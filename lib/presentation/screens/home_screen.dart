@@ -13,6 +13,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../data/models/place_model.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/place_provider.dart';
+import '../../logic/tour_provider.dart';
 import '../widgets/place_card.dart';
 import '../widgets/featured_card.dart';
 import '../widgets/weather_widget.dart';
@@ -396,9 +397,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       },
                     ),
                     const SizedBox(width: 10),
-                    const _IconBtn(
-                      icon: Icons.notifications_outlined,
-                      badge: true,
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const GeofencingSettingsScreen(),
+                          ),
+                        );
+                      },
+                      child: const _IconBtn(
+                        icon: Icons.notifications_outlined,
+                        badge: true,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     GestureDetector(
@@ -522,9 +534,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       featured,
     );
 
-    return CustomScrollView(
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async {
+        await context.read<PlaceProvider>().refresh();
+        if (!mounted) return;
+        await context.read<TourProvider>().refresh();
+      },
+      child: CustomScrollView(
       controller: _scrollCtrl,
-      physics: const BouncingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
       slivers: [
         SliverToBoxAdapter(
           child: Opacity(
@@ -795,6 +816,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
         const SliverToBoxAdapter(child: SizedBox(height: 24)),
       ],
+      ),
     );
   }
 

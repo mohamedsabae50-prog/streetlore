@@ -51,6 +51,12 @@ class PlaceProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> ensureLoaded() async {
+    if (_places.isEmpty) {
+      await loadPlaces(force: true);
+    }
+  }
+
   Future<void> refresh() => loadPlaces(force: true);
 
   PlaceModel? findById(String id) {

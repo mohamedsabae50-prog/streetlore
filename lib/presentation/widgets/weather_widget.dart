@@ -73,7 +73,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: _gradientFor(d.iconCode),
@@ -91,35 +91,42 @@ class _WeatherWidgetState extends State<WeatherWidget> {
         ),
         child: Row(
           children: [
-            Icon(_iconForCode(d.iconCode), color: Colors.white, size: 38),
-            const SizedBox(width: 12),
+            Icon(_iconForCode(d.iconCode), color: Colors.white, size: 32),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     '${d.tempC.round()}°C · ${d.description}',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Alexandria · feels ${d.feelsLikeC.round()}° · ${d.humidity}% humidity',
+                    'feels ${d.feelsLikeC.round()}° · ${d.humidity}% humidity',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
             IconButton(
               onPressed: _load,
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             ),
           ],
         ),
