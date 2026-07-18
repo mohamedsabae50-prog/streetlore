@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
@@ -11,6 +11,7 @@ import '../../logic/theme_provider.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/locale_provider.dart';
 import '../../logic/streak_provider.dart';
+import '../../l10n/app_strings.dart';
 import 'login_screen.dart';
 import 'emergency_screen.dart';
 import 'map_view_screen.dart';
@@ -127,7 +128,7 @@ class ProfileScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _Stat(
-                          label: 'Saved',
+                          label: context.tr('prof_saved'),
                           numericValue: placeP.savedPlaces.length,
                           icon: Icons.bookmark_rounded,
                           delayMs: 200,
@@ -137,7 +138,7 @@ class ProfileScreen extends StatelessWidget {
                             height: 36,
                             color: Colors.white.withValues(alpha: 0.2)),
                         _Stat(
-                          label: 'Explored',
+                          label: context.tr('prof_explored'),
                           numericValue: MockPlaceVisits.count,
                           icon: Icons.explore_rounded,
                           delayMs: 320,
@@ -147,8 +148,8 @@ class ProfileScreen extends StatelessWidget {
                             height: 36,
                             color: Colors.white.withValues(alpha: 0.2)),
                         _Stat(
-                          label: 'Tours',
-                          textValue: 'All',
+                          label: context.tr('prof_tours'),
+                          textValue: context.tr('cat_all'),
                           icon: Icons.map_rounded,
                           delayMs: 440,
                         ),
@@ -177,25 +178,26 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.celebration_rounded, color: Colors.white, size: 28),
-                    SizedBox(width: 12),
+                    const Icon(Icons.celebration_rounded,
+                        color: Colors.white, size: 28),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Everything is free',
-                            style: TextStyle(
+                            context.tr('free_banner_title'),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
                           Text(
-                            'All tours, places & guides are unlocked for everyone.',
-                            style: TextStyle(
+                            context.tr('free_banner_sub'),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                             ),
@@ -253,8 +255,13 @@ class ProfileScreen extends StatelessWidget {
                             children: [
                               Text(
                                 streak.currentStreak == 0
-                                    ? 'Start your streak'
-                                    : '${streak.currentStreak} day${streak.currentStreak == 1 ? '' : 's'} streak',
+                                    ? context.tr('streak_start')
+                                    : context.tr('streak_days', {
+                                        'n': '${streak.currentStreak}',
+                                        's': streak.currentStreak == 1
+                                            ? ''
+                                            : 's',
+                                      }),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 17,
@@ -264,8 +271,14 @@ class ProfileScreen extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 streak.longestStreak > 0
-                                    ? 'Best: ${streak.longestStreak} · ${streak.totalVisitDays} day${streak.totalVisitDays == 1 ? '' : 's'} total'
-                                    : 'Check in at any place to begin',
+                                    ? context.tr('streak_best', {
+                                        'b': '${streak.longestStreak}',
+                                        't': '${streak.totalVisitDays}',
+                                        's': streak.totalVisitDays == 1
+                                            ? ''
+                                            : 's',
+                                      })
+                                    : context.tr('streak_begin'),
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.88),
                                   fontSize: 12,
@@ -287,7 +300,7 @@ class ProfileScreen extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-              child: Text('App Settings',
+              child: Text(context.tr('section_app_settings'),
                   style: AppTextStyles.sectionTitle
                       .copyWith(color: context.textPri)),
             ),
@@ -301,8 +314,10 @@ class ProfileScreen extends StatelessWidget {
                 child: _Card(children: [
                   _ToggleTile(
                     icon: Icons.dark_mode_rounded,
-                    title: 'Dark Mode',
-                    subtitle: themeP.isDark ? 'Dark theme enabled' : 'Light theme active',
+                    title: context.tr('dark_mode'),
+                    subtitle: themeP.isDark
+                        ? context.tr('dark_theme_on')
+                        : context.tr('light_theme_on'),
                     color: const Color(0xFF6366F1),
                     value: themeP.isDark,
                     onChanged: (_) {
@@ -313,8 +328,8 @@ class ProfileScreen extends StatelessWidget {
                   _Div(),
                   _ToggleTile(
                     icon: Icons.notifications_rounded,
-                    title: 'Push Notifications',
-                    subtitle: 'Get tips and discoveries',
+                    title: context.tr('push_notif'),
+                    subtitle: context.tr('push_notif_sub'),
                     color: AppColors.accent,
                     value: true,
                     onChanged: (_) {},
@@ -322,8 +337,8 @@ class ProfileScreen extends StatelessWidget {
                   _Div(),
                   _ToggleTile(
                     icon: Icons.location_on_rounded,
-                    title: 'Location Services',
-                    subtitle: 'Used for nearby recommendations',
+                    title: context.tr('location_services'),
+                    subtitle: context.tr('location_services_sub'),
                     color: AppColors.success,
                     value: true,
                     onChanged: (_) {},
@@ -333,7 +348,7 @@ class ProfileScreen extends StatelessWidget {
                     builder: (context, lp, _) {
                       return _ToggleTile(
                         icon: Icons.translate_rounded,
-                        title: 'Language',
+                        title: context.tr('language'),
                         subtitle: lp.isArabic ? 'العربية' : 'English',
                         color: const Color(0xFF0EA5E9),
                         value: lp.isArabic,
@@ -352,7 +367,7 @@ class ProfileScreen extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-              child: Text('Data & Privacy',
+              child: Text(context.tr('section_data_privacy'),
                   style: AppTextStyles.sectionTitle
                       .copyWith(color: context.textPri)),
             ),
@@ -366,9 +381,9 @@ class ProfileScreen extends StatelessWidget {
                 child: _Card(children: [
                   _ActionTile(
                     icon: Icons.delete_outline_rounded,
-                    title: 'Clear Saved Places',
-                    subtitle:
-                        '${placeP.savedPlaces.length} places in your collection',
+                    title: context.tr('clear_saved'),
+                    subtitle: context.tr('places_in_collection',
+                        {'n': '${placeP.savedPlaces.length}'}),
                     color: AppColors.error,
                     isDestructive: true,
                     onTap: () => _showClearDialog(context, placeP),
@@ -376,13 +391,12 @@ class ProfileScreen extends StatelessWidget {
                   _Div(),
                   _ActionTile(
                     icon: Icons.download_outlined,
-                    title: 'Export My Data',
-                    subtitle: 'Download your saved collection',
+                    title: context.tr('export_data'),
+                    subtitle: context.tr('export_data_sub'),
                     color: AppColors.primary,
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Export feature coming soon!')),
+                        SnackBar(content: Text(context.tr('export_soon'))),
                       );
                     },
                   ),
@@ -394,7 +408,7 @@ class ProfileScreen extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-              child: Text('About',
+              child: Text(context.tr('section_about'),
                   style: AppTextStyles.sectionTitle
                       .copyWith(color: context.textPri)),
             ),
@@ -408,8 +422,8 @@ class ProfileScreen extends StatelessWidget {
                 child: _Card(children: [
                   _ActionTile(
                     icon: Icons.health_and_safety_rounded,
-                    title: 'Emergency Info',
-                    subtitle: 'Hospitals, embassies, hotlines',
+                    title: context.tr('emergency_info'),
+                    subtitle: context.tr('emergency_info_sub'),
                     color: const Color(0xFFEF4444),
                     onTap: () {
                       HapticFeedback.lightImpact();
@@ -424,8 +438,8 @@ class ProfileScreen extends StatelessWidget {
                   _Div(),
                   _ActionTile(
                     icon: Icons.map_rounded,
-                    title: 'Map View',
-                    subtitle: 'All 42 places on interactive map',
+                    title: context.tr('map_view'),
+                    subtitle: context.tr('map_view_sub'),
                     color: const Color(0xFF3B82F6),
                     onTap: () {
                       HapticFeedback.lightImpact();
@@ -438,8 +452,8 @@ class ProfileScreen extends StatelessWidget {
                   _Div(),
                   _ActionTile(
                     icon: Icons.attach_money_rounded,
-                    title: 'Currency Converter',
-                    subtitle: 'EGP ↔ USD, EUR, GBP, SAR + more',
+                    title: context.tr('currency_converter'),
+                    subtitle: context.tr('currency_converter_sub'),
                     color: const Color(0xFF14B8A6),
                     onTap: () {
                       HapticFeedback.lightImpact();
@@ -454,8 +468,8 @@ class ProfileScreen extends StatelessWidget {
                   _Div(),
                   _ActionTile(
                     icon: Icons.directions_transit_rounded,
-                    title: 'Public Transport',
-                    subtitle: 'Trams, buses, taxis in Alexandria',
+                    title: context.tr('public_transport'),
+                    subtitle: context.tr('public_transport_sub'),
                     color: const Color(0xFFEC4899),
                     onTap: () {
                       HapticFeedback.lightImpact();
@@ -470,8 +484,8 @@ class ProfileScreen extends StatelessWidget {
                   _Div(),
                   _ActionTile(
                     icon: Icons.menu_book_rounded,
-                    title: 'Travel Journal',
-                    subtitle: 'Save memories, notes & photos',
+                    title: context.tr('travel_journal'),
+                    subtitle: context.tr('travel_journal_sub'),
                     color: const Color(0xFF8B5CF6),
                     onTap: () {
                       HapticFeedback.lightImpact();
@@ -484,27 +498,26 @@ class ProfileScreen extends StatelessWidget {
                   _Div(),
                   _ActionTile(
                     icon: Icons.help_outline_rounded,
-                    title: 'Help Center',
-                    subtitle: 'FAQs and support',
+                    title: context.tr('help_center'),
+                    subtitle: context.tr('help_center_sub'),
                     color: const Color(0xFF0EA5E9),
                     onTap: () => _showHelp(context),
                   ),
                   _Div(),
                   _ActionTile(
                     icon: Icons.star_outline_rounded,
-                    title: 'Rate Streetlore',
-                    subtitle: 'Share your experience',
+                    title: context.tr('rate_app'),
+                    subtitle: context.tr('rate_app_sub'),
                     color: AppColors.ratingGold,
                     onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Thank you for your support! ')),
+                      SnackBar(content: Text(context.tr('rate_thanks'))),
                     ),
                   ),
                   _Div(),
                   _ActionTile(
                     icon: Icons.info_outline_rounded,
-                    title: 'About Streetlore',
-                    subtitle: 'Version 2.0.0',
+                    title: context.tr('about_app'),
+                    subtitle: context.tr('version'),
                     color: context.textSec,
                     onTap: () => showAboutDialog(
                     context: context,
@@ -604,8 +617,8 @@ class ProfileScreen extends StatelessWidget {
                 (route) => false,
               );
             },
-            child: const Text('Sign Out',
-                style: TextStyle(color: Colors.white)),
+            child: Text(context.tr('sign_out'),
+                style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -617,17 +630,17 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.cardColor,
-        title: Text('Clear All Saved?',
+        title: Text(context.tr('clear_all_saved_q'),
             style: TextStyle(
                 color: context.textPri, fontWeight: FontWeight.w800)),
         content: Text(
-          'This will permanently remove all saved places. This cannot be undone.',
+          context.tr('clear_all_warning'),
           style: TextStyle(color: context.textSec, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
+            child: Text(context.tr('cancel'),
                 style: TextStyle(color: context.textSec)),
           ),
           ElevatedButton(
@@ -640,13 +653,13 @@ class ProfileScreen extends StatelessWidget {
               provider.clearAllSaved();
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('All saved places cleared.'),
+                SnackBar(
+                    content: Text(context.tr('saved_cleared')),
                     backgroundColor: AppColors.error),
               );
             },
-            child: const Text('Clear',
-                style: TextStyle(color: Colors.white)),
+            child: Text(context.tr('clear'),
+                style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -658,11 +671,11 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.cardColor,
-        title: Text('Help Center',
+        title: Text(context.tr('help_center'),
             style: TextStyle(
                 color: context.textPri, fontWeight: FontWeight.w800)),
         content: Text(
-          'For support, contact us at:\nsupport@streetlore.com\n\nWe reply within 24 hours.',
+          context.tr('help_contact'),
           style: TextStyle(
               color: context.textSec, fontSize: 14, height: 1.6),
         ),
@@ -674,8 +687,8 @@ class ProfileScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Got it',
-                style: TextStyle(color: Colors.white)),
+            child: Text(context.tr('got_it'),
+                style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),

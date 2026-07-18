@@ -17,6 +17,7 @@ import '../../logic/tour_provider.dart';
 import '../widgets/place_card.dart';
 import '../widgets/featured_card.dart';
 import '../widgets/weather_widget.dart';
+import '../../l10n/app_strings.dart';
 import 'place_details_screen.dart';
 import 'ai_trip_generator_screen.dart';
 import 'leaderboard_screen.dart';
@@ -154,11 +155,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  String _getGreeting() {
+  String _getGreeting(BuildContext context) {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Good Morning';
-    if (h < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (h < 12) return context.tr('greet_morning');
+    if (h < 17) return context.tr('greet_afternoon');
+    return context.tr('greet_evening');
   }
 
   List<PlaceModel> get _categoryFiltered {
@@ -263,18 +264,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Compass direction',
-                              style: TextStyle(
+                            Text(
+                              context.tr('compass_title'),
+                              style: const TextStyle(
                                 color: AppColors.textPrimary,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 15,
                               ),
                             ),
                             const SizedBox(height: 6),
-                            const Text(
-                              'Discover the city with a sweeping animated compass that grows into place.',
-                              style: TextStyle(
+                            Text(
+                              context.tr('compass_sub'),
+                              style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 12,
                                 height: 1.4,
@@ -353,7 +354,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _getGreeting(),
+                            _getGreeting(context),
                             style: const TextStyle(
                               fontSize: 13,
                               color: AppColors.textSecondary,
@@ -481,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   onChanged: (v) => setState(() => _searchQuery = v),
                   decoration: InputDecoration(
-                    hintText: 'Search places, landmarks...',
+                    hintText: context.tr('search_hint'),
                     hintStyle: TextStyle(
                       color: AppColors.textSecondary.withValues(alpha: 0.5),
                       fontSize: 15,
@@ -542,280 +543,277 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         await context.read<TourProvider>().refresh();
       },
       child: CustomScrollView(
-      controller: _scrollCtrl,
-      physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
-      ),
-      slivers: [
-        SliverToBoxAdapter(
-          child: Opacity(
-            opacity: (1.0 - _scrollOffset / 120).clamp(0.0, 1.0),
-            child: const WeatherWidget(),
-          ),
+        controller: _scrollCtrl,
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
         ),
-        SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Featured',
-                      style: AppTextStyles.sectionTitle.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const Text(
-                      'See all',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Row(
-                  children: [
-                    FilterChip(
-                      label: const Text('Open Now'),
-                      selected: placeProvider.isFilterOpenNow,
-                      onSelected: (_) => placeProvider.toggleFilterOpenNow(),
-                      selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                      checkmarkColor: AppColors.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Cheapest'),
-                      selected: placeProvider.isFilterCheapest,
-                      onSelected: (_) => placeProvider.toggleFilterCheapest(),
-                      selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                      checkmarkColor: AppColors.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Nearest'),
-                      selected: placeProvider.isFilterNearest,
-                      onSelected: (_) => placeProvider.toggleFilterNearest(),
-                      selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                      checkmarkColor: AppColors.primary,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              Transform.translate(
-                offset: Offset(0, -_scrollOffset * 0.25),
-                child: Opacity(
-                  opacity: (1.0 - _scrollOffset / 350).clamp(0.0, 1.0),
-                  child: SizedBox(
-                    height: 240,
-                    child: ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.only(left: 20, right: 6),
-                      itemCount: displayedPlaces.length,
-                      itemBuilder: (context, i) => FeaturedCard(
-                        place: displayedPlaces[i],
-                        onTap: () => _openPlace(displayedPlaces[i]),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 20),
-            child: SizedBox(
-              height: 42,
-              child: ListView.builder(
-                physics: const BouncingScrollPhysics(),
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: _categories.length + 2,
-                itemBuilder: (context, i) {
-                  if (i == _categories.length) {
-                    return _FilterPill(
-                      label: 'Free only',
-                      iconOn: Icons.check_circle_rounded,
-                      iconOff: Icons.local_offer_rounded,
-                      color: const Color(0xFF10B981),
-                      active: _freeOnly,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        setState(() => _freeOnly = !_freeOnly);
-                      },
-                    );
-                  }
-                  if (i == _categories.length + 1) {
-                    return _FilterPill(
-                      label: 'Hidden Gems',
-                      iconOn: Icons.diamond_rounded,
-                      iconOff: Icons.diamond_outlined,
-                      color: const Color(0xFF8B5CF6),
-                      active: _hiddenGemsOnly,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        setState(() => _hiddenGemsOnly = !_hiddenGemsOnly);
-                      },
-                    );
-                  }
-                  final cat = _categories[i];
-                  final isSel = _selectedCategory == cat.label;
-                  return GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      setState(() => _selectedCategory = cat.label);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeOutCubic,
-                      margin: const EdgeInsets.only(right: 10),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 9,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSel
-                            ? AppColors.primary
-                            : AppColors.cardBackground,
-                        borderRadius: BorderRadius.circular(22),
-                        border: isSel
-                            ? null
-                            : Border.all(
-                                color: AppColors.textSecondary.withValues(
-                                  alpha: 0.2,
-                                ),
-                              ),
-                        boxShadow: isSel
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.35,
-                                  ),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            cat.icon,
-                            size: 14,
-                            color: isSel
-                                ? Colors.white
-                                : AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            cat.label,
-                            style: TextStyle(
-                              color: isSel
-                                  ? Colors.white
-                                  : AppColors.textSecondary,
-                              fontWeight: isSel
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-
-        SliverToBoxAdapter(child: _QuickAccessGrid()),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _selectedCategory == 'All' ? 'All Places' : _selectedCategory,
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: AppColors.textPrimary,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        context.tr('featured'),
+                        style: AppTextStyles.sectionTitle.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        context.tr('see_all'),
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Row(
+                    children: [
+                      FilterChip(
+                        label: Text(context.tr('filter_open_now')),
+                        selected: placeProvider.isFilterOpenNow,
+                        onSelected: (_) => placeProvider.toggleFilterOpenNow(),
+                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                        checkmarkColor: AppColors.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      FilterChip(
+                        label: Text(context.tr('filter_cheapest')),
+                        selected: placeProvider.isFilterCheapest,
+                        onSelected: (_) => placeProvider.toggleFilterCheapest(),
+                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                        checkmarkColor: AppColors.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      FilterChip(
+                        label: Text(context.tr('filter_nearest')),
+                        selected: placeProvider.isFilterNearest,
+                        onSelected: (_) => placeProvider.toggleFilterNearest(),
+                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                        checkmarkColor: AppColors.primary,
+                      ),
+                    ],
                   ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${filtered.length} places',
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
+                ),
+                const SizedBox(height: 14),
+
+                Transform.translate(
+                  offset: Offset(0, -_scrollOffset * 0.25),
+                  child: Opacity(
+                    opacity: (1.0 - _scrollOffset / 350).clamp(0.0, 1.0),
+                    child: SizedBox(
+                      height: 240,
+                      child: ListView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.only(left: 20, right: 6),
+                        itemCount: displayedPlaces.length,
+                        itemBuilder: (context, i) => FeaturedCard(
+                          place: displayedPlaces[i],
+                          onTap: () => _openPlace(displayedPlaces[i]),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        ),
-        filtered.isEmpty
-            ? SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.search_off_rounded,
-                        size: 64,
-                        color: AppColors.textSecondary.withValues(alpha: 0.5),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No places found',
-                        style: AppTextStyles.sectionTitle.copyWith(
-                          color: AppColors.textPrimary,
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: SizedBox(
+                height: 42,
+                child: ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: _categories.length + 2,
+                  itemBuilder: (context, i) {
+                    if (i == _categories.length) {
+                      return _FilterPill(
+                        label: 'filter_free',
+                        iconOn: Icons.check_circle_rounded,
+                        iconOff: Icons.local_offer_rounded,
+                        color: const Color(0xFF10B981),
+                        active: _freeOnly,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          setState(() => _freeOnly = !_freeOnly);
+                        },
+                      );
+                    }
+                    if (i == _categories.length + 1) {
+                      return _FilterPill(
+                        label: 'filter_hidden_gems',
+                        iconOn: Icons.diamond_rounded,
+                        iconOff: Icons.diamond_outlined,
+                        color: const Color(0xFF8B5CF6),
+                        active: _hiddenGemsOnly,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          setState(() => _hiddenGemsOnly = !_hiddenGemsOnly);
+                        },
+                      );
+                    }
+                    final cat = _categories[i];
+                    final isSel = _selectedCategory == cat.label;
+                    return GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        setState(() => _selectedCategory = cat.label);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeOutCubic,
+                        margin: const EdgeInsetsDirectional.only(end: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 9,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSel
+                              ? AppColors.primary
+                              : AppColors.cardBackground,
+                          borderRadius: BorderRadius.circular(22),
+                          border: isSel
+                              ? null
+                              : Border.all(
+                                  color: AppColors.textSecondary.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                ),
+                          boxShadow: isSel
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.35,
+                                    ),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              cat.icon,
+                              size: 14,
+                              color: isSel
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              context.tr('cat_${cat.label.toLowerCase()}'),
+                              style: TextStyle(
+                                color: isSel
+                                    ? Colors.white
+                                    : AppColors.textSecondary,
+                                fontWeight: isSel
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              )
-            : SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) => FadeInUp(
-                    delay: Duration(milliseconds: 60 * i + 200),
-                    offsetY: 24,
-                    child: PlaceCard(
-                      place: filtered[i],
-                      onTap: () => _openPlace(filtered[i]),
-                    ),
-                  ),
-                  childCount: filtered.length,
+                    );
+                  },
                 ),
               ),
-        const SliverToBoxAdapter(child: SizedBox(height: 24)),
-      ],
+            ),
+          ),
+
+          SliverToBoxAdapter(child: _QuickAccessGrid()),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _selectedCategory == 'All'
+                        ? context.tr('all_places')
+                        : context.tr(
+                            'cat_${_selectedCategory.toLowerCase()}'),
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      context.tr('places_count', {'n': '${filtered.length}'}),
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          filtered.isEmpty
+              ? SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off_rounded,
+                          size: 64,
+                          color: AppColors.textSecondary.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          context.tr('no_places'),
+                          style: AppTextStyles.sectionTitle.copyWith(
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, i) => FadeInUp(
+                      delay: Duration(milliseconds: 60 * i + 200),
+                      offsetY: 24,
+                      child: PlaceCard(
+                        place: filtered[i],
+                        onTap: () => _openPlace(filtered[i]),
+                      ),
+                    ),
+                    childCount: filtered.length,
+                  ),
+                ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        ],
       ),
     );
   }
@@ -838,15 +836,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 16),
             Text(
-              'No results for "$_searchQuery"',
+              context.tr('no_results_for', {'q': _searchQuery}),
               style: AppTextStyles.sectionTitle.copyWith(
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Try a different name or category',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            Text(
+              context.tr('try_different'),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
             ),
           ],
         ),
@@ -858,7 +859,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
           child: Text(
-            '${results.length} results for "$_searchQuery"',
+            context.tr('results_for', {
+              'n': '${results.length}',
+              'q': _searchQuery,
+            }),
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 13,
@@ -1006,7 +1010,7 @@ class _QuickAccessGrid extends StatelessWidget {
     final items = <_QuickItem>[
       _QuickItem(
         icon: Icons.auto_awesome,
-        label: 'AI Trip',
+        label: 'quick_ai_trip',
         color: const Color(0xFF6366F1),
         onTap: () => Navigator.push(
           context,
@@ -1015,7 +1019,7 @@ class _QuickAccessGrid extends StatelessWidget {
       ),
       _QuickItem(
         icon: Icons.wb_twilight_rounded,
-        label: 'Best Time',
+        label: 'quick_best_time',
         color: const Color(0xFFF59E0B),
         onTap: () => Navigator.push(
           context,
@@ -1024,7 +1028,7 @@ class _QuickAccessGrid extends StatelessWidget {
       ),
       _QuickItem(
         icon: Icons.map_rounded,
-        label: 'Map',
+        label: 'quick_map',
         color: const Color(0xFF3B82F6),
         onTap: () => Navigator.push(
           context,
@@ -1033,7 +1037,7 @@ class _QuickAccessGrid extends StatelessWidget {
       ),
       _QuickItem(
         icon: Icons.attach_money_rounded,
-        label: 'Currency',
+        label: 'quick_currency',
         color: const Color(0xFF14B8A6),
         onTap: () => Navigator.push(
           context,
@@ -1042,7 +1046,7 @@ class _QuickAccessGrid extends StatelessWidget {
       ),
       _QuickItem(
         icon: Icons.directions_transit_rounded,
-        label: 'Transport',
+        label: 'quick_transport',
         color: const Color(0xFFEC4899),
         onTap: () => Navigator.push(
           context,
@@ -1051,7 +1055,7 @@ class _QuickAccessGrid extends StatelessWidget {
       ),
       _QuickItem(
         icon: Icons.menu_book_rounded,
-        label: 'Journal',
+        label: 'quick_journal',
         color: const Color(0xFF8B5CF6),
         onTap: () => Navigator.push(
           context,
@@ -1060,7 +1064,7 @@ class _QuickAccessGrid extends StatelessWidget {
       ),
       _QuickItem(
         icon: Icons.emoji_events_rounded,
-        label: 'Ranking',
+        label: 'quick_ranking',
         color: AppColors.warning,
         onTap: () => Navigator.push(
           context,
@@ -1069,7 +1073,7 @@ class _QuickAccessGrid extends StatelessWidget {
       ),
       _QuickItem(
         icon: Icons.alt_route_rounded,
-        label: 'Routes',
+        label: 'quick_routes',
         color: AppColors.success,
         onTap: () => Navigator.push(
           context,
@@ -1078,7 +1082,7 @@ class _QuickAccessGrid extends StatelessWidget {
       ),
       _QuickItem(
         icon: Icons.cloud_off_rounded,
-        label: 'Offline',
+        label: 'quick_offline',
         color: const Color(0xFF7C3AED),
         onTap: () => Navigator.push(
           context,
@@ -1087,7 +1091,7 @@ class _QuickAccessGrid extends StatelessWidget {
       ),
       _QuickItem(
         icon: Icons.notifications_active_rounded,
-        label: 'Nearby',
+        label: 'quick_nearby',
         color: AppColors.accent,
         onTap: () => Navigator.push(
           context,
@@ -1096,7 +1100,7 @@ class _QuickAccessGrid extends StatelessWidget {
       ),
       _QuickItem(
         icon: Icons.chat_bubble_rounded,
-        label: 'Live Chat',
+        label: 'quick_chat',
         color: const Color(0xFF10B981),
         onTap: () {
           final first = context.read<PlaceProvider>().places.first;
@@ -1116,7 +1120,7 @@ class _QuickAccessGrid extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Discover',
+                context.tr('discover'),
                 style: AppTextStyles.sectionTitle.copyWith(
                   color: AppColors.textPrimary,
                 ),
@@ -1130,10 +1134,9 @@ class _QuickAccessGrid extends StatelessWidget {
             itemCount: items.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              mainAxisSpacing: 8, // ????? ??????? ??? ?????? ???
+              mainAxisSpacing: 20,
               crossAxisSpacing: 12,
-              childAspectRatio:
-                  1.4, // ????? ????? ?? ???? ???? ???????? ?????? ??????
+              childAspectRatio: 0.7,
             ),
             itemBuilder: (context, i) => FadeInUp(
               delay: Duration(milliseconds: 50 * i + 100),
@@ -1175,7 +1178,7 @@ class _QuickCircleTile extends StatelessWidget {
           const SizedBox(height: 8),
 
           Text(
-            item.label,
+            context.tr(item.label),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -1237,7 +1240,7 @@ class _FilterPill extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              label,
+              context.tr(label),
               style: TextStyle(
                 color: active ? Colors.white : color,
                 fontWeight: active ? FontWeight.w800 : FontWeight.w600,

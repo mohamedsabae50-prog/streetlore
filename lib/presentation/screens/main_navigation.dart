@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
+import '../../l10n/app_strings.dart';
 import 'home_screen.dart';
 import 'tours_screen.dart';
 import 'saved_tours_screen.dart';
@@ -32,22 +33,22 @@ class _MainNavigationState extends State<MainNavigation>
     _NavItem(
       icon: Icons.explore_outlined,
       activeIcon: Icons.explore_rounded,
-      label: 'Explore',
+      label: 'nav_explore',
     ),
     _NavItem(
       icon: Icons.map_outlined,
       activeIcon: Icons.map_rounded,
-      label: 'Tours',
+      label: 'nav_tours',
     ),
     _NavItem(
       icon: Icons.bookmark_outline_rounded,
       activeIcon: Icons.bookmark_rounded,
-      label: 'Saved',
+      label: 'nav_saved',
     ),
     _NavItem(
       icon: Icons.person_outline_rounded,
       activeIcon: Icons.person_rounded,
-      label: 'Profile',
+      label: 'nav_profile',
     ),
   ];
 
@@ -137,8 +138,8 @@ class _MainNavigationState extends State<MainNavigation>
                     final fromX = _previousIndex * tabWidth;
                     final toX = _currentIndex * tabWidth;
                     final x = fromX + (toX - fromX) * _indicatorAnim.value;
-                    return Positioned(
-                      left: x + 8 + (tabWidth - 56) / 2,
+                    return PositionedDirectional(
+                      start: x + 8 + (tabWidth - 56) / 2,
                       top: 6,
                       child: Opacity(
                         opacity: _indicatorAnim.value,
@@ -243,7 +244,7 @@ class _NavBarItem extends StatelessWidget {
                     ? AppColors.primary
                     : AppColors.textSecondary,
               ),
-              child: Text(item.label),
+              child: Text(context.tr(item.label)),
             ),
           ],
         ),

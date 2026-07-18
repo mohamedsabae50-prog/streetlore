@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/tour_provider.dart';
+import '../../l10n/app_strings.dart';
 import '../widgets/place_card.dart';
 import '../widgets/tour_card.dart';
 import 'place_details_screen.dart';
@@ -50,13 +51,14 @@ class _SavedToursScreenState extends State<SavedToursScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Your collection',
+                        context.tr('saved_collection'),
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      Text('Saved', style: AppTextStyles.screenTitle),
+                      Text(context.tr('saved_title'),
+                          style: AppTextStyles.screenTitle),
                     ],
                   ),
                 ],
@@ -92,9 +94,9 @@ class _SavedToursScreenState extends State<SavedToursScreen>
                     fontWeight: FontWeight.w500,
                     fontSize: 13,
                   ),
-                  tabs: const [
-                    Tab(text: 'Places'),
-                    Tab(text: 'Tours'),
+                  tabs: [
+                    Tab(text: context.tr('tab_places')),
+                    Tab(text: context.tr('tab_tours')),
                   ],
                 ),
               ),
@@ -125,16 +127,13 @@ class _SavedPlacesTab extends StatelessWidget {
         if (places.isEmpty) {
           return _EmptyState(
             icon: Icons.bookmark_outline_rounded,
-            title: 'No Saved Places',
-            subtitle:
-                'Start exploring and tap the bookmark icon on any place to save it here for easy access.',
-            actionLabel: 'Discover Places',
+            title: context.tr('no_saved_places'),
+            subtitle: context.tr('empty_saved_places_sub'),
+            actionLabel: context.tr('discover_places'),
             onAction: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Switch to the Explore tab to discover places!',
-                  ),
+                SnackBar(
+                  content: Text(context.tr('switch_explore')),
                 ),
               );
             },
@@ -198,7 +197,7 @@ class _SavedPlacesTab extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Clear',
+                              context.tr('clear'),
                               style: TextStyle(
                                 color: AppColors.error,
                                 fontWeight: FontWeight.w700,
@@ -219,16 +218,17 @@ class _SavedPlacesTab extends StatelessWidget {
                 return Dismissible(
                   key: Key('saved_place_${place.id}'),
                   direction: DismissDirection.endToStart,
-                  background: _deleteBackground(),
+                  background: _deleteBackground(context),
                   onDismissed: (_) {
                     placeProvider.toggleSave(place);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          '${place.name} removed from saved places',
+                          context.tr('removed_from_saved',
+                              {'name': place.name}),
                         ),
                         action: SnackBarAction(
-                          label: 'Undo',
+                          label: context.tr('undo'),
                           textColor: AppColors.ratingGold,
                           onPressed: () => placeProvider.toggleSave(place),
                         ),
@@ -262,19 +262,19 @@ class _SavedPlacesTab extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: Colors.white,
-        title: const Text(
-          'Clear All Saved Places?',
+        title: Text(
+          context.tr('clear_all_title'),
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
             fontSize: 18,
           ),
         ),
-        content: const Text(
-          'This will permanently remove all your saved places. This cannot be undone.',
+        content: Text(
+          context.tr('clear_all_warning'),
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             color: AppColors.textSecondary,
             fontSize: 14,
             height: 1.5,
@@ -283,7 +283,7 @@ class _SavedPlacesTab extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(context.tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -296,13 +296,14 @@ class _SavedPlacesTab extends StatelessWidget {
               provider.clearAllSaved();
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('All saved places cleared.'),
+                SnackBar(
+                  content: Text(context.tr('saved_cleared')),
                   backgroundColor: AppColors.error,
                 ),
               );
             },
-            child: const Text('Clear', style: TextStyle(color: Colors.white)),
+            child: Text(context.tr('clear'),
+                style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -322,14 +323,13 @@ class _SavedToursTab extends StatelessWidget {
         if (tours.isEmpty) {
           return _EmptyState(
             icon: Icons.map_outlined,
-            title: 'No Saved Tours',
-            subtitle:
-                'Tap the download icon on any tour to save it here for offline access.',
-            actionLabel: 'Browse Tours',
+            title: context.tr('no_saved_tours'),
+            subtitle: context.tr('empty_saved_tours_sub'),
+            actionLabel: context.tr('browse_tours'),
             onAction: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Switch to the Tours tab to discover tours!'),
+                SnackBar(
+                  content: Text(context.tr('switch_tours')),
                 ),
               );
             },
@@ -457,7 +457,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-Widget _deleteBackground() => Container(
+Widget _deleteBackground(BuildContext context) => Container(
   margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
   decoration: BoxDecoration(
     gradient: const LinearGradient(
@@ -465,16 +465,16 @@ Widget _deleteBackground() => Container(
     ),
     borderRadius: BorderRadius.circular(20),
   ),
-  alignment: Alignment.centerRight,
-  padding: const EdgeInsets.only(right: 24),
+  alignment: AlignmentDirectional.centerEnd,
+  padding: const EdgeInsetsDirectional.only(end: 24),
   child: Column(
     mainAxisAlignment: MainAxisAlignment.center,
-    children: const [
-      Icon(Icons.delete_rounded, color: Colors.white, size: 28),
-      SizedBox(height: 4),
+    children: [
+      const Icon(Icons.delete_rounded, color: Colors.white, size: 28),
+      const SizedBox(height: 4),
       Text(
-        'Remove',
-        style: TextStyle(
+        context.tr('remove'),
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 11,
           fontWeight: FontWeight.w700,

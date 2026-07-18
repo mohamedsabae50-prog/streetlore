@@ -5,6 +5,8 @@ import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../logic/auth_provider.dart';
 import 'main_navigation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,16 +36,21 @@ class _LoginScreenState extends State<LoginScreen>
       vsync: this,
       duration: const Duration(seconds: 14),
     )..repeat();
-    _bgBlob1 = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animCtrl, curve: Curves.linear),
+    _bgBlob1 = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.linear));
+    _bgBlob2 = Tween<double>(
+      begin: 0.5,
+      end: 1.5,
+    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.linear));
+    _nameFocus.addListener(
+      () => setState(() => _focusedField = _nameFocus.hasFocus ? 'name' : null),
     );
-    _bgBlob2 = Tween<double>(begin: 0.5, end: 1.5).animate(
-      CurvedAnimation(parent: _animCtrl, curve: Curves.linear),
+    _emailFocus.addListener(
+      () =>
+          setState(() => _focusedField = _emailFocus.hasFocus ? 'email' : null),
     );
-    _nameFocus.addListener(() => setState(
-        () => _focusedField = _nameFocus.hasFocus ? 'name' : null));
-    _emailFocus.addListener(() => setState(
-        () => _focusedField = _emailFocus.hasFocus ? 'email' : null));
   }
 
   @override
@@ -65,9 +72,9 @@ class _LoginScreenState extends State<LoginScreen>
     if (!mounted) return;
 
     await context.read<AuthProvider>().signIn(
-          name: _nameCtrl.text,
-          email: _emailCtrl.text,
-        );
+      name: _nameCtrl.text,
+      email: _emailCtrl.text,
+    );
 
     if (!mounted) return;
     _goToMain();
@@ -76,9 +83,9 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _continueAsGuest() async {
     HapticFeedback.lightImpact();
     await context.read<AuthProvider>().signIn(
-          name: 'Guest Explorer',
-          email: 'guest@streetlore.com',
-        );
+      name: 'Guest Explorer',
+      email: 'guest@streetlore.com',
+    );
     if (!mounted) return;
     _goToMain();
   }
@@ -102,7 +109,6 @@ class _LoginScreenState extends State<LoginScreen>
       backgroundColor: context.bgColor,
       body: Stack(
         children: [
-          
           if (!context.isDark)
             Positioned.fill(
               child: IgnorePointer(
@@ -128,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 32),
-                    
+
                     Center(
                       child: PopIn(
                         duration: const Duration(milliseconds: 700),
@@ -140,8 +146,7 @@ class _LoginScreenState extends State<LoginScreen>
                             borderRadius: BorderRadius.circular(22),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary
-                                    .withValues(alpha: 0.4),
+                                color: AppColors.primary.withValues(alpha: 0.4),
                                 blurRadius: 24,
                                 offset: const Offset(0, 10),
                               ),
@@ -268,18 +273,19 @@ class _LoginScreenState extends State<LoginScreen>
                               label: 'Google',
                               icon: Icons.g_mobiledata_rounded,
                               color: const Color(0xFFEA4335),
-                              onTap: _signIn,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _SocialButton(
-                              label: 'Apple',
-                              icon: Icons.apple_rounded,
-                              color: context.isDark
-                                  ? Colors.white
-                                  : Colors.black,
-                              onTap: _signIn,
+                              onTap: () async {
+                                try {
+                                  await Supabase.instance.client.auth
+                                      .signInWithOAuth(
+                                        OAuthProvider.google,
+                                        redirectTo: kIsWeb
+                                            ? null
+                                            : 'io.supabase.streetlore://login-callback/',
+                                      );
+                                } catch (e) {
+                                  print('Error signing in with Google: $e');
+                                }
+                              },
                             ),
                           ),
                         ],
@@ -386,9 +392,11 @@ class _InputField extends StatelessWidget {
           prefixIcon: AnimatedScale(
             scale: isFocused ? 1.1 : 1.0,
             duration: const Duration(milliseconds: 200),
-            child: Icon(icon,
-                color: isFocused ? AppColors.primary : context.textSec,
-                size: 20),
+            child: Icon(
+              icon,
+              color: isFocused ? AppColors.primary : context.textSec,
+              size: 20,
+            ),
           ),
           filled: true,
           fillColor: context.cardColor,
@@ -402,8 +410,7 @@ class _InputField extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide:
-                const BorderSide(color: AppColors.primary, width: 1.5),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
@@ -413,8 +420,10 @@ class _InputField extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(color: AppColors.error),
           ),
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 16,
+          ),
         ),
         validator: validator,
       ),
@@ -552,20 +561,21 @@ class _BlobPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint1 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          AppColors.primary.withValues(alpha: 0.18),
-          AppColors.primary.withValues(alpha: 0.0),
-        ],
-      ).createShader(
-        Rect.fromCircle(
-          center: Offset(
-            size.width * (0.2 + 0.15 * _wave(phase)),
-            size.height * (0.25 + 0.1 * _wave(phase + 0.3)),
-          ),
-          radius: 200,
-        ),
-      );
+      ..shader =
+          RadialGradient(
+            colors: [
+              AppColors.primary.withValues(alpha: 0.18),
+              AppColors.primary.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(
+                size.width * (0.2 + 0.15 * _wave(phase)),
+                size.height * (0.25 + 0.1 * _wave(phase + 0.3)),
+              ),
+              radius: 200,
+            ),
+          );
     canvas.drawCircle(
       Offset(
         size.width * (0.2 + 0.15 * _wave(phase)),
@@ -576,20 +586,21 @@ class _BlobPainter extends CustomPainter {
     );
 
     final paint2 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          AppColors.accent.withValues(alpha: 0.16),
-          AppColors.accent.withValues(alpha: 0.0),
-        ],
-      ).createShader(
-        Rect.fromCircle(
-          center: Offset(
-            size.width * (0.85 - 0.1 * _wave(phase2)),
-            size.height * (0.7 - 0.05 * _wave(phase2 + 0.5)),
-          ),
-          radius: 240,
-        ),
-      );
+      ..shader =
+          RadialGradient(
+            colors: [
+              AppColors.accent.withValues(alpha: 0.16),
+              AppColors.accent.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(
+                size.width * (0.85 - 0.1 * _wave(phase2)),
+                size.height * (0.7 - 0.05 * _wave(phase2 + 0.5)),
+              ),
+              radius: 240,
+            ),
+          );
     canvas.drawCircle(
       Offset(
         size.width * (0.85 - 0.1 * _wave(phase2)),
@@ -600,20 +611,21 @@ class _BlobPainter extends CustomPainter {
     );
 
     final paint3 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          AppColors.success.withValues(alpha: 0.10),
-          AppColors.success.withValues(alpha: 0.0),
-        ],
-      ).createShader(
-        Rect.fromCircle(
-          center: Offset(
-            size.width * (0.5 + 0.2 * _wave(phase2 + 0.7)),
-            size.height * (1.1 - 0.2 * _wave(phase + 0.2)),
-          ),
-          radius: 280,
-        ),
-      );
+      ..shader =
+          RadialGradient(
+            colors: [
+              AppColors.success.withValues(alpha: 0.10),
+              AppColors.success.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(
+                size.width * (0.5 + 0.2 * _wave(phase2 + 0.7)),
+                size.height * (1.1 - 0.2 * _wave(phase + 0.2)),
+              ),
+              radius: 280,
+            ),
+          );
     canvas.drawCircle(
       Offset(
         size.width * (0.5 + 0.2 * _wave(phase2 + 0.7)),

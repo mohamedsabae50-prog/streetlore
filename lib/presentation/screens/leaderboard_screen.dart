@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -9,6 +9,7 @@ import '../../core/widgets/animated_counter.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/confetti_overlay.dart';
 import '../../data/models/gamification_stats.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/gamification_provider.dart';
 import '../../logic/leaderboard_provider.dart';
 
@@ -79,10 +80,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     title: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Most travelled in Alexandria',
+                        Text(context.tr('lb_subtitle'),
                             style: TextStyle(
                                 fontSize: 12, color: AppColors.textSecondary)),
-                        Text('Leaderboard', style: AppTextStyles.screenTitle),
+                        Text(context.tr('lb_title'),
+                            style: AppTextStyles.screenTitle),
                       ],
                     ),
                     actions: [
@@ -111,9 +113,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       child: Center(child: CircularProgressIndicator()),
                     )
                   else if (entries.isEmpty)
-                    const SliverFillRemaining(
+                    SliverFillRemaining(
                       hasScrollBody: false,
-                      child: Center(child: Text('No leaderboard data yet')),
+                      child: Center(child: Text(context.tr('lb_empty'))),
                     )
                   else
                     SliverList(
@@ -162,8 +164,8 @@ class _MyCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('YOUR RANK',
-              style: TextStyle(
+          Text(context.tr('lb_your_rank'),
+              style: const TextStyle(
                 color: Colors.white60,
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -203,7 +205,10 @@ class _MyCard extends StatelessWidget {
                             fontWeight: FontWeight.w800)),
                     AnimatedCounter(
                       value: stats.totalPoints,
-                      suffix: ' points · ${stats.level}',
+                      suffix: context.tr('lb_points_level', {
+                        'p': '',
+                        'l': AppStrings.level(context, stats.level),
+                      }),
                       style: const TextStyle(
                           color: Colors.white70, fontSize: 12),
                     ),
@@ -246,11 +251,14 @@ class _MyCard extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _miniStat(Icons.location_on_rounded, '${stats.placesVisited}', 'Visited'),
+              _miniStat(Icons.location_on_rounded, '${stats.placesVisited}',
+                  context.tr('stat_visited')),
               const SizedBox(width: 16),
-              _miniStat(Icons.star_rounded, '${stats.reviewsPosted}', 'Reviews'),
+              _miniStat(Icons.star_rounded, '${stats.reviewsPosted}',
+                  context.tr('stat_reviews')),
               const SizedBox(width: 16),
-              _miniStat(Icons.alt_route_rounded, '${stats.routesCreated}', 'Routes'),
+              _miniStat(Icons.alt_route_rounded, '${stats.routesCreated}',
+                  context.tr('stat_routes')),
             ],
           ),
           if (stats.badges.isNotEmpty) ...[
@@ -382,7 +390,10 @@ class _Row extends StatelessWidget {
                     style: const TextStyle(
                         fontWeight: FontWeight.w700, fontSize: 14)),
                 Text(
-                    '${stats.placesVisited} visited · ${stats.reviewsPosted} reviews',
+                    context.tr('lb_row_sub', {
+                      'v': '${stats.placesVisited}',
+                      'r': '${stats.reviewsPosted}',
+                    }),
                     style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 12)),
               ],
@@ -397,7 +408,7 @@ class _Row extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
                     color: AppColors.primary)),
-              Text(stats.level,
+              Text(AppStrings.level(context, stats.level),
                   style: TextStyle(
                       color: AppColors.textSecondary, fontSize: 11)),
             ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/weather_service.dart';
+import '../../l10n/app_strings.dart';
 import '../screens/currency_converter_screen.dart';
 
 class WeatherWidget extends StatefulWidget {
@@ -110,7 +111,10 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'feels ${d.feelsLikeC.round()}° · ${d.humidity}% humidity',
+                    context.tr('weather_feels', {
+                      't': '${d.feelsLikeC.round()}',
+                      'h': '${d.humidity}',
+                    }),
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 11,

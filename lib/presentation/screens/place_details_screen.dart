@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
@@ -13,6 +13,7 @@ import '../../logic/place_provider.dart';
 import '../../logic/review_provider.dart';
 import '../../logic/streak_provider.dart';
 import '../../data/models/review_model.dart';
+import '../../l10n/app_strings.dart';
 import '../widgets/add_review_sheet.dart';
 import '../widgets/place_photos_section.dart';
 import 'map_screen.dart';
@@ -229,7 +230,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            _isOpen ? 'Open Now' : 'Closed',
+                            _isOpen
+                                ? context.tr('open_now')
+                                : context.tr('closed'),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
@@ -401,7 +404,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     icon: saved
                                         ? Icons.bookmark_rounded
                                         : Icons.bookmark_border_rounded,
-                                    label: saved ? 'Saved' : 'Save',
+                                    label: saved
+                                        ? context.tr('saved')
+                                        : context.tr('save'),
                                     color: saved
                                         ? AppColors.ratingGold
                                         : AppColors.primary,
@@ -419,7 +424,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                 icon: _isVisited
                                     ? Icons.check_circle_rounded
                                     : Icons.flag_outlined,
-                                label: _isVisited ? 'Visited' : 'Check-in',
+                                label: _isVisited
+                                    ? context.tr('visited')
+                                    : context.tr('checkin'),
                                 color: AppColors.success,
                                 onTap: () async {
                                   HapticFeedback.mediumImpact();
@@ -447,7 +454,15 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                 size: 18),
                                             const SizedBox(width: 8),
                                             Text(
-                                              'Checked in! Streak: $newStreak day${newStreak == 1 ? '' : 's'}',
+                                              context.tr(
+                                                'checked_in_streak',
+                                                {
+                                                  'n': '$newStreak',
+                                                  's': newStreak == 1
+                                                      ? ''
+                                                      : 's',
+                                                },
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -466,7 +481,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                 color: Colors.white,
                                                 size: 18),
                                             const SizedBox(width: 8),
-                                            const Text('Check-in removed'),
+                                            Text(context
+                                                .tr('checkin_removed')),
                                           ],
                                         ),
                                       ),
@@ -479,7 +495,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                             Expanded(
                               child: _QuickAction(
                                 icon: Icons.directions_rounded,
-                                label: 'Go',
+                                label: context.tr('go'),
                                 color: AppColors.primary,
                                 onTap: _openMaps,
                               ),
@@ -498,7 +514,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                             Row(
                               children: [
                                 Text(
-                                  'About this place',
+                                  context.tr('about_place'),
                                   style: TextStyle(
                                     color: textPri,
                                     fontSize: 18,
@@ -645,7 +661,7 @@ class _ReviewsSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Community Reviews',
+                context.tr('community_reviews'),
                 style: TextStyle(
                   color: textPri,
                   fontSize: 18,
@@ -661,7 +677,7 @@ class _ReviewsSection extends StatelessWidget {
                     builder: (_) => AddReviewSheet(placeId: place.id),
                   );
                 },
-                child: const Text('Write Review'),
+                child: Text(context.tr('write_review')),
               ),
             ],
           ),
@@ -675,7 +691,7 @@ class _ReviewsSection extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  'No reviews yet. Be the first to share your story!',
+                  context.tr('no_reviews'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: textSec, fontSize: 14),
                 ),
@@ -774,7 +790,7 @@ class _NearbySection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
           child: Text(
-            'Nearby Hidden Gems',
+            context.tr('nearby_gems'),
             style: TextStyle(
               color: textPri,
               fontSize: 18,
@@ -874,10 +890,14 @@ class _BookingBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Experience', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(context.tr('experience'),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 Text(
-                  'Book a Tour',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color),
+                  context.tr('book_tour'),
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: theme.textTheme.bodyLarge?.color),
                 ),
               ],
             ),
@@ -890,7 +910,8 @@ class _BookingBar extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: const Text('Book Now', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(context.tr('book_now'),
+                style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -913,14 +934,15 @@ class _ShareSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Share Streetlore', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(context.tr('share_app'),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _ShareIcon(icon: Icons.link, label: 'Copy Link'),
-              _ShareIcon(icon: Icons.message, label: 'Message'),
-              _ShareIcon(icon: Icons.email, label: 'Email'),
+              _ShareIcon(icon: Icons.link, label: context.tr('copy_link')),
+              _ShareIcon(icon: Icons.message, label: context.tr('message')),
+              _ShareIcon(icon: Icons.email, label: context.tr('email')),
             ],
           ),
           const SizedBox(height: 24),
@@ -1013,7 +1035,7 @@ class _TravelBuddyButtonState extends State<_TravelBuddyButton> {
             ),
             const SizedBox(width: 4),
             Text(
-              _speaking ? 'Stop' : 'Listen',
+              _speaking ? context.tr('stop') : context.tr('listen'),
               style: TextStyle(
                 color: _speaking ? AppColors.accent : AppColors.primary,
                 fontSize: 11,
@@ -1057,16 +1079,16 @@ class _PriceBanner extends StatelessWidget {
     }
   }
 
-  String get _title {
+  String _titleFor(BuildContext context) {
     switch (place.priceLevel) {
       case PriceLevel.free:
-        return 'Free entry';
+        return context.tr('free_entry');
       case PriceLevel.cheap:
-        return 'Budget-friendly';
+        return context.tr('budget_friendly');
       case PriceLevel.moderate:
-        return 'Standard ticket';
+        return context.tr('standard_ticket');
       case PriceLevel.expensive:
-        return 'Premium experience';
+        return context.tr('premium_experience');
     }
   }
 
@@ -1100,7 +1122,7 @@ class _PriceBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _title,
+                  _titleFor(context),
                   style: TextStyle(
                     color: _accent,
                     fontSize: 15,
@@ -1112,14 +1134,14 @@ class _PriceBanner extends StatelessWidget {
                   Row(
                     children: [
                       _PricePill(
-                        label: 'Egyptians',
+                        label: context.tr('egyptians'),
                         price: 'EGP ${place.priceLocalEgp}',
                         accent: _accent,
                         isDark: isDark,
                       ),
                       const SizedBox(width: 6),
                       _PricePill(
-                        label: 'Foreigners',
+                        label: context.tr('foreigners'),
                         price: 'EGP ${place.priceForeignerEgp}',
                         accent: _accent,
                         isDark: isDark,

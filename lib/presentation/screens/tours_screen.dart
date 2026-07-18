@@ -5,6 +5,7 @@ import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../logic/tour_provider.dart';
+import '../../l10n/app_strings.dart';
 import '../widgets/tour_card.dart';
 import 'tour_details_screen.dart';
 
@@ -63,12 +64,12 @@ class _ToursScreenState extends State<ToursScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Curated for you',
+                      context.tr('tours_subtitle'),
                       style: TextStyle(
                           fontSize: 12, color: AppColors.textSecondary),
                     ),
                     Text(
-                      'Guided Tours',
+                      context.tr('tours_title'),
                       style: AppTextStyles.screenTitle
                           .copyWith(color: AppColors.textPrimary),
                     ),
@@ -80,8 +81,9 @@ class _ToursScreenState extends State<ToursScreen>
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
                   child: Text(
                     filtered.isEmpty
-                        ? 'No tours yet'
-                        : '${filtered.length} tours available - all free',
+                        ? context.tr('no_tours')
+                        : context.tr('tours_available',
+                            {'n': '${filtered.length}'}),
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 13,
@@ -91,13 +93,14 @@ class _ToursScreenState extends State<ToursScreen>
                 ),
               ),
               if (filtered.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
                     child: Padding(
-                      padding: EdgeInsets.all(40),
-                      child: Text('Loading tours...',
-                          style: TextStyle(color: AppColors.textSecondary)),
+                      padding: const EdgeInsets.all(40),
+                      child: Text(context.tr('loading_tours'),
+                          style:
+                              const TextStyle(color: AppColors.textSecondary)),
                     ),
                   ),
                 )
