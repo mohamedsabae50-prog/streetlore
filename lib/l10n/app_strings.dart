@@ -142,7 +142,7 @@ class AppStrings {
     },
     'map_view': {'en': 'Map View', 'ar': 'عرض الخريطة'},
     'map_view_sub': {
-      'en': 'All 42 places on interactive map',
+      'en': 'All places on interactive map',
       'ar': 'كل الأماكن على خريطة تفاعلية',
     },
     'currency_converter': {'en': 'Currency Converter', 'ar': 'محوّل العملات'},
