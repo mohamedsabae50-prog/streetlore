@@ -1,12 +1,13 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/constants/app_colors.dart';
-import '../../core/widgets/shimmer_image.dart';
+import '../../core/widgets/app_image.dart';
 import '../../data/models/place_photo.dart';
 import '../../data/models/place_model.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/place_photos_provider.dart';
 
@@ -23,96 +24,109 @@ class PlacePhotosSection extends StatelessWidget {
     );
     if (source == null) return;
     if (!context.mounted) return;
-    final picked = await picker.pickImage(source: source, maxWidth: 1600);
+    final picked = await picker.pickImage(
+      source: source,
+      maxWidth: 1200,
+      imageQuality: 80,
+    );
     if (picked == null) return;
     if (!context.mounted) return;
     final auth = context.read<AuthProvider>();
     final photos = context.read<PlacePhotosProvider>();
     HapticFeedback.mediumImpact();
+    // Store as a base64 data URI: works on web (where dart:io File paths
+    // and blob URLs do not survive) and on mobile, and persists in prefs.
+    final bytes = await picked.readAsBytes();
     await photos.addPhoto(
       placeId: place.id,
       userName: auth.userName.isEmpty ? 'Traveler' : auth.userName,
-      imageUrl: picked.path,
+      imageUrl: AppImage.toDataUri(bytes),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<PlacePhotosProvider>(
-      builder: (context, provider, _) {
-        final photos = provider.photosFor(place.id);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.photo_library_rounded,
-                    color: AppColors.primary, size: 18),
-                const SizedBox(width: 6),
-                Text(
-                  'Photos',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '${photos.length}',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 11,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      child: Consumer<PlacePhotosProvider>(
+        builder: (context, provider, _) {
+          final photos = provider.photosFor(place.id);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.photo_library_rounded,
+                      color: AppColors.primary, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    context.tr('photos'),
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => _addPhoto(context),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(14),
+                      color: AppColors.primary.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.add_a_photo_rounded,
-                            color: Colors.white, size: 14),
-                        SizedBox(width: 5),
-                        Text(
-                          'Add',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      '${photos.length}',
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (photos.isEmpty) _emptyState() else _photoGrid(context, photos),
-          ],
-        );
-      },
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => _addPhoto(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.add_a_photo_rounded,
+                              color: Colors.white, size: 14),
+                          const SizedBox(width: 5),
+                          Text(
+                            context.tr('add'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (photos.isEmpty)
+                _emptyState(context)
+              else
+                _photoGrid(context, photos),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  Widget _emptyState() {
+  Widget _emptyState(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -130,7 +144,8 @@ class PlacePhotosSection extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.5), size: 32),
           const SizedBox(height: 8),
           Text(
-            'Be the first to share a photo',
+            context.tr('first_photo'),
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.textPrimary.withValues(alpha: 0.7),
               fontSize: 13,
@@ -148,6 +163,7 @@ class PlacePhotosSection extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.zero,
         itemCount: photos.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, i) {
@@ -177,7 +193,6 @@ class _PhotoCard extends StatelessWidget {
     final liked = photo.isLikedBy(
       context.watch<PlacePhotosProvider>().currentUserId,
     );
-    final isFile = !photo.imageUrl.startsWith('http');
     return Container(
       width: 160,
       decoration: BoxDecoration(
@@ -195,13 +210,11 @@ class _PhotoCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            isFile
-                ? Image.file(File(photo.imageUrl), fit: BoxFit.cover)
-                : ShimmerImage(
-                    imageUrl: photo.imageUrl,
-                    fit: BoxFit.cover,
-                    fallbackIcon: Icons.broken_image_rounded,
-                  ),
+            AppImage(
+              source: photo.imageUrl,
+              fit: BoxFit.cover,
+              fallbackIcon: Icons.broken_image_rounded,
+            ),
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -315,20 +328,20 @@ class _AddPhotoSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Add a photo',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            Text(
+              context.tr('add_photo_title'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 16),
             _SourceTile(
               icon: Icons.photo_camera_rounded,
-              label: 'Take photo',
+              label: context.tr('take_photo'),
               color: AppColors.primary,
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             _SourceTile(
               icon: Icons.photo_library_rounded,
-              label: 'Choose from gallery',
+              label: context.tr('choose_gallery'),
               color: AppColors.success,
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),

@@ -1,12 +1,13 @@
-﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import '../../data/models/review_model.dart';
-import '../../logic/review_provider.dart';
-import '../../logic/auth_provider.dart';
+
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/app_image.dart';
+import '../../data/models/review_model.dart';
+import '../../l10n/app_strings.dart';
+import '../../logic/auth_provider.dart';
+import '../../logic/review_provider.dart';
 
 class AddReviewSheet extends StatefulWidget {
   final String placeId;
@@ -20,45 +21,40 @@ class AddReviewSheet extends StatefulWidget {
 class _AddReviewSheetState extends State<AddReviewSheet> {
   final _commentController = TextEditingController();
   double _rating = 5.0;
-  File? _selectedImage;
+  String? _imageDataUri;
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      imageQuality: 80,
+    );
+    if (!mounted || pickedFile == null) return;
+    // Keep the image as a base64 data URI instead of a dart:io File copy:
+    // path_provider/File are unsupported on web and threw at submit time.
+    final bytes = await pickedFile.readAsBytes();
     if (!mounted) return;
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
-    }
+    setState(() => _imageDataUri = AppImage.toDataUri(bytes));
   }
 
   Future<void> _submitReview() async {
     if (_commentController.text.trim().isEmpty) {
-      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please write a comment')));
+      ).showSnackBar(SnackBar(content: Text(context.tr('review_empty_warn'))));
       return;
     }
 
     setState(() => _isLoading = true);
 
-    String? savedImagePath;
-
-    if (_selectedImage != null) {
-      final directory = await getApplicationDocumentsDirectory();
-      final imageName = '${DateTime.now().millisecondsSinceEpoch}.png';
-      savedImagePath = '${directory.path}/$imageName';
-      await _selectedImage!.copy(savedImagePath);
-    }
-
-    if (!mounted) return;
-
-    
-    
     final auth = context.read<AuthProvider>();
     final reviewProvider = context.read<ReviewProvider>();
     final navigator = Navigator.of(context);
@@ -73,7 +69,7 @@ class _AddReviewSheetState extends State<AddReviewSheet> {
       userName: userName,
       rating: _rating,
       comment: _commentController.text.trim(),
-      imagePath: savedImagePath,
+      imagePath: _imageDataUri,
       date: DateTime.now(),
     );
 
@@ -83,104 +79,147 @@ class _AddReviewSheetState extends State<AddReviewSheet> {
       navigator.pop();
     } catch (e) {
       if (!mounted) return;
+      setState(() => _isLoading = false);
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not post review: $e')),
+        SnackBar(content: Text('${context.tr('review_failed')}: $e')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 20,
-        right: 20,
-        top: 20,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Write a Review',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
+    final theme = Theme.of(context);
+    final textPri = theme.textTheme.bodyLarge?.color ?? Colors.black;
 
-            Row(
-              children: [
-                const Text('Rating: ', style: TextStyle(fontSize: 16)),
-                Slider(
-                  value: _rating,
-                  min: 1,
-                  max: 5,
-                  divisions: 4,
-                  label: _rating.toString(),
-                  onChanged: (val) => setState(() => _rating = val),
-                ),
-                Row(
-                  children: [
-                    Text('$_rating', style: const TextStyle(fontSize: 16)),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.star_rounded, color: AppColors.warning, size: 18),
-                  ],
-                ),
-              ],
-            ),
-
-            TextField(
-              controller: _commentController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Share your experience...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+    return SafeArea(
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          left: 20,
+          right: 20,
+          top: 12,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.dividerColor.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                OutlinedButton.icon(
-                  onPressed: _pickImage,
-                  icon: const Icon(Icons.add_a_photo),
-                  label: const Text('Add Photo'),
+              const SizedBox(height: 16),
+              Text(
+                context.tr('write_review'),
+                style: TextStyle(
+                  color: textPri,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
                 ),
-                const SizedBox(width: 16),
-                if (_selectedImage != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      _selectedImage!,
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
+              ),
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  Text(
+                    '${context.tr('rating_label')}: ',
+                    style: TextStyle(color: textPri, fontSize: 15),
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: _rating,
+                      min: 1,
+                      max: 5,
+                      divisions: 4,
+                      label: _rating.toStringAsFixed(0),
+                      onChanged: (val) => setState(() => _rating = val),
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 24),
+                  Text(
+                    _rating.toStringAsFixed(0),
+                    style: TextStyle(
+                      color: textPri,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  const Icon(Icons.star_rounded,
+                      color: AppColors.warning, size: 18),
+                ],
+              ),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _submitReview,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
+              TextField(
+                controller: _commentController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: context.tr('review_hint'),
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Post Review', style: TextStyle(fontSize: 16)),
               ),
-            ),
-            const SizedBox(height: 24),
-          ],
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _pickImage,
+                    icon: const Icon(Icons.add_a_photo_rounded, size: 18),
+                    label: Text(context.tr('add_photo_btn')),
+                  ),
+                  const SizedBox(width: 16),
+                  if (_imageDataUri != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: AppImage(
+                        source: _imageDataUri!,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _submitReview,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Text(
+                          context.tr('post_review'),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

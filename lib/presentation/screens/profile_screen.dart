@@ -65,6 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = context.watch<AuthProvider>();
     final themeP = context.watch<ThemeProvider>();
     final placeP = context.watch<PlaceProvider>();
+    final gamification = context.watch<GamificationProvider>();
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -179,7 +180,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: Colors.white.withValues(alpha: 0.2)),
                         _Stat(
                           label: context.tr('prof_explored'),
-                          numericValue: MockPlaceVisits.count,
+                          numericValue:
+                              gamification.stats.placesVisited,
                           icon: Icons.explore_rounded,
                           delayMs: 320,
                         ),
@@ -813,10 +815,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-}
-
-class MockPlaceVisits {
-  static const int count = 7;
 }
 
 class _Stat extends StatelessWidget {

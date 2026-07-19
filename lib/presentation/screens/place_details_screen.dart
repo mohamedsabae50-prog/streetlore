@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/app_image.dart';
 import '../../core/widgets/confetti_overlay.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../data/mock_data.dart';
@@ -198,7 +199,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                     ),
                   ),
                   Positioned(
-                    top: 16,
+                    top: 100,
                     right: 16,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -249,26 +250,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.accent.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            place.category.toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
                         Hero(
                           tag: 'place-category-${place.id}',
                           flightShuttleBuilder: (
@@ -392,7 +373,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+                        padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
                         child: Row(
                           children: [
                             Expanded(
@@ -777,6 +758,18 @@ class _ReviewItem extends StatelessWidget {
             review.comment,
             style: TextStyle(color: textPri.withValues(alpha: 0.8), fontSize: 14, height: 1.4),
           ),
+          if (review.imagePath != null && review.imagePath!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: AppImage(
+                source: review.imagePath!,
+                height: 170,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ],
         ],
       ),
     );

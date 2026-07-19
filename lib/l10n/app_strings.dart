@@ -281,6 +281,7 @@ class AppStrings {
     'badge_streak_10': {'en': '10 Visits', 'ar': '10 زيارات'},
     'badge_streak_25': {'en': '25 Visits', 'ar': '25 زيارة'},
     'badge_streak_50': {'en': '50 Visits', 'ar': '50 زيارة'},
+    'First Steps': {'en': 'First Steps', 'ar': 'الخطوات الأولى'},
     'write_review': {'en': 'Write Review', 'ar': 'اكتب تقييمًا'},
     'community_reviews': {'en': 'Community Reviews', 'ar': 'تقييمات المجتمع'},
     'no_reviews': {
@@ -302,6 +303,31 @@ class AppStrings {
     'premium_experience': {'en': 'Premium experience', 'ar': 'تجربة مميزة'},
     'egyptians': {'en': 'Egyptians', 'ar': 'مصريون'},
     'foreigners': {'en': 'Foreigners', 'ar': 'أجانب'},
+
+    'photos': {'en': 'Photos', 'ar': 'الصور'},
+    'add': {'en': 'Add', 'ar': 'أضف'},
+    'add_photo_title': {'en': 'Add a photo', 'ar': 'أضف صورة'},
+    'take_photo': {'en': 'Take photo', 'ar': 'التقط صورة'},
+    'choose_gallery': {'en': 'Choose from gallery', 'ar': 'اختر من المعرض'},
+    'first_photo': {
+      'en': 'Be the first to share a photo',
+      'ar': 'كن أول من يشارك صورة',
+    },
+    'rating_label': {'en': 'Rating', 'ar': 'التقييم'},
+    'review_hint': {
+      'en': 'Share your experience...',
+      'ar': 'شاركنا تجربتك...',
+    },
+    'add_photo_btn': {'en': 'Add Photo', 'ar': 'أضف صورة'},
+    'post_review': {'en': 'Post Review', 'ar': 'انشر التقييم'},
+    'review_empty_warn': {
+      'en': 'Please write a comment first',
+      'ar': 'من فضلك اكتب تعليقًا أولًا',
+    },
+    'review_failed': {
+      'en': 'Could not post review',
+      'ar': 'تعذر نشر التقييم',
+    },
   };
 
   static String level(BuildContext context, String levelName) =>
