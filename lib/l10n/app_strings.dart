@@ -270,6 +270,14 @@ class AppStrings {
       'en': '{n} tours available - all free',
       'ar': '{n} جولة متاحة - كلها مجانية',
     },
+    'tour_filter_all': {'en': 'All', 'ar': 'الكل'},
+    'tour_filter_short': {'en': 'Up to 3h', 'ar': 'حتى 3 ساعات'},
+    'tour_filter_half': {'en': 'Half day', 'ar': 'نصف يوم'},
+    'tour_filter_full': {'en': 'Full day', 'ar': 'يوم كامل'},
+    'tour_none_in_filter': {
+      'en': 'No tours in this category',
+      'ar': 'لا توجد جولات في هذه الفئة',
+    },
 
     'open_now': {'en': 'Open Now', 'ar': 'مفتوح الآن'},
     'closed': {'en': 'Closed', 'ar': 'مغلق'},
