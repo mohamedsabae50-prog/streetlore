@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/models/review_model.dart';
 
@@ -26,6 +26,13 @@ class ReviewProvider extends ChangeNotifier {
   
   Future<void> addReview(ReviewModel review) async {
     _reviews.add(review);
+    await _saveReviews();
+    notifyListeners();
+  }
+
+  
+  Future<void> removeReview(String reviewId) async {
+    _reviews.removeWhere((r) => r.id == reviewId);
     await _saveReviews();
     notifyListeners();
   }

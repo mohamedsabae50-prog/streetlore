@@ -290,9 +290,6 @@ class AppStrings {
     },
     'about_place': {'en': 'About this place', 'ar': 'عن هذا المكان'},
     'nearby_gems': {'en': 'Nearby Hidden Gems', 'ar': 'جواهر مخفية قريبة'},
-    'experience': {'en': 'Experience', 'ar': 'التجربة'},
-    'book_tour': {'en': 'Book a Tour', 'ar': 'احجز جولة'},
-    'book_now': {'en': 'Book Now', 'ar': 'احجز الآن'},
     'share_app': {'en': 'Share Streetlore', 'ar': 'شارك ستريت لور'},
     'copy_link': {'en': 'Copy Link', 'ar': 'نسخ الرابط'},
     'message': {'en': 'Message', 'ar': 'رسالة'},
@@ -329,6 +326,7 @@ class AppStrings {
       'ar': 'تعذر نشر التقييم',
     },
     'delete_photo_q': {'en': 'Delete this photo?', 'ar': 'حذف هذه الصورة؟'},
+    'delete_review_q': {'en': 'Delete this review?', 'ar': 'حذف هذا التقييم؟'},
     'delete': {'en': 'Delete', 'ar': 'حذف'},
   };
 

@@ -41,6 +41,7 @@ class PlacePhotosSection extends StatelessWidget {
       placeId: place.id,
       userName: auth.userName.isEmpty ? 'Traveler' : auth.userName,
       imageUrl: AppImage.toDataUri(bytes),
+      userId: auth.currentUserId,
     );
   }
 
@@ -225,7 +226,7 @@ class _PhotoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<PlacePhotosProvider>();
     final liked = photo.isLikedBy(provider.currentUserId);
-    final canDelete = photo.userId == provider.currentUserId;
+    final canDelete = context.read<AuthProvider>().owns(photo.userId);
     return Container(
       width: 160,
       decoration: BoxDecoration(

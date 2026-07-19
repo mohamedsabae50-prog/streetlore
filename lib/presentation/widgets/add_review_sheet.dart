@@ -67,6 +67,7 @@ class _AddReviewSheetState extends State<AddReviewSheet> {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       placeId: widget.placeId,
       userName: userName,
+      userId: auth.currentUserId,
       rating: _rating,
       comment: _commentController.text.trim(),
       imagePath: _imageDataUri,

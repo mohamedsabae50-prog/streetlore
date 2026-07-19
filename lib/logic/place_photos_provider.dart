@@ -58,12 +58,13 @@ class PlacePhotosProvider extends ChangeNotifier {
     required String placeId,
     required String userName,
     required String imageUrl,
+    String? userId,
     String caption = '',
   }) async {
     final photo = PlacePhoto(
       id: _uuid.v4(),
       placeId: placeId,
-      userId: _currentUserId,
+      userId: userId ?? _currentUserId,
       userName: userName,
       imageUrl: imageUrl,
       caption: caption,

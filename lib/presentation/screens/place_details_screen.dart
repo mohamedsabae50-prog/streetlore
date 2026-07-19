@@ -9,6 +9,7 @@ import '../../core/widgets/shimmer_image.dart';
 import '../../data/mock_data.dart';
 import '../../data/models/place_model.dart';
 import '../../logic/gamification_provider.dart';
+import '../../logic/auth_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/review_provider.dart';
 import '../../logic/streak_provider.dart';
@@ -537,7 +538,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                       if (_nearby.isNotEmpty)
                         _NearbySection(places: _nearby),
 
-                      const SizedBox(height: 120),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -549,7 +550,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
           ConfettiOverlay(controller: _confetti),
         ],
       ),
-      bottomSheet: _BookingBar(place: place),
     );
   }
 }
@@ -698,11 +698,38 @@ class _ReviewItem extends StatelessWidget {
   final ReviewModel review;
   const _ReviewItem({required this.review});
 
+  Future<void> _confirmDelete(BuildContext context) async {
+    final provider = context.read<ReviewProvider>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(ctx.tr('delete_review_q')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(ctx.tr('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              ctx.tr('delete'),
+              style: const TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await provider.removeReview(review.id);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textPri = theme.textTheme.bodyLarge?.color ?? Colors.black;
     final textSec = theme.textTheme.bodyMedium?.color ?? Colors.grey;
+    final canDelete = context.read<AuthProvider>().owns(review.userId);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -747,9 +774,26 @@ class _ReviewItem extends StatelessWidget {
                   ],
                 ),
               ),
-              Text(
-                '${review.date.day}/${review.date.month}/${review.date.year}',
-                style: TextStyle(color: textSec, fontSize: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${review.date.day}/${review.date.month}/${review.date.year}',
+                    style: TextStyle(color: textSec, fontSize: 12),
+                  ),
+                  if (canDelete)
+                    GestureDetector(
+                      onTap: () => _confirmDelete(context),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppColors.error.withValues(alpha: 0.8),
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),
@@ -866,55 +910,6 @@ class _NearbyCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _BookingBar extends StatelessWidget {
-  final PlaceModel place;
-  const _BookingBar({required this.place});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        border: Border(top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(context.tr('experience'),
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                Text(
-                  context.tr('book_tour'),
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: theme.textTheme.bodyLarge?.color),
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-            child: Text(context.tr('book_now'),
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }

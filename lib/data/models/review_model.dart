@@ -1,9 +1,10 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 class ReviewModel {
   final String id;
   final String placeId; 
   final String userName;
+  final String userId;
   final double rating;
   final String comment;
   final String?
@@ -14,6 +15,7 @@ class ReviewModel {
     required this.id,
     required this.placeId,
     required this.userName,
+    this.userId = 'me',
     required this.rating,
     required this.comment,
     this.imagePath,
@@ -25,6 +27,7 @@ class ReviewModel {
       'id': id,
       'placeId': placeId,
       'userName': userName,
+      'userId': userId,
       'rating': rating,
       'comment': comment,
       'imagePath': imagePath,
@@ -37,6 +40,7 @@ class ReviewModel {
       id: map['id'],
       placeId: map['placeId'],
       userName: map['userName'],
+      userId: map['userId'] ?? 'me',
       rating: map['rating'],
       comment: map['comment'],
       imagePath: map['imagePath'],

@@ -14,6 +14,19 @@ class AuthProvider extends ChangeNotifier {
   String get userName => _userName;
   String get userEmail => _userEmail;
 
+  /// Stable id of the current user, used for content-ownership checks.
+  /// Logged-in users are keyed by email; guests share a local 'guest' id.
+  String get currentUserId => _isLoggedIn ? _userEmail : 'guest';
+
+  /// True when [ownerId] refers to content created by the current user.
+  /// Legacy records stored with the placeholder id 'me' (before per-user
+  /// ids existed) are treated as created on this device by the current user.
+  bool owns(String? ownerId) =>
+      ownerId == null ||
+      ownerId.isEmpty ||
+      ownerId == 'me' ||
+      ownerId == currentUserId;
+
   AuthProvider();
 
   Future<void> bootstrap() => _load();
