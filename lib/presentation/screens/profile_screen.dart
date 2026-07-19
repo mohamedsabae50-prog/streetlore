@@ -40,8 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// Fire a one-time confetti burst when the profile is opened and the user
-  /// owns a streak milestone badge they haven't been celebrated for yet.
+  
   Future<void> _maybeCelebrateStreakBadge() async {
     final g = context.read<GamificationProvider>();
     final streakBadges =

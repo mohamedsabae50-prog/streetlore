@@ -60,7 +60,6 @@ class AppStrings {
     'quick_transport': {'en': 'Transport', 'ar': 'المواصلات'},
     'quick_journal': {'en': 'Journal', 'ar': 'اليوميات'},
     'quick_ranking': {'en': 'Ranking', 'ar': 'الترتيب'},
-    'quick_routes': {'en': 'Routes', 'ar': 'المسارات'},
     'quick_offline': {'en': 'Offline', 'ar': 'أوفلاين'},
     'quick_nearby': {'en': 'Nearby', 'ar': 'بالقرب'},
     'quick_chat': {'en': 'Live Chat', 'ar': 'دردشة مباشرة'},
@@ -79,7 +78,6 @@ class AppStrings {
     'lb_points_level': {'en': '{p} points · {l}', 'ar': '{p} نقطة · {l}'},
     'stat_visited': {'en': 'Visited', 'ar': 'زيارات'},
     'stat_reviews': {'en': 'Reviews', 'ar': 'تقييمات'},
-    'stat_routes': {'en': 'Routes', 'ar': 'مسارات'},
     'lb_empty': {
       'en': 'No leaderboard data yet',
       'ar': 'لا توجد بيانات للترتيب بعد',
@@ -136,8 +134,8 @@ class AppStrings {
     },
     'public_transport': {'en': 'Public Transport', 'ar': 'المواصلات العامة'},
     'public_transport_sub': {
-      'en': 'Trams, buses, taxis in Alexandria',
-      'ar': 'ترام وأتوبيسات وتاكسي في الإسكندرية',
+      'en': 'Microbuses, buses & taxis in Alexandria',
+      'ar': 'ميكروباص وأتوبيسات وتاكسي في الإسكندرية',
     },
     'travel_journal': {'en': 'Travel Journal', 'ar': 'يوميات السفر'},
     'travel_journal_sub': {

@@ -34,7 +34,7 @@ class PublicTransportScreen extends StatelessWidget {
                 const SizedBox(width: 14),
                 const Expanded(
                   child: Text(
-                    'Get around Alexandria with trams, buses, and taxis',
+                    'Get around Alexandria with microbuses, buses, and taxis',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 15,
@@ -47,17 +47,6 @@ class PublicTransportScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Tram Lines', style: AppTextStyles.sectionTitle),
-          const SizedBox(height: 8),
-          ..._tramLines.map((t) => _TransportCard(
-            icon: Icons.tram_rounded,
-            color: const Color(0xFFEF4444),
-            title: t['title'] as String,
-            description: t['description'] as String,
-            price: t['price'] as String,
-            stations: (t['stations'] as List).cast<String>(),
-          )),
-          const SizedBox(height: 20),
           Text('Bus Routes', style: AppTextStyles.sectionTitle),
           const SizedBox(height: 8),
           ..._busRoutes.map((b) => _TransportCard(
@@ -74,10 +63,10 @@ class PublicTransportScreen extends StatelessWidget {
           _TransportCard(
             icon: Icons.local_taxi_rounded,
             color: const Color(0xFFFBBF24),
-            title: 'Cairo Taxi (Yellow)',
-            description: 'Most common, metered. Working meter required by law.',
-            price: 'Meter: EGP 5-7 base + EGP 2.5/km',
-            stations: const ['Available citywide', 'Book via app or hail on street'],
+            title: 'Taxi',
+            description: 'Hail on the street or order by phone. Ask for the meter or agree the fare before you ride.',
+            price: 'Meter: EGP 7-10 base + EGP 3/km',
+            stations: const ['Available citywide', 'Black & yellow cabs'],
           ),
           const SizedBox(height: 8),
           _TransportCard(
@@ -111,7 +100,7 @@ class PublicTransportScreen extends StatelessWidget {
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Pro tip: Buy a single-ride tram ticket from the booth at the stop, or use the transport card (kahraba) for 10% off.',
+                    'Pro tip: Microbuses (servis) are the cheapest way along the Corniche — wave to board, and pay the driver directly when you get off.',
                     style: TextStyle(
                       color: AppColors.success,
                       fontSize: 12,
@@ -127,27 +116,6 @@ class PublicTransportScreen extends StatelessWidget {
       ),
     );
   }
-
-  static const List<Map<String, Object>> _tramLines = [
-    {
-      'title': 'Ramleh Line (Red)',
-      'description': 'Most useful for tourists. Runs along the corniche from Raml Station to San Stefano.',
-      'price': 'EGP 5 single ride',
-      'stations': <String>['Raml Station', 'Saad Zaghloul', 'Stanley', 'Gleem', 'Sidi Gaber', 'Sporting', 'San Stefano'],
-    },
-    {
-      'title': 'Ramleh Line (Blue)',
-      'description': 'Inner-city branch toward Moharam Bek and the souqs.',
-      'price': 'EGP 5 single ride',
-      'stations': <String>['Raml Station', 'Attarin', 'Moharam Bek', 'Manshiya'],
-    },
-    {
-      'title': 'Western Line',
-      'description': 'Heads west toward Agami. Long ride, good for beach hoppers.',
-      'price': 'EGP 7-10 single ride',
-      'stations': <String>['Raml Station', 'Sidi Gaber', 'Hannoville', 'Sidi Bishr', 'Mandara', 'Agami'],
-    },
-  ];
 
   static const List<Map<String, Object>> _busRoutes = [
     {

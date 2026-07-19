@@ -76,10 +76,8 @@ You told me NOT to modify `home_screen.dart` and `place_details_screen.dart`. Th
 **To see real Supabase data in the UI**, do this in any of those screens:
 
 ```dart
-// before
 final places = MockData.places;
 
-// after
 final places = context.watch<PlaceProvider>().places;
 ```
 

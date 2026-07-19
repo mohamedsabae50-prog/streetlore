@@ -256,9 +256,6 @@ class _MyCard extends StatelessWidget {
               const SizedBox(width: 16),
               _miniStat(Icons.star_rounded, '${stats.reviewsPosted}',
                   context.tr('stat_reviews')),
-              const SizedBox(width: 16),
-              _miniStat(Icons.alt_route_rounded, '${stats.routesCreated}',
-                  context.tr('stat_routes')),
             ],
           ),
           if (stats.badges.isNotEmpty) ...[

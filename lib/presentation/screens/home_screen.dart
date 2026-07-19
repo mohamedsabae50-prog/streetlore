@@ -25,7 +25,6 @@ import 'map_view_screen.dart';
 import 'currency_converter_screen.dart';
 import 'public_transport_screen.dart';
 import 'journal_screen.dart';
-import 'community_routes_screen.dart';
 import 'offline_mode_screen.dart';
 import 'geofencing_settings_screen.dart';
 import 'live_chat_screen.dart';
@@ -1069,15 +1068,6 @@ class _QuickAccessGrid extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
-        ),
-      ),
-      _QuickItem(
-        icon: Icons.alt_route_rounded,
-        label: 'quick_routes',
-        color: AppColors.success,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CommunityRoutesScreen()),
         ),
       ),
       _QuickItem(

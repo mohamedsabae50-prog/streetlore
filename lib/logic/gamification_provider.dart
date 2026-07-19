@@ -63,9 +63,6 @@ class GamificationProvider extends ChangeNotifier {
       photosUploaded: action == 'photo'
           ? _stats.photosUploaded + 1
           : _stats.photosUploaded,
-      routesCreated: action == 'route_created'
-          ? _stats.routesCreated + 1
-          : _stats.routesCreated,
       badges: updatedBadges,
     );
 
@@ -140,7 +137,6 @@ class GamificationProvider extends ChangeNotifier {
       totalPoints: _stats.totalPoints,
       placesVisited: _stats.placesVisited,
       reviewsPosted: _stats.reviewsPosted,
-      routesCreated: _stats.routesCreated,
       photosUploaded: _stats.photosUploaded,
       badges: _stats.badges,
       level: _stats.level,

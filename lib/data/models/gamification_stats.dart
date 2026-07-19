@@ -1,4 +1,4 @@
-﻿
+
 class Badge {
   final String id;
   final String name;
@@ -26,7 +26,6 @@ class GamificationStats {
   final int totalPoints;
   final int placesVisited;
   final int reviewsPosted;
-  final int routesCreated;
   final int photosUploaded;
   final List<Badge> badges;
   final String level; 
@@ -38,7 +37,6 @@ class GamificationStats {
     this.totalPoints = 0,
     this.placesVisited = 0,
     this.reviewsPosted = 0,
-    this.routesCreated = 0,
     this.photosUploaded = 0,
     this.badges = const [],
     this.level = 'Explorer',
@@ -48,7 +46,6 @@ class GamificationStats {
     int? totalPoints,
     int? placesVisited,
     int? reviewsPosted,
-    int? routesCreated,
     int? photosUploaded,
     List<Badge>? badges,
     String? level,
@@ -60,7 +57,6 @@ class GamificationStats {
         totalPoints: totalPoints ?? this.totalPoints,
         placesVisited: placesVisited ?? this.placesVisited,
         reviewsPosted: reviewsPosted ?? this.reviewsPosted,
-        routesCreated: routesCreated ?? this.routesCreated,
         photosUploaded: photosUploaded ?? this.photosUploaded,
         badges: badges ?? this.badges,
         level: level ?? this.level,
@@ -73,7 +69,6 @@ class GamificationStats {
         'total_points': totalPoints,
         'places_visited': placesVisited,
         'reviews_posted': reviewsPosted,
-        'routes_created': routesCreated,
         'photos_uploaded': photosUploaded,
         'badges': badges
             .map((b) => {
@@ -97,7 +92,6 @@ class GamificationStats {
         totalPoints: (json['total_points'] as num?)?.toInt() ?? 0,
         placesVisited: (json['places_visited'] as num?)?.toInt() ?? 0,
         reviewsPosted: (json['reviews_posted'] as num?)?.toInt() ?? 0,
-        routesCreated: (json['routes_created'] as num?)?.toInt() ?? 0,
         photosUploaded: (json['photos_uploaded'] as num?)?.toInt() ?? 0,
         badges: ((json['badges'] as List<dynamic>?) ?? const [])
             .map((b) => Badge(
@@ -132,10 +126,6 @@ class GamificationStats {
         return 20;
       case 'photo':
         return 30;
-      case 'route_created':
-        return 100;
-      case 'route_liked':
-        return 5;
       case 'chat_message':
         return 2;
       default:
