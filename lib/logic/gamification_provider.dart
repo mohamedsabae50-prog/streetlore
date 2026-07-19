@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -98,6 +98,35 @@ class GamificationProvider extends ChangeNotifier {
       earnedAt: DateTime.now(),
       pointsAwarded: 25,
     );
+  }
+
+  /// Streak milestones (cumulative visit counts) that award a badge.
+  static const List<int> streakMilestones = [5, 10, 25, 50];
+
+  /// Called after a check-in with the new cumulative streak. When the
+  /// streak lands exactly on a milestone (and the badge isn't owned yet),
+  /// the badge is unlocked, persisted and returned — otherwise null.
+  ///
+  /// The badge [Badge.name] is an AppStrings key (`badge_streak_<n>`) so it
+  /// can be localized at display time.
+  Future<Badge?> checkStreakMilestone(int streak) async {
+    if (!streakMilestones.contains(streak)) return null;
+    final id = 'b_streak_$streak';
+    if (_stats.badges.any((b) => b.id == id)) return null;
+
+    final badge = Badge(
+      id: id,
+      name: 'badge_streak_$streak',
+      description: 'Visited $streak places',
+      iconName: 'local_fire_department',
+      tier: streak >= 25 ? 'gold' : 'silver',
+      earnedAt: DateTime.now(),
+      pointsAwarded: 0,
+    );
+    _stats = _stats.copyWith(badges: [..._stats.badges, badge]);
+    await _save();
+    notifyListeners();
+    return badge;
   }
 
   void setUserIdentity({required String userId, required String userName, String? avatarColorHex}) {

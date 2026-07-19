@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/services/tts_service.dart';
 import '../../core/widgets/confetti_overlay.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../data/mock_data.dart';
@@ -440,10 +439,16 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     final newStreak =
                                         await streak.registerVisit();
                                     await gamification.applyAction('check_in');
-                                    if (newStreak > 1 && newStreak % 3 == 0) {
+                                    final milestoneBadge = await gamification
+                                        .checkStreakMilestone(newStreak);
+                                    if (milestoneBadge != null) {
+                                      HapticFeedback.heavyImpact();
+                                      _confetti.play();
+                                    } else if (newStreak > 1 &&
+                                        newStreak % 3 == 0) {
                                       _confetti.play();
                                     }
-                                    if (!mounted) return;
+                                    if (!context.mounted) return;
                                     messenger.showSnackBar(
                                       SnackBar(
                                         content: Row(
@@ -453,15 +458,21 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                 color: Colors.white,
                                                 size: 18),
                                             const SizedBox(width: 8),
-                                            Text(
-                                              context.tr(
-                                                'checked_in_streak',
-                                                {
-                                                  'n': '$newStreak',
-                                                  's': newStreak == 1
-                                                      ? ''
-                                                      : 's',
-                                                },
+                                            Expanded(
+                                              child: Text(
+                                                milestoneBadge != null
+                                                    ? context.tr(
+                                                        'badge_unlocked',
+                                                        {
+                                                          'name': context.tr(
+                                                              milestoneBadge
+                                                                  .name),
+                                                        },
+                                                      )
+                                                    : context.tr(
+                                                        'checked_in_streak',
+                                                        {'n': '$newStreak'},
+                                                      ),
                                               ),
                                             ),
                                           ],
@@ -471,7 +482,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                       ),
                                     );
                                   } else {
-                                    if (!mounted) return;
+                                    if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Row(
@@ -521,9 +532,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                const Spacer(),
-                                
-                                _TravelBuddyButton(description: place.description),
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -970,81 +978,6 @@ class _ShareIcon extends StatelessWidget {
         const SizedBox(height: 8),
         Text(label, style: const TextStyle(fontSize: 12)),
       ],
-    );
-  }
-}
-
-class _TravelBuddyButton extends StatefulWidget {
-  final String description;
-  const _TravelBuddyButton({required this.description});
-  @override
-  State<_TravelBuddyButton> createState() => _TravelBuddyButtonState();
-}
-
-class _TravelBuddyButtonState extends State<_TravelBuddyButton> {
-  bool _speaking = false;
-
-  Future<void> _toggle() async {
-    final tts = TtsService.instance;
-    if (_speaking) {
-      await tts.stop();
-      if (mounted) setState(() => _speaking = false);
-    } else {
-      setState(() => _speaking = true);
-      
-      
-      final intro = 'Welcome to ${widget.description.split('\n').first}. '
-          'Here is what makes it special. '
-          '${widget.description.replaceAll('\n', ' ')}';
-      await tts.speak(intro);
-      if (mounted) setState(() => _speaking = false);
-    }
-  }
-
-  @override
-  void dispose() {
-    
-    TtsService.instance.stop();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: _toggle,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: _speaking
-              ? AppColors.accent.withValues(alpha: 0.12)
-              : AppColors.primary.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: _speaking ? AppColors.accent : AppColors.primary.withValues(alpha: 0.3),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              _speaking ? Icons.stop_circle_rounded : Icons.record_voice_over_rounded,
-              size: 14,
-              color: _speaking ? AppColors.accent : AppColors.primary,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              _speaking ? context.tr('stop') : context.tr('listen'),
-              style: TextStyle(
-                color: _speaking ? AppColors.accent : AppColors.primary,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

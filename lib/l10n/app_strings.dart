@@ -164,7 +164,7 @@ class AppStrings {
       'ar': 'كل الجولات والأماكن والمرشدين متاحين للجميع.',
     },
     'streak_start': {'en': 'Start your streak', 'ar': 'ابدأ سلسلتك'},
-    'streak_days': {'en': '{n} day{s} streak', 'ar': '{n} يوم على التوالي'},
+    'streak_days': {'en': '{n} visits streak', 'ar': 'ستريك {n} زيارة'},
     'streak_best': {
       'en': 'Best: {b} · {t} day{s} total',
       'ar': 'الأفضل: {b} · إجمالي {t} يوم',
@@ -199,6 +199,12 @@ class AppStrings {
     },
     'got_it': {'en': 'Got it', 'ar': 'فهمت'},
     'sign_out': {'en': 'Sign Out', 'ar': 'تسجيل الخروج'},
+    'sign_out_q': {'en': 'Sign Out?', 'ar': 'تسجيل الخروج؟'},
+    'sign_out_sub': {
+      'en':
+          'Are you sure you want to sign out? Your saved places will be preserved.',
+      'ar': 'هل أنت متأكد؟ أماكنك المحفوظة ستبقى كما هي.',
+    },
 
     'saved_collection': {'en': 'Your collection', 'ar': 'مجموعتك'},
     'saved_title': {'en': 'Saved', 'ar': 'المحفوظات'},
@@ -261,9 +267,22 @@ class AppStrings {
     'go': {'en': 'Go', 'ar': 'اذهب'},
     'checkin': {'en': 'Check-in', 'ar': 'تسجيل زيارة'},
     'checked_in_streak': {
-      'en': 'Checked in! Streak: {n} day{s}',
-      'ar': 'تم تسجيل الزيارة! السلسلة: {n} يوم',
+      'en': 'Checked in! Streak: {n}',
+      'ar': 'تم تسجيل الزيارة! ستريك {n}',
     },
+    'badge_unlocked': {
+      'en': 'Badge unlocked: {name} 🏅',
+      'ar': 'شارة جديدة: {name} 🏅',
+    },
+    'badges_title': {'en': 'Badges', 'ar': 'الشارات'},
+    'no_badges': {
+      'en': 'Check in at places to earn badges',
+      'ar': 'سجّل زياراتك للأماكن لتكسب الشارات',
+    },
+    'badge_streak_5': {'en': '5 Visits', 'ar': '5 زيارات'},
+    'badge_streak_10': {'en': '10 Visits', 'ar': '10 زيارات'},
+    'badge_streak_25': {'en': '25 Visits', 'ar': '25 زيارة'},
+    'badge_streak_50': {'en': '50 Visits', 'ar': '50 زيارة'},
     'write_review': {'en': 'Write Review', 'ar': 'اكتب تقييمًا'},
     'community_reviews': {'en': 'Community Reviews', 'ar': 'تقييمات المجتمع'},
     'no_reviews': {
@@ -279,8 +298,6 @@ class AppStrings {
     'copy_link': {'en': 'Copy Link', 'ar': 'نسخ الرابط'},
     'message': {'en': 'Message', 'ar': 'رسالة'},
     'email': {'en': 'Email', 'ar': 'بريد'},
-    'listen': {'en': 'Listen', 'ar': 'استمع'},
-    'stop': {'en': 'Stop', 'ar': 'إيقاف'},
     'free_entry': {'en': 'Free entry', 'ar': 'دخول مجاني'},
     'budget_friendly': {'en': 'Budget-friendly', 'ar': 'مناسب للميزانية'},
     'standard_ticket': {'en': 'Standard ticket', 'ar': 'تذكرة عادية'},

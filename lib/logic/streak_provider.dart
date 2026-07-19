@@ -35,7 +35,6 @@ class StreakProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('StreakProvider load error: $e');
     }
-    _refreshFromElapsed();
     notifyListeners();
   }
 
@@ -52,50 +51,21 @@ class StreakProvider extends ChangeNotifier {
     );
   }
 
-  void _refreshFromElapsed() {
-    if (_lastVisitDate == null) return;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final last = DateTime(
-      _lastVisitDate!.year,
-      _lastVisitDate!.month,
-      _lastVisitDate!.day,
-    );
-    final diff = today.difference(last).inDays;
-    if (diff > 1) {
-      _currentStreak = 0;
-    }
-  }
-
+  /// Register a place visit (check-in).
+  ///
+  /// The streak is a **cumulative visit counter**: every check-in adds +1
+  /// and it NEVER resets, no matter how much time passes between visits.
+  /// Visit one place → 1. A week later still 1. Visit another place → 2.
   Future<int> registerVisit({DateTime? when}) async {
     final t = when ?? DateTime.now();
     final today = DateTime(t.year, t.month, t.day);
 
-    if (_lastVisitDate == null) {
-      _currentStreak = 1;
-      _totalVisitDays = 1;
-      _lastVisitDate = today;
-    } else {
-      final last = DateTime(
-        _lastVisitDate!.year,
-        _lastVisitDate!.month,
-        _lastVisitDate!.day,
-      );
-      final diff = today.difference(last).inDays;
-      if (diff == 0) {
-        // same day, no change
-        notifyListeners();
-        return 0;
-      } else if (diff == 1) {
-        _currentStreak += 1;
-        _totalVisitDays += 1;
-        _lastVisitDate = today;
-      } else {
-        _currentStreak = 1;
-        _totalVisitDays += 1;
-        _lastVisitDate = today;
-      }
+    if (!_isSameDay(_lastVisitDate, t)) {
+      _totalVisitDays += 1;
     }
+    _lastVisitDate = today;
+    _currentStreak += 1;
+
     if (_currentStreak > _longestStreak) {
       _longestStreak = _currentStreak;
     }

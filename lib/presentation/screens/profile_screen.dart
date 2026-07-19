@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_counter.dart';
 import '../../core/widgets/animated_icons.dart';
+import '../../core/widgets/confetti_overlay.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/theme_provider.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/gamification_provider.dart';
 import '../../logic/locale_provider.dart';
 import '../../logic/streak_provider.dart';
 import '../../l10n/app_strings.dart';
@@ -19,8 +22,44 @@ import 'currency_converter_screen.dart';
 import 'public_transport_screen.dart';
 import 'journal_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final ConfettiController _confetti = ConfettiController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _maybeCelebrateStreakBadge(),
+    );
+  }
+
+  /// Fire a one-time confetti burst when the profile is opened and the user
+  /// owns a streak milestone badge they haven't been celebrated for yet.
+  Future<void> _maybeCelebrateStreakBadge() async {
+    final g = context.read<GamificationProvider>();
+    final streakBadges =
+        g.stats.badges.where((b) => b.id.startsWith('b_streak_'));
+    if (streakBadges.isEmpty) return;
+    final highest = streakBadges
+        .map((b) => int.tryParse(b.id.replaceFirst('b_streak_', '')) ?? 0)
+        .fold(0, (a, b) => a > b ? a : b);
+    final prefs = await SharedPreferences.getInstance();
+    const key = 'profile_celebrated_streak_badge';
+    final celebrated = prefs.getInt(key) ?? 0;
+    if (highest > celebrated) {
+      if (!mounted) return;
+      HapticFeedback.heavyImpact();
+      _confetti.play();
+      await prefs.setInt(key, highest);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +69,9 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      body: CustomScrollView(
+      body: Stack(
+        children: [
+          CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
           
@@ -299,6 +340,80 @@ class ProfileScreen extends StatelessWidget {
           
           SliverToBoxAdapter(
             child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Consumer<GamificationProvider>(
+                builder: (context, g, _) {
+                  final badges = g.stats.badges;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr('badges_title'),
+                        style: AppTextStyles.sectionTitle
+                            .copyWith(color: context.textPri),
+                      ),
+                      const SizedBox(height: 10),
+                      if (badges.isEmpty)
+                        Text(
+                          context.tr('no_badges'),
+                          style: TextStyle(
+                              color: context.textSec, fontSize: 13),
+                        )
+                      else
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (var i = 0; i < badges.length; i++)
+                              FadeInUp(
+                                delay: Duration(milliseconds: 60 * i),
+                                offsetY: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.primaryGradient,
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primary
+                                            .withValues(alpha: 0.25),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                          Icons.workspace_premium_rounded,
+                                          color: Colors.white,
+                                          size: 16),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        context.tr(badges[i].name),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+
+          SliverToBoxAdapter(
+            child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
               child: Text(context.tr('section_app_settings'),
                   style: AppTextStyles.sectionTitle
@@ -560,7 +675,7 @@ class ProfileScreen extends StatelessWidget {
                         size: 18, color: AppColors.error),
                     const SizedBox(width: 8),
                     Text(
-                      'Sign Out',
+                      context.tr('sign_out'),
                       style: TextStyle(
                         color: AppColors.error,
                         fontWeight: FontWeight.w700,
@@ -574,6 +689,11 @@ class ProfileScreen extends StatelessWidget {
           ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            ],
+          ),
+          Positioned.fill(
+            child: ConfettiOverlay(controller: _confetti),
+          ),
         ],
       ),
     );
@@ -584,17 +704,17 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.cardColor,
-        title: Text('Sign Out?',
+        title: Text(context.tr('sign_out_q'),
             style: TextStyle(
                 color: context.textPri, fontWeight: FontWeight.w800)),
         content: Text(
-          'Are you sure you want to sign out? Your saved places will be preserved.',
+          context.tr('sign_out_sub'),
           style: TextStyle(color: context.textSec, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
+            child: Text(context.tr('cancel'),
                 style: TextStyle(color: context.textSec)),
           ),
           ElevatedButton(
