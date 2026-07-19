@@ -1,14 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/config/app_config.dart';
 import '../../core/services/ai_service.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../data/models/ai_trip_plan.dart';
 import '../../data/models/place_model.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/trip_provider.dart';
 import 'place_details_screen.dart';
@@ -28,12 +28,12 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
   AiTripPlan? _plan;
   String? _error;
 
-  static const _suggestions = <String>[
-    'Two days in Alexandria, mid-budget, love history and seafood',
-    'One relaxed day focused on cafés and the corniche',
-    'Three days off the beaten path, hidden gems only',
-    'A family day with kid-friendly museums and a beach',
-  ];
+  List<String> _suggestions(BuildContext context) => <String>[
+        context.tr('ai_sugg_1'),
+        context.tr('ai_sugg_2'),
+        context.tr('ai_sugg_3'),
+        context.tr('ai_sugg_4'),
+      ];
 
   @override
   void dispose() {
@@ -44,7 +44,7 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
   Future<void> _generate() async {
     final prompt = _promptCtrl.text.trim();
     if (prompt.isEmpty) {
-      setState(() => _error = 'Please describe what kind of trip you want.');
+      setState(() => _error = context.tr('ai_err_empty'));
       return;
     }
     setState(() {
@@ -58,10 +58,12 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
         prompt: prompt,
         availablePlaces: places,
         daysHint: _days,
+        budget: _budget,
       );
       setState(() => _plan = plan);
     } catch (e) {
-      setState(() => _error = 'Failed to generate: $e');
+      if (!mounted) return;
+      setState(() => _error = context.tr('ai_err_failed', {'e': '$e'}));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -70,30 +72,9 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
-        title: const Text('AI Trip Generator'),
-        actions: [
-          if (!AppConfig.geminiEnabled)
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'MOCK',
-                  style: TextStyle(
-                    color: AppColors.warning,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
-            ),
-        ],
+        title: Text(context.tr('ai_planner_title')),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
@@ -130,22 +111,22 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
                   ),
                 ),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Powered by Gemini',
-                        style: TextStyle(
+                        context.tr('ai_planner_title'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'Describe your ideal Alexandria trip and we\'ll plan it.',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                        context.tr('ai_planner_sub'),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                     ],
                   ),
@@ -154,22 +135,24 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Tell us about your trip', style: AppTextStyles.sectionTitle),
+          Text(context.tr('ai_prompt_title'),
+              style: AppTextStyles.sectionTitle
+                  .copyWith(color: context.textPri)),
           const SizedBox(height: 8),
           TextField(
             controller: _promptCtrl,
             maxLines: 3,
             decoration: InputDecoration(
-              hintText: 'e.g. two days in Alexandria, mid-budget, love history',
+              hintText: context.tr('ai_prompt_hint'),
               filled: true,
-              fillColor: AppColors.cardBackground,
+              fillColor: context.cardColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: AppColors.textHint),
+                borderSide: BorderSide(color: context.hintColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
+                borderSide: BorderSide(color: context.hintColor.withValues(alpha: 0.3)),
               ),
             ),
           ),
@@ -177,7 +160,7 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _suggestions
+            children: _suggestions(context)
                 .map((s) => ActionChip(
                       label: Text(s, style: const TextStyle(fontSize: 12)),
                       onPressed: () {
@@ -211,7 +194,7 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
                     )
                   : const Icon(Icons.auto_awesome, color: Colors.white),
               label: Text(
-                _busy ? 'Generating...' : 'Generate Itinerary',
+                _busy ? context.tr('ai_generating') : context.tr('ai_generate'),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -261,15 +244,16 @@ class _DaysPicker extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+        border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.primary),
+          Icon(Icons.calendar_today_rounded, size: 18, color: context.textPri),
           const SizedBox(width: 8),
-          const Text('Days', style: TextStyle(fontWeight: FontWeight.w600)),
+          Text(context.tr('ai_days'),
+              style: const TextStyle(fontWeight: FontWeight.w600)),
           const Spacer(),
           DropdownButton<int>(
             value: value,
@@ -296,15 +280,16 @@ class _BudgetPicker extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+        border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.payments_rounded, size: 18, color: AppColors.primary),
+          Icon(Icons.payments_rounded, size: 18, color: context.textPri),
           const SizedBox(width: 8),
-          const Text('Budget', style: TextStyle(fontWeight: FontWeight.w600)),
+          Text(context.tr('ai_budget'),
+              style: const TextStyle(fontWeight: FontWeight.w600)),
           const Spacer(),
           DropdownButton<String>(
             value: value,
@@ -330,9 +315,9 @@ class _PlanSummary extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+        border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,15 +326,19 @@ class _PlanSummary extends StatelessWidget {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           Text(plan.summary,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5)),
+              style: TextStyle(color: context.textSec, fontSize: 13, height: 1.5)),
           const SizedBox(height: 12),
           Row(
             children: [
-              _badge('${plan.totalDays} days'),
+              _badge(context,
+                  context.tr('ai_days_count', {'n': '${plan.totalDays}'})),
               const SizedBox(width: 8),
-              _badge(plan.estimatedBudget),
+              _badge(context, plan.estimatedBudget),
               const SizedBox(width: 8),
-              _badge('${plan.days.fold(0, (s, d) => s + d.stops.length)} stops'),
+              _badge(
+                  context,
+                  context.tr('tour_stops_count',
+                      {'n': '${plan.days.fold(0, (s, d) => s + d.stops.length)}'})),
             ],
           ),
           const SizedBox(height: 16),
@@ -371,11 +360,13 @@ class _PlanSummary extends StatelessWidget {
                       trip.togglePlaceInTrip(p);
                     }
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Added ${places.length} places to your Trip Planner')),
+                      SnackBar(
+                          content: Text(context.tr('ai_added_to_planner',
+                              {'n': '${places.length}'}))),
                     );
                   },
                   icon: const Icon(Icons.add_road_rounded),
-                  label: const Text('Add all to Trip Planner'),
+                  label: Text(context.tr('ai_add_all')),
                 ),
               );
             },
@@ -385,15 +376,15 @@ class _PlanSummary extends StatelessWidget {
     );
   }
 
-  Widget _badge(String text) => Container(
+  Widget _badge(BuildContext context, String text) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(text,
-            style: const TextStyle(
-              color: AppColors.primary,
+            style: TextStyle(
+              color: context.textPri,
               fontSize: 11,
               fontWeight: FontWeight.w800,
             )),
@@ -409,9 +400,9 @@ class _DayCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+        border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,7 +442,7 @@ class _StopTile extends StatelessWidget {
     for (final p in places) {
       if (p.id == id) return p;
     }
-    return places.isNotEmpty ? places.first : null;
+    return null;
   }
   @override
   Widget build(BuildContext context) {
@@ -494,7 +485,7 @@ class _StopTile extends StatelessWidget {
                       ),
                       Text(stop.suggestedTime,
                           style: TextStyle(
-                            color: AppColors.textSecondary,
+                            color: context.textSec,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           )),
@@ -503,7 +494,7 @@ class _StopTile extends StatelessWidget {
                   if (stop.note.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(stop.note,
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.4)),
+                        style: TextStyle(color: context.textSec, fontSize: 12, height: 1.4)),
                   ],
                 ],
               ),
@@ -530,8 +521,8 @@ class _TipsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Local tips',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+          Text(context.tr('ai_local_tips'),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           for (final t in tips) ...[
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [

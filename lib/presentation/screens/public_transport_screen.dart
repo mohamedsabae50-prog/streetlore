@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../l10n/app_strings.dart';
 
 class PublicTransportScreen extends StatelessWidget {
   const PublicTransportScreen({super.key});
@@ -8,10 +9,10 @@ class PublicTransportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
-        title: const Text('Public Transport'),
-        backgroundColor: AppColors.background,
+        title: Text(context.tr('public_transport')),
+        backgroundColor: context.bgColor,
         elevation: 0,
       ),
       body: ListView(
@@ -32,10 +33,10 @@ class PublicTransportScreen extends StatelessWidget {
               children: [
                 const Icon(Icons.directions_transit_rounded, color: Colors.white, size: 32),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Get around Alexandria with microbuses, buses, and taxis',
-                    style: TextStyle(
+                    context.tr('transport_hero'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -47,7 +48,9 @@ class PublicTransportScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Bus Routes', style: AppTextStyles.sectionTitle),
+          Text(context.tr('transport_bus_routes'),
+              style: AppTextStyles.sectionTitle
+                  .copyWith(color: context.textPri)),
           const SizedBox(height: 8),
           ..._busRoutes.map((b) => _TransportCard(
             icon: Icons.directions_bus_rounded,
@@ -58,33 +61,44 @@ class PublicTransportScreen extends StatelessWidget {
             stations: (b['stations'] as List).cast<String>(),
           )),
           const SizedBox(height: 20),
-          Text('Taxis & Microbuses', style: AppTextStyles.sectionTitle),
+          Text(context.tr('transport_taxi_section'),
+              style: AppTextStyles.sectionTitle
+                  .copyWith(color: context.textPri)),
           const SizedBox(height: 8),
           _TransportCard(
             icon: Icons.local_taxi_rounded,
             color: const Color(0xFFFBBF24),
-            title: 'Taxi',
-            description: 'Hail on the street or order by phone. Ask for the meter or agree the fare before you ride.',
-            price: 'Meter: EGP 7-10 base + EGP 3/km',
-            stations: const ['Available citywide', 'Black & yellow cabs'],
+            title: context.tr('transport_taxi'),
+            description: context.tr('transport_taxi_desc'),
+            price: context.tr('transport_taxi_price'),
+            stations: [
+              context.tr('transport_taxi_s1'),
+              context.tr('transport_taxi_s2'),
+            ],
           ),
           const SizedBox(height: 8),
           _TransportCard(
             icon: Icons.directions_car_rounded,
             color: const Color(0xFF8B5CF6),
             title: 'Uber / Careem',
-            description: 'App-based. Cash or card. Surge pricing at peak hours.',
-            price: 'EGP 30-100+ depending on distance',
-            stations: const ['Download app', 'Set pickup & drop-off'],
+            description: context.tr('transport_uber_desc'),
+            price: context.tr('transport_uber_price'),
+            stations: [
+              context.tr('transport_uber_s1'),
+              context.tr('transport_uber_s2'),
+            ],
           ),
           const SizedBox(height: 8),
           _TransportCard(
             icon: Icons.airport_shuttle_rounded,
             color: const Color(0xFF3B82F6),
-            title: 'Microbus (Servis)',
-            description: 'Shared 14-seater vans. Fixed routes, cheap.',
+            title: context.tr('transport_micro_title'),
+            description: context.tr('transport_micro_desc'),
             price: 'EGP 3-10',
-            stations: const ['Set routes', 'Wave to board'],
+            stations: [
+              context.tr('transport_micro_s1'),
+              context.tr('transport_micro_s2'),
+            ],
           ),
           const SizedBox(height: 20),
           Container(
@@ -94,14 +108,14 @@ class PublicTransportScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.tips_and_updates_rounded, color: AppColors.success, size: 22),
-                SizedBox(width: 10),
+                const Icon(Icons.tips_and_updates_rounded, color: AppColors.success, size: 22),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Pro tip: Microbuses (servis) are the cheapest way along the Corniche — wave to board, and pay the driver directly when you get off.',
-                    style: TextStyle(
+                    context.tr('transport_pro_tip'),
+                    style: const TextStyle(
                       color: AppColors.success,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -161,7 +175,7 @@ class _TransportCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
@@ -205,7 +219,7 @@ class _TransportCard extends StatelessWidget {
               child: Text(
                 description,
                 style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: context.textSec,
                   fontSize: 12,
                   height: 1.5,
                 ),
@@ -217,9 +231,9 @@ class _TransportCard extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Stops:',
+                context.tr('transport_stops'),
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: context.textPri,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
@@ -233,7 +247,7 @@ class _TransportCard extends StatelessWidget {
               children: [
                 for (var i = 0; i < stations.length; i++) ...[
                   if (i > 0)
-                    const Icon(Icons.arrow_forward_rounded, size: 12, color: AppColors.textHint),
+                    Icon(Icons.arrow_forward_rounded, size: 12, color: context.hintColor),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../l10n/app_strings.dart';
 
 class CurrencyConverterScreen extends StatefulWidget {
   const CurrencyConverterScreen({super.key});
@@ -94,10 +95,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     final rate = _convert(1, _fromCurrency, _toCurrency);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
-        title: const Text('Currency Converter'),
-        backgroundColor: AppColors.background,
+        title: Text(context.tr('currency_converter')),
+        backgroundColor: context.bgColor,
         elevation: 0,
       ),
       body: ListView(
@@ -154,16 +155,18 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Amount', style: AppTextStyles.sectionTitle),
+          Text(context.tr('cur_amount'),
+              style: AppTextStyles.sectionTitle
+                  .copyWith(color: context.textPri)),
           const SizedBox(height: 8),
           TextField(
             controller: _egpController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'Enter amount',
+              hintText: context.tr('cur_enter_amount'),
               filled: true,
-              fillColor: AppColors.cardBackground,
+              fillColor: context.cardColor,
               prefixIcon: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Text(
@@ -174,11 +177,11 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
               prefixIconConstraints: const BoxConstraints(minWidth: 50),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: AppColors.textHint),
+                borderSide: BorderSide(color: context.hintColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
+                borderSide: BorderSide(color: context.hintColor.withValues(alpha: 0.3)),
               ),
             ),
           ),
@@ -186,7 +189,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
           Row(
             children: [
               Expanded(child: _CurrencyPicker(
-                label: 'From',
+                label: context.tr('cur_from'),
                 code: _fromCurrency,
                 onChanged: (c) => setState(() => _fromCurrency = c),
                 currencies: _currencies,
@@ -196,14 +199,14 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
               IconButton(
                 onPressed: _swap,
                 icon: const Icon(Icons.swap_horiz_rounded, size: 28),
-                color: AppColors.primary,
+                color: context.textPri,
                 style: IconButton.styleFrom(
                   backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   shape: const CircleBorder(),
                 ),
               ),
               Expanded(child: _CurrencyPicker(
-                label: 'To',
+                label: context.tr('cur_to'),
                 code: _toCurrency,
                 onChanged: (c) => setState(() => _toCurrency = c),
                 currencies: _currencies,
@@ -226,8 +229,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Rates are approximate and based on mid-market averages. Check with your bank or exchange for actual rates.',
-                    style: TextStyle(
+                    context.tr('cur_disclaimer'),
+                    style: const TextStyle(
                       color: AppColors.warning,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -266,9 +269,9 @@ class _CurrencyPicker extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+        border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,7 +279,7 @@ class _CurrencyPicker extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: context.textSec,
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.5,

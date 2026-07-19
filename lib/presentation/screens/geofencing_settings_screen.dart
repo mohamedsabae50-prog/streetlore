@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
@@ -7,6 +7,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../data/models/geofence_alert.dart';
 import '../../data/models/place_model.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/geofence_provider.dart';
 import '../../logic/place_provider.dart';
 
@@ -16,8 +17,8 @@ class GeofencingSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Geofencing Alerts')),
+      backgroundColor: context.bgColor,
+      appBar: AppBar(title: Text(context.tr('geo_title'))),
       body: Consumer<GeofenceProvider>(
         builder: (context, geo, _) {
           final places = context.watch<PlaceProvider>().places;
@@ -51,15 +52,15 @@ class GeofencingSettingsScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Get notified nearby',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                          SizedBox(height: 4),
-                          Text('Choose the places you want alerts for - within 500m by default.',
-                              style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          Text(context.tr('geo_hero_title'),
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 4),
+                          Text(context.tr('geo_hero_sub'),
+                              style: const TextStyle(color: Colors.white70, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -70,19 +71,19 @@ class GeofencingSettingsScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
+                  color: context.cardColor,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+                  border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
                     Icon(geo.isMonitoring ? Icons.gps_fixed : Icons.gps_off,
-                        color: geo.isMonitoring ? AppColors.success : AppColors.textSecondary),
+                        color: geo.isMonitoring ? AppColors.success : context.textSec),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(geo.isMonitoring
-                          ? 'Monitoring your location for nearby places'
-                          : 'Monitoring paused'),
+                          ? context.tr('geo_monitoring_on')
+                          : context.tr('geo_monitoring_off')),
                     ),
                     Switch.adaptive(
                       value: geo.isMonitoring,
@@ -92,7 +93,9 @@ class GeofencingSettingsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              Text('Choose places', style: AppTextStyles.sectionTitle),
+              Text(context.tr('geo_choose_places'),
+                  style: AppTextStyles.sectionTitle
+                      .copyWith(color: context.textPri)),
               const SizedBox(height: 8),
               for (final place in places)
                 _PlaceToggle(
@@ -131,12 +134,12 @@ class _PlaceToggle extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: enabled
               ? AppColors.success.withValues(alpha: 0.4)
-              : AppColors.textHint.withValues(alpha: 0.3),
+              : context.hintColor.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -146,7 +149,7 @@ class _PlaceToggle extends StatelessWidget {
             child: Image.network(
               place.imageUrl,
               width: 50, height: 50, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(width: 50, height: 50, color: AppColors.backgroundAlt),
+              errorBuilder: (_, __, ___) => Container(width: 50, height: 50, color: context.bgAlt),
             ),
           ),
           const SizedBox(width: 12),
@@ -156,8 +159,13 @@ class _PlaceToggle extends StatelessWidget {
               children: [
                 Text(place.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const SizedBox(height: 2),
-                Text('${Geolocator.distanceBetween(0, 0, place.lat, place.lng).toStringAsFixed(0)} m from city center',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                Text(
+                    context.tr('geo_distance', {
+                      'd': Geolocator.distanceBetween(
+                              0, 0, place.lat, place.lng)
+                          .toStringAsFixed(0),
+                    }),
+                    style: TextStyle(color: context.textSec, fontSize: 11)),
               ],
             ),
           ),

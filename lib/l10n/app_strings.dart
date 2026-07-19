@@ -68,10 +68,28 @@ class AppStrings {
       'en': 'feels {t}° · {h}% humidity',
       'ar': 'الإحساس {t}° · رطوبة {h}%',
     },
+    'weather_my_location': {'en': 'Use my location', 'ar': 'استخدم موقعي'},
+    'location_denied': {
+      'en': 'Location permission denied. Enable it to see local weather.',
+      'ar': 'تم رفض إذن الموقع. فعّله لعرض طقس منطقتك.',
+    },
+    'refresh': {'en': 'Refresh', 'ar': 'تحديث'},
+    'map_title': {'en': 'Map · {n} places', 'ar': 'الخريطة · {n} مكان'},
+    'map_my_location': {'en': 'My location', 'ar': 'موقعي'},
+    'community_chat': {'en': 'Community Chat', 'ar': 'دردشة المجتمع'},
+    'community_chat_sub': {
+      'en': 'Ask travelers about this place',
+      'ar': 'اسأل المسافرين عن هذا المكان',
+    },
+    'ai_planner_title': {'en': 'Smart Trip Planner', 'ar': 'مخطط الرحلات الذكي'},
+    'ai_planner_sub': {
+      'en': "Describe your ideal Alexandria trip and we'll plan it.",
+      'ar': 'صف رحلتك المثالية في إسكندرية وهنخططها لك.',
+    },
 
     'lb_subtitle': {
-      'en': 'Most travelled in Alexandria',
-      'ar': 'الأكثر تنقلًا في الإسكندرية',
+      'en': 'Most travelled around the world',
+      'ar': 'الأكثر تنقلًا حول العالم',
     },
     'lb_title': {'en': 'Leaderboard', 'ar': 'الترتيب'},
     'lb_your_rank': {'en': 'YOUR RANK', 'ar': 'ترتيبك'},
@@ -328,6 +346,356 @@ class AppStrings {
     'delete_photo_q': {'en': 'Delete this photo?', 'ar': 'حذف هذه الصورة؟'},
     'delete_review_q': {'en': 'Delete this review?', 'ar': 'حذف هذا التقييم؟'},
     'delete': {'en': 'Delete', 'ar': 'حذف'},
+    'edit': {'en': 'Edit', 'ar': 'تعديل'},
+
+    'trip_title': {'en': 'My Trip Planner', 'ar': 'مخطط رحلتي'},
+    'trip_empty': {
+      'en': 'Your trip is empty.\nAdd places from the explore screen!',
+      'ar': 'رحلتك فاضية.\nضيف أماكن من شاشة الاستكشاف!',
+    },
+    'trip_places_planned': {
+      'en': '{n} Places Planned',
+      'ar': '{n} مكان مخطط',
+    },
+    'trip_clear_all': {'en': 'Clear All', 'ar': 'مسح الكل'},
+
+    'offline_title': {'en': 'Offline Mode', 'ar': 'الوضع دون اتصال'},
+    'offline_hero_title': {'en': 'Travel without signal', 'ar': 'سافر من غير شبكة'},
+    'offline_mb_downloaded': {
+      'en': '{n} MB downloaded',
+      'ar': '{n} ميجابايت محمّلة',
+    },
+    'offline_downloaded': {'en': 'Downloaded', 'ar': 'المحمّلة'},
+    'offline_available': {
+      'en': 'Available to download',
+      'ar': 'متاحة للتحميل',
+    },
+    'offline_pack_size': {
+      'en': '{mb} MB · {n} places',
+      'ar': '{mb} ميجابايت · {n} مكان',
+    },
+    'offline_download': {'en': 'Download', 'ar': 'تحميل'},
+
+    'geo_title': {'en': 'Geofencing Alerts', 'ar': 'تنبيهات الموقع'},
+    'geo_hero_title': {'en': 'Get notified nearby', 'ar': 'تنبيهات عند الاقتراب'},
+    'geo_hero_sub': {
+      'en': 'Choose the places you want alerts for - within 500m by default.',
+      'ar': 'اختار الأماكن اللي عايز تنبيهات لها - في نطاق ٥٠٠ متر افتراضيًا.',
+    },
+    'geo_monitoring_on': {
+      'en': 'Monitoring your location for nearby places',
+      'ar': 'بنراقب موقعك للأماكن القريبة',
+    },
+    'geo_monitoring_off': {'en': 'Monitoring paused', 'ar': 'المراقبة متوقفة'},
+    'geo_choose_places': {'en': 'Choose places', 'ar': 'اختار الأماكن'},
+    'geo_distance': {
+      'en': '{d} m from city center',
+      'ar': '{d} م من وسط المدينة',
+    },
+
+    'chat_live': {'en': 'Live chat', 'ar': 'دردشة مباشرة'},
+    'chat_empty': {
+      'en': 'Be the first to say hi',
+      'ar': 'كن أول واحد يقول أهلًا',
+    },
+    'chat_now': {'en': 'now', 'ar': 'الآن'},
+    'chat_hint': {
+      'en': 'Say something to fellow travellers...',
+      'ar': 'قول حاجة للمسافرين اللي معاك...',
+    },
+
+    'map_err_location_denied': {
+      'en': 'Location permission is required to show the route.',
+      'ar': 'يجب الموافقة على صلاحية الموقع لعرض المسار.',
+    },
+    'map_err_location_denied_forever': {
+      'en':
+          'Location permission is permanently denied. Please enable it in Settings.',
+      'ar': 'صلاحية الموقع مرفوضة دائماً، يرجى تفعيلها من الإعدادات.',
+    },
+    'map_err_location': {
+      'en': 'Something went wrong while locating you.',
+      'ar': 'حدث خطأ أثناء تحديد الموقع.',
+    },
+    'map_err_route': {
+      'en': 'Failed to load the road route.',
+      'ar': 'فشل في تحميل مسار الطريق.',
+    },
+    'map_err_offline': {
+      'en': 'Check your internet connection.',
+      'ar': 'تأكد من اتصالك بالإنترنت.',
+    },
+    'map_open_details': {'en': 'Open details', 'ar': 'افتح التفاصيل'},
+    'map_close': {'en': 'Close', 'ar': 'إغلاق'},
+
+    'saved_count': {'en': '{n} saved', 'ar': '{n} محفوظ'},
+    'swipe_remove_hint': {
+      'en': '<- Swipe left to remove',
+      'ar': '<- اسحب لليسار للإزالة',
+    },
+
+    'tour_no_locations': {
+      'en': 'No locations available for this tour.',
+      'ar': 'لا توجد مواقع متاحة لهذه الجولة.',
+    },
+    'tour_removed_offline': {
+      'en': 'Tour removed from offline access',
+      'ar': 'تمت إزالة الجولة من الوصول دون اتصال',
+    },
+    'tour_saved_offline': {
+      'en': 'Tour saved for offline access!',
+      'ar': 'تم حفظ الجولة للوصول دون اتصال!',
+    },
+    'tour_duration': {'en': 'Duration', 'ar': 'المدة'},
+    'tour_stops': {'en': 'Stops', 'ar': 'محطات'},
+    'tour_access': {'en': 'Access', 'ar': 'الدخول'},
+    'tour_free': {'en': 'Free', 'ar': 'مجاني'},
+    'tour_about': {'en': 'About this Tour', 'ar': 'عن هذه الجولة'},
+    'tour_itinerary': {'en': 'Tour Itinerary', 'ar': 'خط سير الجولة'},
+    'tour_stops_count': {'en': '{n} stops', 'ar': '{n} محطة'},
+    'tour_stops_along': {
+      'en': '{n} stops along the way',
+      'ar': '{n} محطة على الطريق',
+    },
+    'tour_start_nav': {'en': 'Start Navigation', 'ar': 'ابدأ التنقل'},
+    'tour_locations_count': {'en': '{n} locations', 'ar': '{n} موقع'},
+
+    'journal_add_memory': {'en': 'Add memory', 'ar': 'أضف ذكرى'},
+    'journal_empty_title': {
+      'en': 'Your travel journal is empty',
+      'ar': 'يوميات سفرك فاضية',
+    },
+    'journal_empty_sub': {
+      'en': 'Save memories, photos, and notes for every place you visit.',
+      'ar': 'احفظ الذكريات والصور والملاحظات لكل مكان تزوره.',
+    },
+    'journal_add_first': {'en': 'Add first memory', 'ar': 'أضف أول ذكرى'},
+    'journal_today': {'en': 'Today', 'ar': 'اليوم'},
+    'journal_yesterday': {'en': 'Yesterday', 'ar': 'أمس'},
+    'journal_days_ago': {'en': '{n} days ago', 'ar': 'منذ {n} يوم'},
+    'journal_pick_place': {'en': 'Pick a place', 'ar': 'اختار مكانًا'},
+    'journal_search_hint': {'en': 'Search places...', 'ar': 'ابحث عن أماكن...'},
+    'journal_new_memory': {'en': 'New memory', 'ar': 'ذكرى جديدة'},
+    'journal_edit_memory': {'en': 'Edit memory', 'ar': 'تعديل الذكرى'},
+    'journal_notes': {'en': 'Notes', 'ar': 'ملاحظات'},
+    'journal_note_hint': {
+      'en': 'What did you think? What did you do? Tips for other travelers?',
+      'ar': 'إيه رأيك؟ إيه اللي عملته؟ نصايح للمسافرين التانيين؟',
+    },
+    'journal_save_memory': {'en': 'Save memory', 'ar': 'احفظ الذكرى'},
+    'journal_update_memory': {'en': 'Update memory', 'ar': 'حدّث الذكرى'},
+
+    'ai_sugg_1': {
+      'en': 'Two days in Alexandria, mid-budget, love history and seafood',
+      'ar': 'يومين في إسكندرية، ميزانية متوسطة، بحب التاريخ والسي فود',
+    },
+    'ai_sugg_2': {
+      'en': 'One relaxed day focused on cafés and the corniche',
+      'ar': 'يوم واحد هادي على القهاوي والكورنيش',
+    },
+    'ai_sugg_3': {
+      'en': 'Three days off the beaten path, hidden gems only',
+      'ar': 'تلات أيام بعيد عن الزحمة، جواهر مخفية بس',
+    },
+    'ai_sugg_4': {
+      'en': 'A family day with kid-friendly museums and a beach',
+      'ar': 'يوم عائلي مع متاحف مناسبة للأطفال وشاطئ',
+    },
+    'ai_err_empty': {
+      'en': 'Please describe what kind of trip you want.',
+      'ar': 'من فضلك صف نوع الرحلة اللي عايزها.',
+    },
+    'ai_err_failed': {'en': 'Failed to generate: {e}', 'ar': 'فشل التوليد: {e}'},
+    'ai_prompt_title': {'en': 'Tell us about your trip', 'ar': 'قولنا عن رحلتك'},
+    'ai_prompt_hint': {
+      'en': 'e.g. two days in Alexandria, mid-budget, love history',
+      'ar': 'مثال: يومين في إسكندرية، ميزانية متوسطة، بحب التاريخ',
+    },
+    'ai_generating': {'en': 'Generating...', 'ar': 'جارٍ التخطيط...'},
+    'ai_generate': {'en': 'Generate Itinerary', 'ar': 'خطّط رحلتي'},
+    'ai_days': {'en': 'Days', 'ar': 'الأيام'},
+    'ai_budget': {'en': 'Budget', 'ar': 'الميزانية'},
+    'ai_days_count': {'en': '{n} days', 'ar': '{n} يوم'},
+    'ai_added_to_planner': {
+      'en': 'Added {n} places to your Trip Planner',
+      'ar': 'اتضاف {n} مكان لمخطط رحلتك',
+    },
+    'ai_add_all': {
+      'en': 'Add all to Trip Planner',
+      'ar': 'ضيف الكل لمخطط الرحلة',
+    },
+    'ai_local_tips': {'en': 'Local tips', 'ar': 'نصايح من أهل البلد'},
+
+    'cur_amount': {'en': 'Amount', 'ar': 'المبلغ'},
+    'cur_enter_amount': {'en': 'Enter amount', 'ar': 'أدخل المبلغ'},
+    'cur_from': {'en': 'From', 'ar': 'من'},
+    'cur_to': {'en': 'To', 'ar': 'إلى'},
+    'cur_disclaimer': {
+      'en':
+          'Rates are approximate and based on mid-market averages. Check with your bank or exchange for actual rates.',
+      'ar':
+          'الأسعار تقريبية ومبنية على متوسطات السوق. راجع البنك أو الصرافة للأسعار الفعلية.',
+    },
+
+    'transport_hero': {
+      'en': 'Get around Alexandria with microbuses, buses, and taxis',
+      'ar': 'اتنقل في إسكندرية بالميكروباص والأتوبيس والتاكسي',
+    },
+    'transport_bus_routes': {'en': 'Bus Routes', 'ar': 'خطوط الأتوبيس'},
+    'transport_taxi_section': {
+      'en': 'Taxis & Microbuses',
+      'ar': 'التاكسي والميكروباص',
+    },
+    'transport_taxi': {'en': 'Taxi', 'ar': 'تاكسي'},
+    'transport_taxi_desc': {
+      'en':
+          'Hail on the street or order by phone. Ask for the meter or agree the fare before you ride.',
+      'ar':
+          'اطلبه من الشارع أو بالتليفون. اطلب العداد أو اتفق على الأجرة قبل ما تركب.',
+    },
+    'transport_taxi_price': {
+      'en': 'Meter: EGP 7-10 base + EGP 3/km',
+      'ar': 'العداد: ٧-١٠ جنيه أساسي + ٣ جنيه لكل كم',
+    },
+    'transport_taxi_s1': {'en': 'Available citywide', 'ar': 'متاح في كل المدينة'},
+    'transport_taxi_s2': {
+      'en': 'Black & yellow cabs',
+      'ar': 'تاكسي أسود وأصفر',
+    },
+    'transport_uber_desc': {
+      'en': 'App-based. Cash or card. Surge pricing at peak hours.',
+      'ar': 'بالتطبيق. كاش أو كارت. أسعار أعلى في أوقات الذروة.',
+    },
+    'transport_uber_price': {
+      'en': 'EGP 30-100+ depending on distance',
+      'ar': '٣٠-١٠٠+ جنيه حسب المسافة',
+    },
+    'transport_uber_s1': {'en': 'Download app', 'ar': 'حمّل التطبيق'},
+    'transport_uber_s2': {
+      'en': 'Set pickup & drop-off',
+      'ar': 'حدد مكان الركوب والنزول',
+    },
+    'transport_micro_title': {
+      'en': 'Microbus (Servis)',
+      'ar': 'ميكروباص (سيرفيس)',
+    },
+    'transport_micro_desc': {
+      'en': 'Shared 14-seater vans. Fixed routes, cheap.',
+      'ar': 'ميكروباص ١٤ راكب مشترك. خطوط ثابتة ورخيصة.',
+    },
+    'transport_micro_s1': {'en': 'Set routes', 'ar': 'خطوط ثابتة'},
+    'transport_micro_s2': {'en': 'Wave to board', 'ar': 'لوّح عشان تركب'},
+    'transport_pro_tip': {
+      'en':
+          'Pro tip: Microbuses (servis) are the cheapest way along the Corniche — wave to board, and pay the driver directly when you get off.',
+      'ar':
+          'نصيحة: الميكروباص (السيرفيس) أرخص وسيلة على الكورنيش — لوّح عشان تركب، وادفع للسواق مباشرة لما تنزل.',
+    },
+    'transport_stops': {'en': 'Stops:', 'ar': 'المحطات:'},
+
+    'bt_title': {'en': 'Best Time to Visit', 'ar': 'أفضل وقت للزيارة'},
+    'bt_ranked_now': {
+      'en': 'Ranked for right now',
+      'ar': 'مرتبة حسب الوقت الحالي',
+    },
+    'greet_night': {'en': 'Good night', 'ar': 'ليلة سعيدة'},
+    'bt_sub_great': {
+      'en': '{day} — {n} place{s} glowing right now',
+      'ar': '{day} — {n} مكان متألق دلوقتي',
+    },
+    'bt_sub_okay': {
+      'en': '{day} — {n} decent pick{s} if you hurry',
+      'ar': '{day} — {n} اختيار كويس لو لحقت',
+    },
+    'bt_sub_quiet': {
+      'en': '{day} — quiet time, plan for later',
+      'ar': '{day} — وقت هادي، خطط لبعدين',
+    },
+    'day_mon': {'en': 'Mon', 'ar': 'الاتنين'},
+    'day_tue': {'en': 'Tue', 'ar': 'التلات'},
+    'day_wed': {'en': 'Wed', 'ar': 'الأربع'},
+    'day_thu': {'en': 'Thu', 'ar': 'الخميس'},
+    'day_fri': {'en': 'Fri', 'ar': 'الجمعة'},
+    'day_sat': {'en': 'Sat', 'ar': 'السبت'},
+    'day_sun': {'en': 'Sun', 'ar': 'الحد'},
+    'bt_sunrise': {'en': 'Sunrise', 'ar': 'الشروق'},
+    'bt_daylight': {'en': 'Daylight', 'ar': 'النهار'},
+    'bt_sunset': {'en': 'Sunset', 'ar': 'الغروب'},
+
+    'emg_title': {'en': 'Emergency', 'ar': 'الطوارئ'},
+    'emg_call_failed': {
+      'en': 'Cannot place call to {n}',
+      'ar': 'تعذر الاتصال بـ {n}',
+    },
+    'emg_numbers': {'en': 'Emergency Numbers', 'ar': 'أرقام الطوارئ'},
+    'emg_hospitals': {'en': 'Hospitals', 'ar': 'المستشفيات'},
+    'emg_embassies': {
+      'en': 'Embassies & Consulates',
+      'ar': 'السفارات والقنصليات',
+    },
+    'emg_pharmacies': {'en': '24h Pharmacies', 'ar': 'صيدليات ٢٤ ساعة'},
+    'emg_transport': {'en': 'Transport', 'ar': 'المواصلات'},
+    'emg_hero_title': {
+      'en': 'Stay safe in Alexandria',
+      'ar': 'خلي بالك في إسكندرية',
+    },
+    'emg_hero_sub': {
+      'en': 'Tap any number to call. Save this page for quick access.',
+      'ar': 'اضغط على أي رقم للاتصال. احفظ الصفحة دي للوصول السريع.',
+    },
+
+    'login_welcome': {'en': 'Welcome to\nStreetlore', 'ar': 'أهلًا بك في\nستريت لور'},
+    'login_subtitle': {
+      'en': 'Sign in to save your favorite places and access exclusive tours.',
+      'ar': 'سجّل دخولك لحفظ أماكنك المفضلة والوصول لجولات حصرية.',
+    },
+    'login_full_name': {'en': 'Full Name', 'ar': 'الاسم الكامل'},
+    'login_name_hint': {'en': 'e.g. Ahmed Hassan', 'ar': 'مثال: أحمد حسن'},
+    'login_err_name': {
+      'en': 'Please enter your name',
+      'ar': 'من فضلك أدخل اسمك',
+    },
+    'login_email': {'en': 'Email Address', 'ar': 'البريد الإلكتروني'},
+    'login_email_hint': {
+      'en': 'e.g. ahmed@example.com',
+      'ar': 'مثال: ahmed@example.com',
+    },
+    'login_err_email': {
+      'en': 'Please enter your email',
+      'ar': 'من فضلك أدخل بريدك الإلكتروني',
+    },
+    'login_err_email_invalid': {
+      'en': 'Please enter a valid email',
+      'ar': 'من فضلك أدخل بريدًا إلكترونيًا صحيحًا',
+    },
+    'login_sign_in': {'en': 'Sign In', 'ar': 'تسجيل الدخول'},
+    'login_or': {'en': 'or', 'ar': 'أو'},
+    'login_google': {'en': 'Google', 'ar': 'جوجل'},
+    'login_just_exploring': {'en': 'Just exploring? ', 'ar': 'بتستكشف بس؟ '},
+    'login_continue_guest': {'en': 'Continue as Guest', 'ar': 'ادخل كضيف'},
+    'login_guest_name': {'en': 'Guest Explorer', 'ar': 'مستكشف زائر'},
+
+    'ob_title_1': {'en': 'Discover the Unseen', 'ar': 'اكتشف المخفي'},
+    'ob_sub_1': {
+      'en':
+          'Uncover 30+ hidden gems and landmarks of Alexandria that most tourists never find.',
+      'ar': 'اكتشف أكتر من ٣٠ جوهرة مخفية ومعلم في إسكندرية معظم السياح مبيعرفوهاش.',
+    },
+    'ob_title_2': {'en': 'Plan Your Journey', 'ar': 'خطط رحلتك'},
+    'ob_sub_2': {
+      'en':
+          'Choose from expertly curated tours. Navigate with ease and explore at your own pace.',
+      'ar': 'اختار من جولات مختارة بعناية. اتنقل بسهولة واستكشف على مزاجك.',
+    },
+    'ob_title_3': {'en': 'Save & Revisit', 'ar': 'احفظ وارجع تاني'},
+    'ob_sub_3': {
+      'en':
+          'Build your personal travel collection. Save your favorite places and access them anytime.',
+      'ar': 'اعمل مجموعتك الخاصة. احفظ أماكنك المفضلة ووصلها في أي وقت.',
+    },
+    'ob_skip': {'en': 'Skip', 'ar': 'تخطَّ'},
+    'ob_get_started': {'en': 'Get Started', 'ar': 'يلا نبدأ'},
+    'ob_next': {'en': 'Next', 'ar': 'التالي'},
   };
 
   static String level(BuildContext context, String levelName) =>

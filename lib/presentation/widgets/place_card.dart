@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
@@ -30,7 +30,7 @@ class _PlaceCardState extends State<PlaceCard> {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -176,7 +176,7 @@ class _PlaceCardState extends State<PlaceCard> {
               type: MaterialType.transparency,
               child: Text(
                 widget.place.name,
-                style: AppTextStyles.placeName,
+                style: AppTextStyles.placeName.copyWith(color: context.textPri),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -205,7 +205,7 @@ class _PlaceCardState extends State<PlaceCard> {
               Text(
                 widget.place.rating.toStringAsFixed(1),
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: context.textPri,
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                 ),

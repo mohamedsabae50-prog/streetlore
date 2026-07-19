@@ -17,6 +17,7 @@ import '../../data/models/review_model.dart';
 import '../../l10n/app_strings.dart';
 import '../widgets/add_review_sheet.dart';
 import '../widgets/place_photos_section.dart';
+import 'live_chat_screen.dart';
 import 'map_screen.dart';
 
 class PlaceDetailsScreen extends StatefulWidget {
@@ -532,6 +533,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                       
                       PlacePhotosSection(place: place),
                       const SizedBox(height: 24),
+                      _ChatEntryCard(place: place),
                       _ReviewsSection(place: place),
 
                       
@@ -624,6 +626,76 @@ class _QuickAction extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ChatEntryCard extends StatelessWidget {
+  final PlaceModel place;
+  const _ChatEntryCard({required this.place});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => LiveChatScreen(place: place)),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.15),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.chat_bubble_rounded,
+                    color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr('community_chat'),
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      context.tr('community_chat_sub'),
+                      style: TextStyle(
+                        color: theme.textTheme.bodyMedium?.color,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded,
+                  size: 14, color: AppColors.primary),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -923,9 +995,9 @@ class _ShareSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.bgColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -960,8 +1032,8 @@ class _ShareIcon extends StatelessWidget {
         Container(
           width: 56,
           height: 56,
-          decoration: BoxDecoration(color: Colors.grey[100], shape: BoxShape.circle),
-          child: Icon(icon, color: AppColors.primary),
+          decoration: BoxDecoration(color: context.bgAlt, shape: BoxShape.circle),
+          child: Icon(icon, color: context.textPri),
         ),
         const SizedBox(height: 8),
         Text(label, style: const TextStyle(fontSize: 12)),

@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../logic/trip_provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../l10n/app_strings.dart';
 
 class TripPlannerScreen extends StatelessWidget {
   const TripPlannerScreen({super.key});
@@ -9,17 +10,15 @@ class TripPlannerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFF0F172A,
-      ), 
+      backgroundColor: context.bgColor,
       appBar: AppBar(
-        title: const Text(
-          'My Trip Planner',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          context.tr('trip_title'),
+          style: TextStyle(color: context.textPri, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: context.textPri),
       ),
       body: Consumer<TripProvider>(
         builder: (context, tripProvider, child) {
@@ -33,13 +32,13 @@ class TripPlannerScreen extends StatelessWidget {
                   Icon(
                     Icons.map_outlined,
                     size: 80,
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: context.hintColor,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Your trip is empty.\nAdd places from the explore screen!',
+                  Text(
+                    context.tr('trip_empty'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white54, fontSize: 16),
+                    style: TextStyle(color: context.textSec, fontSize: 16),
                   ),
                 ],
               ),
@@ -54,9 +53,10 @@ class TripPlannerScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${tripPlaces.length} Places Planned',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      context.tr('trip_places_planned',
+                          {'n': '${tripPlaces.length}'}),
+                      style: TextStyle(
+                        color: context.textPri,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -67,9 +67,9 @@ class TripPlannerScreen extends StatelessWidget {
                         Icons.delete_sweep,
                         color: AppColors.error,
                       ),
-                      label: const Text(
-                        'Clear All',
-                        style: TextStyle(color: AppColors.error),
+                      label: Text(
+                        context.tr('trip_clear_all'),
+                        style: const TextStyle(color: AppColors.error),
                       ),
                     ),
                   ],
@@ -86,7 +86,7 @@ class TripPlannerScreen extends StatelessWidget {
                     final place = tripPlaces[index];
                     return Card(
                       key: ValueKey(place.id),
-                      color: const Color(0xFF1E293B),
+                      color: context.cardColor,
                       margin: const EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -104,21 +104,21 @@ class TripPlannerScreen extends StatelessWidget {
                         ),
                         title: Text(
                           place.name,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: context.textPri,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         subtitle: Text(
                           place.category,
-                          style: const TextStyle(
-                            color: AppColors.primary,
+                          style: TextStyle(
+                            color: context.textSec,
                             fontSize: 12,
                           ),
                         ),
-                        trailing: const Icon(
+                        trailing: Icon(
                           Icons.drag_handle_rounded,
-                          color: Colors.white54,
+                          color: context.textSec,
                         ),
                       ),
                     );

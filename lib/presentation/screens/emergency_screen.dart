@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
+import '../../l10n/app_strings.dart';
 
 class EmergencyScreen extends StatelessWidget {
   const EmergencyScreen({super.key});
@@ -13,7 +14,7 @@ class EmergencyScreen extends StatelessWidget {
     if (!ok) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Cannot place call to $number')),
+        SnackBar(content: Text(context.tr('emg_call_failed', {'n': number}))),
       );
       return;
     }
@@ -23,17 +24,17 @@ class EmergencyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: context.bgColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: context.bgColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Emergency',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
+        title: Text(
+          context.tr('emg_title'),
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
         ),
       ),
       body: ListView(
@@ -45,7 +46,7 @@ class EmergencyScreen extends StatelessWidget {
           _SectionHeader(
             icon: Icons.phone_in_talk_rounded,
             color: const Color(0xFFEF4444),
-            title: 'Emergency Numbers',
+            title: context.tr('emg_numbers'),
           ),
           const SizedBox(height: 10),
           ..._emergencyNumbers.map((e) => _CallCard(
@@ -59,7 +60,7 @@ class EmergencyScreen extends StatelessWidget {
           _SectionHeader(
             icon: Icons.local_hospital_rounded,
             color: const Color(0xFFEF4444),
-            title: 'Hospitals',
+            title: context.tr('emg_hospitals'),
           ),
           const SizedBox(height: 10),
           ..._hospitals.map((h) => _PlaceCard24(
@@ -73,7 +74,7 @@ class EmergencyScreen extends StatelessWidget {
           _SectionHeader(
             icon: Icons.flag_rounded,
             color: const Color(0xFF6366F1),
-            title: 'Embassies & Consulates',
+            title: context.tr('emg_embassies'),
           ),
           const SizedBox(height: 10),
           ..._embassies.map((e) => _PlaceCard24(
@@ -87,7 +88,7 @@ class EmergencyScreen extends StatelessWidget {
           _SectionHeader(
             icon: Icons.local_pharmacy_rounded,
             color: const Color(0xFF10B981),
-            title: '24h Pharmacies',
+            title: context.tr('emg_pharmacies'),
           ),
           const SizedBox(height: 10),
           ..._pharmacies.map((p) => _PlaceCard24(
@@ -101,7 +102,7 @@ class EmergencyScreen extends StatelessWidget {
           _SectionHeader(
             icon: Icons.taxi_alert_rounded,
             color: const Color(0xFFF59E0B),
-            title: 'Transport',
+            title: context.tr('emg_transport'),
           ),
           const SizedBox(height: 10),
           ..._transport.map((t) => _CallCard(
@@ -157,9 +158,9 @@ class _HeaderCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Stay safe in Alexandria',
-                  style: TextStyle(
+                Text(
+                  context.tr('emg_hero_title'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -167,7 +168,7 @@ class _HeaderCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Tap any number to call. Save this page for quick access.',
+                  context.tr('emg_hero_sub'),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.88),
                     fontSize: 12,
@@ -208,10 +209,10 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            color: context.textPri,
           ),
         ),
       ],
@@ -237,7 +238,7 @@ class _CallCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -272,10 +273,10 @@ class _CallCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
+                          color: context.textPri,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -330,7 +331,7 @@ class _PlaceCard24 extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -351,25 +352,25 @@ class _PlaceCard24 extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      color: context.textPri,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.location_on_outlined,
-                          size: 12, color: AppColors.textHint),
+                      Icon(Icons.location_on_outlined,
+                          size: 12, color: context.hintColor),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           subtitle,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: context.textSec,
                           ),
                         ),
                       ),
@@ -378,8 +379,8 @@ class _PlaceCard24 extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.phone_outlined,
-                          size: 12, color: AppColors.textHint),
+                      Icon(Icons.phone_outlined,
+                          size: 12, color: context.hintColor),
                       const SizedBox(width: 4),
                       Text(
                         phone,

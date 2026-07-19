@@ -37,7 +37,7 @@ class _SavedToursScreenState extends State<SavedToursScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.bgColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -54,11 +54,12 @@ class _SavedToursScreenState extends State<SavedToursScreen>
                         context.tr('saved_collection'),
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: context.textSec,
                         ),
                       ),
                       Text(context.tr('saved_title'),
-                          style: AppTextStyles.screenTitle),
+                          style: AppTextStyles.screenTitle
+                              .copyWith(color: context.textPri)),
                     ],
                   ),
                 ],
@@ -69,10 +70,10 @@ class _SavedToursScreenState extends State<SavedToursScreen>
               child: Container(
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
+                  color: context.cardColor,
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
-                    color: AppColors.textSecondary.withValues(alpha: 0.15),
+                    color: context.textSec.withValues(alpha: 0.15),
                   ),
                 ),
                 child: TabBar(
@@ -85,7 +86,7 @@ class _SavedToursScreenState extends State<SavedToursScreen>
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
                   labelColor: Colors.white,
-                  unselectedLabelColor: AppColors.textSecondary,
+                  unselectedLabelColor: context.textSec,
                   labelStyle: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
@@ -158,7 +159,7 @@ class _SavedPlacesTab extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '${places.length} saved',
+                        context.tr('saved_count', {'n': '${places.length}'}),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -168,9 +169,9 @@ class _SavedPlacesTab extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      '<- Swipe left to remove',
+                      context.tr('swipe_remove_hint'),
                       style: TextStyle(
-                        color: AppColors.textSecondary,
+                        color: context.textSec,
                         fontSize: 12,
                       ),
                     ),
@@ -261,21 +262,21 @@ class _SavedPlacesTab extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
+        backgroundColor: ctx.cardColor,
         title: Text(
           context.tr('clear_all_title'),
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            color: ctx.textPri,
             fontSize: 18,
           ),
         ),
         content: Text(
           context.tr('clear_all_warning'),
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
+          style: TextStyle(
+            color: ctx.textSec,
             fontSize: 14,
             height: 1.5,
           ),
@@ -401,12 +402,13 @@ class _EmptyState extends StatelessWidget {
                   ],
                 ),
               ),
-              child: Icon(icon, size: 54, color: AppColors.primary),
+              child: Icon(icon, size: 54, color: context.textPri),
             ),
             const SizedBox(height: 28),
             Text(
               title,
-              style: AppTextStyles.displayMedium.copyWith(fontSize: 22),
+              style: AppTextStyles.displayMedium
+                  .copyWith(fontSize: 22, color: context.textPri),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),

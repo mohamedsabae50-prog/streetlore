@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import 'login_screen.dart';
 
@@ -20,9 +21,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   final List<_OnboardSlide> _slides = const [
     _OnboardSlide(
       icon: Icons.explore_rounded,
-      title: 'Discover the Unseen',
-      subtitle:
-          'Uncover 30+ hidden gems and landmarks of Alexandria that most tourists never find.',
+      title: 'ob_title_1',
+      subtitle: 'ob_sub_1',
       color1: Color(0xFF1E3A5F),
       color2: Color(0xFF0F172A),
       iconBg: Color(0xFF3B82F6),
@@ -30,9 +30,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     ),
     _OnboardSlide(
       icon: Icons.map_rounded,
-      title: 'Plan Your Journey',
-      subtitle:
-          'Choose from expertly curated tours. Navigate with ease and explore at your own pace.',
+      title: 'ob_title_2',
+      subtitle: 'ob_sub_2',
       color1: Color(0xFF064E3B),
       color2: Color(0xFF0D1117),
       iconBg: Color(0xFF10B981),
@@ -40,9 +39,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     ),
     _OnboardSlide(
       icon: Icons.bookmark_rounded,
-      title: 'Save & Revisit',
-      subtitle:
-          'Build your personal travel collection. Save your favorite places and access them anytime.',
+      title: 'ob_title_3',
+      subtitle: 'ob_sub_3',
       color1: Color(0xFF4C1D95),
       color2: Color(0xFF0D1117),
       iconBg: Color(0xFF7C3AED),
@@ -144,20 +142,20 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       border: Border.all(
                           color: Colors.white.withValues(alpha: 0.25)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Skip',
-                          style: TextStyle(
+                          context.tr('ob_skip'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
                             letterSpacing: 0.3,
                           ),
                         ),
-                        SizedBox(width: 4),
-                        Icon(Icons.arrow_forward_rounded,
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_forward_rounded,
                             color: Colors.white, size: 14),
                       ],
                     ),
@@ -227,8 +225,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             children: [
                               Text(
                                 _currentPage == _slides.length - 1
-                                    ? 'Get Started'
-                                    : 'Next',
+                                    ? context.tr('ob_get_started')
+                                    : context.tr('ob_next'),
                                 style: const TextStyle(
                                   color: Color(0xFF0F172A),
                                   fontWeight: FontWeight.w800,
@@ -426,7 +424,7 @@ class _SlideViewState extends State<_SlideView>
                   child: FadeTransition(
                     opacity: _titleFade,
                     child: Text(
-                      widget.slide.title,
+                      context.tr(widget.slide.title),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 32,
@@ -444,7 +442,7 @@ class _SlideViewState extends State<_SlideView>
                   child: FadeTransition(
                     opacity: _subFade,
                     child: Text(
-                      widget.slide.subtitle,
+                      context.tr(widget.slide.subtitle),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.78),

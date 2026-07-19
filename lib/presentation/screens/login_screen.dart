@@ -1,8 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import 'main_navigation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -83,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _continueAsGuest() async {
     HapticFeedback.lightImpact();
     await context.read<AuthProvider>().signIn(
-      name: 'Guest Explorer',
+      name: context.tr('login_guest_name'),
       email: 'guest@streetlore.com',
     );
     if (!mounted) return;
@@ -164,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen>
                     FadeInUp(
                       delay: const Duration(milliseconds: 200),
                       child: Text(
-                        'Welcome to\nStreetlore',
+                        context.tr('login_welcome'),
                         style: TextStyle(
                           fontSize: 34,
                           fontWeight: FontWeight.w900,
@@ -178,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen>
                     FadeInUp(
                       delay: const Duration(milliseconds: 280),
                       child: Text(
-                        'Sign in to save your favorite places and access exclusive tours.',
+                        context.tr('login_subtitle'),
                         style: TextStyle(
                           fontSize: 15,
                           color: context.textSec,
@@ -197,12 +198,12 @@ class _LoginScreenState extends State<LoginScreen>
                               controller: _nameCtrl,
                               focusNode: _nameFocus,
                               isFocused: _focusedField == 'name',
-                              label: 'Full Name',
-                              hint: 'e.g. Ahmed Hassan',
+                              label: context.tr('login_full_name'),
+                              hint: context.tr('login_name_hint'),
                               icon: Icons.person_outline_rounded,
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) {
-                                  return 'Please enter your name';
+                                  return context.tr('login_err_name');
                                 }
                                 return null;
                               },
@@ -215,16 +216,16 @@ class _LoginScreenState extends State<LoginScreen>
                               controller: _emailCtrl,
                               focusNode: _emailFocus,
                               isFocused: _focusedField == 'email',
-                              label: 'Email Address',
-                              hint: 'e.g. ahmed@example.com',
+                              label: context.tr('login_email'),
+                              hint: context.tr('login_email_hint'),
                               icon: Icons.email_outlined,
                               keyboardType: TextInputType.emailAddress,
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) {
-                                  return 'Please enter your email';
+                                  return context.tr('login_err_email');
                                 }
                                 if (!v.contains('@')) {
-                                  return 'Please enter a valid email';
+                                  return context.tr('login_err_email_invalid');
                                 }
                                 return null;
                               },
@@ -236,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen>
                             child: _GradientButton(
                               isLoading: _isLoading,
                               onTap: _signIn,
-                              label: 'Sign In',
+                              label: context.tr('login_sign_in'),
                               icon: Icons.login_rounded,
                             ),
                           ),
@@ -252,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen>
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: Text(
-                              'or',
+                              context.tr('login_or'),
                               style: TextStyle(
                                 color: context.textSec,
                                 fontSize: 13,
@@ -270,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen>
                         children: [
                           Expanded(
                             child: _SocialButton(
-                              label: 'Google',
+                              label: context.tr('login_google'),
                               icon: Icons.g_mobiledata_rounded,
                               color: const Color(0xFFEA4335),
                               onTap: () async {
@@ -304,11 +305,11 @@ class _LoginScreenState extends State<LoginScreen>
                                 style: const TextStyle(fontSize: 14),
                                 children: [
                                   TextSpan(
-                                    text: 'Just exploring? ',
+                                    text: context.tr('login_just_exploring'),
                                     style: TextStyle(color: context.textSec),
                                   ),
                                   TextSpan(
-                                    text: 'Continue as Guest',
+                                    text: context.tr('login_continue_guest'),
                                     style: TextStyle(
                                       color: AppColors.accent,
                                       fontWeight: FontWeight.w700,

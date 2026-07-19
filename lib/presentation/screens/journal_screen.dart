@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/journal_entry.dart';
 import '../../data/models/place_model.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/journal_provider.dart';
 import '../../logic/place_provider.dart';
 import 'place_details_screen.dart';
@@ -16,10 +17,10 @@ class JournalScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
-        title: const Text('Travel Journal'),
-        backgroundColor: AppColors.background,
+        title: Text(context.tr('travel_journal')),
+        backgroundColor: context.bgColor,
         elevation: 0,
       ),
       body: Consumer<JournalProvider>(
@@ -59,9 +60,9 @@ class JournalScreen extends StatelessWidget {
             onPressed: () => _showPlacePicker(context, journal),
             backgroundColor: AppColors.primary,
             icon: const Icon(Icons.add_rounded, color: Colors.white),
-            label: const Text(
-              'Add memory',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+            label: Text(
+              context.tr('journal_add_memory'),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
             ),
           );
         },
@@ -132,23 +133,23 @@ class _EmptyState extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.menu_book_rounded, size: 40, color: AppColors.primary),
+              child: Icon(Icons.menu_book_rounded, size: 40, color: context.textPri),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Your travel journal is empty',
+            Text(
+              context.tr('journal_empty_title'),
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: context.textPri,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Save memories, photos, and notes for every place you visit.',
+              context.tr('journal_empty_sub'),
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: context.textSec,
                 fontSize: 13,
                 height: 1.5,
               ),
@@ -157,7 +158,7 @@ class _EmptyState extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onPick,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Add first memory'),
+              label: Text(context.tr('journal_add_first')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -187,12 +188,14 @@ class _JournalCard extends StatelessWidget {
     required this.onDelete,
   });
 
-  String _dateLabel(DateTime d) {
+  String _dateLabel(BuildContext context, DateTime d) {
     final now = DateTime.now();
     final diff = now.difference(d);
-    if (diff.inDays == 0) return 'Today';
-    if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    if (diff.inDays == 0) return context.tr('journal_today');
+    if (diff.inDays == 1) return context.tr('journal_yesterday');
+    if (diff.inDays < 7) {
+      return context.tr('journal_days_ago', {'n': '${diff.inDays}'});
+    }
     return '${d.day}/${d.month}/${d.year}';
   }
 
@@ -205,9 +208,9 @@ class _JournalCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.textHint.withValues(alpha: 0.2)),
+          border: Border.all(color: context.hintColor.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,17 +223,17 @@ class _JournalCard extends StatelessWidget {
                     children: [
                       Text(
                         entry.placeName,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
+                        style: TextStyle(
+                          color: context.textPri,
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _dateLabel(entry.visitedAt),
+                        _dateLabel(context, entry.visitedAt),
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: context.textSec,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -248,14 +251,14 @@ class _JournalCard extends StatelessWidget {
                   }),
                 ),
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert_rounded, color: AppColors.textHint),
+                  icon: Icon(Icons.more_vert_rounded, color: context.hintColor),
                   onSelected: (v) {
                     if (v == 'edit') onEdit();
                     if (v == 'delete') onDelete();
                   },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'edit', child: Text('Edit')),
-                    PopupMenuItem(value: 'delete', child: Text('Delete')),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(value: 'edit', child: Text(context.tr('edit'))),
+                    PopupMenuItem(value: 'delete', child: Text(context.tr('delete'))),
                   ],
                 ),
               ],
@@ -265,7 +268,7 @@ class _JournalCard extends StatelessWidget {
               Text(
                 entry.note!,
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: context.textPri,
                   fontSize: 13,
                   height: 1.5,
                 ),
@@ -308,9 +311,9 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
       maxChildSize: 0.95,
       builder: (context, scroll) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: context.bgColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             children: [
@@ -318,7 +321,7 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
               Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.textHint,
+                  color: context.hintColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -327,8 +330,9 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
-                    const Expanded(
-                      child: Text('Pick a place', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    Expanded(
+                      child: Text(context.tr('journal_pick_place'),
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
@@ -343,10 +347,10 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
                   controller: _search,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'Search places...',
+                    hintText: context.tr('journal_search_hint'),
                     prefixIcon: const Icon(Icons.search_rounded),
                     filled: true,
-                    fillColor: AppColors.cardBackground,
+                    fillColor: context.cardColor,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
@@ -371,8 +375,8 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
                           p.imageUrl,
                           width: 48, height: 48, fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
-                            width: 48, height: 48, color: AppColors.backgroundAlt,
-                            child: const Icon(Icons.image_rounded, color: AppColors.textHint),
+                            width: 48, height: 48, color: context.bgAlt,
+                            child: Icon(Icons.image_rounded, color: context.hintColor),
                           ),
                         ),
                       ),
@@ -432,9 +436,9 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
         maxChildSize: 0.95,
         builder: (context, scroll) {
           return Container(
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: context.bgColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: ListView(
               controller: scroll,
@@ -444,27 +448,32 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
                   child: Container(
                     width: 40, height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.textHint,
+                      color: context.hintColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  widget.existing == null ? 'New memory' : 'Edit memory',
-                  style: AppTextStyles.screenTitle,
+                  widget.existing == null
+                      ? context.tr('journal_new_memory')
+                      : context.tr('journal_edit_memory'),
+                  style: AppTextStyles.screenTitle
+                      .copyWith(color: context.textPri),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   widget.place.name,
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: context.textSec,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 18),
-                Text('Rating', style: AppTextStyles.sectionTitle),
+                Text(context.tr('rating_label'),
+                    style: AppTextStyles.sectionTitle
+                        .copyWith(color: context.textPri)),
                 const SizedBox(height: 8),
                 Row(
                   children: List.generate(5, (i) {
@@ -481,22 +490,24 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
                   }),
                 ),
                 const SizedBox(height: 12),
-                Text('Notes', style: AppTextStyles.sectionTitle),
+                Text(context.tr('journal_notes'),
+                    style: AppTextStyles.sectionTitle
+                        .copyWith(color: context.textPri)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _noteCtrl,
                   maxLines: 6,
                   decoration: InputDecoration(
-                    hintText: 'What did you think? What did you do? Tips for other travelers?',
+                    hintText: context.tr('journal_note_hint'),
                     filled: true,
-                    fillColor: AppColors.cardBackground,
+                    fillColor: context.cardColor,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: AppColors.textHint),
+                      borderSide: BorderSide(color: context.hintColor),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
+                      borderSide: BorderSide(color: context.hintColor.withValues(alpha: 0.3)),
                     ),
                   ),
                 ),
@@ -521,7 +532,9 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
                     ),
                     icon: const Icon(Icons.check_rounded, color: Colors.white),
                     label: Text(
-                      widget.existing == null ? 'Save memory' : 'Update memory',
+                      widget.existing == null
+                          ? context.tr('journal_save_memory')
+                          : context.tr('journal_update_memory'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 15,

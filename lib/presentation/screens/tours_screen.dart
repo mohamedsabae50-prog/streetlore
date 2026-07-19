@@ -43,7 +43,7 @@ class _ToursScreenState extends State<ToursScreen>
     final filtered = context.watch<TourProvider>().tours;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.bgColor,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: RefreshIndicator(
@@ -56,7 +56,7 @@ class _ToursScreenState extends State<ToursScreen>
               SliverAppBar(
                 floating: true,
                 snap: true,
-                backgroundColor: AppColors.background,
+                backgroundColor: context.bgColor,
                 elevation: 0,
                 scrolledUnderElevation: 0,
                 titleSpacing: 20,
@@ -66,12 +66,12 @@ class _ToursScreenState extends State<ToursScreen>
                     Text(
                       context.tr('tours_subtitle'),
                       style: TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary),
+                          fontSize: 12, color: context.textSec),
                     ),
                     Text(
                       context.tr('tours_title'),
                       style: AppTextStyles.screenTitle
-                          .copyWith(color: AppColors.textPrimary),
+                          .copyWith(color: context.textPri),
                     ),
                   ],
                 ),
@@ -85,7 +85,7 @@ class _ToursScreenState extends State<ToursScreen>
                         : context.tr('tours_available',
                             {'n': '${filtered.length}'}),
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: context.textSec,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -100,7 +100,7 @@ class _ToursScreenState extends State<ToursScreen>
                       padding: const EdgeInsets.all(40),
                       child: Text(context.tr('loading_tours'),
                           style:
-                              const TextStyle(color: AppColors.textSecondary)),
+                              TextStyle(color: context.textSec)),
                     ),
                   ),
                 )

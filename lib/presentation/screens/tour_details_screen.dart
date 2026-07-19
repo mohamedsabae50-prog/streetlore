@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/itinerary_model.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/tour_provider.dart';
 import '../widgets/place_card.dart';
 import 'place_details_screen.dart';
@@ -60,7 +61,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No locations available for this tour.')),
+          SnackBar(content: Text(context.tr('tour_no_locations'))),
         );
       }
     }
@@ -71,7 +72,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
     final tour = widget.tour;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.bgColor,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -102,8 +103,8 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                       SnackBar(
                         content: Text(
                           isSaved
-                              ? 'Tour removed from offline access'
-                              : 'Tour saved for offline access!',
+                              ? context.tr('tour_removed_offline')
+                              : context.tr('tour_saved_offline'),
                         ),
                       ),
                     );
@@ -236,7 +237,8 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                                 color: Colors.white60, size: 14),
                             const SizedBox(width: 4),
                             Text(
-                              '${tour.places.length} stops along the way',
+                              context.tr('tour_stops_along',
+                                  {'n': '${tour.places.length}'}),
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
@@ -259,9 +261,9 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
               child: SlideTransition(
                 position: _contentSlide,
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.vertical(
+                  decoration: BoxDecoration(
+                    color: context.bgColor,
+                    borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(28)),
                   ),
                   transform: Matrix4.translationValues(0, -28, 0),
@@ -276,7 +278,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                             Expanded(
                               child: _StatCard(
                                 icon: Icons.access_time_rounded,
-                                label: 'Duration',
+                                label: context.tr('tour_duration'),
                                 value: tour.duration,
                                 color: AppColors.primary,
                               ),
@@ -285,7 +287,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                             Expanded(
                               child: _StatCard(
                                 icon: Icons.location_on_rounded,
-                                label: 'Stops',
+                                label: context.tr('tour_stops'),
                                 value: '${tour.places.length}',
                                 color: AppColors.accent,
                               ),
@@ -294,8 +296,8 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                             Expanded(
                               child: _StatCard(
                                 icon: Icons.lock_open_rounded,
-                                label: 'Access',
-                                value: 'Free',
+                                label: context.tr('tour_access'),
+                                value: context.tr('tour_free'),
                                 color: AppColors.success,
                               ),
                             ),
@@ -309,7 +311,9 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('About this Tour', style: AppTextStyles.sectionTitle),
+                            Text(context.tr('tour_about'),
+                                style: AppTextStyles.sectionTitle
+                                    .copyWith(color: context.textPri)),
                             const SizedBox(height: 10),
                             Text(tour.description, style: AppTextStyles.bodyMedium),
                           ],
@@ -323,11 +327,14 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Tour Itinerary', style: AppTextStyles.sectionTitle),
+                              Text(context.tr('tour_itinerary'),
+                                  style: AppTextStyles.sectionTitle
+                                      .copyWith(color: context.textPri)),
                               Text(
-                                '${tour.places.length} stops',
+                                context.tr('tour_stops_count',
+                                    {'n': '${tour.places.length}'}),
                                 style: TextStyle(
-                                  color: AppColors.textSecondary,
+                                  color: context.textSec,
                                   fontSize: 13,
                                 ),
                               ),
@@ -425,7 +432,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
           children: [
             const Icon(Icons.navigation_rounded, color: Colors.white, size: 22),
             const SizedBox(width: 10),
-            Text('Start Navigation', style: AppTextStyles.buttonText),
+            Text(context.tr('tour_start_nav'), style: AppTextStyles.buttonText),
           ],
         ),
       ),
@@ -480,7 +487,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
@@ -500,14 +507,14 @@ class _StatCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: context.textPri,
             ),
           ),
           Text(
             label,
             style: TextStyle(
               fontSize: 11,
-              color: AppColors.textSecondary,
+              color: context.textSec,
               fontWeight: FontWeight.w500,
             ),
           ),

@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../data/models/offline_pack.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/offline_provider.dart';
 import '../../logic/place_provider.dart';
 
@@ -27,8 +28,8 @@ class _OfflineModeScreenState extends State<OfflineModeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Offline Mode')),
+      backgroundColor: context.bgColor,
+      appBar: AppBar(title: Text(context.tr('offline_title'))),
       body: Consumer<OfflineProvider>(
         builder: (context, off, _) {
           final downloaded = off.packs;
@@ -71,10 +72,11 @@ class _OfflineModeScreenState extends State<OfflineModeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Travel without signal',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                          Text(context.tr('offline_hero_title'),
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
                           const SizedBox(height: 4),
-                          Text('${off.totalDownloadedMb} MB downloaded',
+                          Text(context.tr('offline_mb_downloaded',
+                                  {'n': '${off.totalDownloadedMb}'}),
                               style: const TextStyle(color: Colors.white70, fontSize: 12)),
                         ],
                       ),
@@ -84,13 +86,17 @@ class _OfflineModeScreenState extends State<OfflineModeScreen> {
               ),
               const SizedBox(height: 20),
               if (downloaded.isNotEmpty) ...[
-                Text('Downloaded', style: AppTextStyles.sectionTitle),
+                Text(context.tr('offline_downloaded'),
+                    style: AppTextStyles.sectionTitle
+                        .copyWith(color: context.textPri)),
                 const SizedBox(height: 8),
                 for (final p in downloaded) _DownloadedTile(pack: p),
                 const SizedBox(height: 20),
               ],
               if (available.isNotEmpty) ...[
-                Text('Available to download', style: AppTextStyles.sectionTitle),
+                Text(context.tr('offline_available'),
+                    style: AppTextStyles.sectionTitle
+                        .copyWith(color: context.textPri)),
                 const SizedBox(height: 8),
                 for (final p in available) _AvailableTile(pack: p),
               ],
@@ -111,7 +117,7 @@ class _DownloadedTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
       ),
@@ -125,15 +131,19 @@ class _DownloadedTile extends StatelessWidget {
               children: [
                 Text(pack.name, style: const TextStyle(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 2),
-                Text('${pack.sizeMb} MB · ${pack.placeIds.length} places',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                Text(
+                    context.tr('offline_pack_size', {
+                      'mb': '${pack.sizeMb}',
+                      'n': '${pack.placeIds.length}',
+                    }),
+                    style: TextStyle(color: context.textSec, fontSize: 12)),
               ],
             ),
           ),
           IconButton(
             onPressed: () => context.read<OfflineProvider>().remove(pack),
             icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
-            tooltip: 'Delete',
+            tooltip: context.tr('delete'),
           ),
         ],
       ),
@@ -150,9 +160,9 @@ class _AvailableTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+        border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -165,11 +175,15 @@ class _AvailableTile extends StatelessWidget {
                 Text(pack.name, style: const TextStyle(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 2),
                 Text(pack.description,
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    style: TextStyle(color: context.textSec, fontSize: 12),
                     maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
-                Text('${pack.sizeMb} MB · ${pack.placeIds.length} places',
-                    style: TextStyle(color: AppColors.textHint, fontSize: 11)),
+                Text(
+                    context.tr('offline_pack_size', {
+                      'mb': '${pack.sizeMb}',
+                      'n': '${pack.placeIds.length}',
+                    }),
+                    style: TextStyle(color: context.hintColor, fontSize: 11)),
               ],
             ),
           ),
@@ -184,8 +198,8 @@ class _AvailableTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('Download',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+            child: Text(context.tr('offline_download'),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
           ),
         ],
       ),

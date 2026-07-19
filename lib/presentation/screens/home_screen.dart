@@ -27,7 +27,6 @@ import 'public_transport_screen.dart';
 import 'journal_screen.dart';
 import 'offline_mode_screen.dart';
 import 'geofencing_settings_screen.dart';
-import 'live_chat_screen.dart';
 import 'best_time_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -210,10 +209,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
+                    color: context.cardColor,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppColors.textSecondary.withValues(alpha: 0.1),
+                      color: context.textSec.withValues(alpha: 0.1),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -261,8 +260,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           children: [
                             Text(
                               context.tr('compass_title'),
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
+                              style: TextStyle(
+                                color: context.textPri,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 15,
                               ),
@@ -270,8 +269,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             const SizedBox(height: 6),
                             Text(
                               context.tr('compass_sub'),
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
+                              style: TextStyle(
+                                color: context.textSec,
                                 fontSize: 12,
                                 height: 1.4,
                               ),
@@ -333,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final isSearching = _isSearching;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.bgColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -350,9 +349,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         children: [
                           Text(
                             _getGreeting(context),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textSecondary,
+                              color: context.textSec,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -449,7 +448,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
+                  color: context.cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -463,15 +462,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   border: Border.all(
                     color: _isSearchFocused
                         ? AppColors.primary.withValues(alpha: 0.45)
-                        : AppColors.textSecondary.withValues(alpha: 0.2),
+                        : context.textSec.withValues(alpha: 0.2),
                     width: 1.5,
                   ),
                 ),
                 child: TextField(
                   controller: _searchController,
                   focusNode: _searchFocus,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: context.textPri,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -479,21 +478,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   decoration: InputDecoration(
                     hintText: context.tr('search_hint'),
                     hintStyle: TextStyle(
-                      color: AppColors.textSecondary.withValues(alpha: 0.5),
+                      color: context.textSec.withValues(alpha: 0.5),
                       fontSize: 15,
                     ),
                     prefixIcon: Icon(
                       Icons.search_rounded,
                       color: _isSearchFocused
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
+                          ? context.textPri
+                          : context.textSec,
                       size: 22,
                     ),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.close_rounded,
-                              color: AppColors.textSecondary,
+                              color: context.textSec,
                               size: 20,
                             ),
                             onPressed: () {
@@ -531,7 +530,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
 
     return RefreshIndicator(
-      color: AppColors.primary,
+      color: context.textPri,
       onRefresh: () async {
         await context.read<PlaceProvider>().refresh();
         if (!mounted) return;
@@ -555,13 +554,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         context.tr('featured'),
                         style: AppTextStyles.sectionTitle.copyWith(
-                          color: AppColors.textPrimary,
+                          color: context.textPri,
                         ),
                       ),
                       Text(
                         context.tr('see_all'),
-                        style: const TextStyle(
-                          color: AppColors.primary,
+                        style: TextStyle(
+                          color: context.textPri,
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
                         ),
@@ -579,7 +578,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         selected: placeProvider.isFilterOpenNow,
                         onSelected: (_) => placeProvider.toggleFilterOpenNow(),
                         selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                        checkmarkColor: AppColors.primary,
+                        checkmarkColor: context.textPri,
                       ),
                       const SizedBox(width: 8),
                       FilterChip(
@@ -587,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         selected: placeProvider.isFilterCheapest,
                         onSelected: (_) => placeProvider.toggleFilterCheapest(),
                         selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                        checkmarkColor: AppColors.primary,
+                        checkmarkColor: context.textPri,
                       ),
                       const SizedBox(width: 8),
                       FilterChip(
@@ -595,7 +594,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         selected: placeProvider.isFilterNearest,
                         onSelected: (_) => placeProvider.toggleFilterNearest(),
                         selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                        checkmarkColor: AppColors.primary,
+                        checkmarkColor: context.textPri,
                       ),
                     ],
                   ),
@@ -687,12 +686,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         decoration: BoxDecoration(
                           color: isSel
                               ? AppColors.primary
-                              : AppColors.cardBackground,
+                              : context.cardColor,
                           borderRadius: BorderRadius.circular(22),
                           border: isSel
                               ? null
                               : Border.all(
-                                  color: AppColors.textSecondary.withValues(
+                                  color: context.textSec.withValues(
                                     alpha: 0.2,
                                   ),
                                 ),
@@ -716,7 +715,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               size: 14,
                               color: isSel
                                   ? Colors.white
-                                  : AppColors.textSecondary,
+                                  : context.textSec,
                             ),
                             const SizedBox(width: 6),
                             Text(
@@ -724,7 +723,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               style: TextStyle(
                                 color: isSel
                                     ? Colors.white
-                                    : AppColors.textSecondary,
+                                    : context.textSec,
                                 fontWeight: isSel
                                     ? FontWeight.w700
                                     : FontWeight.w500,
@@ -754,7 +753,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         : context.tr(
                             'cat_${_selectedCategory.toLowerCase()}'),
                     style: AppTextStyles.sectionTitle.copyWith(
-                      color: AppColors.textPrimary,
+                      color: context.textPri,
                     ),
                   ),
                   Container(
@@ -768,8 +767,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     child: Text(
                       context.tr('places_count', {'n': '${filtered.length}'}),
-                      style: const TextStyle(
-                        color: AppColors.primary,
+                      style: TextStyle(
+                        color: context.textPri,
                         fontWeight: FontWeight.w700,
                         fontSize: 12,
                       ),
@@ -789,13 +788,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Icon(
                           Icons.search_off_rounded,
                           size: 64,
-                          color: AppColors.textSecondary.withValues(alpha: 0.5),
+                          color: context.textSec.withValues(alpha: 0.5),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           context.tr('no_places'),
                           style: AppTextStyles.sectionTitle.copyWith(
-                            color: AppColors.textPrimary,
+                            color: context.textPri,
                           ),
                         ),
                       ],
@@ -833,22 +832,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: AnimatedLottieIcon(
                 animation: LottieAnimations.radar,
                 size: 90,
-                color: AppColors.textSecondary,
-                secondaryColor: AppColors.primary,
+                color: context.textSec,
+                secondaryColor: context.textPri,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               context.tr('no_results_for', {'q': _searchQuery}),
               style: AppTextStyles.sectionTitle.copyWith(
-                color: AppColors.textPrimary,
+                color: context.textPri,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               context.tr('try_different'),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: context.textSec,
                 fontSize: 13,
               ),
             ),
@@ -866,8 +865,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               'n': '${results.length}',
               'q': _searchQuery,
             }),
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: context.textSec,
               fontSize: 13,
             ),
           ),
@@ -891,8 +890,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildShimmer() {
-    final base = Colors.grey[300]!;
-    final highlight = Colors.grey[100]!;
+    final base = context.shimmerBase;
+    final highlight = context.shimmerHighlight;
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
       child: Column(
@@ -907,7 +906,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 width: 140,
                 height: 20,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.cardColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
@@ -927,7 +926,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   child: Container(
                     width: 190,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.cardColor,
                       borderRadius: BorderRadius.circular(22),
                     ),
                   ),
@@ -971,10 +970,10 @@ class _IconBtn extends StatelessWidget {
       width: 42,
       height: 42,
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AppColors.textSecondary.withValues(alpha: 0.2),
+          color: context.textSec.withValues(alpha: 0.2),
         ),
         boxShadow: [
           BoxShadow(
@@ -986,7 +985,7 @@ class _IconBtn extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          Center(child: Icon(icon, color: AppColors.textPrimary, size: 22)),
+          Center(child: Icon(icon, color: context.textPri, size: 22)),
           if (badge)
             Positioned(
               top: 9,
@@ -997,7 +996,7 @@ class _IconBtn extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.background, width: 1.5),
+                  border: Border.all(color: context.bgColor, width: 1.5),
                 ),
               ),
             ),
@@ -1092,18 +1091,6 @@ class _QuickAccessGrid extends StatelessWidget {
           MaterialPageRoute(builder: (_) => const GeofencingSettingsScreen()),
         ),
       ),
-      _QuickItem(
-        icon: Icons.chat_bubble_rounded,
-        label: 'quick_chat',
-        color: const Color(0xFF10B981),
-        onTap: () {
-          final first = context.read<PlaceProvider>().places.first;
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => LiveChatScreen(place: first)),
-          );
-        },
-      ),
     ];
 
     return Padding(
@@ -1116,7 +1103,7 @@ class _QuickAccessGrid extends StatelessWidget {
               Text(
                 context.tr('discover'),
                 style: AppTextStyles.sectionTitle.copyWith(
-                  color: AppColors.textPrimary,
+                  color: context.textPri,
                 ),
               ),
             ],
@@ -1209,7 +1196,7 @@ class _FilterPill extends StatelessWidget {
         margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: active ? color : AppColors.cardBackground,
+          color: active ? color : context.cardColor,
           borderRadius: BorderRadius.circular(22),
           border: active
               ? null

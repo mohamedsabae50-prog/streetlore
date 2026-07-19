@@ -59,7 +59,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.bgColor,
       body: Stack(
         children: [
           Consumer2<LeaderboardProvider, GamificationProvider>(
@@ -75,16 +75,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 slivers: [
                   SliverAppBar(
                     floating: true,
-                    backgroundColor: AppColors.background,
+                    backgroundColor: context.bgColor,
                     elevation: 0,
                     title: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(context.tr('lb_subtitle'),
                             style: TextStyle(
-                                fontSize: 12, color: AppColors.textSecondary)),
+                                fontSize: 12, color: context.textSec)),
                         Text(context.tr('lb_title'),
-                            style: AppTextStyles.screenTitle),
+                            style: AppTextStyles.screenTitle
+                                .copyWith(color: context.textPri)),
                       ],
                     ),
                     actions: [
@@ -320,12 +321,12 @@ class _Row extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isTop3
               ? AppColors.warning.withValues(alpha: 0.4)
-              : AppColors.textHint.withValues(alpha: 0.3),
+              : context.hintColor.withValues(alpha: 0.3),
         ),
         boxShadow: isTop3
             ? [
@@ -346,7 +347,7 @@ class _Row extends StatelessWidget {
             decoration: BoxDecoration(
               color: isTop3
                   ? AppColors.warning.withValues(alpha: 0.18)
-                  : AppColors.textHint.withValues(alpha: 0.18),
+                  : context.hintColor.withValues(alpha: 0.18),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
@@ -361,9 +362,9 @@ class _Row extends StatelessWidget {
                     size: 20,
                   )
                 : Text('$rank',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textSecondary,
+                      color: context.textSec,
                     )),
           ),
           const SizedBox(width: 12),
@@ -392,7 +393,7 @@ class _Row extends StatelessWidget {
                       'r': '${stats.reviewsPosted}',
                     }),
                     style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 12)),
+                        color: context.textSec, fontSize: 12)),
               ],
             ),
           ),
@@ -401,13 +402,13 @@ class _Row extends StatelessWidget {
             children: [
               AnimatedCounter(
                 value: stats.totalPoints,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.primary)),
+                    color: context.textPri)),
               Text(AppStrings.level(context, stats.level),
                   style: TextStyle(
-                      color: AppColors.textSecondary, fontSize: 11)),
+                      color: context.textSec, fontSize: 11)),
             ],
           ),
         ],

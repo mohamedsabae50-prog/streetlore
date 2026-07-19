@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../data/models/itinerary_model.dart';
+import '../../l10n/app_strings.dart';
 
 class TourCard extends StatelessWidget {
   final ItineraryModel tour;
@@ -23,7 +24,7 @@ class TourCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -36,15 +37,15 @@ class TourCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildImageHeader(),
-            _buildContent(),
+            _buildImageHeader(context),
+            _buildContent(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildImageHeader() {
+  Widget _buildImageHeader(BuildContext context) {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: SizedBox(
@@ -139,7 +140,8 @@ class TourCard extends StatelessWidget {
                         color: Colors.white, size: 12),
                     const SizedBox(width: 4),
                     Text(
-                      '${tour.places.length} Stops',
+                      context.tr('tour_stops_count',
+                          {'n': '${tour.places.length}'}),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -156,7 +158,7 @@ class TourCard extends StatelessWidget {
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -180,7 +182,7 @@ class TourCard extends StatelessWidget {
               type: MaterialType.transparency,
               child: Text(
                 tour.title,
-                style: AppTextStyles.cardTitle,
+                style: AppTextStyles.cardTitle.copyWith(color: context.textPri),
               ),
             ),
           ),
@@ -196,6 +198,7 @@ class TourCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildTag(
+                  context,
                   icon: Icons.timer_outlined,
                   label: tour.duration,
                 ),
@@ -203,8 +206,10 @@ class TourCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _buildTag(
+                  context,
                   icon: Icons.route_rounded,
-                  label: '${tour.places.length} locations',
+                  label: context.tr('tour_locations_count',
+                      {'n': '${tour.places.length}'}),
                 ),
               ),
               Container(
@@ -226,24 +231,24 @@ class TourCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTag({required IconData icon, required String label}) {
+  Widget _buildTag(BuildContext context, {required IconData icon, required String label}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.backgroundAlt,
+        color: context.bgAlt,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppColors.textSecondary),
+          Icon(icon, size: 12, color: context.textSec),
           const SizedBox(width: 5),
           Flexible(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textSecondary,
+                color: context.textSec,
                 fontWeight: FontWeight.w600,
               ),
               maxLines: 1,

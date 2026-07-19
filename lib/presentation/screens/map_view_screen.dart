@@ -1,11 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/place_model.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
 import 'place_details_screen.dart';
+
+/// Maps a raw English category key (used for logic comparisons) to its
+/// translated display label.
+String _catLabel(BuildContext context, String cat) {
+  switch (cat) {
+    case 'All': return context.tr('cat_all');
+    case 'Historical': return context.tr('cat_historical');
+    case 'Culture': return context.tr('cat_culture');
+    case 'Nature': return context.tr('cat_nature');
+    case 'Food': return context.tr('cat_food');
+    case 'Shopping': return context.tr('cat_shopping');
+    case 'Mosques': return context.tr('cat_mosques');
+    case 'Churches': return context.tr('cat_churches');
+    case 'Streets': return context.tr('cat_streets');
+    default: return cat;
+  }
+}
 
 class MapViewScreen extends StatefulWidget {
   const MapViewScreen({super.key});
@@ -18,8 +37,38 @@ class _MapViewScreenState extends State<MapViewScreen> {
   final MapController _mapController = MapController();
   String? _selectedCategory;
   PlaceModel? _selectedPlace;
+  LatLng? _userLocation;
+  bool _initialCentered = false;
 
   static const _alexCenter = LatLng(31.2001, 29.9187);
+
+  /// Asks for the location permission (only when the map opens or when the
+  /// user taps the locate button) and centers the map on the device position.
+  /// Falls back to the Alexandria center when permission is denied.
+  Future<void> _locateUser({bool move = false}) async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      );
+      if (!mounted) return;
+      final here = LatLng(pos.latitude, pos.longitude);
+      setState(() => _userLocation = here);
+      if (move || !_initialCentered) {
+        _initialCentered = true;
+        _mapController.move(here, 13.5);
+      }
+    } catch (_) {
+      // Keep the default Alexandria center.
+    }
+  }
 
   IconData _iconForCategory(String category) {
     switch (category) {
@@ -69,6 +118,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
               initialZoom: 12,
               minZoom: 5,
               maxZoom: 18,
+              onMapReady: () => _locateUser(),
               onTap: (_, __) => setState(() => _selectedPlace = null),
             ),
             children: [
@@ -79,6 +129,27 @@ class _MapViewScreenState extends State<MapViewScreen> {
               ),
               MarkerLayer(
                 markers: [
+                  if (_userLocation != null)
+                    Marker(
+                      point: _userLocation!,
+                      width: 26,
+                      height: 26,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3B82F6),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF3B82F6)
+                                  .withValues(alpha: 0.5),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   for (final p in visible)
                     Marker(
                       point: LatLng(p.lat, p.lng),
@@ -123,8 +194,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back_ios_rounded, size: 18),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppColors.textPrimary,
+                      backgroundColor: context.cardColor,
+                      foregroundColor: context.textPri,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -132,7 +203,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.cardColor,
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
@@ -143,9 +214,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         ],
                       ),
                       child: Text(
-                        'Alexandria Map · ${visible.length} places',
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
+                        context.tr('map_title', {'n': '${visible.length}'}),
+                        style: TextStyle(
+                          color: context.textPri,
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
                         ),
@@ -174,6 +245,18 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 },
               ),
             ),
+          Positioned(
+            right: 16,
+            bottom: _selectedPlace != null ? 170 : 72,
+            child: FloatingActionButton.small(
+              heroTag: 'locate-fab',
+              tooltip: context.tr('map_my_location'),
+              onPressed: () => _locateUser(move: true),
+              backgroundColor: Theme.of(context).cardColor,
+              child: Icon(Icons.my_location_rounded,
+                  size: 20, color: context.textPri),
+            ),
+          ),
           Positioned(
             left: 0, right: 0, bottom: _selectedPlace != null ? 110 : 16,
             child: _CategoryFilter(
@@ -209,7 +292,7 @@ class _SelectedPlaceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -237,8 +320,8 @@ class _SelectedPlaceCard extends StatelessWidget {
               children: [
                 Text(
                   place.name,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: context.textPri,
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
                   ),
@@ -249,7 +332,7 @@ class _SelectedPlaceCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      place.category,
+                      _catLabel(context, place.category),
                       style: TextStyle(
                         color: color,
                         fontSize: 11,
@@ -261,8 +344,8 @@ class _SelectedPlaceCard extends StatelessWidget {
                     const SizedBox(width: 2),
                     Text(
                       place.rating.toString(),
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: context.textPri,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
@@ -276,13 +359,13 @@ class _SelectedPlaceCard extends StatelessWidget {
             onPressed: onOpen,
             icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
             color: color,
-            tooltip: 'Open details',
+            tooltip: context.tr('map_open_details'),
           ),
           IconButton(
             onPressed: onClose,
             icon: const Icon(Icons.close_rounded, size: 18),
-            color: AppColors.textHint,
-            tooltip: 'Close',
+            color: context.hintColor,
+            tooltip: context.tr('map_close'),
           ),
         ],
       ),
@@ -329,21 +412,21 @@ class _CategoryFilter extends StatelessWidget {
                 color: isSel ? Colors.white : color,
               ),
               label: Text(
-                cat,
+                _catLabel(context, cat),
                 style: TextStyle(
-                  color: isSel ? Colors.white : AppColors.textPrimary,
+                  color: isSel ? Colors.white : context.textPri,
                   fontWeight: FontWeight.w800,
                   fontSize: 12,
                 ),
               ),
-              backgroundColor: Colors.white,
+              backgroundColor: context.cardColor,
               selectedColor: color,
               checkmarkColor: Colors.white,
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: isSel ? color : Colors.white,
+                  color: isSel ? color : context.cardColor,
                   width: 1.5,
                 ),
               ),

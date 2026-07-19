@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/weather_service.dart';
 import '../../l10n/app_strings.dart';
-import '../screens/currency_converter_screen.dart';
 
 class WeatherWidget extends StatefulWidget {
   const WeatherWidget({super.key});
@@ -15,6 +14,7 @@ class WeatherWidget extends StatefulWidget {
 class _WeatherWidgetState extends State<WeatherWidget> {
   WeatherData? _data;
   bool _loading = true;
+  bool _locating = false;
 
   @override
   void initState() {
@@ -30,6 +30,24 @@ class _WeatherWidgetState extends State<WeatherWidget> {
         _data = d;
         _loading = false;
       });
+    }
+  }
+
+  /// Explicitly asks for the location permission (only when the user taps the
+  /// location button) and refetches the weather for the device position.
+  Future<void> _useMyLocation() async {
+    HapticFeedback.lightImpact();
+    setState(() => _locating = true);
+    final d = await WeatherService.instance.fetchForDeviceLocation();
+    if (!mounted) return;
+    setState(() {
+      _locating = false;
+      if (d != null) _data = d;
+    });
+    if (d == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('location_denied'))),
+      );
     }
   }
 
@@ -51,7 +69,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
         height: 100,
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(18),
         ),
         child: const Center(
@@ -63,77 +81,85 @@ class _WeatherWidgetState extends State<WeatherWidget> {
       );
     }
     final d = _data!;
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () {
-        HapticFeedback.lightImpact();
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CurrencyConverterScreen()),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: _gradientFor(d.iconCode),
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _gradientFor(d.iconCode),
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: _gradientFor(d.iconCode).first.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: _gradientFor(d.iconCode).first.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(_iconForCode(d.iconCode), color: Colors.white, size: 32),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${d.tempC.round()}°C · ${d.description}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  context.tr('weather_feels', {
+                    't': '${d.feelsLikeC.round()}',
+                    'h': '${d.humidity}',
+                  }),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(_iconForCode(d.iconCode), color: Colors.white, size: 32),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${d.tempC.round()}°C · ${d.description}',
-                    style: const TextStyle(
+          ),
+          IconButton(
+            onPressed: _locating ? null : _useMyLocation,
+            tooltip: context.tr('weather_my_location'),
+            icon: _locating
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
                       color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    context.tr('weather_feels', {
-                      't': '${d.feelsLikeC.round()}',
-                      'h': '${d.humidity}',
-                    }),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              onPressed: _load,
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            ),
-          ],
-        ),
+                  )
+                : const Icon(Icons.my_location_rounded,
+                    color: Colors.white, size: 20),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          ),
+          IconButton(
+            onPressed: _load,
+            tooltip: context.tr('refresh'),
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          ),
+        ],
       ),
     );
   }

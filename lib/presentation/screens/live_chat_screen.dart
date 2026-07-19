@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../data/models/chat_message.dart';
 import '../../data/models/place_model.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/chat_provider.dart';
 
@@ -59,7 +60,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   Widget build(BuildContext context) {
     final place = widget.place;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         titleSpacing: 0,
         title: Row(
@@ -79,7 +80,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                 children: [
                   Text(place.name,
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
-                  const Text('Live chat', style: TextStyle(fontSize: 11, color: Colors.white70)),
+                  Text(context.tr('chat_live'),
+                      style: TextStyle(fontSize: 11, color: context.textSec)),
                 ],
               ),
             ),
@@ -109,9 +111,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text('Be the first to say hi',
+                          Text(context.tr('chat_empty'),
                               style: TextStyle(
-                                color: AppColors.textSecondary,
+                                color: context.textSec,
                                 fontWeight: FontWeight.w600,
                               )),
                         ],
@@ -171,9 +173,9 @@ class _MessageBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.cardBackground,
+                color: context.cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.textHint.withValues(alpha: 0.2)),
+                border: Border.all(color: context.hintColor.withValues(alpha: 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,8 +185,8 @@ class _MessageBubble extends StatelessWidget {
                       Text(message.userName,
                           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                       const Spacer(),
-                      Text(_relativeTime(message.sentAt),
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+                      Text(_relativeTime(context, message.sentAt),
+                          style: TextStyle(color: context.textSec, fontSize: 10)),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -198,9 +200,9 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 
-  String _relativeTime(DateTime dt) {
+  String _relativeTime(BuildContext context, DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'now';
+    if (diff.inMinutes < 1) return context.tr('chat_now');
     if (diff.inMinutes < 60) return '${diff.inMinutes}m';
     if (diff.inHours < 24) return '${diff.inHours}h';
     return '${diff.inDays}d';
@@ -216,8 +218,8 @@ class _Composer extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        border: Border(top: BorderSide(color: AppColors.textHint.withValues(alpha: 0.2))),
+        color: context.cardColor,
+        border: Border(top: BorderSide(color: context.hintColor.withValues(alpha: 0.2))),
       ),
       child: Row(
         children: [
@@ -225,14 +227,14 @@ class _Composer extends StatelessWidget {
             child: TextField(
               controller: controller,
               decoration: InputDecoration(
-                hintText: 'Say something to fellow travellers...',
-                hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6)),
+                hintText: context.tr('chat_hint'),
+                hintStyle: TextStyle(color: context.textSec.withValues(alpha: 0.6)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: context.bgColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),
               textInputAction: TextInputAction.send,

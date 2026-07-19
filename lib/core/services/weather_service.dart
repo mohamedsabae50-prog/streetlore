@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
 class WeatherData {
@@ -88,6 +89,29 @@ class WeatherService {
       return _cached ?? _mockWeather();
     } finally {
       _loading = false;
+    }
+  }
+
+  /// Fetches weather for the device's actual position. Explicitly requests
+  /// the location permission (never auto-detects silently). Returns null when
+  /// the permission is denied or the position cannot be determined.
+  Future<WeatherData?> fetchForDeviceLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return null;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low,
+      );
+      return fetch(lat: pos.latitude, lng: pos.longitude);
+    } catch (e) {
+      debugPrint('WeatherService: device location failed: $e');
+      return null;
     }
   }
 

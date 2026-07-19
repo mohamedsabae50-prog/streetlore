@@ -26,13 +26,15 @@ class AiService {
     required String prompt,
     required List<PlaceModel> availablePlaces,
     int? daysHint,
+    String? budget,
   }) async {
     final model = _ensureModel();
     if (model == null) {
-      return _mockPlan(
+      return _localPlan(
         prompt: prompt,
         daysHint: daysHint ?? 2,
         availablePlaces: availablePlaces,
+        budget: budget ?? r'$$',
       );
     }
 
@@ -86,10 +88,11 @@ Rules:
       return _parsePlan(json, availablePlaceIds);
     } catch (e) {
       debugPrint('AiService: Gemini call failed, falling back to mock: $e');
-      return _mockPlan(
+      return _localPlan(
         prompt: prompt,
         daysHint: daysHint ?? 2,
         availablePlaces: availablePlaces,
+        budget: budget ?? r'$$',
       );
     }
   }
@@ -123,10 +126,14 @@ Rules:
     );
   }
 
-  AiTripPlan _mockPlan({
+  /// Fully offline, rule-based planner. Scores places against the user's
+  /// prompt (Arabic & English keywords), prefers free/cheap stops on tight
+  /// budgets, and orders each day geographically so the route is walkable.
+  AiTripPlan _localPlan({
     required String prompt,
     required int daysHint,
     required List<PlaceModel> availablePlaces,
+    required String budget,
   }) {
     final all = availablePlaces;
     if (all.isEmpty) {
@@ -135,35 +142,74 @@ Rules:
         summary:
             'Connect to the network or add places to start planning your trip.',
         totalDays: daysHint,
-        estimatedBudget: r'$$',
+        estimatedBudget: budget,
         days: const [],
         tips: const [
           'Pull to refresh and try again once places are loaded.',
         ],
       );
     }
-    final perDay = (all.length / daysHint).ceil();
+
+    final q = prompt.toLowerCase();
+
+    const categoryKeywords = <String, List<String>>{
+      'Historical': ['history', 'historical', 'castle', 'fort', 'ancient', 'roman', 'ruins', 'citadel', 'تاريخ', 'تاريخي', 'قلعة', 'آثار', 'حصن'],
+      'Culture': ['culture', 'museum', 'art', 'library', 'ثقافة', 'ثقافي', 'متحف', 'فن', 'مكتبة'],
+      'Food': ['food', 'seafood', 'restaurant', 'eat', 'fish', 'cafe', 'café', 'coffee', 'dinner', 'lunch', 'أكل', 'اكل', 'سمك', 'مطعم', 'مأكولات', 'قهوة', 'كافيه'],
+      'Nature': ['nature', 'beach', 'park', 'garden', 'sea', 'corniche', 'طبيعة', 'شاطئ', 'بحر', 'جنينة', 'حديقة', 'كورنيش'],
+      'Shopping': ['shopping', 'shop', 'market', 'bazaar', 'سوق', 'تسوق'],
+      'Mosques': ['mosque', 'مسجد', 'جامع', 'مساجد'],
+      'Churches': ['church', 'كنيسة', 'كنائس'],
+      'Streets': ['street', 'walk', 'downtown', 'stroll', 'شارع', 'شوارع', 'ممشى', 'وسط البلد'],
+    };
+
+    final wantsHidden =
+        ['hidden', 'gem', 'gems', 'مخفي', 'مخفية', 'جواهر'].any(q.contains);
+
+    double score(PlaceModel p) {
+      var s = p.rating; // quality signal 0..5
+      final kws = categoryKeywords[p.category] ?? const <String>[];
+      for (final k in kws) {
+        if (q.contains(k)) {
+          s += 6;
+          break;
+        }
+      }
+      if (wantsHidden && p.isHiddenGem) s += 6;
+      if (budget == r'$') {
+        if (p.isFree) {
+          s += 3;
+        } else if (p.priceLevel == PriceLevel.cheap) {
+          s += 1.5;
+        } else {
+          s -= 2;
+        }
+      } else if (budget == r'$$$$' && p.priceLevel == PriceLevel.expensive) {
+        s += 2;
+      }
+      return s;
+    }
+
+    final ranked = [...all]..sort((a, b) => score(b).compareTo(score(a)));
+
+    final perDay = (ranked.length / daysHint).ceil().clamp(2, 4);
     final days = <AiTripDay>[];
-    for (var i = 0; i < daysHint; i++) {
-      final start = i * perDay;
-      final end = (start + perDay).clamp(0, all.length);
-      if (start >= all.length) break;
-      final slice = all.sublist(start, end);
-      if (slice.isEmpty) break;
+    var index = 0;
+    for (var d = 0; d < daysHint && index < ranked.length; d++) {
+      final end = (index + perDay).clamp(0, ranked.length);
+      final slice = ranked.sublist(index, end);
+      index = end;
+      final ordered = _geoOrder(slice);
       days.add(AiTripDay(
-        dayNumber: i + 1,
-        theme: i == 0
-            ? 'Icons of the City'
-            : i == 1
-                ? 'Tastes & Traditions'
-                : 'Hidden Corners',
+        dayNumber: d + 1,
+        theme: _themeFor(ordered, d),
         stops: [
-          for (var j = 0; j < slice.length; j++)
+          for (var j = 0; j < ordered.length; j++)
             AiTripStop(
-              placeId: slice[j].id,
+              placeId: ordered[j].id,
               suggestedTime:
                   '${(9 + j * 3).toString().padLeft(2, '0')}:00 - ${(11 + j * 3).toString().padLeft(2, '0')}:00',
-              note: 'Suggested by AI based on: "$prompt"',
+              note: _noteFor(ordered[j]),
             ),
         ],
       ));
@@ -171,9 +217,10 @@ Rules:
     return AiTripPlan(
       title: 'Your $daysHint-Day Alexandria Plan',
       summary:
-          'A draft itinerary generated locally. Connect a Gemini key in lib/core/config/app_config.dart for tailored results.',
+          'Planned on your device from your request: best-matching places, '
+          'ordered so each day flows as one walkable route.',
       totalDays: daysHint,
-      estimatedBudget: r'$$',
+      estimatedBudget: budget,
       days: days,
       tips: const [
         'Start early to avoid crowds at the most popular sites.',
@@ -182,4 +229,67 @@ Rules:
       ],
     );
   }
+
+  /// Nearest-neighbor ordering, starting from the northernmost point
+  /// (sea side) so the day reads as one continuous route.
+  List<PlaceModel> _geoOrder(List<PlaceModel> places) {
+    final remaining = [...places]
+      ..sort((a, b) => b.lat.compareTo(a.lat));
+    final ordered = <PlaceModel>[];
+    var current = remaining.removeAt(0);
+    ordered.add(current);
+    while (remaining.isNotEmpty) {
+      remaining.sort(
+        (a, b) => _dist(current, a).compareTo(_dist(current, b)),
+      );
+      current = remaining.removeAt(0);
+      ordered.add(current);
+    }
+    return ordered;
+  }
+
+  double _dist(PlaceModel a, PlaceModel b) {
+    final dx = a.lat - b.lat;
+    final dy = a.lng - b.lng;
+    return dx * dx + dy * dy;
+  }
+
+  String _themeFor(List<PlaceModel> dayPlaces, int dayIndex) {
+    final counts = <String, int>{};
+    for (final p in dayPlaces) {
+      counts[p.category] = (counts[p.category] ?? 0) + 1;
+    }
+    var top = '';
+    var topN = -1;
+    counts.forEach((cat, n) {
+      if (n > topN) {
+        top = cat;
+        topN = n;
+      }
+    });
+    switch (top) {
+      case 'Historical':
+        return 'Historical Highlights';
+      case 'Food':
+        return 'Tastes of the City';
+      case 'Nature':
+        return 'Nature & Sea Breeze';
+      case 'Culture':
+        return 'Culture & Museums';
+      case 'Shopping':
+        return 'Markets & Shopping';
+      case 'Mosques':
+        return 'Spiritual Landmarks';
+      case 'Churches':
+        return 'Sacred Architecture';
+      case 'Streets':
+        return 'Streets & Local Life';
+      default:
+        return dayIndex == 0 ? 'City Icons' : 'Hidden Corners';
+    }
+  }
+
+  String _noteFor(PlaceModel p) => p.isHiddenGem
+      ? 'Hidden gem loved by locals.'
+      : 'Top-rated ${p.category.toLowerCase()} stop.';
 }

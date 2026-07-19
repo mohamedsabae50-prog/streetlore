@@ -1,9 +1,11 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+
+import '../../l10n/app_strings.dart';
 
 class MapScreen extends StatefulWidget {
   final double destinationLat;
@@ -40,19 +42,20 @@ class _MapScreenState extends State<MapScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
+          if (!mounted) return;
           setState(() {
             _isLoading = false;
-            _errorMessage = 'يجب الموافقة على صلاحية الموقع لعرض المسار.';
+            _errorMessage = context.tr('map_err_location_denied');
           });
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
-          _errorMessage =
-              'صلاحية الموقع مرفوضة دائماً، يرجى تفعيلها من الإعدادات.';
+          _errorMessage = context.tr('map_err_location_denied_forever');
         });
         return;
       }
@@ -66,9 +69,10 @@ class _MapScreenState extends State<MapScreen> {
       
       await _getRoute();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'حدث خطأ أثناء تحديد الموقع.';
+        _errorMessage = context.tr('map_err_location');
       });
     }
   }
@@ -99,15 +103,17 @@ class _MapScreenState extends State<MapScreen> {
           _isLoading = false;
         });
       } else {
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
-          _errorMessage = 'فشل في تحميل مسار الطريق.';
+          _errorMessage = context.tr('map_err_route');
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'تأكد من اتصالك بالإنترنت.';
+        _errorMessage = context.tr('map_err_offline');
       });
     }
   }

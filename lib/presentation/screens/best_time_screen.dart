@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/best_time_service.dart';
 import '../../core/services/sun_times_service.dart';
 import '../../data/models/place_model.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
 import 'place_details_screen.dart';
 
@@ -38,32 +39,32 @@ class _BestTimeScreenState extends State<BestTimeScreen> {
     final skip = ranked.where((r) => r.recommendation.isBadNow).length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: context.bgColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
           SliverAppBar(
             pinned: true,
-            backgroundColor: const Color(0xFFF8FAFC),
+            backgroundColor: context.bgColor,
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-              color: AppColors.textPrimary,
+              color: context.textPri,
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text(
-              'Best Time to Visit',
+            title: Text(
+              context.tr('bt_title'),
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 20,
-                color: AppColors.textPrimary,
+                color: context.textPri,
               ),
             ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh_rounded, size: 22),
-                color: AppColors.primary,
-                tooltip: 'Refresh',
+                color: context.textPri,
+                tooltip: context.tr('refresh'),
                 onPressed: _refreshNow,
               ),
             ],
@@ -111,7 +112,7 @@ class _BestTimeScreenState extends State<BestTimeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _nowLabel(_now),
+                              _nowLabel(context, _now),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 17,
@@ -120,7 +121,7 @@ class _BestTimeScreenState extends State<BestTimeScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _nowSubtitle(_now, great, okay, skip),
+                              _nowSubtitle(context, _now, great, okay, skip),
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.85),
                                 fontSize: 13,
@@ -150,9 +151,9 @@ class _BestTimeScreenState extends State<BestTimeScreen> {
                   Icon(Icons.bolt_rounded, color: AppColors.warning, size: 18),
                   const SizedBox(width: 6),
                   Text(
-                    'Ranked for right now',
+                    context.tr('bt_ranked_now'),
                     style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: context.textPri,
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                     ),
@@ -204,27 +205,37 @@ class _BestTimeScreenState extends State<BestTimeScreen> {
     return list;
   }
 
-  String _nowLabel(DateTime now) {
+  String _nowLabel(BuildContext context, DateTime now) {
     final hour = now.hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    if (hour < 21) return 'Good evening';
-    return 'Good night';
+    if (hour < 12) return context.tr('greet_morning');
+    if (hour < 17) return context.tr('greet_afternoon');
+    if (hour < 21) return context.tr('greet_evening');
+    return context.tr('greet_night');
   }
 
-  String _nowSubtitle(DateTime now, int great, int okay, int skip) {
-    final day = _dayName(now.weekday);
+  String _nowSubtitle(
+      BuildContext context, DateTime now, int great, int okay, int skip) {
+    final day = _dayName(context, now.weekday);
     if (great > 0) {
-      return '$day — $great place${great == 1 ? '' : 's'} glowing right now';
+      return context.tr('bt_sub_great', {
+        'day': day,
+        'n': '$great',
+        's': great == 1 ? '' : 's',
+      });
     }
     if (okay > 0) {
-      return '$day — $okay decent pick${okay == 1 ? '' : 's'} if you hurry';
+      return context.tr('bt_sub_okay', {
+        'day': day,
+        'n': '$okay',
+        's': okay == 1 ? '' : 's',
+      });
     }
-    return '$day — quiet time, plan for later';
+    return context.tr('bt_sub_quiet', {'day': day});
   }
 
-  String _dayName(int weekday) {
-    return const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][weekday - 1];
+  String _dayName(BuildContext context, int weekday) {
+    return context.tr(
+        ['day_mon', 'day_tue', 'day_wed', 'day_thu', 'day_fri', 'day_sat', 'day_sun'][weekday - 1]);
   }
 }
 
@@ -256,7 +267,7 @@ class _BestTimeCard extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(20, 6, 20, 6),
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -292,8 +303,8 @@ class _BestTimeCard extends StatelessWidget {
                 children: [
                   Text(
                     place.name,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: context.textPri,
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                     ),
@@ -321,8 +332,8 @@ class _BestTimeCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           '· ${recommendation.hint}',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+                          style: TextStyle(
+                            color: context.textSec,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -407,7 +418,7 @@ class _SunTimesCard extends StatelessWidget {
         children: [
           _SunPill(
             icon: Icons.wb_twilight_rounded,
-            label: 'Sunrise',
+            label: context.tr('bt_sunrise'),
             time: svc.formatTime(times.sunrise),
           ),
           Container(
@@ -417,7 +428,7 @@ class _SunTimesCard extends StatelessWidget {
           ),
           _SunPill(
             icon: Icons.wb_sunny_rounded,
-            label: 'Daylight',
+            label: context.tr('bt_daylight'),
             time: svc.formatDuration(times.daylight),
           ),
           Container(
@@ -427,7 +438,7 @@ class _SunTimesCard extends StatelessWidget {
           ),
           _SunPill(
             icon: Icons.nights_stay_rounded,
-            label: 'Sunset',
+            label: context.tr('bt_sunset'),
             time: svc.formatTime(times.sunset),
           ),
         ],
