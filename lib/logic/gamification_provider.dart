@@ -35,12 +35,10 @@ class GamificationProvider extends ChangeNotifier {
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kKey, jsonEncode(_stats.toJson()));
-    
+
     SupabaseService.instance.pushStats(_stats);
   }
 
-  
-  
   Future<Badge?> applyAction(String action) async {
     final pts = GamificationStats.pointsFor(action);
     if (pts == 0) return null;
@@ -56,10 +54,18 @@ class GamificationProvider extends ChangeNotifier {
     _stats = _stats.copyWith(
       totalPoints: newPoints,
       level: newLevel,
-      placesVisited: action == 'check_in' ? _stats.placesVisited + 1 : _stats.placesVisited,
-      reviewsPosted: action == 'review' ? _stats.reviewsPosted + 1 : _stats.reviewsPosted,
-      photosUploaded: action == 'photo' ? _stats.photosUploaded + 1 : _stats.photosUploaded,
-      routesCreated: action == 'route_created' ? _stats.routesCreated + 1 : _stats.routesCreated,
+      placesVisited: action == 'check_in'
+          ? _stats.placesVisited + 1
+          : _stats.placesVisited,
+      reviewsPosted: action == 'review'
+          ? _stats.reviewsPosted + 1
+          : _stats.reviewsPosted,
+      photosUploaded: action == 'photo'
+          ? _stats.photosUploaded + 1
+          : _stats.photosUploaded,
+      routesCreated: action == 'route_created'
+          ? _stats.routesCreated + 1
+          : _stats.routesCreated,
       badges: updatedBadges,
     );
 
@@ -100,15 +106,8 @@ class GamificationProvider extends ChangeNotifier {
     );
   }
 
-  /// Streak milestones (cumulative visit counts) that award a badge.
   static const List<int> streakMilestones = [5, 10, 25, 50];
 
-  /// Called after a check-in with the new cumulative streak. When the
-  /// streak lands exactly on a milestone (and the badge isn't owned yet),
-  /// the badge is unlocked, persisted and returned — otherwise null.
-  ///
-  /// The badge [Badge.name] is an AppStrings key (`badge_streak_<n>`) so it
-  /// can be localized at display time.
   Future<Badge?> checkStreakMilestone(int streak) async {
     if (!streakMilestones.contains(streak)) return null;
     final id = 'b_streak_$streak';
@@ -129,7 +128,11 @@ class GamificationProvider extends ChangeNotifier {
     return badge;
   }
 
-  void setUserIdentity({required String userId, required String userName, String? avatarColorHex}) {
+  void setUserIdentity({
+    required String userId,
+    required String userName,
+    String? avatarColorHex,
+  }) {
     _stats = GamificationStats(
       userId: userId,
       userName: userName,

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'package:supabase/supabase.dart';
 import 'dart:io';
 
@@ -12,7 +10,9 @@ Future<String> _readServiceKey() async {
   if (fromEnv != null && fromEnv.isNotEmpty) return fromEnv;
   print('');
   print('=== Supabase Service Role Key Required ===');
-  print('Get it from: Supabase Dashboard -> Project Settings -> API -> service_role');
+  print(
+    'Get it from: Supabase Dashboard -> Project Settings -> API -> service_role',
+  );
   print('Or paste anon key to attempt (may fail with RLS).');
   stdout.write('Paste service_role key (or Enter to use anon): ');
   final input = stdin.readLineSync();

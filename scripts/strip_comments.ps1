@@ -1,11 +1,4 @@
-# Strip all Dart comments while preserving string literals, multi-line
-# strings, and code structure.
-# Handles:
-#   // single-line comments
-#   /// doc comments
-#   /* block comments */
-#   /** doc block comments */
-# Ignores // and /* inside "..." and '...' and """...""" and '''...'''.
+
 
 param([string]$Path = "lib")
 
@@ -16,34 +9,24 @@ function Remove-Comments {
     $len = $text.Length
     while ($i -lt $len) {
         $c = $text[$i]
-        # Multi-line / doc block comment start
         if ($c -eq '/' -and ($i + 1) -lt $len -and $text[$i + 1] -eq '*') {
-            # find the closing */
             $end = $text.IndexOf('*/', $i + 2)
             if ($end -lt 0) {
-                # unterminated — drop rest
                 break
             }
             $i = $end + 2
-            # If the comment was the only thing on the line (besides leading
-            # whitespace), also drop the trailing newline so we don't leave
-            # a blank line behind. Heuristic: if the previous char in the
-            # output is '\n' OR the line had only whitespace before, drop
-            # the following newline.
+            
             if (($i -lt $len) -and $text[$i] -eq "`n") {
                 $i++
             }
             continue
         }
-        # Single-line / doc comment
         if ($c -eq '/' -and ($i + 1) -lt $len -and $text[$i + 1] -eq '/') {
-            # find end of line
             $end = $i
             while ($end -lt $len -and $text[$end] -ne "`n") { $end++ }
             $i = $end
             continue
         }
-        # Triple-quoted strings
         if (($c -eq '"' -or $c -eq "'") -and ($i + 2) -lt $len -and $text[$i + 1] -eq $c -and $text[$i + 2] -eq $c) {
             $q = $c
             [void]$sb.Append($c)
@@ -66,7 +49,6 @@ function Remove-Comments {
             }
             continue
         }
-        # Single-quoted string
         if ($c -eq '"' -or $c -eq "'") {
             $q = $c
             [void]$sb.Append($c)
@@ -91,7 +73,6 @@ function Remove-Comments {
     return $sb.ToString()
 }
 
-# Collapse runs of blank lines into a single blank line.
 function Collapse-Blank-Lines {
     param([string]$text)
     $text = [regex]::Replace($text, "`r`n", "`n")

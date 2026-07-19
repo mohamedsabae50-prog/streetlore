@@ -51,11 +51,6 @@ class StreakProvider extends ChangeNotifier {
     );
   }
 
-  /// Register a place visit (check-in).
-  ///
-  /// The streak is a **cumulative visit counter**: every check-in adds +1
-  /// and it NEVER resets, no matter how much time passes between visits.
-  /// Visit one place → 1. A week later still 1. Visit another place → 2.
   Future<int> registerVisit({DateTime? when}) async {
     final t = when ?? DateTime.now();
     final today = DateTime(t.year, t.month, t.day);
