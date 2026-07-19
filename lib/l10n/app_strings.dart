@@ -328,6 +328,8 @@ class AppStrings {
       'en': 'Could not post review',
       'ar': 'تعذر نشر التقييم',
     },
+    'delete_photo_q': {'en': 'Delete this photo?', 'ar': 'حذف هذه الصورة؟'},
+    'delete': {'en': 'Delete', 'ar': 'حذف'},
   };
 
   static String level(BuildContext context, String levelName) =>

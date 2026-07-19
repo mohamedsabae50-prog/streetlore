@@ -22,6 +22,12 @@ class AppImage extends StatelessWidget {
   final double fallbackIconSize;
   final Color? fallbackColor;
 
+  /// Optional decode-size hints for data-URI images. Capping the decoded
+  /// resolution avoids multi-megabyte decodes of full-size photos and the
+  /// resulting frame drops when many photos are on screen.
+  final int? memCacheWidth;
+  final int? memCacheHeight;
+
   const AppImage({
     super.key,
     required this.source,
@@ -31,6 +37,8 @@ class AppImage extends StatelessWidget {
     this.fallbackIcon = Icons.broken_image_rounded,
     this.fallbackIconSize = 32,
     this.fallbackColor,
+    this.memCacheWidth,
+    this.memCacheHeight,
   });
 
   static bool isDataUri(String s) => s.startsWith('data:image');
@@ -57,6 +65,8 @@ class AppImage extends StatelessWidget {
             width: width,
             height: height,
             gaplessPlayback: true,
+            cacheWidth: memCacheWidth,
+            cacheHeight: memCacheHeight,
             errorBuilder: (_, __, ___) => _fallback(),
           );
         } catch (_) {

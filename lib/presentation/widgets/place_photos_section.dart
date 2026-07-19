@@ -44,6 +44,33 @@ class PlacePhotosSection extends StatelessWidget {
     );
   }
 
+  Future<void> _confirmDelete(BuildContext context, PlacePhoto photo) async {
+    final photos = context.read<PlacePhotosProvider>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(ctx.tr('delete_photo_q')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(ctx.tr('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              ctx.tr('delete'),
+              style: const TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      HapticFeedback.mediumImpact();
+      await photos.removePhoto(place.id, photo.id);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -176,6 +203,7 @@ class PlacePhotosSection extends StatelessWidget {
                   .read<PlacePhotosProvider>()
                   .toggleLike(place.id, photo.id);
             },
+            onDelete: () => _confirmDelete(context, photo),
           );
         },
       ),
@@ -186,13 +214,18 @@ class PlacePhotosSection extends StatelessWidget {
 class _PhotoCard extends StatelessWidget {
   final PlacePhoto photo;
   final VoidCallback onLike;
-  const _PhotoCard({required this.photo, required this.onLike});
+  final VoidCallback onDelete;
+  const _PhotoCard({
+    required this.photo,
+    required this.onLike,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final liked = photo.isLikedBy(
-      context.watch<PlacePhotosProvider>().currentUserId,
-    );
+    final provider = context.watch<PlacePhotosProvider>();
+    final liked = photo.isLikedBy(provider.currentUserId);
+    final canDelete = photo.userId == provider.currentUserId;
     return Container(
       width: 160,
       decoration: BoxDecoration(
@@ -214,6 +247,7 @@ class _PhotoCard extends StatelessWidget {
               source: photo.imageUrl,
               fit: BoxFit.cover,
               fallbackIcon: Icons.broken_image_rounded,
+              memCacheWidth: 320,
             ),
             Positioned.fill(
               child: DecoratedBox(
@@ -266,6 +300,27 @@ class _PhotoCard extends StatelessWidget {
                 ),
               ),
             ),
+            if (canDelete)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: GestureDetector(
+                  onTap: onDelete,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.white,
+                      size: 15,
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               left: 10,
               right: 10,

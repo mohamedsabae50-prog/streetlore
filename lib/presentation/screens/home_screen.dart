@@ -47,7 +47,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final FocusNode _searchFocus = FocusNode();
   final ScrollController _scrollCtrl = ScrollController();
   bool _isSearchFocused = false;
-  double _scrollOffset = 0;
 
   late final AnimationController _headerCtrl;
   late final Animation<double> _headerFade;
@@ -134,9 +133,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _searchFocus.addListener(
       () => setState(() => _isSearchFocused = _searchFocus.hasFocus),
     );
-    _scrollCtrl.addListener(() {
-      if (mounted) setState(() => _scrollOffset = _scrollCtrl.offset);
-    });
     Future.delayed(const Duration(milliseconds: 1400), () {
       if (mounted) setState(() => _isLoading = false);
     });
@@ -606,21 +602,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 14),
 
-                Transform.translate(
-                  offset: Offset(0, -_scrollOffset * 0.25),
-                  child: Opacity(
-                    opacity: (1.0 - _scrollOffset / 350).clamp(0.0, 1.0),
-                    child: SizedBox(
-                      height: 240,
-                      child: ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.only(left: 20, right: 6),
-                        itemCount: displayedPlaces.length,
-                        itemBuilder: (context, i) => FeaturedCard(
-                          place: displayedPlaces[i],
-                          onTap: () => _openPlace(displayedPlaces[i]),
-                        ),
+                AnimatedBuilder(
+                  animation: _scrollCtrl,
+                  builder: (context, staticChild) {
+                    final o =
+                        _scrollCtrl.hasClients ? _scrollCtrl.offset : 0.0;
+                    return Transform.translate(
+                      offset: Offset(0, -o * 0.25),
+                      child: Opacity(
+                        opacity: (1.0 - o / 350).clamp(0.0, 1.0),
+                        child: staticChild,
+                      ),
+                    );
+                  },
+                  child: SizedBox(
+                    height: 240,
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.only(left: 20, right: 6),
+                      itemCount: displayedPlaces.length,
+                      itemBuilder: (context, i) => FeaturedCard(
+                        place: displayedPlaces[i],
+                        onTap: () => _openPlace(displayedPlaces[i]),
                       ),
                     ),
                   ),
