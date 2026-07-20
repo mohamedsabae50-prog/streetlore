@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/weather_service.dart';
@@ -33,8 +33,6 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     }
   }
 
-  /// Explicitly asks for the location permission (only when the user taps the
-  /// location button) and refetches the weather for the device position.
   Future<void> _useMyLocation() async {
     HapticFeedback.lightImpact();
     setState(() => _locating = true);
@@ -109,7 +107,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${d.tempC.round()}°C · ${d.description}',
+                  '${d.tempC.round()}Â°C Â· ${d.description}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,

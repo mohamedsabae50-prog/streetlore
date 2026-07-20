@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -9,8 +9,6 @@ import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
 import 'place_details_screen.dart';
 
-/// Maps a raw English category key (used for logic comparisons) to its
-/// translated display label.
 String _catLabel(BuildContext context, String cat) {
   switch (cat) {
     case 'All': return context.tr('cat_all');
@@ -42,9 +40,6 @@ class _MapViewScreenState extends State<MapViewScreen> {
 
   static const _alexCenter = LatLng(31.2001, 29.9187);
 
-  /// Asks for the location permission (only when the map opens or when the
-  /// user taps the locate button) and centers the map on the device position.
-  /// Falls back to the Alexandria center when permission is denied.
   Future<void> _locateUser({bool move = false}) async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -66,7 +61,6 @@ class _MapViewScreenState extends State<MapViewScreen> {
         _mapController.move(here, 13.5);
       }
     } catch (_) {
-      // Keep the default Alexandria center.
     }
   }
 

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -34,8 +34,6 @@ class PlacePhotosSection extends StatelessWidget {
     final auth = context.read<AuthProvider>();
     final photos = context.read<PlacePhotosProvider>();
     HapticFeedback.mediumImpact();
-    // Store as a base64 data URI: works on web (where dart:io File paths
-    // and blob URLs do not survive) and on mobile, and persists in prefs.
     final bytes = await picked.readAsBytes();
     await photos.addPhoto(
       placeId: place.id,

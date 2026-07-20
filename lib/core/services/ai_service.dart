@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
@@ -126,9 +126,6 @@ Rules:
     );
   }
 
-  /// Fully offline, rule-based planner. Scores places against the user's
-  /// prompt (Arabic & English keywords), prefers free/cheap stops on tight
-  /// budgets, and orders each day geographically so the route is walkable.
   AiTripPlan _localPlan({
     required String prompt,
     required int daysHint,
@@ -153,18 +150,18 @@ Rules:
     final q = prompt.toLowerCase();
 
     const categoryKeywords = <String, List<String>>{
-      'Historical': ['history', 'historical', 'castle', 'fort', 'ancient', 'roman', 'ruins', 'citadel', 'تاريخ', 'تاريخي', 'قلعة', 'آثار', 'حصن'],
-      'Culture': ['culture', 'museum', 'art', 'library', 'ثقافة', 'ثقافي', 'متحف', 'فن', 'مكتبة'],
-      'Food': ['food', 'seafood', 'restaurant', 'eat', 'fish', 'cafe', 'café', 'coffee', 'dinner', 'lunch', 'أكل', 'اكل', 'سمك', 'مطعم', 'مأكولات', 'قهوة', 'كافيه'],
-      'Nature': ['nature', 'beach', 'park', 'garden', 'sea', 'corniche', 'طبيعة', 'شاطئ', 'بحر', 'جنينة', 'حديقة', 'كورنيش'],
-      'Shopping': ['shopping', 'shop', 'market', 'bazaar', 'سوق', 'تسوق'],
-      'Mosques': ['mosque', 'مسجد', 'جامع', 'مساجد'],
-      'Churches': ['church', 'كنيسة', 'كنائس'],
-      'Streets': ['street', 'walk', 'downtown', 'stroll', 'شارع', 'شوارع', 'ممشى', 'وسط البلد'],
+      'Historical': ['history', 'historical', 'castle', 'fort', 'ancient', 'roman', 'ruins', 'citadel', 'ØªØ§Ø±ÙŠØ®', 'ØªØ§Ø±ÙŠØ®ÙŠ', 'Ù‚Ù„Ø¹Ø©', 'Ø¢Ø«Ø§Ø±', 'Ø­ØµÙ†'],
+      'Culture': ['culture', 'museum', 'art', 'library', 'Ø«Ù‚Ø§ÙØ©', 'Ø«Ù‚Ø§ÙÙŠ', 'Ù…ØªØ­Ù', 'ÙÙ†', 'Ù…ÙƒØªØ¨Ø©'],
+      'Food': ['food', 'seafood', 'restaurant', 'eat', 'fish', 'cafe', 'cafÃ©', 'coffee', 'dinner', 'lunch', 'Ø£ÙƒÙ„', 'Ø§ÙƒÙ„', 'Ø³Ù…Ùƒ', 'Ù…Ø·Ø¹Ù…', 'Ù…Ø£ÙƒÙˆÙ„Ø§Øª', 'Ù‚Ù‡ÙˆØ©', 'ÙƒØ§ÙÙŠÙ‡'],
+      'Nature': ['nature', 'beach', 'park', 'garden', 'sea', 'corniche', 'Ø·Ø¨ÙŠØ¹Ø©', 'Ø´Ø§Ø·Ø¦', 'Ø¨Ø­Ø±', 'Ø¬Ù†ÙŠÙ†Ø©', 'Ø­Ø¯ÙŠÙ‚Ø©', 'ÙƒÙˆØ±Ù†ÙŠØ´'],
+      'Shopping': ['shopping', 'shop', 'market', 'bazaar', 'Ø³ÙˆÙ‚', 'ØªØ³ÙˆÙ‚'],
+      'Mosques': ['mosque', 'Ù…Ø³Ø¬Ø¯', 'Ø¬Ø§Ù…Ø¹', 'Ù…Ø³Ø§Ø¬Ø¯'],
+      'Churches': ['church', 'ÙƒÙ†ÙŠØ³Ø©', 'ÙƒÙ†Ø§Ø¦Ø³'],
+      'Streets': ['street', 'walk', 'downtown', 'stroll', 'Ø´Ø§Ø±Ø¹', 'Ø´ÙˆØ§Ø±Ø¹', 'Ù…Ù…Ø´Ù‰', 'ÙˆØ³Ø· Ø§Ù„Ø¨Ù„Ø¯'],
     };
 
     final wantsHidden =
-        ['hidden', 'gem', 'gems', 'مخفي', 'مخفية', 'جواهر'].any(q.contains);
+        ['hidden', 'gem', 'gems', 'Ù…Ø®ÙÙŠ', 'Ù…Ø®ÙÙŠØ©', 'Ø¬ÙˆØ§Ù‡Ø±'].any(q.contains);
 
     double score(PlaceModel p) {
       var s = p.rating; // quality signal 0..5
@@ -230,8 +227,6 @@ Rules:
     );
   }
 
-  /// Nearest-neighbor ordering, starting from the northernmost point
-  /// (sea side) so the day reads as one continuous route.
   List<PlaceModel> _geoOrder(List<PlaceModel> places) {
     final remaining = [...places]
       ..sort((a, b) => b.lat.compareTo(a.lat));

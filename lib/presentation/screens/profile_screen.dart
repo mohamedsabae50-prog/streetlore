@@ -9,6 +9,7 @@ import '../../core/widgets/animated_counter.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/confetti_overlay.dart';
 import '../../logic/place_provider.dart';
+import '../../logic/tour_provider.dart';
 import '../../logic/theme_provider.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/gamification_provider.dart';
@@ -149,6 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = context.watch<AuthProvider>();
     final themeP = context.watch<ThemeProvider>();
     final placeP = context.watch<PlaceProvider>();
+    final tourP = context.watch<TourProvider>();
     final gamification = context.watch<GamificationProvider>();
 
     return Scaffold(
@@ -294,7 +296,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: Colors.white.withValues(alpha: 0.2)),
                         _Stat(
                           label: context.tr('prof_tours'),
-                          textValue: context.tr('cat_all'),
+                          numericValue: tourP.savedTours.length +
+                              gamification.stats.placesVisited,
                           icon: Icons.map_rounded,
                           delayMs: 440,
                         ),
@@ -841,14 +844,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 class _Stat extends StatelessWidget {
   final String label;
   final int? numericValue;
-  final String? textValue;
   final IconData icon;
   final int delayMs;
   const _Stat({
     required this.label,
     required this.icon,
     this.numericValue,
-    this.textValue,
     this.delayMs = 0,
   });
 
@@ -860,21 +861,14 @@ class _Stat extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.white70, size: 18),
           const SizedBox(height: 4),
-          if (numericValue != null)
-            AnimatedCounter(
-              value: numericValue!,
-              duration: const Duration(milliseconds: 1200),
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800),
-            )
-          else
-            Text(textValue ?? '',
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800)),
+          AnimatedCounter(
+            value: numericValue ?? 0,
+            duration: const Duration(milliseconds: 1200),
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w800),
+          ),
           Text(label,
               style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.65),

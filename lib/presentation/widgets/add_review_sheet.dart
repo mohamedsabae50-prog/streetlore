@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -38,8 +38,6 @@ class _AddReviewSheetState extends State<AddReviewSheet> {
       imageQuality: 80,
     );
     if (!mounted || pickedFile == null) return;
-    // Keep the image as a base64 data URI instead of a dart:io File copy:
-    // path_provider/File are unsupported on web and threw at submit time.
     final bytes = await pickedFile.readAsBytes();
     if (!mounted) return;
     setState(() => _imageDataUri = AppImage.toDataUri(bytes));

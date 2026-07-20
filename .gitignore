@@ -48,3 +48,6 @@ app.*.map.json
 /.trash_backup/
 
 serve.dart
+
+# Local one-off scripts
+strip_comments.ps1

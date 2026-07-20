@@ -1,18 +1,9 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
 import 'shimmer_image.dart';
 
-/// Cross-platform image widget that never touches `dart:io`, so it is safe
-/// on web, desktop and mobile.
-///
-/// Supported sources:
-/// - `data:image/...;base64,...` URIs (decoded via [Image.memory])
-/// - `http(s)://` and `blob:` URLs (via [ShimmerImage] / network)
-///
-/// Anything else (e.g. legacy local file paths stored before the web-safe
-/// storage change) renders a graceful fallback box instead of crashing.
 class AppImage extends StatelessWidget {
   final String source;
   final BoxFit fit;
@@ -22,9 +13,6 @@ class AppImage extends StatelessWidget {
   final double fallbackIconSize;
   final Color? fallbackColor;
 
-  /// Optional decode-size hints for data-URI images. Capping the decoded
-  /// resolution avoids multi-megabyte decodes of full-size photos and the
-  /// resulting frame drops when many photos are on screen.
   final int? memCacheWidth;
   final int? memCacheHeight;
 
@@ -48,7 +36,6 @@ class AppImage extends StatelessWidget {
       s.startsWith('https://') ||
       s.startsWith('blob:');
 
-  /// Builds a compact data URI from raw image bytes.
   static String toDataUri(List<int> bytes, {String mime = 'image/jpeg'}) =>
       'data:$mime;base64,${base64Encode(bytes)}';
 
