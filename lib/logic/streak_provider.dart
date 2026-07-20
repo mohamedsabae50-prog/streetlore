@@ -3,12 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StreakProvider extends ChangeNotifier {
-  static const _kKey = 'streak_v1';
+  static const _kPrefix = 'streak_v2_';
 
   int _currentStreak = 0;
   int _longestStreak = 0;
   DateTime? _lastVisitDate;
   int _totalVisitDays = 0;
+  String _userId = '';
 
   int get currentStreak => _currentStreak;
   int get longestStreak => _longestStreak;
@@ -21,9 +22,21 @@ class StreakProvider extends ChangeNotifier {
     _load();
   }
 
+  Future<void> setUserId(String userId) async {
+    if (userId.isEmpty || userId == _userId) return;
+    await _save();
+    _userId = userId;
+    _currentStreak = 0;
+    _longestStreak = 0;
+    _totalVisitDays = 0;
+    _lastVisitDate = null;
+    await _load();
+    notifyListeners();
+  }
+
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_kKey);
+    final raw = prefs.getString(_key);
     if (raw == null) return;
     try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
@@ -35,13 +48,13 @@ class StreakProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('StreakProvider load error: $e');
     }
-    notifyListeners();
   }
 
   Future<void> _save() async {
+    if (_userId.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-      _kKey,
+      _key,
       jsonEncode({
         'currentStreak': _currentStreak,
         'longestStreak': _longestStreak,
@@ -52,6 +65,7 @@ class StreakProvider extends ChangeNotifier {
   }
 
   Future<int> registerVisit({DateTime? when}) async {
+    if (_userId.isEmpty) return 0;
     final t = when ?? DateTime.now();
     final today = DateTime(t.year, t.month, t.day);
 
@@ -82,4 +96,6 @@ class StreakProvider extends ChangeNotifier {
     if (a == null) return false;
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
+
+  String get _key => '$_kPrefix$_userId';
 }

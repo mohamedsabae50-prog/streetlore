@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/gamification_provider.dart';
+import '../../logic/streak_provider.dart';
 import 'home_screen.dart';
 import 'tours_screen.dart';
 import 'saved_tours_screen.dart';
@@ -69,8 +70,8 @@ class _MainNavigationState extends State<MainNavigation>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final auth = context.read<AuthProvider>();
-      final gam = context.read<GamificationProvider>();
-      gam.syncWithAuth(auth);
+      context.read<GamificationProvider>().syncWithAuth(auth);
+      context.read<StreakProvider>().setUserId(auth.userId);
     });
   }
 
