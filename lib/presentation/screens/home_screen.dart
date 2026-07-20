@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +6,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:provider/provider.dart';
 import 'trip_planner_screen.dart';
 import '../../core/animations/app_animations.dart';
+import '../../core/services/compass_service.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../logic/trip_provider.dart';
@@ -57,6 +59,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late final Animation<double> _compassPulse;
   late final AnimationController _compassIconCtrl;
   late final Animation<double> _compassIconRotation;
+  double _compassHeadingDeg = 0;
+  StreamSubscription<double>? _compassSub;
 
   final List<_CategoryItem> _categories = const [
     _CategoryItem(label: 'All', icon: Icons.apps_rounded),
@@ -124,8 +128,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Future.delayed(const Duration(milliseconds: 950), () {
       if (mounted) {
         _compassPulseCtrl.repeat(reverse: true);
-        _compassIconCtrl.repeat();
       }
+    });
+
+    CompassService.instance.start();
+    _compassSub = CompassService.instance.headingStream.listen((deg) {
+      if (!mounted) return;
+      setState(() {
+        _compassHeadingDeg = deg;
+      });
     });
 
     _searchFocus.addListener(
@@ -145,6 +156,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _compassCtrl.dispose();
     _compassPulseCtrl.dispose();
     _compassIconCtrl.dispose();
+    _compassSub?.cancel();
     super.dispose();
   }
 
@@ -190,12 +202,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         animation: Listenable.merge([
           _compassCtrl,
           _compassPulseCtrl,
-          _compassIconCtrl,
         ]),
         builder: (context, _) {
           final pulseValue = _compassPulse.value;
           final pulseScale = 1.0 + pulseValue * 0.03;
           final glowAlpha = (pulseValue * 32).clamp(0, 32).toInt();
+          final hasCompass = CompassService.instance.isAvailable;
+          final angle = _compassHeadingDeg * (pi / 180.0);
+          final dir = _compassDirLabel(_compassHeadingDeg);
           return Transform.translate(
             offset: Offset(0, _compassOffset.value),
             child: Transform.rotate(
@@ -241,15 +255,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
-                        child: Center(
-                          child: Transform.rotate(
-                            angle: _compassIconRotation.value,
-                            child: const Icon(
-                              Icons.navigation_rounded,
-                              color: Colors.white,
-                              size: 28,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Positioned(
+                              top: 4,
+                              child: Text(
+                                'N',
+                                style: TextStyle(
+                                  color: Colors.white
+                                      .withValues(alpha: 0.95),
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
                             ),
-                          ),
+                            Center(
+                              child: Transform.rotate(
+                                angle: hasCompass
+                                    ? -angle
+                                    : _compassIconRotation.value,
+                                child: const Icon(
+                                  Icons.navigation_rounded,
+                                  color: Colors.white,
+                                  size: 26,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -257,17 +290,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              context.tr('compass_title'),
-                              style: TextStyle(
-                                color: context.textPri,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 15,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  context.tr('compass_title'),
+                                  style: TextStyle(
+                                    color: context.textPri,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                if (hasCompass) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF22C55E)
+                                          .withValues(alpha: 0.18),
+                                      borderRadius:
+                                          BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      dir,
+                                      style: const TextStyle(
+                                        color: Color(0xFF22C55E),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             Text(
-                              context.tr('compass_sub'),
+                              hasCompass
+                                  ? '${_compassHeadingDeg.round()}° · ${context.tr('compass_sub')}'
+                                  : context.tr('compass_sub'),
                               style: TextStyle(
                                 color: context.textSec,
                                 fontSize: 12,
@@ -286,6 +348,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         },
       ),
     );
+  }
+
+  String _compassDirLabel(double deg) {
+    const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    final i = ((deg % 360) / 45).round() % 8;
+    return dirs[i];
   }
 
   void _openPlace(PlaceModel place) {
