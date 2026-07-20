@@ -1082,15 +1082,6 @@ class _QuickAccessGrid extends StatelessWidget {
           MaterialPageRoute(builder: (_) => const OfflineModeScreen()),
         ),
       ),
-      _QuickItem(
-        icon: Icons.notifications_active_rounded,
-        label: 'quick_nearby',
-        color: AppColors.accent,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const GeofencingSettingsScreen()),
-        ),
-      ),
     ];
 
     return Padding(

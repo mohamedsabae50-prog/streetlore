@@ -45,7 +45,6 @@ flutter {
     source = "../.."
 }
 
-// تم إضافة هذا الجزء لحل مشكلة الإشعارات
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

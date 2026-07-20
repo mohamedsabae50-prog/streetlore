@@ -61,7 +61,6 @@ class AppStrings {
     'quick_journal': {'en': 'Journal', 'ar': 'اليوميات'},
     'quick_ranking': {'en': 'Ranking', 'ar': 'الترتيب'},
     'quick_offline': {'en': 'Offline', 'ar': 'أوفلاين'},
-    'quick_nearby': {'en': 'Nearby', 'ar': 'بالقرب'},
     'quick_chat': {'en': 'Live Chat', 'ar': 'دردشة مباشرة'},
 
     'weather_feels': {
