@@ -586,47 +586,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-              child: Text(context.tr('section_data_privacy'),
-                  style: AppTextStyles.sectionTitle
-                      .copyWith(color: context.textPri)),
-            ),
-          ),
-
-          SliverToBoxAdapter(
-            child: FadeInUp(
-              delay: const Duration(milliseconds: 320),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _Card(children: [
-                  _ActionTile(
-                    icon: Icons.delete_outline_rounded,
-                    title: context.tr('clear_saved'),
-                    subtitle: context.tr('places_in_collection',
-                        {'n': '${placeP.savedPlaces.length}'}),
-                    color: AppColors.error,
-                    isDestructive: true,
-                    onTap: () => _showClearDialog(context, placeP),
-                  ),
-                  _Div(),
-                  _ActionTile(
-                    icon: Icons.download_outlined,
-                    title: context.tr('export_data'),
-                    subtitle: context.tr('export_data_sub'),
-                    color: AppColors.primary,
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(context.tr('export_soon'))),
-                      );
-                    },
-                  ),
-                ]),
-              ),
-            ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
               child: Text(context.tr('section_about'),
                   style: AppTextStyles.sectionTitle
                       .copyWith(color: context.textPri)),
@@ -849,47 +808,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showClearDialog(BuildContext context, PlaceProvider provider) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.cardColor,
-        title: Text(context.tr('clear_all_saved_q'),
-            style: TextStyle(
-                color: context.textPri, fontWeight: FontWeight.w800)),
-        content: Text(
-          context.tr('clear_all_warning'),
-          style: TextStyle(color: context.textSec, fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.tr('cancel'),
-                style: TextStyle(color: context.textSec)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              provider.clearAllSaved();
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(context.tr('saved_cleared')),
-                    backgroundColor: AppColors.error),
-              );
-            },
-            child: Text(context.tr('clear'),
-                style: const TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showHelp(BuildContext context) {
     showDialog(
       context: context,
@@ -1054,7 +972,6 @@ class _ActionTile extends StatelessWidget {
   final IconData icon;
   final String title, subtitle;
   final Color color;
-  final bool isDestructive;
   final VoidCallback onTap;
 
   const _ActionTile({
@@ -1062,7 +979,6 @@ class _ActionTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.color,
-    this.isDestructive = false,
     required this.onTap,
   });
 
@@ -1093,9 +1009,7 @@ class _ActionTile extends StatelessWidget {
                       style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
-                          color: isDestructive
-                              ? color
-                              : context.textPri)),
+                          color: context.textPri)),
                   Text(subtitle,
                       style: TextStyle(
                           fontSize: 12, color: context.textSec)),

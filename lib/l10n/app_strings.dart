@@ -123,16 +123,6 @@ class AppStrings {
       'ar': 'تُستخدم لاقتراح أماكن قريبة',
     },
     'language': {'en': 'Language', 'ar': 'اللغة'},
-    'clear_saved': {'en': 'Clear Saved Places', 'ar': 'مسح الأماكن المحفوظة'},
-    'export_data': {'en': 'Export My Data', 'ar': 'تصدير بياناتي'},
-    'export_data_sub': {
-      'en': 'Download your saved collection',
-      'ar': 'حمّل مجموعتك المحفوظة',
-    },
-    'export_soon': {
-      'en': 'Export feature coming soon!',
-      'ar': 'ميزة التصدير قادمة قريبًا!',
-    },
     'emergency_info': {'en': 'Emergency Info', 'ar': 'معلومات الطوارئ'},
     'emergency_info_sub': {
       'en': 'Hospitals, embassies, hotlines',
@@ -188,18 +178,9 @@ class AppStrings {
       'ar': 'سجّل زيارتك في أي مكان للبدء',
     },
     'section_app_settings': {'en': 'App Settings', 'ar': 'إعدادات التطبيق'},
-    'section_data_privacy': {
-      'en': 'Data & Privacy',
-      'ar': 'البيانات والخصوصية',
-    },
     'section_about': {'en': 'About', 'ar': 'حول'},
     'dark_theme_on': {'en': 'Dark theme enabled', 'ar': 'الوضع الداكن مفعّل'},
     'light_theme_on': {'en': 'Light theme active', 'ar': 'الوضع الفاتح مفعّل'},
-    'places_in_collection': {
-      'en': '{n} places in your collection',
-      'ar': '{n} مكان في مجموعتك',
-    },
-    'clear_all_saved_q': {'en': 'Clear All Saved?', 'ar': 'مسح كل المحفوظات؟'},
     'clear_all_warning': {
       'en':
           'This will permanently remove all saved places. This cannot be undone.',
