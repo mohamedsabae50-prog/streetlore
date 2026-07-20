@@ -5,6 +5,7 @@ import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/gamification_provider.dart';
 import 'main_navigation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
@@ -83,12 +84,128 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _continueAsGuest() async {
     HapticFeedback.lightImpact();
-    await context.read<AuthProvider>().signIn(
-      name: context.tr('login_guest_name'),
-      email: 'guest@streetlore.com',
-    );
+    final name = await _askGuestName();
+    if (name == null || name.trim().isEmpty) return;
+    if (!mounted) return;
+    final gam = context.read<GamificationProvider>();
+    await context.read<AuthProvider>().signInAsGuest(name);
+    gam.syncWithAuth(context.read<AuthProvider>());
     if (!mounted) return;
     _goToMain();
+  }
+
+  Future<String?> _askGuestName() async {
+    final ctrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: Theme.of(ctx).cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.person_outline_rounded,
+                  color: AppColors.accent,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  context.tr('guest_dialog_title'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.tr('guest_dialog_sub'),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.textSec,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: ctrl,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.words,
+                  maxLength: 24,
+                  decoration: InputDecoration(
+                    labelText: context.tr('login_full_name'),
+                    hintText: context.tr('login_name_hint'),
+                    prefixIcon: const Icon(Icons.badge_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    counterText: '',
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return context.tr('login_err_name');
+                    }
+                    return null;
+                  },
+                  onFieldSubmitted: (_) {
+                    if (formKey.currentState!.validate()) {
+                      Navigator.of(ctx).pop(ctrl.text);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(
+                context.tr('cancel'),
+                style: TextStyle(color: context.textSec),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.of(ctx).pop(ctrl.text);
+                }
+              },
+              child: Text(
+                context.tr('sign_in_continue'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _goToMain() {

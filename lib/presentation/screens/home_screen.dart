@@ -22,7 +22,6 @@ import 'place_details_screen.dart';
 import 'ai_trip_generator_screen.dart';
 import 'leaderboard_screen.dart';
 import 'map_view_screen.dart';
-import 'currency_converter_screen.dart';
 import 'public_transport_screen.dart';
 import 'journal_screen.dart';
 import 'offline_mode_screen.dart';
@@ -1035,15 +1034,6 @@ class _QuickAccessGrid extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const MapViewScreen()),
-        ),
-      ),
-      _QuickItem(
-        icon: Icons.attach_money_rounded,
-        label: 'quick_currency',
-        color: const Color(0xFF14B8A6),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CurrencyConverterScreen()),
         ),
       ),
       _QuickItem(

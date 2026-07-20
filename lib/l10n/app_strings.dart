@@ -56,7 +56,6 @@ class AppStrings {
     'quick_ai_trip': {'en': 'AI Trip', 'ar': 'رحلة ذكية'},
     'quick_best_time': {'en': 'Best Time', 'ar': 'أفضل وقت'},
     'quick_map': {'en': 'Map', 'ar': 'الخريطة'},
-    'quick_currency': {'en': 'Currency', 'ar': 'العملات'},
     'quick_transport': {'en': 'Transport', 'ar': 'المواصلات'},
     'quick_journal': {'en': 'Journal', 'ar': 'اليوميات'},
     'quick_ranking': {'en': 'Ranking', 'ar': 'الترتيب'},
@@ -681,6 +680,19 @@ class AppStrings {
     'login_just_exploring': {'en': 'Just exploring? ', 'ar': 'بتستكشف بس؟ '},
     'login_continue_guest': {'en': 'Continue as Guest', 'ar': 'ادخل كضيف'},
     'login_guest_name': {'en': 'Guest Explorer', 'ar': 'مستكشف زائر'},
+    'guest_dialog_title': {'en': 'Pick a display name', 'ar': 'اختار اسم للعرض'},
+    'guest_dialog_sub': {
+      'en':
+          'Other travellers will see this name on the leaderboard. You can change it later.',
+      'ar':
+          'المسافرين التانيين هيشوفوا الاسم ده في الترتيب. ممكن تغيّره بعدين.',
+    },
+    'sign_in_continue': {'en': 'Continue', 'ar': 'كمّل'},
+    'edit_name': {'en': 'Edit name', 'ar': 'غيّر الاسم'},
+    'edit_name_dialog_title': {
+      'en': 'Change your display name',
+      'ar': 'غيّر اسم العرض',
+    },
 
     'ob_title_1': {'en': 'Discover the Unseen', 'ar': 'اكتشف المخفي'},
     'ob_sub_1': {

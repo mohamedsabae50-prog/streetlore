@@ -40,6 +40,9 @@ Future<void> main() async {
   unawaited(placeProvider.loadPlaces());
   unawaited(tourProvider.loadTours());
 
+  final gamification = GamificationProvider();
+  gamification.syncWithAuth(auth);
+
   runApp(
     MultiProvider(
       providers: [
@@ -49,7 +52,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => TripProvider()),
         ChangeNotifierProvider<PlaceProvider>.value(value: placeProvider),
         ChangeNotifierProvider<TourProvider>.value(value: tourProvider),
-        ChangeNotifierProvider(create: (_) => GamificationProvider()),
+        ChangeNotifierProvider<GamificationProvider>.value(value: gamification),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => LeaderboardProvider()),
         ChangeNotifierProvider(create: (_) => GeofenceProvider()),

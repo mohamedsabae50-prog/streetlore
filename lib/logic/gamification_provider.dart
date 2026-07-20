@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/models/gamification_stats.dart';
 import '../core/services/supabase_service.dart';
+import 'auth_provider.dart';
 
 class GamificationProvider extends ChangeNotifier {
   GamificationStats _stats = GamificationStats(
@@ -17,6 +18,18 @@ class GamificationProvider extends ChangeNotifier {
 
   GamificationProvider() {
     _load();
+  }
+
+  void syncWithAuth(AuthProvider auth) {
+    if (auth.userId.isEmpty) return;
+    if (_stats.userId == auth.userId &&
+        _stats.userName == auth.userName) {
+      return;
+    }
+    setUserIdentity(
+      userId: auth.userId,
+      userName: auth.userName.isEmpty ? 'Explorer' : auth.userName,
+    );
   }
 
   Future<void> _load() async {
