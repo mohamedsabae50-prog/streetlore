@@ -63,8 +63,8 @@ class AppStrings {
     'quick_chat': {'en': 'Live Chat', 'ar': 'دردشة مباشرة'},
 
     'weather_feels': {
-      'en': 'feels {t}° · {h}% humidity',
-      'ar': 'الإحساس {t}° · رطوبة {h}%',
+      'en': 'feels {t}  · {h}% humidity',
+      'ar': 'الإحساس {t}  · رطوبة {h}%',
     },
     'weather_my_location': {'en': 'Use my location', 'ar': 'استخدم موقعي'},
     'location_denied': {

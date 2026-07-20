@@ -107,7 +107,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${d.tempC.round()}Â°C Â· ${d.description}',
+                  '${d.tempC.round()}°  ${d.description}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,
