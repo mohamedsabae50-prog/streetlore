@@ -136,6 +136,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (!mounted) return;
       setState(() {
         _compassHeadingDeg = deg;
+        if (!CompassService.instance.isActuallyWorking) {
+          _compassIconCtrl.repeat();
+        } else {
+          _compassIconCtrl.stop();
+          _compassIconCtrl.value = 0;
+        }
       });
     });
 
@@ -207,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           final pulseValue = _compassPulse.value;
           final pulseScale = 1.0 + pulseValue * 0.03;
           final glowAlpha = (pulseValue * 32).clamp(0, 32).toInt();
-          final hasCompass = CompassService.instance.isAvailable;
+          final hasCompass = CompassService.instance.isActuallyWorking;
           final angle = _compassHeadingDeg * (pi / 180.0);
           final dir = _compassDirLabel(_compassHeadingDeg);
           return Transform.translate(
