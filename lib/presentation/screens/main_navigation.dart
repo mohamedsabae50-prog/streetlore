@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/gamification_provider.dart';
+import '../../logic/journal_provider.dart';
 import '../../logic/streak_provider.dart';
 import 'home_screen.dart';
 import 'tours_screen.dart';
@@ -72,6 +73,7 @@ class _MainNavigationState extends State<MainNavigation>
       final auth = context.read<AuthProvider>();
       context.read<GamificationProvider>().syncWithAuth(auth);
       context.read<StreakProvider>().setUserId(auth.userId);
+      context.read<JournalProvider>().setUserId(auth.userId);
     });
   }
 
