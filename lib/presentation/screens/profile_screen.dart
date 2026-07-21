@@ -16,6 +16,7 @@ import '../../logic/gamification_provider.dart';
 import '../../logic/locale_provider.dart';
 import '../../logic/streak_provider.dart';
 import '../../l10n/app_strings.dart';
+import '../widgets/prayer_times_widget.dart';
 import 'login_screen.dart';
 import 'emergency_screen.dart';
 import 'map_view_screen.dart';
@@ -309,7 +310,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-          
+
+          SliverToBoxAdapter(
+            child: const PrayerTimesWidget(),
+          ),
+
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
