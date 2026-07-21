@@ -16,13 +16,13 @@ import '../../logic/gamification_provider.dart';
 import '../../logic/locale_provider.dart';
 import '../../logic/streak_provider.dart';
 import '../../l10n/app_strings.dart';
-import '../widgets/prayer_times_widget.dart';
 import 'login_screen.dart';
 import 'emergency_screen.dart';
 import 'map_view_screen.dart';
 import 'currency_converter_screen.dart';
 import 'public_transport_screen.dart';
 import 'journal_screen.dart';
+import 'prayer_times_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -310,10 +310,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-
-          SliverToBoxAdapter(
-            child: const PrayerTimesWidget(),
-          ),
 
           SliverToBoxAdapter(
             child: Padding(
@@ -617,6 +613,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const EmergencyScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _Div(),
+                  _ActionTile(
+                    icon: Icons.mosque_rounded,
+                    title: context.tr('prayer_times'),
+                    subtitle: context.tr('prayer_times_sub'),
+                    color: const Color(0xFF14B8A6),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PrayerTimesScreen(),
                         ),
                       );
                     },

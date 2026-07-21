@@ -129,6 +129,11 @@ class AppStrings {
       'en': 'Hospitals, embassies, hotlines',
       'ar': 'مستشفيات وسفارات وخطوط ساخنة',
     },
+    'prayer_times': {'en': 'Prayer Times', 'ar': 'مواقيت الصلاة'},
+    'prayer_times_sub': {
+      'en': 'Daily prayer schedule for Alexandria',
+      'ar': 'مواعيد الصلاة اليومية للإسكندرية',
+    },
     'map_view': {'en': 'Map View', 'ar': 'عرض الخريطة'},
     'map_view_sub': {
       'en': 'All places on interactive map',

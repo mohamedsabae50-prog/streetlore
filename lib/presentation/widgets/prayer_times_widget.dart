@@ -1,21 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/services/prayer_times_service.dart';
 
-class PrayerTimesWidget extends StatefulWidget {
+class PrayerTimesWidget extends StatelessWidget {
   const PrayerTimesWidget({super.key});
-
-  @override
-  State<PrayerTimesWidget> createState() => _PrayerTimesWidgetState();
-}
-
-class _PrayerTimesWidgetState extends State<PrayerTimesWidget> {
-  late PrayerTimes _times;
-
-  @override
-  void initState() {
-    super.initState();
-    _times = PrayerTimesService.instance.compute();
-  }
 
   String _formatTime(DateTime t) {
     final h24 = t.hour;
@@ -30,17 +17,52 @@ class _PrayerTimesWidgetState extends State<PrayerTimesWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final current = _times.currentPrayer;
-    final nextName = _times.nextPrayerName();
-    final remaining = _times.timeUntilNext;
+    return FutureBuilder<PrayerTimes>(
+      future: PrayerTimesService.instance.getTimes(),
+      builder: (context, snap) {
+        if (!snap.hasData) {
+          return Container(
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: const EdgeInsets.all(18),
+            height: 130,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF14B8A6), Color(0xFF0E7490)],
+              ),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2.5,
+              ),
+            ),
+          );
+        }
+        return _buildContent(context, snap.data!);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context, PrayerTimes times) {
+    final current = times.currentPrayer;
+    final nextName = times.nextPrayerName();
+    final remaining = times.timeUntilNext;
+    final hh = remaining.inHours;
+    final mm = remaining.inMinutes % 60;
+    final remainingStr = hh > 0
+        ? '${hh}h ${mm}m'
+        : '${mm}m';
 
     final prayers = [
-      ('Fajr', _times.fajr),
-      ('Sunrise', _times.sunrise),
-      ('Dhuhr', _times.dhuhr),
-      ('Asr', _times.asr),
-      ('Maghrib', _times.maghrib),
-      ('Isha', _times.isha),
+      ('Fajr', times.fajr),
+      ('Sunrise', times.sunrise),
+      ('Dhuhr', times.dhuhr),
+      ('Asr', times.asr),
+      ('Maghrib', times.maghrib),
+      ('Isha', times.isha),
     ];
 
     return Container(
@@ -94,7 +116,7 @@ class _PrayerTimesWidgetState extends State<PrayerTimesWidget> {
                       ),
                     ),
                     Text(
-                      'Alexandria  $nextName  $remaining',
+                      'Alexandria · $nextName · $remainingStr',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
