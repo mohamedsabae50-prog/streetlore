@@ -29,6 +29,7 @@ import 'journal_screen.dart';
 import 'offline_mode_screen.dart';
 import 'geofencing_settings_screen.dart';
 import 'best_time_screen.dart';
+import 'prayer_times_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -401,6 +402,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    context.watch<PlaceProvider>();
     final filtered = _filtered;
     final isSearching = _isSearching;
 
@@ -1144,6 +1146,15 @@ class _QuickAccessGrid extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const OfflineModeScreen()),
+        ),
+      ),
+      _QuickItem(
+        icon: Icons.mosque_rounded,
+        label: 'quick_prayer',
+        color: const Color(0xFF14B8A6),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PrayerTimesScreen()),
         ),
       ),
     ];

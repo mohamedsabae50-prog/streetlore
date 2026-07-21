@@ -61,6 +61,7 @@ class AppStrings {
     'quick_ranking': {'en': 'Ranking', 'ar': 'الترتيب'},
     'quick_offline': {'en': 'Offline', 'ar': 'أوفلاين'},
     'quick_chat': {'en': 'Live Chat', 'ar': 'دردشة مباشرة'},
+    'quick_prayer': {'en': 'Prayer', 'ar': 'الصلاة'},
 
     'weather_feels': {
       'en': 'feels {t}  · {h}% humidity',

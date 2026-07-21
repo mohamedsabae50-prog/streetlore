@@ -18,9 +18,14 @@ class _PrayerTimesWidgetState extends State<PrayerTimesWidget> {
   }
 
   String _formatTime(DateTime t) {
-    final h = t.hour.toString().padLeft(2, '0');
+    final h24 = t.hour;
+    final h12 = h24 == 0
+        ? 12
+        : (h24 > 12 ? h24 - 12 : h24);
+    final ampm = h24 >= 12 ? 'PM' : 'AM';
+    final hh = h12.toString().padLeft(2, '0');
     final m = t.minute.toString().padLeft(2, '0');
-    return '$h:$m';
+    return '$hh:$m $ampm';
   }
 
   @override

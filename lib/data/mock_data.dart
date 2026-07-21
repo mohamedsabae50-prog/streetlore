@@ -80,10 +80,10 @@ class MockData {
     return result;
   }
 
-  static List<PlaceModel> getFeatured() => _seedPlaces.take(5).toList();
+  static List<PlaceModel> getFeatured() => fallbackPlaces.take(5).toList();
 
   static List<PlaceModel> getNearby(PlaceModel current) {
-    return _seedPlaces
+    return fallbackPlaces
         .where((p) =>
             p.id != current.id &&
             (p.lat - current.lat).abs() < 0.05 &&
@@ -105,7 +105,7 @@ class MockData {
     return hour >= 9 && hour < 18;
   }
 
-  static List<PlaceModel> get places => _seedPlaces;
+  static List<PlaceModel> get places => fallbackPlaces;
 
   static List<ItineraryModel> get tours => _seedTours;
 }
@@ -125,5 +125,167 @@ class MockReview {
   });
 }
 
-const List<PlaceModel> _seedPlaces = [];
+const List<PlaceModel> fallbackPlaces = [
+  PlaceModel(
+    id: 'fallback_qaitbay',
+    name: 'Citadel of Qaitbay',
+    description:
+        'A 15th-century defensive fortress located on the Mediterranean sea coast. Built upon the ruins of the ancient Lighthouse of Alexandria.',
+    imageUrl:
+        'https://images.unsplash.com/photo-1604608672516-f1b9b1d1d1b1?w=900',
+    rating: 4.7,
+    category: 'Historical',
+    lat: 31.2141,
+    lng: 29.8856,
+    address: 'Asafra, Alexandria',
+    openHours: '9:00 AM - 5:00 PM',
+    reviewCount: 1240,
+    priceLevel: PriceLevel.cheap,
+    priceNote: 'Adults',
+    priceLocalEgp: 20,
+    priceForeignerEgp: 80,
+    isHiddenGem: false,
+  ),
+  PlaceModel(
+    id: 'fallback_biblio',
+    name: 'Bibliotheca Alexandrina',
+    description:
+        'A major library and cultural center on the shore of the Mediterranean. A revival of the ancient Library of Alexandria.',
+    imageUrl:
+        'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=900',
+    rating: 4.8,
+    category: 'Culture',
+    lat: 31.2092,
+    lng: 29.9085,
+    address: 'El Shatby, Alexandria',
+    openHours: '10:00 AM - 7:00 PM',
+    reviewCount: 2890,
+    priceLevel: PriceLevel.free,
+    priceNote: 'Free entry',
+    priceLocalEgp: 0,
+    priceForeignerEgp: 0,
+    isHiddenGem: false,
+  ),
+  PlaceModel(
+    id: 'fallback_pompey',
+    name: 'Pompey Pillar',
+    description:
+        'A Roman triumphal column in Alexandria. The largest of its kind constructed outside of Rome and the imperial capitals.',
+    imageUrl:
+        'https://images.unsplash.com/photo-1553913861-c0fddf2619ee?w=900',
+    rating: 4.5,
+    category: 'Historical',
+    lat: 31.1825,
+    lng: 29.8967,
+    address: 'Carmous, Alexandria',
+    openHours: '9:00 AM - 5:00 PM',
+    reviewCount: 980,
+    priceLevel: PriceLevel.cheap,
+    priceNote: 'Adults',
+    priceLocalEgp: 15,
+    priceForeignerEgp: 60,
+    isHiddenGem: false,
+  ),
+  PlaceModel(
+    id: 'fallback_catacombs',
+    name: 'Catacombs of Kom El Shoqafa',
+    description:
+        'A historical archaeological site considered one of the Seven Wonders of the Middle Ages. Multi-level labyrinth with chambers.',
+    imageUrl:
+        'https://images.unsplash.com/photo-1568322445389-f64ac2515020?w=900',
+    rating: 4.6,
+    category: 'Historical',
+    lat: 31.1789,
+    lng: 29.8922,
+    address: 'Carmous, Alexandria',
+    openHours: '9:00 AM - 4:00 PM',
+    reviewCount: 1450,
+    priceLevel: PriceLevel.cheap,
+    priceNote: 'Adults',
+    priceLocalEgp: 20,
+    priceForeignerEgp: 80,
+    isHiddenGem: false,
+  ),
+  PlaceModel(
+    id: 'fallback_corniche',
+    name: 'Alexandria Corniche',
+    description:
+        'A scenic waterfront promenade along the Mediterranean Sea. Perfect for sunset walks with stunning views.',
+    imageUrl:
+        'https://images.unsplash.com/photo-1591202913800-b4eddb931f06?w=900',
+    rating: 4.7,
+    category: 'Streets',
+    lat: 31.2460,
+    lng: 29.9660,
+    address: 'Corniche, Alexandria',
+    openHours: 'Open 24 hours',
+    reviewCount: 3200,
+    priceLevel: PriceLevel.free,
+    priceNote: 'Free',
+    priceLocalEgp: 0,
+    priceForeignerEgp: 0,
+    isHiddenGem: false,
+  ),
+  PlaceModel(
+    id: 'fallback_montaza',
+    name: 'Montaza Palace Gardens',
+    description:
+        'Beautiful royal gardens with the Khedive Ismail palace. Green oasis by the sea with stunning views.',
+    imageUrl:
+        'https://images.unsplash.com/photo-1604999333679-b86d54738315?w=900',
+    rating: 4.5,
+    category: 'Nature',
+    lat: 31.2890,
+    lng: 30.0160,
+    address: 'Montaza, Alexandria',
+    openHours: '8:00 AM - 10:00 PM',
+    reviewCount: 1850,
+    priceLevel: PriceLevel.free,
+    priceNote: 'Garden free, palace 25 EGP',
+    priceLocalEgp: 0,
+    priceForeignerEgp: 25,
+    isHiddenGem: false,
+  ),
+  PlaceModel(
+    id: 'fallback_attarine',
+    name: 'Attarine Mosque',
+    description:
+        'A historic mosque in the old heart of Alexandria. Beautiful Mamluk-era architecture with intricate details.',
+    imageUrl:
+        'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=900',
+    rating: 4.3,
+    category: 'Mosques',
+    lat: 31.1990,
+    lng: 29.8970,
+    address: 'Attarine, Alexandria',
+    openHours: '9:00 AM - 9:00 PM',
+    reviewCount: 420,
+    priceLevel: PriceLevel.free,
+    priceNote: 'Free',
+    priceLocalEgp: 0,
+    priceForeignerEgp: 0,
+    isHiddenGem: true,
+  ),
+  PlaceModel(
+    id: 'fallback_stmark',
+    name: 'St. Mark Coptic Cathedral',
+    description:
+        'The historic seat of the Coptic Pope in Alexandria. Beautiful modern architecture with ancient Coptic heritage.',
+    imageUrl:
+        'https://images.unsplash.com/photo-1545987796-200677ee1011?w=900',
+    rating: 4.6,
+    category: 'Churches',
+    lat: 31.2056,
+    lng: 29.9110,
+    address: 'Raml Station, Alexandria',
+    openHours: '8:00 AM - 8:00 PM',
+    reviewCount: 380,
+    priceLevel: PriceLevel.free,
+    priceNote: 'Free',
+    priceLocalEgp: 0,
+    priceForeignerEgp: 0,
+    isHiddenGem: false,
+  ),
+];
+
 const List<ItineraryModel> _seedTours = [];

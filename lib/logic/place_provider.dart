@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../data/mock_data.dart' show fallbackPlaces;
 import '../data/models/place_model.dart';
 
 class PlaceProvider extends ChangeNotifier {
@@ -38,13 +39,26 @@ class PlaceProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final res = await _client.from('places').select().order('id');
-      _places = (res as List<dynamic>)
+      final res = await _client
+          .from('places')
+          .select()
+          .order('id')
+          .timeout(const Duration(seconds: 10));
+      final list = (res as List<dynamic>)
           .map((e) => _placeFromSupabase(e as Map<String, dynamic>))
           .toList();
-      _error = null;
-    } catch (e) {
+      debugPrint('PlaceProvider: loaded ${list.length} places from Supabase');
+      if (list.isEmpty) {
+        _places = List<PlaceModel>.from(fallbackPlaces);
+        _error = null;
+      } else {
+        _places = list;
+        _error = null;
+      }
+    } catch (e, st) {
+      debugPrint('PlaceProvider: loadPlaces failed, using fallback: $e\n$st');
       _error = 'Failed to load places: $e';
+      _places = List<PlaceModel>.from(fallbackPlaces);
     } finally {
       _loading = false;
       notifyListeners();
