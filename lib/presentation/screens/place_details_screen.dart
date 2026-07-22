@@ -9,6 +9,7 @@ import '../../core/widgets/shimmer_image.dart';
 import '../../data/mock_data.dart';
 import '../../data/models/place_model.dart';
 import '../../logic/gamification_provider.dart';
+import '../../logic/achievement_provider.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/review_provider.dart';
@@ -420,9 +421,12 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     final gamification =
                                         context.read<GamificationProvider>();
                                     final messenger = ScaffoldMessenger.of(context);
+                                    final achievements =
+                                        context.read<AchievementProvider>();
                                     final newStreak =
                                         await streak.registerVisit();
                                     await gamification.applyAction('check_in');
+                                    achievements.refreshFromStats();
                                     final milestoneBadge = await gamification
                                         .checkStreakMilestone(newStreak);
                                     if (milestoneBadge != null) {

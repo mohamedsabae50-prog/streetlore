@@ -138,6 +138,18 @@ class GamificationProvider extends ChangeNotifier {
     return badge;
   }
 
+  Future<void> addBadgeIfMissing(Badge badge) async {
+    if (_stats.badges.any((b) => b.id == badge.id)) return;
+    _stats = _stats.copyWith(
+      badges: [..._stats.badges, badge],
+      totalPoints: _stats.totalPoints + badge.pointsAwarded,
+      level: GamificationStats.levelForPoints(
+          _stats.totalPoints + badge.pointsAwarded),
+    );
+    await _save();
+    notifyListeners();
+  }
+
   void setUserIdentity({
     required String userId,
     required String userName,

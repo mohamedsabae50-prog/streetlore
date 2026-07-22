@@ -62,6 +62,7 @@ class AppStrings {
     'quick_offline': {'en': 'Offline', 'ar': 'أوفلاين'},
     'quick_chat': {'en': 'Live Chat', 'ar': 'دردشة مباشرة'},
     'quick_prayer': {'en': 'Prayer', 'ar': 'الصلاة'},
+    'quick_badges': {'en': 'Badges', 'ar': 'إنجازات'},
 
     'weather_feels': {
       'en': 'feels {t}  · {h}% humidity',

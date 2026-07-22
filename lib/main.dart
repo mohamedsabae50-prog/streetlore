@@ -16,6 +16,7 @@ import 'logic/locale_provider.dart';
 import 'logic/place_photos_provider.dart';
 import 'logic/streak_provider.dart';
 import 'logic/journal_provider.dart';
+import 'logic/achievement_provider.dart';
 import 'presentation/screens/splash_screen.dart';
 import 'logic/trip_provider.dart';
 import 'logic/review_provider.dart';
@@ -43,6 +44,15 @@ Future<void> main() async {
   final gamification = GamificationProvider();
   gamification.syncWithAuth(auth);
 
+  final streak = StreakProvider();
+  streak.setUserId(auth.userId);
+  final achievements = AchievementProvider(
+    auth: auth,
+    gam: gamification,
+    places: placeProvider,
+    streak: streak,
+  );
+
   runApp(
     MultiProvider(
       providers: [
@@ -58,9 +68,10 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => GeofenceProvider()),
         ChangeNotifierProvider(create: (_) => OfflineProvider()),
         ChangeNotifierProvider(create: (_) => PlacePhotosProvider()),
-        ChangeNotifierProvider(create: (_) => StreakProvider()),
+        ChangeNotifierProvider<StreakProvider>.value(value: streak),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => JournalProvider()),
+        ChangeNotifierProvider<AchievementProvider>.value(value: achievements),
       ],
       child: const StreetloreApp(),
     ),

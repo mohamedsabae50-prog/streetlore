@@ -26,6 +26,7 @@ import 'journal_screen.dart';
 import 'offline_mode_screen.dart';
 import 'geofencing_settings_screen.dart';
 import 'best_time_screen.dart';
+import 'achievements_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -903,6 +904,15 @@ class _QuickAccessGrid extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const OfflineModeScreen()),
+        ),
+      ),
+      _QuickItem(
+        icon: Icons.emoji_events_rounded,
+        label: 'quick_badges',
+        color: const Color(0xFFFFB347),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AchievementsScreen()),
         ),
       ),
     ];

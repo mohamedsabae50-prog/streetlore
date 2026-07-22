@@ -13,6 +13,7 @@ import '../../logic/tour_provider.dart';
 import '../../logic/theme_provider.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/gamification_provider.dart';
+import '../../logic/achievement_provider.dart';
 import '../../logic/locale_provider.dart';
 import '../../logic/streak_provider.dart';
 import '../../l10n/app_strings.dart';
@@ -23,6 +24,7 @@ import 'currency_converter_screen.dart';
 import 'public_transport_screen.dart';
 import 'journal_screen.dart';
 import 'prayer_times_screen.dart';
+import 'achievements_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -514,6 +516,162 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                     ],
+                  );
+                },
+              ),
+            ),
+          ),
+
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: Consumer<AchievementProvider>(
+                builder: (context, ach, _) {
+                  final recent = ach.recentUnlocked(limit: 3);
+                  final ratio = ach.completionRatio;
+                  final unlocked = ach.totalUnlocked;
+                  final total = ach.totalAvailable;
+                  return GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AchievementsScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFFFFB347),
+                            Color(0xFFFF7E5F),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF7E5F)
+                                .withValues(alpha: 0.3),
+                            blurRadius: 14,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.22),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.emoji_events_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Achievements',
+                                      style: TextStyle(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.85),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.6,
+                                      ),
+                                    ),
+                                    Text(
+                                      '$unlocked / $total unlocked',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: ratio,
+                              minHeight: 8,
+                              backgroundColor:
+                                  Colors.white.withValues(alpha: 0.2),
+                              valueColor:
+                                  const AlwaysStoppedAnimation(Colors.white),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (recent.isEmpty)
+                            Text(
+                              'Start your collection',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                          else
+                            Row(
+                              children: [
+                                for (final def in recent) ...[
+                                  Container(
+                                    width: 38,
+                                    height: 38,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white
+                                          .withValues(alpha: 0.22),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      def.icon,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Expanded(
+                                  child: Text(
+                                    'View all',
+                                    textAlign: TextAlign.end,
+                                    style: TextStyle(
+                                      color: Colors.white
+                                          .withValues(alpha: 0.9),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
                   );
                 },
               ),
