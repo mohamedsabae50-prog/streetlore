@@ -27,6 +27,7 @@ import 'offline_mode_screen.dart';
 import 'geofencing_settings_screen.dart';
 import 'best_time_screen.dart';
 import 'achievements_screen.dart';
+import 'walking_routes_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -913,6 +914,15 @@ class _QuickAccessGrid extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const AchievementsScreen()),
+        ),
+      ),
+      _QuickItem(
+        icon: Icons.directions_walk_rounded,
+        label: 'quick_routes',
+        color: const Color(0xFFEC4899),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const WalkingRoutesScreen()),
         ),
       ),
     ];

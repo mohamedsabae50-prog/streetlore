@@ -63,6 +63,7 @@ class AppStrings {
     'quick_chat': {'en': 'Live Chat', 'ar': 'دردشة مباشرة'},
     'quick_prayer': {'en': 'Prayer', 'ar': 'الصلاة'},
     'quick_badges': {'en': 'Badges', 'ar': 'إنجازات'},
+    'quick_routes': {'en': 'Routes', 'ar': 'مسارات'},
 
     'weather_feels': {
       'en': 'feels {t}  · {h}% humidity',
