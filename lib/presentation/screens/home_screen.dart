@@ -22,7 +22,6 @@ import 'place_details_screen.dart';
 import 'ai_trip_generator_screen.dart';
 import 'leaderboard_screen.dart';
 import 'map_view_screen.dart';
-import 'public_transport_screen.dart';
 import 'journal_screen.dart';
 import 'offline_mode_screen.dart';
 import 'geofencing_settings_screen.dart';
@@ -877,15 +876,6 @@ class _QuickAccessGrid extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const MapViewScreen()),
-        ),
-      ),
-      _QuickItem(
-        icon: Icons.directions_transit_rounded,
-        label: 'quick_transport',
-        color: const Color(0xFFEC4899),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const PublicTransportScreen()),
         ),
       ),
       _QuickItem(
