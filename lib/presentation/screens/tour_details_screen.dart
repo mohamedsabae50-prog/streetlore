@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -142,10 +143,15 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                         child: (toHeroContext.widget as Hero).child,
                       );
                     },
-                    child: Image.network(
-                      tour.imageUrl,
+                    child: CachedNetworkImage(
+                      imageUrl: tour.imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
+                      memCacheWidth: 1080,
+                      memCacheHeight: 1080,
+                      placeholder: (_, __) => Container(
+                        color: AppColors.primaryLight,
+                      ),
+                      errorWidget: (context, error, stackTrace) => Container(
                         color: AppColors.primaryLight,
                       ),
                     ),

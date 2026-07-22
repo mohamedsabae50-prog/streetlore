@@ -47,7 +47,6 @@ class PlaceProvider extends ChangeNotifier {
       final list = (res as List<dynamic>)
           .map((e) => _placeFromSupabase(e as Map<String, dynamic>))
           .toList();
-      debugPrint('PlaceProvider: loaded ${list.length} places from Supabase');
       if (list.isEmpty) {
         _places = List<PlaceModel>.from(fallbackPlaces);
         _error = null;
@@ -55,8 +54,7 @@ class PlaceProvider extends ChangeNotifier {
         _places = list;
         _error = null;
       }
-    } catch (e, st) {
-      debugPrint('PlaceProvider: loadPlaces failed, using fallback: $e\n$st');
+    } catch (e) {
       _error = 'Failed to load places: $e';
       _places = List<PlaceModel>.from(fallbackPlaces);
     } finally {

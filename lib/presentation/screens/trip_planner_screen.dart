@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../logic/trip_provider.dart';
@@ -95,11 +96,19 @@ class TripPlannerScreen extends StatelessWidget {
                         contentPadding: const EdgeInsets.all(12),
                         leading: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            place.imageUrl,
+                          child: CachedNetworkImage(
+                            imageUrl: place.imageUrl,
                             width: 60,
                             height: 60,
                             fit: BoxFit.cover,
+                            memCacheWidth: 120,
+                            memCacheHeight: 120,
+                            placeholder: (_, __) => Container(
+                              width: 60, height: 60, color: context.bgAlt,
+                            ),
+                            errorWidget: (_, __, ___) => Container(
+                              width: 60, height: 60, color: context.bgAlt,
+                            ),
                           ),
                         ),
                         title: Text(

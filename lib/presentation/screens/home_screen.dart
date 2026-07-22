@@ -1,12 +1,9 @@
-import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:provider/provider.dart';
 import 'trip_planner_screen.dart';
 import '../../core/animations/app_animations.dart';
-import '../../core/services/compass_service.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../logic/trip_provider.dart';
@@ -19,6 +16,7 @@ import '../../logic/tour_provider.dart';
 import '../widgets/place_card.dart';
 import '../widgets/featured_card.dart';
 import '../widgets/weather_widget.dart';
+import '../widgets/compass_card.dart';
 import '../../l10n/app_strings.dart';
 import 'place_details_screen.dart';
 import 'ai_trip_generator_screen.dart';
@@ -51,17 +49,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late final AnimationController _headerCtrl;
   late final Animation<double> _headerFade;
 
-  late final AnimationController _compassCtrl;
-  late final Animation<double> _compassScale;
-  late final Animation<double> _compassRotation;
-  late final Animation<double> _compassOffset;
-  late final AnimationController _compassPulseCtrl;
-  late final Animation<double> _compassPulse;
-  late final AnimationController _compassIconCtrl;
-  late final Animation<double> _compassIconRotation;
-  double _compassHeadingDeg = 0;
-  StreamSubscription<double>? _compassSub;
-
   final List<_CategoryItem> _categories = const [
     _CategoryItem(label: 'All', icon: Icons.apps_rounded),
     _CategoryItem(label: 'Historical', icon: Icons.account_balance_rounded),
@@ -85,66 +72,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       end: 1.0,
     ).animate(CurvedAnimation(parent: _headerCtrl, curve: Curves.easeIn));
 
-    _compassCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 950),
-    )..forward();
-    _compassScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.65, end: 1.1), weight: 55),
-      TweenSequenceItem(tween: Tween(begin: 1.1, end: 1.0), weight: 45),
-    ]).animate(CurvedAnimation(parent: _compassCtrl, curve: Curves.easeOut));
-
-    _compassRotation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: -0.45, end: 0.35), weight: 45),
-      TweenSequenceItem(tween: Tween(begin: 0.35, end: -0.15), weight: 30),
-      TweenSequenceItem(tween: Tween(begin: -0.15, end: 0.0), weight: 25),
-    ]).animate(CurvedAnimation(parent: _compassCtrl, curve: Curves.easeOut));
-
-    _compassOffset = Tween<double>(begin: 26, end: 0).animate(
-      CurvedAnimation(parent: _compassCtrl, curve: Curves.easeOutQuint),
-    );
-
-    _compassPulseCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-    _compassPulse =
-        TweenSequence<double>([
-          TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 50),
-          TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 50),
-        ]).animate(
-          CurvedAnimation(parent: _compassPulseCtrl, curve: Curves.easeInOut),
-        );
-
-    _compassIconCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    );
-    _compassIconRotation = Tween<double>(
-      begin: 0.0,
-      end: 2 * pi,
-    ).animate(CurvedAnimation(parent: _compassIconCtrl, curve: Curves.linear));
-
-    Future.delayed(const Duration(milliseconds: 950), () {
-      if (mounted) {
-        _compassPulseCtrl.repeat(reverse: true);
-      }
-    });
-
-    CompassService.instance.start();
-    _compassSub = CompassService.instance.headingStream.listen((deg) {
-      if (!mounted) return;
-      setState(() {
-        _compassHeadingDeg = deg;
-        if (!CompassService.instance.isActuallyWorking) {
-          _compassIconCtrl.repeat();
-        } else {
-          _compassIconCtrl.stop();
-          _compassIconCtrl.value = 0;
-        }
-      });
-    });
-
     _searchFocus.addListener(
       () => setState(() => _isSearchFocused = _searchFocus.hasFocus),
     );
@@ -159,10 +86,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _searchFocus.dispose();
     _scrollCtrl.dispose();
     _headerCtrl.dispose();
-    _compassCtrl.dispose();
-    _compassPulseCtrl.dispose();
-    _compassIconCtrl.dispose();
-    _compassSub?.cancel();
     super.dispose();
   }
 
@@ -201,166 +124,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return result;
   }
 
-  Widget _buildCompassIntro() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: AnimatedBuilder(
-        animation: Listenable.merge([
-          _compassCtrl,
-          _compassPulseCtrl,
-        ]),
-        builder: (context, _) {
-          final pulseValue = _compassPulse.value;
-          final pulseScale = 1.0 + pulseValue * 0.03;
-          final glowAlpha = (pulseValue * 32).clamp(0, 32).toInt();
-          final hasCompass = CompassService.instance.isActuallyWorking;
-          final angle = _compassHeadingDeg * (pi / 180.0);
-          final dir = _compassDirLabel(_compassHeadingDeg);
-          return Transform.translate(
-            offset: Offset(0, _compassOffset.value),
-            child: Transform.rotate(
-              angle: _compassRotation.value,
-              child: Transform.scale(
-                scale: _compassScale.value * pulseScale,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: context.cardColor,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: context.textSec.withValues(alpha: 0.1),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 58,
-                        height: 58,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF4F46E5), Color(0xFF22C55E)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color.fromARGB(glowAlpha, 79, 70, 229),
-                              blurRadius: 16 + pulseValue * 8,
-                              spreadRadius: pulseValue * 2,
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Positioned(
-                              top: 4,
-                              child: Text(
-                                'N',
-                                style: TextStyle(
-                                  color: Colors.white
-                                      .withValues(alpha: 0.95),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                            Center(
-                              child: Transform.rotate(
-                                angle: hasCompass
-                                    ? -angle
-                                    : _compassIconRotation.value,
-                                child: const Icon(
-                                  Icons.navigation_rounded,
-                                  color: Colors.white,
-                                  size: 26,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  context.tr('compass_title'),
-                                  style: TextStyle(
-                                    color: context.textPri,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                                if (hasCompass) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF22C55E)
-                                          .withValues(alpha: 0.18),
-                                      borderRadius:
-                                          BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      dir,
-                                      style: const TextStyle(
-                                        color: Color(0xFF22C55E),
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              hasCompass
-                                  ? '${_compassHeadingDeg.round()}° · ${context.tr('compass_sub')}'
-                                  : context.tr('compass_sub'),
-                              style: TextStyle(
-                                color: context.textSec,
-                                fontSize: 12,
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  String _compassDirLabel(double deg) {
-    const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-    final i = ((deg % 360) / 45).round() % 8;
-    return dirs[i];
-  }
+  Widget _buildCompassIntro() => const CompassCard();
 
   void _openPlace(PlaceModel place) {
     Navigator.push(
@@ -514,8 +278,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            _buildCompassIntro(),
-            const WeatherWidget(),
+            RepaintBoundary(child: _buildCompassIntro()),
+            const RepaintBoundary(child: WeatherWidget()),
 
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -684,20 +448,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       offset: Offset(0, -o * 0.25),
                       child: Opacity(
                         opacity: (1.0 - o / 350).clamp(0.0, 1.0),
-                        child: staticChild,
+                        child: RepaintBoundary(child: staticChild),
                       ),
                     );
                   },
-                  child: SizedBox(
-                    height: 240,
-                    child: ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.only(left: 20, right: 6),
-                      itemCount: displayedPlaces.length,
-                      itemBuilder: (context, i) => FeaturedCard(
-                        place: displayedPlaces[i],
-                        onTap: () => _openPlace(displayedPlaces[i]),
+                  child: RepaintBoundary(
+                    child: SizedBox(
+                      height: 240,
+                      child: ListView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.only(left: 20, right: 6),
+                        itemCount: displayedPlaces.length,
+                        itemBuilder: (context, i) => FeaturedCard(
+                          place: displayedPlaces[i],
+                          onTap: () => _openPlace(displayedPlaces[i]),
+                        ),
                       ),
                     ),
                   ),
@@ -814,7 +580,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
 
-          SliverToBoxAdapter(child: _QuickAccessGrid()),
+          SliverToBoxAdapter(
+            child: RepaintBoundary(child: _QuickAccessGrid()),
+          ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),

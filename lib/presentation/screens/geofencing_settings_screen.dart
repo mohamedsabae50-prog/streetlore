@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
@@ -146,10 +147,13 @@ class _PlaceToggle extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              place.imageUrl,
+            child: CachedNetworkImage(
+              imageUrl: place.imageUrl,
               width: 50, height: 50, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(width: 50, height: 50, color: context.bgAlt),
+              memCacheWidth: 100,
+              memCacheHeight: 100,
+              placeholder: (_, __) => Container(width: 50, height: 50, color: context.bgAlt),
+              errorWidget: (_, __, ___) => Container(width: 50, height: 50, color: context.bgAlt),
             ),
           ),
           const SizedBox(width: 12),

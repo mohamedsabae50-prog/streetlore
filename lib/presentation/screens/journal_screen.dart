@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -371,10 +372,15 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
                       contentPadding: EdgeInsets.zero,
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          p.imageUrl,
+                        child: CachedNetworkImage(
+                          imageUrl: p.imageUrl,
                           width: 48, height: 48, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+                          memCacheWidth: 96,
+                          memCacheHeight: 96,
+                          placeholder: (_, __) => Container(
+                            width: 48, height: 48, color: context.bgAlt,
+                          ),
+                          errorWidget: (_, __, ___) => Container(
                             width: 48, height: 48, color: context.bgAlt,
                             child: Icon(Icons.image_rounded, color: context.hintColor),
                           ),

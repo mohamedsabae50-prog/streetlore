@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-class ShimmerImage extends StatefulWidget {
+class ShimmerImage extends StatelessWidget {
   final String imageUrl;
   final BoxFit fit;
   final BorderRadius? borderRadius;
@@ -20,70 +21,32 @@ class ShimmerImage extends StatefulWidget {
   });
 
   @override
-  State<ShimmerImage> createState() => _ShimmerImageState();
-}
-
-class _ShimmerImageState extends State<ShimmerImage> {
-  late final ImageProvider _provider;
-  late final ImageStream _stream;
-  bool _loaded = false;
-  bool _failed = false;
-  ImageStreamListener? _listener;
-
-  @override
-  void initState() {
-    super.initState();
-    _provider = NetworkImage(widget.imageUrl);
-    _stream = _provider.resolve(const ImageConfiguration());
-    _listener = ImageStreamListener(
-      (_, __) {
-        if (mounted) setState(() => _loaded = true);
-      },
-      onError: (_, __) {
-        if (mounted) setState(() => _failed = true);
-      },
-    );
-    _stream.addListener(_listener!);
-  }
-
-  @override
-  void dispose() {
-    _stream.removeListener(_listener!);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final radius = widget.borderRadius ?? BorderRadius.zero;
-    final clip = ClipRRect(
+    final radius = borderRadius ?? BorderRadius.zero;
+    return ClipRRect(
       borderRadius: radius,
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 350),
-        switchInCurve: Curves.easeOut,
-        child: _failed
-            ? _Fallback(
-                key: const ValueKey('fallback'),
-                icon: widget.fallbackIcon,
-                color: widget.fallbackColor ?? Colors.grey,
-                iconSize: widget.fallbackIconSize,
-              )
-            : _loaded
-                ? Image(
-                    key: const ValueKey('image'),
-                    image: _provider,
-                    fit: widget.fit,
-                    gaplessPlayback: true,
-                  )
-                : Shimmer.fromColors(
-                    key: const ValueKey('shimmer'),
-                    baseColor: const Color(0xFFE2E8F0),
-                    highlightColor: const Color(0xFFF8FAFC),
-                    period: const Duration(milliseconds: 1400),
-                    child: Container(color: const Color(0xFFE2E8F0)),
-                  ),
+      child: CachedNetworkImage(
+        imageUrl: imageUrl,
+        fit: fit,
+        fadeInDuration: const Duration(milliseconds: 220),
+        fadeOutDuration: const Duration(milliseconds: 150),
+        memCacheWidth: 720,
+        memCacheHeight: 720,
+        maxWidthDiskCache: 1280,
+        maxHeightDiskCache: 1280,
+        placeholder: (context, url) => Shimmer.fromColors(
+          baseColor: const Color(0xFFE2E8F0),
+          highlightColor: const Color(0xFFF8FAFC),
+          period: const Duration(milliseconds: 1400),
+          child: Container(color: const Color(0xFFE2E8F0)),
+        ),
+        errorWidget: (context, url, error) => _Fallback(
+          icon: fallbackIcon,
+          color: fallbackColor ?? Colors.grey,
+          iconSize: fallbackIconSize,
+        ),
       ),
     );
-    return clip;
   }
 }
 
@@ -92,7 +55,6 @@ class _Fallback extends StatelessWidget {
   final Color color;
   final double iconSize;
   const _Fallback({
-    super.key,
     required this.icon,
     required this.color,
     required this.iconSize,
