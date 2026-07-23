@@ -87,8 +87,8 @@ class PlacePhotosSection extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     context.tr('photos'),
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: context.textPri,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
@@ -173,7 +173,7 @@ class PlacePhotosSection extends StatelessWidget {
             context.tr('first_photo'),
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: AppColors.textPrimary.withValues(alpha: 0.7),
+              color: context.textPri.withValues(alpha: 0.7),
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
