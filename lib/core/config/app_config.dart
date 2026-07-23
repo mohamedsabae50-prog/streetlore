@@ -8,7 +8,7 @@ class AppConfig {
   static const String geminiApiKey =
       'AQ.Ab8RN6Jfsh4TWPHBZBuBdSJjbDs63KJXfNVvzqvYm2_OyAcZpA';
   static const String geminiModel = 'gemini-2.0-flash';
-  static const bool geminiEnabled = true;
+  static const bool geminiEnabled = false;
   static const bool newFeaturesEnabled = true;
   static const int defaultGeofenceRadius = 500;
 }
