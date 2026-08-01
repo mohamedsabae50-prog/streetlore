@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/prayer_times_service.dart';
+import '../../l10n/app_strings.dart';
 import '../widgets/prayer_times_widget.dart';
 
 class PrayerTimesScreen extends StatelessWidget {
@@ -51,7 +52,12 @@ class PrayerTimesScreen extends StatelessWidget {
             );
           }
           if (!snap.hasData) {
-            return const Center(child: Text('Failed to load prayer times'));
+            return Center(
+              child: Text(
+                context.tr('prayer_load_failed'),
+                style: TextStyle(color: context.textSec),
+              ),
+            );
           }
           return _buildContent(context, snap.data!);
         },
@@ -135,32 +141,32 @@ class PrayerTimesScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 _DetailRow(
-                  label: 'Fajr',
+                  label: context.tr('prayer_fajr'),
                   time: _formatTime(times.fajr),
                   icon: Icons.nights_stay_rounded,
                 ),
                 _DetailRow(
-                  label: 'Sunrise',
+                  label: context.tr('prayer_sunrise'),
                   time: _formatTime(times.sunrise),
                   icon: Icons.wb_twilight_rounded,
                 ),
                 _DetailRow(
-                  label: 'Dhuhr',
+                  label: context.tr('prayer_dhuhr'),
                   time: _formatTime(times.dhuhr),
                   icon: Icons.wb_sunny_rounded,
                 ),
                 _DetailRow(
-                  label: 'Asr',
+                  label: context.tr('prayer_asr'),
                   time: _formatTime(times.asr),
                   icon: Icons.wb_cloudy_rounded,
                 ),
                 _DetailRow(
-                  label: 'Maghrib',
+                  label: context.tr('prayer_maghrib'),
                   time: _formatTime(times.maghrib),
                   icon: Icons.wb_twilight_rounded,
                 ),
                 _DetailRow(
-                  label: 'Isha',
+                  label: context.tr('prayer_isha'),
                   time: _formatTime(times.isha),
                   icon: Icons.bedtime_rounded,
                   isLast: true,

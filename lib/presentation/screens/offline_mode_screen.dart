@@ -189,10 +189,31 @@ class _AvailableTile extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           ElevatedButton(
-            onPressed: () => context.read<OfflineProvider>().download(
-                  pack,
-                  availablePlaces: context.read<PlaceProvider>().places,
-                ),
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final result = await context.read<OfflineProvider>().download(
+                    pack,
+                    availablePlaces: context.read<PlaceProvider>().places,
+                  );
+              if (!context.mounted) return;
+              switch (result) {
+                case DownloadOk ok:
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        context.tr('offline_downloaded_n', {'n': '${ok.cachedCount}'}),
+                      ),
+                    ),
+                  );
+                case DownloadEmpty():
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(context.tr('offline_no_places')),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

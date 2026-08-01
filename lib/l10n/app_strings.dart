@@ -1,3 +1,22 @@
+// ============================================================================
+// NOTE: This file is the runtime cache for the translation lookup used by
+// every `context.tr('key')` call site. The canonical source of truth for all
+// translations is the ARB files in this directory:
+//
+//   lib/l10n/app_en.arb   (English — template)
+//   lib/l10n/app_ar.arb   (Arabic)
+//
+// `flutter gen-l10n` consumes those ARB files and produces the typed
+// `AppLocalizations` class (lib/l10n/generated/app_localizations.dart), which
+// is registered in `main.dart` as a localization delegate. New code should
+// prefer `AppLocalizations.of(context)!.keyName(...)`; the `_v` map below
+// remains as a runtime fallback for the 287 existing `context.tr(...)` call
+// sites that have not been migrated yet.
+//
+// To regenerate this file from the ARB files, run:
+//   dart run tool/gen_app_strings.dart
+// ============================================================================
+
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
@@ -704,6 +723,72 @@ class AppStrings {
     'ob_skip': {'en': 'Skip', 'ar': 'تخطَّ'},
     'ob_get_started': {'en': 'Get Started', 'ar': 'يلا نبدأ'},
     'ob_next': {'en': 'Next', 'ar': 'التالي'},
+
+    // Best-time recommendation labels (formerly hardcoded in best_time_service.dart)
+    'bt_label_go_now': {'en': 'Go now', 'ar': 'روح دلوقتي'},
+    'bt_label_decent_now': {'en': 'Decent now', 'ar': 'كويس دلوقتي'},
+    'bt_label_wait': {'en': 'Wait for a better window', 'ar': 'استنى وقت أحسن'},
+
+    // Best-time window reason phrases
+    'bt_reason_quietest': {'en': 'Quietest, best light', 'ar': 'أهدأ وقت وأفضل إضاءة'},
+    'bt_reason_cool_photo': {'en': 'Cool, photogenic', 'ar': 'مناخس، وقت التصوير'},
+    'bt_reason_hot_crowd': {'en': 'Hot & crowded', 'ar': 'حر وزحمة'},
+    'bt_reason_warm_ok': {'en': 'Warm but ok', 'ar': 'دافي بس مقبول'},
+    'bt_reason_golden_hour': {'en': 'Golden hour magic', 'ar': 'سحر الساعة الذهبية'},
+    'bt_reason_closed_unsafe': {'en': 'Closed, unsafe', 'ar': 'مقفول ومش آمن'},
+    'bt_reason_cool_empty': {'en': 'Cool & empty', 'ar': 'مناخس وفاضي'},
+    'bt_reason_best_photos': {'en': 'Best for photos', 'ar': 'أفضل وقت للصور'},
+    'bt_reason_hot_shaded': {'en': 'Hot but shaded', 'ar': 'حر بس في ضل'},
+    'bt_reason_soft_light': {'en': 'Soft light', 'ar': 'إضاءة هادية'},
+    'bt_reason_often_closing': {'en': 'Often closing', 'ar': 'بيقفل غالباً'},
+    'bt_reason_closed': {'en': 'Closed', 'ar': 'مقفول'},
+    'bt_reason_breakfast': {'en': 'Breakfast spots', 'ar': 'وقت الفطار'},
+    'bt_reason_brunch': {'en': 'Brunch time', 'ar': 'وقت البرانش'},
+    'bt_reason_lunch': {'en': 'Lunch rush', 'ar': 'وقت الغدا'},
+    'bt_reason_dinner': {'en': 'Dinner vibes', 'ar': 'وقت العشا'},
+    'bt_reason_too_early': {'en': 'Too early', 'ar': 'بدري أوي'},
+    'bt_reason_too_late': {'en': 'Too late', 'ar': 'متأخر أوي'},
+
+    // AI tour guide hint placeholder
+    'tour_guide_hint': {
+      'en': 'Ask about {name}...',
+      'ar': 'اسأل عن {name}...',
+    },
+
+    // Prayer times screen fallback
+    'prayer_load_failed': {
+      'en': 'Failed to load prayer times',
+      'ar': 'فشل تحميل مواقيت الصلاة',
+    },
+
+    // Prayer time labels (Islamic terms kept in English for clarity; add Arabic)
+    'prayer_fajr': {'en': 'Fajr', 'ar': 'الفجر'},
+    'prayer_sunrise': {'en': 'Sunrise', 'ar': 'الشروق'},
+    'prayer_dhuhr': {'en': 'Dhuhr', 'ar': 'الظهر'},
+    'prayer_asr': {'en': 'Asr', 'ar': 'العصر'},
+    'prayer_maghrib': {'en': 'Maghrib', 'ar': 'المغرب'},
+    'prayer_isha': {'en': 'Isha', 'ar': 'العشاء'},
+
+    // Location permission flow
+    'loc_perm_blocked': {
+      'en': 'Location is blocked. Enable it in Settings to get nearby alerts.',
+      'ar': 'تم رفض إذن الموقع. فعّله من الإعدادات عشان توصلك التنبيهات.',
+    },
+    'loc_service_off': {
+      'en': 'Location services are off. Turn them on to see what is around you.',
+      'ar': 'خدمات الموقع مقفولة. شغّلها عشان تشوف اللي حواليك.',
+    },
+    'open_settings': {'en': 'Open settings', 'ar': 'افتح الإعدادات'},
+
+    // Offline pack download feedback
+    'offline_downloaded_n': {
+      'en': 'Saved {n} place{s} for offline use',
+      'ar': 'تم حفظ {n} مكان{s} للاستخدام أوفلاين',
+    },
+    'offline_no_places': {
+      'en': 'No matching places found for this pack. The data may still be loading.',
+      'ar': 'مفيش أماكن مطابقة للحزمة. البيانات ممكن تكون لسه بتتحمل.',
+    },
   };
 
   static String level(BuildContext context, String levelName) =>

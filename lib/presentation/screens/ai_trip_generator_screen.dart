@@ -77,7 +77,7 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
         title: Text(context.tr('ai_planner_title')),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 56),
         physics: const BouncingScrollPhysics(),
         children: [
           

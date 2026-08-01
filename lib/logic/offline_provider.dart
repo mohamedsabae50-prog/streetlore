@@ -4,6 +4,25 @@ import '../core/services/offline_storage_service.dart';
 import '../data/models/offline_pack.dart';
 import '../data/models/place_model.dart';
 
+/// Result of a [OfflineProvider.download] attempt so the UI can react
+/// (success toast vs "no places" error toast).
+sealed class DownloadResult {
+  const DownloadResult();
+}
+
+class DownloadOk extends DownloadResult {
+  final int cachedCount;
+  const DownloadOk(this.cachedCount);
+}
+
+/// Returned when the catalog `placeIds` don't match anything currently
+/// available (the pack would have been saved as "downloaded" but the
+/// cache would stay empty - exactly the bug the user hit).
+class DownloadEmpty extends DownloadResult {
+  final OfflinePack pack;
+  const DownloadEmpty(this.pack);
+}
+
 class OfflineProvider extends ChangeNotifier {
   final OfflineStorageService _storage = OfflineStorageService.instance;
   List<OfflinePack> _packs = const [];
@@ -12,37 +31,62 @@ class OfflineProvider extends ChangeNotifier {
   List<OfflinePack> get packs => List.unmodifiable(_packs);
   List<PlaceModel> get cachedPlaces => List.unmodifiable(_cachedPlaces);
 
+  /// Catalog of packs the user can download.
+  ///
+  /// Place-IDs are matched against the live `availablePlaces` list at
+  /// download time, so the catalog is resilient to whatever data source
+  /// (Supabase / fallback / offline cache) is currently providing places.
   static final List<OfflinePack> catalog = [
     OfflinePack(
-      id: 'all_egypt',
+      id: 'all_alexandria',
       name: 'All Alexandria',
       description: 'Every place, every description, every photo URL.',
-      placeIds: List.generate(30, (i) => '${i + 1}'),
-      sizeMb: 84,
+      placeIds: const [
+        'fallback_qaitbay',
+        'fallback_biblio',
+        'fallback_pompey',
+        'fallback_catacombs',
+        'fallback_corniche',
+        'fallback_montaza',
+        'fallback_attarine',
+        'fallback_stmark',
+      ],
+      sizeMb: 24,
       coverEmoji: 'book',
     ),
     OfflinePack(
       id: 'historical',
       name: 'Historical Alexandria',
       description: 'Citadels, catacombs, pillars, museums.',
-      placeIds: const ['1', '4', '7', '9', '11', '12', '17', '27', '28'],
-      sizeMb: 32,
+      placeIds: const [
+        'fallback_qaitbay',
+        'fallback_pompey',
+        'fallback_catacombs',
+      ],
+      sizeMb: 9,
       coverEmoji: 'museum',
     ),
     OfflinePack(
-      id: 'food',
-      name: 'Tastes of the City',
-      description: 'Cafés, seafood markets and legendary restaurants.',
-      placeIds: const ['6', '14', '19', '20', '21', '22', '23', '30'],
-      sizeMb: 24,
-      coverEmoji: 'food',
+      id: 'culture',
+      name: 'Culture & Museums',
+      description: 'Libraries, museums and cultural landmarks.',
+      placeIds: const [
+        'fallback_biblio',
+        'fallback_stmark',
+        'fallback_attarine',
+      ],
+      sizeMb: 8,
+      coverEmoji: 'museum',
     ),
     OfflinePack(
-      id: 'beach',
-      name: 'Coast & Beaches',
-      description: 'From Sidi Bishr to Agami - sun, sand and sea.',
-      placeIds: const ['8', '15', '24', '25', '26'],
-      sizeMb: 18,
+      id: 'nature_sea',
+      name: 'Nature & Sea Breeze',
+      description: 'Gardens, corniche, and the Mediterranean breeze.',
+      placeIds: const [
+        'fallback_montaza',
+        'fallback_corniche',
+      ],
+      sizeMb: 6,
       coverEmoji: 'beach',
     ),
   ];
@@ -54,19 +98,31 @@ class OfflineProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> download(
+  /// Download [pack] into the local cache. Returns a [DownloadResult] so the
+  /// caller can show feedback if no places actually matched.
+  Future<DownloadResult> download(
     OfflinePack pack, {
     required List<PlaceModel> availablePlaces,
   }) async {
     final places = availablePlaces
         .where((p) => pack.placeIds.contains(p.id))
         .toList();
+    if (places.isEmpty) {
+      // Don't pretend a download happened - nothing got cached.
+      debugPrint(
+        'OfflineProvider: no places matched pack "${pack.id}" '
+        '(wanted ${pack.placeIds.length} ids). '
+        'Skipping save so the user does not see a fake "downloaded" pack.',
+      );
+      return DownloadEmpty(pack);
+    }
     await _storage.cachePlaces(places);
     final updated = pack.copyWith(downloadedAt: DateTime.now());
     await _storage.savePack(updated);
     _packs = _storage.getAllPacks();
     _cachedPlaces = _storage.getCachedPlaces();
     notifyListeners();
+    return DownloadOk(places.length);
   }
 
   Future<void> remove(OfflinePack pack) async {

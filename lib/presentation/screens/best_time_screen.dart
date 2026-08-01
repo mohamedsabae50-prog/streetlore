@@ -321,7 +321,7 @@ class _BestTimeCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        recommendation.label,
+                        context.tr(recommendation.labelKey),
                         style: TextStyle(
                           color: recommendation.color,
                           fontSize: 12,
@@ -331,7 +331,7 @@ class _BestTimeCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '· ${recommendation.hint}',
+                          '· ${context.tr(recommendation.hintKey)}',
                           style: TextStyle(
                             color: context.textSec,
                             fontSize: 12,

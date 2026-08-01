@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/ai_tour_guide_service.dart';
 import '../../data/models/place_model.dart';
+import '../../l10n/app_strings.dart';
 
 class AITourGuideScreen extends StatefulWidget {
   final PlaceModel place;
@@ -149,7 +150,8 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _send(),
               decoration: InputDecoration(
-                hintText: 'Ask about ${widget.place.name}...',
+                hintText: context.tr('tour_guide_hint',
+                    {'name': widget.place.name}),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(22),
                   borderSide: BorderSide.none,

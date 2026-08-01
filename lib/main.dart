@@ -8,6 +8,7 @@ import 'core/constants/app_colors.dart';
 import 'core/services/offline_storage_service.dart';
 import 'core/services/supabase_service.dart';
 import 'core/config/supabase_config.dart';
+import 'l10n/generated/app_localizations.dart';
 import 'logic/place_provider.dart';
 import 'logic/tour_provider.dart';
 import 'logic/theme_provider.dart';
@@ -89,8 +90,9 @@ class StreetloreApp extends StatelessWidget {
           title: 'Streetlore',
           debugShowCheckedModeBanner: false,
           locale: localeProvider.locale,
-          supportedLocales: const [Locale('en'), Locale('ar')],
-          localizationsDelegates: const [
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,

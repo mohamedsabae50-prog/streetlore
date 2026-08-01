@@ -4,6 +4,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:provider/provider.dart';
 import 'trip_planner_screen.dart';
 import '../../core/animations/app_animations.dart';
+import '../../core/services/location_permission_service.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../logic/trip_provider.dart';
@@ -79,6 +80,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Future.delayed(const Duration(milliseconds: 1400), () {
       if (mounted) setState(() => _isLoading = false);
     });
+    // Ask the user for location permission the first time the home screen
+    // appears. This powers "near me", distance filters, and geofence alerts.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _ensureLocationPermission();
+    });
+  }
+
+  Future<void> _ensureLocationPermission() async {
+    final status = await LocationPermissionService.instance.requestOnce();
+    if (!mounted) return;
+    if (status == LocationPermissionStatus.permanentlyDenied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr('loc_perm_blocked')),
+          action: SnackBarAction(
+            label: context.tr('open_settings'),
+            onPressed: () => LocationPermissionService.instance.openSettings(),
+          ),
+        ),
+      );
+    } else if (status == LocationPermissionStatus.serviceDisabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('loc_service_off'))),
+      );
+    }
   }
 
   @override

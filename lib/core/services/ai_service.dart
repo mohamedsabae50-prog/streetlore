@@ -101,21 +101,31 @@ Rules:
     Map<String, dynamic> json,
     List<String> availablePlaceIds,
   ) {
-    final days = (json['days'] as List<dynamic>? ?? const [])
-        .map((d) => AiTripDay(
-              dayNumber: (d['dayNumber'] as num?)?.toInt() ?? 1,
-              theme: (d['theme'] as String?) ?? 'Explore',
-              stops: (d['stops'] as List<dynamic>? ?? const [])
-                  .map((s) => AiTripStop(
-                        placeId: (s['placeId'] as String?) ?? '',
-                        suggestedTime:
-                            (s['suggestedTime'] as String?) ?? 'Flexible',
-                        note: (s['note'] as String?) ?? '',
-                      ))
-                  .where((s) => availablePlaceIds.contains(s.placeId))
-                  .toList(),
-            ))
-        .toList();
+    final rawDays = (json['days'] as List<dynamic>? ?? const []);
+    final days = <AiTripDay>[];
+    for (var i = 0; i < rawDays.length; i++) {
+      final d = rawDays[i] as Map<String, dynamic>;
+      final parsed = (d['dayNumber'] as num?)?.toInt() ?? (i + 1);
+      final dayNumber = parsed < 1 ? (i + 1) : parsed;
+      final stops = (d['stops'] as List<dynamic>? ?? const [])
+          .map((s) {
+            final raw = (s as Map<String, dynamic>);
+            return AiTripStop(
+              placeId: (raw['placeId'] as String?) ?? '',
+              suggestedTime: _normalizeTime(
+                  (raw['suggestedTime'] as String?) ?? 'Flexible'),
+              note: (raw['note'] as String?) ?? '',
+            );
+          })
+          .where((s) => availablePlaceIds.contains(s.placeId))
+          .toList();
+      if (stops.isEmpty) continue;
+      days.add(AiTripDay(
+        dayNumber: dayNumber,
+        theme: (d['theme'] as String?) ?? 'Explore',
+        stops: stops,
+      ));
+    }
     return AiTripPlan(
       title: (json['title'] as String?) ?? 'Your Alexandria Adventure',
       summary: (json['summary'] as String?) ?? '',
@@ -124,6 +134,39 @@ Rules:
       days: days,
       tips: ((json['tips'] as List<dynamic>?) ?? const []).cast<String>(),
     );
+  }
+
+  /// Normalize a "HH:MM - HH:MM" time string. Gemini sometimes flips the
+  /// start and end (e.g. "20:00 - 18:00"). If the end is before the start,
+  /// swap them so the UI always reads as "open → close".
+  String _normalizeTime(String raw) {
+    final t = raw.trim();
+    if (t.isEmpty || t.toLowerCase() == 'flexible') return t;
+    final parts = t.split('-');
+    if (parts.length != 2) return t;
+    final a = _parseHHmm(parts[0]);
+    final b = _parseHHmm(parts[1]);
+    if (a == null || b == null) return t;
+    if (b < a) {
+      return '${_fmtHHmm(b)} - ${_fmtHHmm(a)}';
+    }
+    return '${_fmtHHmm(a)} - ${_fmtHHmm(b)}';
+  }
+
+  int? _parseHHmm(String s) {
+    final m = RegExp(r'(\d{1,2})[:.:](\d{2})').firstMatch(s.trim());
+    if (m == null) return null;
+    final h = int.tryParse(m.group(1)!);
+    final min = int.tryParse(m.group(2)!);
+    if (h == null || min == null) return null;
+    if (h < 0 || h > 24 || min < 0 || min > 59) return null;
+    return h * 60 + min;
+  }
+
+  String _fmtHHmm(int totalMinutes) {
+    final h = (totalMinutes ~/ 60).toString().padLeft(2, '0');
+    final m = (totalMinutes % 60).toString().padLeft(2, '0');
+    return '$h:$m';
   }
 
   AiTripPlan _localPlan({

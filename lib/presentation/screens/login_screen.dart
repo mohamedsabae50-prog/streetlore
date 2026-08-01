@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
+import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
@@ -393,12 +394,24 @@ class _LoginScreenState extends State<LoginScreen>
                               color: const Color(0xFFEA4335),
                               onTap: () async {
                                 try {
+                                  String? redirectTo;
+                                  if (kIsWeb) {
+                                    // Use configured production URL if set,
+                                    // otherwise fall back to the current origin
+                                    // (lets `flutter run -d edge` keep working
+                                    // on localhost without bouncing back to it
+                                    // after Supabase + Google OAuth).
+                                    redirectTo = AppConfig.webRedirectUrl ??
+                                        (kIsWeb
+                                            ? Uri.base.origin
+                                            : null);
+                                  } else {
+                                    redirectTo = AppConfig.mobileRedirectUrl;
+                                  }
                                   await Supabase.instance.client.auth
                                       .signInWithOAuth(
                                         OAuthProvider.google,
-                                        redirectTo: kIsWeb
-                                            ? null
-                                            : 'io.supabase.streetlore://login-callback/',
+                                        redirectTo: redirectTo,
                                       );
                                 } catch (e) {
                                   print('Error signing in with Google: $e');

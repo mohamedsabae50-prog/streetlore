@@ -7,6 +7,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_stars.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../data/models/place_model.dart';
+import '../../l10n/app_strings.dart';
 
 class PlaceCard extends StatefulWidget {
   final PlaceModel place;
@@ -315,7 +316,7 @@ class _BestTimeHint extends StatelessWidget {
         const SizedBox(width: 4),
         Flexible(
           child: Text(
-            '${rec.label} · ${rec.hint}',
+            '${context.tr(rec.labelKey)} · ${context.tr(rec.hintKey)}',
             style: TextStyle(
               color: rec.color,
               fontSize: 11,

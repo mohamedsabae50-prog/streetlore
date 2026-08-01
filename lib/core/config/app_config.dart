@@ -11,4 +11,14 @@ class AppConfig {
   static const bool geminiEnabled = true;
   static const bool newFeaturesEnabled = true;
   static const int defaultGeofenceRadius = 500;
+
+  /// Web OAuth redirect URL. Set this to the production origin (e.g.
+  /// `https://mohamedsabae50-prog.github.io/streetlore-web-app/`) so
+  /// Google sign-in doesn't bounce back to `http://localhost:8080`.
+  /// Leave as `null` to fall back to the current page origin (recommended
+  /// for development on localhost).
+  static const String? webRedirectUrl = null;
+
+  /// Native OAuth redirect URL (deep link for Android/iOS).
+  static const String mobileRedirectUrl = 'io.supabase.streetlore://login-callback/';
 }

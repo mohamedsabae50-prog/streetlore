@@ -3,15 +3,15 @@ import '../../data/models/place_model.dart';
 
 class BestTimeRecommendation {
   final int score;
-  final String label;
-  final String hint;
+  final String labelKey;
+  final String hintKey;
   final IconData icon;
   final Color color;
 
   const BestTimeRecommendation({
     required this.score,
-    required this.label,
-    required this.hint,
+    required this.labelKey,
+    required this.hintKey,
     required this.icon,
     required this.color,
   });
@@ -46,29 +46,29 @@ class BestTimeService {
       }
     }
 
-    final nextWindow = _nextWindowText(windows, t, category);
+    final nextWindow = _nextWindowText(windows, t);
 
     if (bestScore >= 75) {
       return BestTimeRecommendation(
         score: bestScore,
-        label: 'Go now',
-        hint: best.reason,
+        labelKey: 'bt_label_go_now',
+        hintKey: best.reasonKey,
         icon: best.icon,
         color: const Color(0xFF10B981),
       );
     } else if (bestScore >= 50) {
       return BestTimeRecommendation(
         score: bestScore,
-        label: 'Decent now',
-        hint: best.reason,
+        labelKey: 'bt_label_decent_now',
+        hintKey: best.reasonKey,
         icon: best.icon,
         color: const Color(0xFFF59E0B),
       );
     } else {
       return BestTimeRecommendation(
         score: bestScore,
-        label: nextWindow.title,
-        hint: nextWindow.body,
+        labelKey: nextWindow.titleKey,
+        hintKey: nextWindow.bodyKey,
         icon: best.icon,
         color: const Color(0xFFEF4444),
       );
@@ -88,51 +88,51 @@ class BestTimeService {
   List<_Window> _windowsFor(String category) {
     if (category.contains('nature') || category.contains('beach')) {
       return const [
-        _Window('early_morning', 95, 'Quietest, best light', Icons.wb_twilight_rounded),
-        _Window('morning', 80, 'Cool, photogenic', Icons.wb_sunny_rounded),
-        _Window('midday', 30, 'Hot & crowded', Icons.wb_sunny_outlined),
-        _Window('afternoon', 55, 'Warm but ok', Icons.wb_cloudy_rounded),
-        _Window('evening', 90, 'Golden hour magic', Icons.wb_twilight_rounded),
-        _Window('night', 20, 'Closed, unsafe', Icons.nightlight_round),
+        _Window('early_morning', 95, 'bt_reason_quietest', Icons.wb_twilight_rounded),
+        _Window('morning', 80, 'bt_reason_cool_photo', Icons.wb_sunny_rounded),
+        _Window('midday', 30, 'bt_reason_hot_crowd', Icons.wb_sunny_outlined),
+        _Window('afternoon', 55, 'bt_reason_warm_ok', Icons.wb_cloudy_rounded),
+        _Window('evening', 90, 'bt_reason_golden_hour', Icons.wb_twilight_rounded),
+        _Window('night', 20, 'bt_reason_closed_unsafe', Icons.nightlight_round),
       ];
     }
     if (category.contains('historical')) {
       return const [
-        _Window('early_morning', 90, 'Cool & empty', Icons.wb_twilight_rounded),
-        _Window('morning', 88, 'Best for photos', Icons.wb_sunny_rounded),
-        _Window('midday', 55, 'Hot but shaded', Icons.wb_sunny_outlined),
-        _Window('afternoon', 70, 'Soft light', Icons.wb_cloudy_rounded),
-        _Window('evening', 60, 'Often closing', Icons.wb_twilight_rounded),
-        _Window('night', 5, 'Closed', Icons.nightlight_round),
+        _Window('early_morning', 90, 'bt_reason_cool_empty', Icons.wb_twilight_rounded),
+        _Window('morning', 88, 'bt_reason_best_photos', Icons.wb_sunny_rounded),
+        _Window('midday', 55, 'bt_reason_hot_shaded', Icons.wb_sunny_outlined),
+        _Window('afternoon', 70, 'bt_reason_soft_light', Icons.wb_cloudy_rounded),
+        _Window('evening', 60, 'bt_reason_often_closing', Icons.wb_twilight_rounded),
+        _Window('night', 5, 'bt_reason_closed', Icons.nightlight_round),
       ];
     }
     if (category.contains('culture') || category.contains('museum')) {
       return const [
-        _Window('early_morning', 65, 'Quiet if open', Icons.wb_twilight_rounded),
-        _Window('morning', 92, 'Cool indoor, low crowd', Icons.wb_sunny_rounded),
-        _Window('midday', 70, 'Indoor climate ok', Icons.wb_sunny_outlined),
-        _Window('afternoon', 80, 'Easy to walk in', Icons.wb_cloudy_rounded),
-        _Window('evening', 88, 'Cooler & atmospheric', Icons.nightlight_round),
-        _Window('night', 10, 'Closed', Icons.nightlight_round),
+        _Window('early_morning', 65, 'bt_reason_quietest', Icons.wb_twilight_rounded),
+        _Window('morning', 92, 'bt_reason_cool_photo', Icons.wb_sunny_rounded),
+        _Window('midday', 70, 'bt_reason_hot_shaded', Icons.wb_sunny_outlined),
+        _Window('afternoon', 80, 'bt_reason_warm_ok', Icons.wb_cloudy_rounded),
+        _Window('evening', 88, 'bt_reason_golden_hour', Icons.nightlight_round),
+        _Window('night', 10, 'bt_reason_closed', Icons.nightlight_round),
       ];
     }
     if (category.contains('food')) {
       return const [
-        _Window('early_morning', 30, 'Too early', Icons.wb_twilight_rounded),
-        _Window('morning', 60, 'Breakfast spots', Icons.wb_sunny_rounded),
-        _Window('midday', 90, 'Lunch prime time', Icons.restaurant_rounded),
-        _Window('afternoon', 50, 'Off hours', Icons.coffee_rounded),
-        _Window('evening', 95, 'Dinner magic', Icons.local_dining_rounded),
-        _Window('night', 70, 'Still open', Icons.nightlight_round),
+        _Window('early_morning', 30, 'bt_reason_too_early', Icons.wb_twilight_rounded),
+        _Window('morning', 60, 'bt_reason_breakfast', Icons.wb_sunny_rounded),
+        _Window('midday', 90, 'bt_reason_lunch', Icons.restaurant_rounded),
+        _Window('afternoon', 50, 'bt_reason_warm_ok', Icons.coffee_rounded),
+        _Window('evening', 95, 'bt_reason_dinner', Icons.local_dining_rounded),
+        _Window('night', 70, 'bt_reason_often_closing', Icons.nightlight_round),
       ];
     }
     return const [
-      _Window('early_morning', 75, 'Quiet & cool', Icons.wb_twilight_rounded),
-      _Window('morning', 85, 'Best for photos', Icons.wb_sunny_rounded),
-      _Window('midday', 55, 'Hot & bright', Icons.wb_sunny_outlined),
-      _Window('afternoon', 65, 'Warm but ok', Icons.wb_cloudy_rounded),
-      _Window('evening', 80, 'Soft light', Icons.wb_twilight_rounded),
-      _Window('night', 25, 'Mostly closed', Icons.nightlight_round),
+      _Window('early_morning', 75, 'bt_reason_quietest', Icons.wb_twilight_rounded),
+      _Window('morning', 85, 'bt_reason_best_photos', Icons.wb_sunny_rounded),
+      _Window('midday', 55, 'bt_reason_hot_crowd', Icons.wb_sunny_outlined),
+      _Window('afternoon', 65, 'bt_reason_warm_ok', Icons.wb_cloudy_rounded),
+      _Window('evening', 80, 'bt_reason_golden_hour', Icons.wb_twilight_rounded),
+      _Window('night', 25, 'bt_reason_closed', Icons.nightlight_round),
     ];
   }
 
@@ -181,11 +181,11 @@ class BestTimeService {
     return 10;
   }
 
-  _NextWindow _nextWindowText(List<_Window> windows, DateTime now, String category) {
+  _NextWindow _nextWindowText(List<_Window> windows, DateTime now) {
     final hour = now.hour;
     int? nextBestHour;
     int bestScore = 0;
-    String label = 'Try later today';
+    String labelKey = 'bt_reason_cool_photo';
     for (final w in windows) {
       final slotStart = _slotStart(w.slot);
       if (slotStart > hour) {
@@ -193,24 +193,19 @@ class BestTimeService {
         if (s > bestScore) {
           bestScore = s;
           nextBestHour = slotStart;
-          label = w.reason;
+          labelKey = w.reasonKey;
         }
       }
     }
     if (nextBestHour == null) {
-      final morningStart = 7;
-      final bestMorning = windows
-          .where((w) => w.slot == 'morning' || w.slot == 'early_morning')
-          .fold<_Window>(windows.first, (a, b) => a.score >= b.score ? a : b);
       return _NextWindow(
-        title: 'Come back tomorrow',
-        body: 'Best at $morningStart-${morningStart + 2} AM — ${bestMorning.reason}',
+        titleKey: 'bt_label_wait',
+        bodyKey: labelKey,
       );
     }
-    final end = nextBestHour + 1;
     return _NextWindow(
-      title: 'Try $nextBestHour-${end > 12 ? end - 12 : end} ${end >= 12 ? 'PM' : 'AM'}',
-      body: label,
+      titleKey: 'bt_label_wait',
+      bodyKey: labelKey,
     );
   }
 
@@ -237,13 +232,13 @@ class BestTimeService {
 class _Window {
   final String slot;
   final int score;
-  final String reason;
+  final String reasonKey;
   final IconData icon;
-  const _Window(this.slot, this.score, this.reason, this.icon);
+  const _Window(this.slot, this.score, this.reasonKey, this.icon);
 }
 
 class _NextWindow {
-  final String title;
-  final String body;
-  const _NextWindow({required this.title, required this.body});
+  final String titleKey;
+  final String bodyKey;
+  const _NextWindow({required this.titleKey, required this.bodyKey});
 }
