@@ -151,11 +151,55 @@ class _DownloadedTile extends StatelessWidget {
   }
 }
 
-class _AvailableTile extends StatelessWidget {
+class _AvailableTile extends StatefulWidget {
   final OfflinePack pack;
   const _AvailableTile({required this.pack});
+
+  @override
+  State<_AvailableTile> createState() => _AvailableTileState();
+}
+
+class _AvailableTileState extends State<_AvailableTile> {
+  bool _downloading = false;
+
+  Future<void> _onDownload() async {
+    if (_downloading) return;
+    setState(() => _downloading = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final provider = context.read<OfflineProvider>();
+    final places = context.read<PlaceProvider>().places;
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      final result = await provider.download(
+        widget.pack,
+        availablePlaces: places,
+      );
+      if (!mounted) return;
+      switch (result) {
+        case DownloadOk ok:
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                context.tr('offline_downloaded_n', {'n': '${ok.cachedCount}'}),
+              ),
+            ),
+          );
+        case DownloadEmpty():
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(context.tr('offline_no_places')),
+              backgroundColor: AppColors.error,
+            ),
+          );
+      }
+    } finally {
+      if (mounted) setState(() => _downloading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final pack = widget.pack;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
@@ -189,38 +233,24 @@ class _AvailableTile extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           ElevatedButton(
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              final result = await context.read<OfflineProvider>().download(
-                    pack,
-                    availablePlaces: context.read<PlaceProvider>().places,
-                  );
-              if (!context.mounted) return;
-              switch (result) {
-                case DownloadOk ok:
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        context.tr('offline_downloaded_n', {'n': '${ok.cachedCount}'}),
-                      ),
-                    ),
-                  );
-                case DownloadEmpty():
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(context.tr('offline_no_places')),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
-              }
-            },
+            onPressed: _downloading ? null : _onDownload,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
+              disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text(context.tr('offline_download'),
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+            child: _downloading
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(context.tr('offline_download'),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
           ),
         ],
       ),

@@ -23,7 +23,6 @@ class GeofencingSettingsScreen extends StatelessWidget {
       body: Consumer<GeofenceProvider>(
         builder: (context, geo, _) {
           final places = context.watch<PlaceProvider>().places;
-          final selectedIds = geo.alerts.map((a) => a.placeId).toSet();
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             physics: const BouncingScrollPhysics(),
@@ -69,29 +68,9 @@ class GeofencingSettingsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: context.cardColor,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(geo.isMonitoring ? Icons.gps_fixed : Icons.gps_off,
-                        color: geo.isMonitoring ? AppColors.success : context.textSec),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(geo.isMonitoring
-                          ? context.tr('geo_monitoring_on')
-                          : context.tr('geo_monitoring_off')),
-                    ),
-                    Switch.adaptive(
-                      value: geo.isMonitoring,
-                      onChanged: (v) => v ? geo.startMonitoring() : geo.stopMonitoring(),
-                    ),
-                  ],
-                ),
+              _MonitoringTile(
+                isMonitoring: geo.isMonitoring,
+                onChanged: (v) => v ? geo.startMonitoring() : geo.stopMonitoring(),
               ),
               const SizedBox(height: 20),
               Text(context.tr('geo_choose_places'),
@@ -101,7 +80,8 @@ class GeofencingSettingsScreen extends StatelessWidget {
               for (final place in places)
                 _PlaceToggle(
                   place: place,
-                  enabled: selectedIds.contains(place.id),
+                  enabled: geo.alerts
+                      .any((a) => a.placeId == place.id && a.enabled),
                   onToggle: () {
                     final existing = geo.alerts.firstWhere(
                       (a) => a.placeId == place.id,
@@ -123,6 +103,41 @@ class GeofencingSettingsScreen extends StatelessWidget {
   }
 }
 
+class _MonitoringTile extends StatelessWidget {
+  final bool isMonitoring;
+  final ValueChanged<bool> onChanged;
+  const _MonitoringTile({required this.isMonitoring, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(isMonitoring ? Icons.gps_fixed : Icons.gps_off,
+              color: isMonitoring ? AppColors.success : context.textSec),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(isMonitoring
+                ? context.tr('geo_monitoring_on')
+                : context.tr('geo_monitoring_off')),
+          ),
+          Switch.adaptive(
+            value: isMonitoring,
+            onChanged: onChanged,
+            activeThumbColor: AppColors.success,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PlaceToggle extends StatelessWidget {
   final PlaceModel place;
   final bool enabled;
@@ -133,7 +148,6 @@ class _PlaceToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: context.cardColor,
         borderRadius: BorderRadius.circular(12),
@@ -143,42 +157,49 @@ class _PlaceToggle extends StatelessWidget {
               : context.hintColor.withValues(alpha: 0.3),
         ),
       ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: CachedNetworkImage(
-              imageUrl: place.imageUrl,
-              width: 50, height: 50, fit: BoxFit.cover,
-              memCacheWidth: 100,
-              memCacheHeight: 100,
-              placeholder: (_, __) => Container(width: 50, height: 50, color: context.bgAlt),
-              errorWidget: (_, __, ___) => Container(width: 50, height: 50, color: context.bgAlt),
-            ),
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: CachedNetworkImage(
+                  imageUrl: place.imageUrl,
+                  width: 50, height: 50, fit: BoxFit.cover,
+                  memCacheWidth: 100,
+                  memCacheHeight: 100,
+                  placeholder: (_, __) => Container(width: 50, height: 50, color: context.bgAlt),
+                  errorWidget: (_, __, ___) => Container(width: 50, height: 50, color: context.bgAlt),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(place.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                    const SizedBox(height: 2),
+                    Text(
+                        context.tr('geo_distance', {
+                          'd': Geolocator.distanceBetween(
+                                  0, 0, place.lat, place.lng)
+                              .toStringAsFixed(0),
+                        }),
+                        style: TextStyle(color: context.textSec, fontSize: 11)),
+                  ],
+                ),
+              ),
+              Switch.adaptive(
+                value: enabled,
+                onChanged: (_) => onToggle(),
+                activeThumbColor: AppColors.success,
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(place.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                const SizedBox(height: 2),
-                Text(
-                    context.tr('geo_distance', {
-                      'd': Geolocator.distanceBetween(
-                              0, 0, place.lat, place.lng)
-                          .toStringAsFixed(0),
-                    }),
-                    style: TextStyle(color: context.textSec, fontSize: 11)),
-              ],
-            ),
-          ),
-          Switch.adaptive(
-            value: enabled,
-            onChanged: (_) => onToggle(),
-            activeThumbColor: AppColors.success,
-          ),
-        ],
+        ),
       ),
     );
   }
