@@ -396,11 +396,6 @@ class _LoginScreenState extends State<LoginScreen>
                                 try {
                                   String? redirectTo;
                                   if (kIsWeb) {
-                                    // Use configured production URL if set,
-                                    // otherwise fall back to the current origin
-                                    // (lets `flutter run -d edge` keep working
-                                    // on localhost without bouncing back to it
-                                    // after Supabase + Google OAuth).
                                     redirectTo = AppConfig.webRedirectUrl ??
                                         (kIsWeb
                                             ? Uri.base.origin

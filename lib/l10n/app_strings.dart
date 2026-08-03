@@ -1,22 +1,3 @@
-// ============================================================================
-// NOTE: This file is the runtime cache for the translation lookup used by
-// every `context.tr('key')` call site. The canonical source of truth for all
-// translations is the ARB files in this directory:
-//
-//   lib/l10n/app_en.arb   (English — template)
-//   lib/l10n/app_ar.arb   (Arabic)
-//
-// `flutter gen-l10n` consumes those ARB files and produces the typed
-// `AppLocalizations` class (lib/l10n/generated/app_localizations.dart), which
-// is registered in `main.dart` as a localization delegate. New code should
-// prefer `AppLocalizations.of(context)!.keyName(...)`; the `_v` map below
-// remains as a runtime fallback for the 287 existing `context.tr(...)` call
-// sites that have not been migrated yet.
-//
-// To regenerate this file from the ARB files, run:
-//   dart run tool/gen_app_strings.dart
-// ============================================================================
-
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 

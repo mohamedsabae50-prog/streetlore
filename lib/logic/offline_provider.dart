@@ -4,8 +4,6 @@ import '../core/services/offline_storage_service.dart';
 import '../data/models/offline_pack.dart';
 import '../data/models/place_model.dart';
 
-/// Result of a [OfflineProvider.download] attempt so the UI can react
-/// (success toast vs "no places" error toast).
 sealed class DownloadResult {
   const DownloadResult();
 }
@@ -15,9 +13,6 @@ class DownloadOk extends DownloadResult {
   const DownloadOk(this.cachedCount);
 }
 
-/// Returned when the catalog `placeIds` don't match anything currently
-/// available (the pack would have been saved as "downloaded" but the
-/// cache would stay empty - exactly the bug the user hit).
 class DownloadEmpty extends DownloadResult {
   final OfflinePack pack;
   const DownloadEmpty(this.pack);
@@ -31,11 +26,6 @@ class OfflineProvider extends ChangeNotifier {
   List<OfflinePack> get packs => List.unmodifiable(_packs);
   List<PlaceModel> get cachedPlaces => List.unmodifiable(_cachedPlaces);
 
-  /// Catalog of packs the user can download.
-  ///
-  /// Place-IDs are matched against the live `availablePlaces` list at
-  /// download time, so the catalog is resilient to whatever data source
-  /// (Supabase / fallback / offline cache) is currently providing places.
   static final List<OfflinePack> catalog = [
     OfflinePack(
       id: 'all_alexandria',
@@ -98,8 +88,6 @@ class OfflineProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Download [pack] into the local cache. Returns a [DownloadResult] so the
-  /// caller can show feedback if no places actually matched.
   Future<DownloadResult> download(
     OfflinePack pack, {
     required List<PlaceModel> availablePlaces,
@@ -108,11 +96,8 @@ class OfflineProvider extends ChangeNotifier {
         .where((p) => pack.placeIds.contains(p.id))
         .toList();
     if (places.isEmpty) {
-      // Don't pretend a download happened - nothing got cached.
       debugPrint(
-        'OfflineProvider: no places matched pack "${pack.id}" '
-        '(wanted ${pack.placeIds.length} ids). '
-        'Skipping save so the user does not see a fake "downloaded" pack.',
+        'OfflineProvider: no places matched pack "${pack.id}"',
       );
       return DownloadEmpty(pack);
     }

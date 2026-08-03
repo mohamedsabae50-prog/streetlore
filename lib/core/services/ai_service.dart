@@ -136,9 +136,6 @@ Rules:
     );
   }
 
-  /// Normalize a "HH:MM - HH:MM" time string. Gemini sometimes flips the
-  /// start and end (e.g. "20:00 - 18:00"). If the end is before the start,
-  /// swap them so the UI always reads as "open → close".
   String _normalizeTime(String raw) {
     final t = raw.trim();
     if (t.isEmpty || t.toLowerCase() == 'flexible') return t;
