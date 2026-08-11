@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -36,6 +37,10 @@ Future<void> main() async {
 
   final auth = AuthProvider();
   await auth.bootstrap();
+
+  // Listen for the Supabase OAuth deep link (e.g. when the browser returns
+  // the user to the app via `io.supabase.streetlore://login-callback/...`).
+  unawaited(_bindAuthDeepLink(auth));
 
   final placeProvider = PlaceProvider();
   final tourProvider = TourProvider();
@@ -77,6 +82,21 @@ Future<void> main() async {
       child: const StreetloreApp(),
     ),
   );
+}
+
+Future<void> _bindAuthDeepLink(AuthProvider auth) async {
+  try {
+    final links = AppLinks();
+    final initial = await links.getInitialLink();
+    if (initial != null) {
+      await auth.handleAuthCallback(initial);
+    }
+    links.uriLinkStream.listen((uri) async {
+      await auth.handleAuthCallback(uri);
+    });
+  } catch (e) {
+    debugPrint('Deep link bind failed: $e');
+  }
 }
 
 class StreetloreApp extends StatelessWidget {

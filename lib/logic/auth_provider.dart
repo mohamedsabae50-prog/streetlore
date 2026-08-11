@@ -1,6 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+
+import '../core/config/app_config.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool _isLoggedIn = false;
@@ -27,12 +31,39 @@ class AuthProvider extends ChangeNotifier {
       ownerId == 'me' ||
       ownerId == currentUserId;
 
-  AuthProvider();
+  AuthProvider() {
+    if (AppConfig.supabaseEnabled) {
+      // React to Supabase auth state changes (e.g. session established after
+      // the OAuth browser redirect back into the app via the deep link).
+      Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+        final event = data.event;
+        if (event == AuthChangeEvent.signedIn ||
+            event == AuthChangeEvent.tokenRefreshed) {
+          _syncFromSupabase();
+        } else if (event == AuthChangeEvent.signedOut) {
+          _isLoggedIn = false;
+          _isGuest = false;
+          notifyListeners();
+        }
+      });
+    }
+  }
 
   Future<void> bootstrap() => _load();
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
+    if (AppConfig.supabaseEnabled) {
+      // If Supabase already has a session (e.g. app was reopened after OAuth),
+      // pick it up so the user does not have to sign in again.
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session?.user != null) {
+        _syncFromSupabase();
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+    }
     _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
     _hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
     _isGuest = prefs.getBool('is_guest') ?? false;
@@ -41,6 +72,43 @@ class AuthProvider extends ChangeNotifier {
     _userId = prefs.getString('user_id') ?? '';
     _isLoading = false;
     notifyListeners();
+  }
+
+  /// Pulls the latest user info from the active Supabase session into local
+  /// state and persists it to SharedPreferences.
+  Future<void> _syncFromSupabase() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    _isLoggedIn = true;
+    _isGuest = false;
+    _userId = user.id;
+    final meta = user.userMetadata ?? const <String, dynamic>{};
+    _userName = (meta['full_name'] as String?) ??
+        (meta['name'] as String?) ??
+        (user.email?.split('@').first) ??
+        'Explorer';
+    _userEmail = user.email ?? _userEmail;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_logged_in', true);
+    await prefs.setBool('is_guest', false);
+    await prefs.setString('user_name', _userName);
+    await prefs.setString('user_email', _userEmail);
+    await prefs.setString('user_id', _userId);
+  }
+
+  /// Exchanges the deep-link URI (from the OAuth redirect) for a Supabase
+  /// session. Called from the platform `app_links` / `uni_links` callback
+  /// when the browser returns to `io.supabase.streetlore://login-callback/`.
+  Future<bool> handleAuthCallback(Uri uri) async {
+    if (!AppConfig.supabaseEnabled) return false;
+    try {
+      await Supabase.instance.client.auth.getSessionFromUrl(uri);
+      return true;
+    } catch (e) {
+      debugPrint('AuthProvider: failed to exchange callback: $e');
+      return false;
+    }
   }
 
   Future<String?> signIn({
