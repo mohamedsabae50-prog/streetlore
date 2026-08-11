@@ -132,7 +132,7 @@ const List<PlaceModel> fallbackPlaces = [
     description:
         'A 15th-century defensive fortress located on the Mediterranean sea coast. Built upon the ruins of the ancient Lighthouse of Alexandria.',
     imageUrl:
-        'https://images.unsplash.com/photo-1604608672516-f1b9b1d1d1b1?w=900',
+        'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?auto=format&fit=crop&w=800&q=80',
     rating: 4.7,
     category: 'Historical',
     lat: 31.2141,
@@ -152,7 +152,7 @@ const List<PlaceModel> fallbackPlaces = [
     description:
         'A major library and cultural center on the shore of the Mediterranean. A revival of the ancient Library of Alexandria.',
     imageUrl:
-        'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=900',
+        'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&w=800&q=80',
     rating: 4.8,
     category: 'Culture',
     lat: 31.2092,
@@ -172,7 +172,7 @@ const List<PlaceModel> fallbackPlaces = [
     description:
         'A Roman triumphal column in Alexandria. The largest of its kind constructed outside of Rome and the imperial capitals.',
     imageUrl:
-        'https://images.unsplash.com/photo-1553913861-c0fddf2619ee?w=900',
+        'https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3?auto=format&fit=crop&w=800&q=80',
     rating: 4.5,
     category: 'Historical',
     lat: 31.1825,
@@ -192,7 +192,7 @@ const List<PlaceModel> fallbackPlaces = [
     description:
         'A historical archaeological site considered one of the Seven Wonders of the Middle Ages. Multi-level labyrinth with chambers.',
     imageUrl:
-        'https://images.unsplash.com/photo-1568322445389-f64ac2515020?w=900',
+        'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=800&q=80',
     rating: 4.6,
     category: 'Historical',
     lat: 31.1789,
@@ -212,7 +212,7 @@ const List<PlaceModel> fallbackPlaces = [
     description:
         'A scenic waterfront promenade along the Mediterranean Sea. Perfect for sunset walks with stunning views.',
     imageUrl:
-        'https://images.unsplash.com/photo-1591202913800-b4eddb931f06?w=900',
+        'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=800&q=80',
     rating: 4.7,
     category: 'Streets',
     lat: 31.2460,
@@ -232,7 +232,7 @@ const List<PlaceModel> fallbackPlaces = [
     description:
         'Beautiful royal gardens with the Khedive Ismail palace. Green oasis by the sea with stunning views.',
     imageUrl:
-        'https://images.unsplash.com/photo-1604999333679-b86d54738315?w=900',
+        'https://images.unsplash.com/photo-1596395819057-e34c0e0f7f30?auto=format&fit=crop&w=800&q=80',
     rating: 4.5,
     category: 'Nature',
     lat: 31.2890,
@@ -252,7 +252,7 @@ const List<PlaceModel> fallbackPlaces = [
     description:
         'A historic mosque in the old heart of Alexandria. Beautiful Mamluk-era architecture with intricate details.',
     imageUrl:
-        'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=900',
+        'https://images.unsplash.com/photo-1564769662533-4f00a87b4056?auto=format&fit=crop&w=800&q=80',
     rating: 4.3,
     category: 'Mosques',
     lat: 31.1990,
@@ -272,7 +272,7 @@ const List<PlaceModel> fallbackPlaces = [
     description:
         'The historic seat of the Coptic Pope in Alexandria. Beautiful modern architecture with ancient Coptic heritage.',
     imageUrl:
-        'https://images.unsplash.com/photo-1545987796-200677ee1011?w=900',
+        'https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=800&q=80',
     rating: 4.6,
     category: 'Churches',
     lat: 31.2056,

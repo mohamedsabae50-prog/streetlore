@@ -1268,6 +1268,54 @@ abstract class AppLocalizations {
   /// **'Please enter your name'**
   String get login_err_name;
 
+  /// Translation key: login_err_password_short
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get login_err_password_short;
+
+  /// Translation key: login_err_account_exists
+  ///
+  /// In en, this message translates to:
+  /// **'An account with this email already exists. Try signing in.'**
+  String get login_err_account_exists;
+
+  /// Translation key: login_err_no_account
+  ///
+  /// In en, this message translates to:
+  /// **'No account found with this email. Tap Sign Up to create one.'**
+  String get login_err_no_account;
+
+  /// Translation key: login_err_wrong_password
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong password. Please try again.'**
+  String get login_err_wrong_password;
+
+  /// Translation key: login_err_unknown
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get login_err_unknown;
+
+  /// Translation key: login_password
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get login_password;
+
+  /// Translation key: login_password_hint
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get login_password_hint;
+
+  /// Translation key: login_password_hint_signup
+  ///
+  /// In en, this message translates to:
+  /// **'At least 6 characters'**
+  String get login_password_hint_signup;
+
   /// Translation key: login_full_name
   ///
   /// In en, this message translates to:
@@ -1279,6 +1327,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Google'**
   String get login_google;
+
+  /// Translation key: login_google_signed_in
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in with Google (local).'**
+  String get login_google_signed_in;
+
+  /// Translation key: login_google_unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in unavailable. Use email or continue as guest.'**
+  String get login_google_unavailable;
+
+  /// Translation key: login_have_account
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get login_have_account;
+
+  /// Translation key: login_no_account
+  ///
+  /// In en, this message translates to:
+  /// **'No account yet?'**
+  String get login_no_account;
+
+  /// Translation key: login_sign_up
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get login_sign_up;
 
   /// Translation key: login_guest_name
   ///

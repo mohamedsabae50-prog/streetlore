@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -194,6 +195,13 @@ class PlacePhotosSection extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, i) {
           final photo = photos[i];
+          // Pre-cache the next image so swiping feels instant (no white flash).
+          if (i + 1 < photos.length) {
+            final next = photos[i + 1].imageUrl;
+            if (AppImage.isNetwork(next)) {
+              precacheImage(CachedNetworkImageProvider(next), context);
+            }
+          }
           return _PhotoCard(
             photo: photo,
             onLike: () {

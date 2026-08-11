@@ -305,8 +305,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            RepaintBoundary(child: _buildCompassIntro()),
-            const RepaintBoundary(child: WeatherWidget()),
 
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -407,6 +405,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           parent: BouncingScrollPhysics(),
         ),
         slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                RepaintBoundary(child: _buildCompassIntro()),
+                const RepaintBoundary(child: WeatherWidget()),
+              ],
+            ),
+          ),
           SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -994,7 +1000,7 @@ class _QuickAccessGrid extends StatelessWidget {
 class _QuickCircleTile extends StatelessWidget {
   final _QuickItem item;
 
-  const _QuickCircleTile({Key? key, required this.item}) : super(key: key);
+  const _QuickCircleTile({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -1008,9 +1014,9 @@ class _QuickCircleTile extends StatelessWidget {
             height: 55,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: item.color.withOpacity(0.1),
+              color: item.color.withValues(alpha: 0.1),
               border: Border.all(
-                color: item.color.withOpacity(0.3),
+                color: item.color.withValues(alpha: 0.3),
                 width: 1.0,
               ),
             ),

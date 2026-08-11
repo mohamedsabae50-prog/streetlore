@@ -635,10 +635,53 @@ class AppLocalizationsAr extends AppLocalizations {
   String get login_err_name => 'من فضلك أدخل اسمك';
 
   @override
+  String get login_err_password_short =>
+      'كلمة المرور لازم تكون 6 حروف على الأقل';
+
+  @override
+  String get login_err_account_exists =>
+      'في حساب بالفعل بالإيميل ده. جرّب تسجّل دخول.';
+
+  @override
+  String get login_err_no_account =>
+      'مفيش حساب بالإيميل ده. اعمل حساب جديد من تسجيل.';
+
+  @override
+  String get login_err_wrong_password => 'كلمة المرور غلط. حاول تاني.';
+
+  @override
+  String get login_err_unknown => 'حصل حاجة غلط. حاول تاني.';
+
+  @override
+  String get login_password => 'كلمة المرور';
+
+  @override
+  String get login_password_hint => 'اكتب كلمة مرورك';
+
+  @override
+  String get login_password_hint_signup => '6 حروف على الأقل';
+
+  @override
   String get login_full_name => 'الاسم الكامل';
 
   @override
   String get login_google => 'جوجل';
+
+  @override
+  String get login_google_signed_in => 'تم تسجيل الدخول بجوجل (محلي).';
+
+  @override
+  String get login_google_unavailable =>
+      'جوجل مش متاح دلوقتي. استخدم الإيميل أو كمّل كضيف.';
+
+  @override
+  String get login_have_account => 'عندك حساب بالفعل؟';
+
+  @override
+  String get login_no_account => 'مفيش حساب لسه؟';
+
+  @override
+  String get login_sign_up => 'إنشاء حساب';
 
   @override
   String get login_guest_name => 'مستكشف زائر';

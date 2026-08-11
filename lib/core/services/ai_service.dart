@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
@@ -22,6 +22,10 @@ class AiService {
     return _model;
   }
 
+  bool _isArabic(String text) {
+    return text.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
+  }
+
   Future<AiTripPlan> generateTrip({
     required String prompt,
     required List<PlaceModel> availablePlaces,
@@ -41,14 +45,22 @@ class AiService {
     final availablePlaceIds =
         availablePlaces.map((p) => p.id).toList(growable: false);
 
+    final bool isArabic = _isArabic(prompt);
+
     final placesForContext = availablePlaces
         .map((p) =>
             '{"id":"${p.id}","name":${jsonEncode(p.name)},"category":"${p.category}","lat":${p.lat},"lng":${p.lng}}')
         .join(',');
 
+    // Build a per-request seed so the same prompt produces different content
+    // across runs. Without this the model tends to return near-identical
+    // recommendations and "stops" feel templated.
+    final seed = DateTime.now().millisecondsSinceEpoch.toString();
+
     final system = """
-You are a travel planner for Alexandria, Egypt. Given a user prompt and a
-JSON list of available places, return ONLY a JSON object matching this shape:
+You are a creative travel planner for Alexandria, Egypt. Given a user prompt,
+a budget level, and a JSON list of available places, return ONLY a JSON
+object matching this shape:
 
 {
   "title": string,
@@ -67,11 +79,19 @@ Rules:
 - Only use placeIds from the provided list.
 - Order stops logically (geographically + chronologically).
 - Be concise; "note" should be <= 18 words.
+- Vary wording: each note, theme, tip must be UNIQUE across the response — no copy-paste.
+- Adapt to the user's prompt: family, romantic, foodie, history, hidden gems, budget trip, etc. — recommendations and notes must reflect what the user asked for.
+- Reflect the budget: \$ is free/street-food, \$\$ is casual, \$\$\$ is mid-range, \$\$\$\$ is premium — adjust tip and summary tone accordingly.
+- For totalDays, prefer the user hint when provided; otherwise pick what fits the prompt.
 - Output raw JSON, no markdown fences.
+- IMPORTANT: The user's prompt language is ${isArabic ? 'Arabic' : 'English'}. Respond in the SAME language. All text fields (title, summary, theme, note, tips) must be in ${isArabic ? 'Arabic' : 'English'}.
+- Variety seed for this request: $seed. Treat as opaque; used only to encourage fresh wording.
 """;
 
     final user = 'User prompt: ${jsonEncode(prompt)}\n'
         'Days hint: ${daysHint ?? "auto"}\n'
+        'Budget: ${budget ?? r"\$\$"}\n'
+        'Variety seed: $seed\n'
         'Available places: [$placesForContext]';
 
     try {
@@ -172,6 +192,7 @@ Rules:
     required List<PlaceModel> availablePlaces,
     required String budget,
   }) {
+    final isArabic = _isArabic(prompt);
     final all = availablePlaces;
     if (all.isEmpty) {
       return AiTripPlan(
@@ -239,31 +260,38 @@ Rules:
       final ordered = _geoOrder(slice);
       days.add(AiTripDay(
         dayNumber: d + 1,
-        theme: _themeFor(ordered, d),
+        theme: _themeFor(ordered, d, isArabic: isArabic),
         stops: [
           for (var j = 0; j < ordered.length; j++)
             AiTripStop(
               placeId: ordered[j].id,
               suggestedTime:
                   '${(9 + j * 3).toString().padLeft(2, '0')}:00 - ${(11 + j * 3).toString().padLeft(2, '0')}:00',
-              note: _noteFor(ordered[j]),
+              note: _noteFor(ordered[j], isArabic: isArabic),
             ),
         ],
       ));
     }
     return AiTripPlan(
-      title: 'Your $daysHint-Day Alexandria Plan',
-      summary:
-          'Planned on your device from your request: best-matching places, '
-          'ordered so each day flows as one walkable route.',
+      title: isArabic ? 'خطتك لـ $daysHint يوم في الإسكندرية' : 'Your $daysHint-Day Alexandria Plan',
+      summary: isArabic 
+          ? 'خطة مُعدّة على جهازك بناءً على طلبك: أفضل الأماكن مرتبة جغرافياً ليومك.'
+          : 'Planned on your device from your request: best-matching places, '
+            'ordered so each day flows as one walkable route.',
       totalDays: daysHint,
       estimatedBudget: budget,
       days: days,
-      tips: const [
-        'Start early to avoid crowds at the most popular sites.',
-        'Carry a light jacket - Mediterranean breeze surprises in the evening.',
-        'Try the local seafood for an authentic Alexandrian dinner.',
-      ],
+      tips: isArabic 
+          ? const [
+              'ابدأ مبكراً لتجنب الازدحام في أشهر المواقع.',
+              'احمل جاكيت خفيف — النسيم المتوسطي يفاجئك مساءً.',
+              'جرّب المأكولات البحرية المحلية لتجربة إسكندرانية أصيلة.',
+            ]
+          : const [
+              'Start early to avoid crowds at the most popular sites.',
+              'Carry a light jacket - Mediterranean breeze surprises in the evening.',
+              'Try the local seafood for an authentic Alexandrian dinner.',
+            ],
     );
   }
 
@@ -289,7 +317,7 @@ Rules:
     return dx * dx + dy * dy;
   }
 
-  String _themeFor(List<PlaceModel> dayPlaces, int dayIndex) {
+  String _themeFor(List<PlaceModel> dayPlaces, int dayIndex, {bool isArabic = false}) {
     final counts = <String, int>{};
     for (final p in dayPlaces) {
       counts[p.category] = (counts[p.category] ?? 0) + 1;
@@ -303,28 +331,19 @@ Rules:
       }
     });
     switch (top) {
-      case 'Historical':
-        return 'Historical Highlights';
-      case 'Food':
-        return 'Tastes of the City';
-      case 'Nature':
-        return 'Nature & Sea Breeze';
-      case 'Culture':
-        return 'Culture & Museums';
-      case 'Shopping':
-        return 'Markets & Shopping';
-      case 'Mosques':
-        return 'Spiritual Landmarks';
-      case 'Churches':
-        return 'Sacred Architecture';
-      case 'Streets':
-        return 'Streets & Local Life';
-      default:
-        return dayIndex == 0 ? 'City Icons' : 'Hidden Corners';
+      case 'Historical': return isArabic ? 'أبرز المواقع التاريخية' : 'Historical Highlights';
+      case 'Food': return isArabic ? 'نكهات المدينة' : 'Tastes of the City';
+      case 'Nature': return isArabic ? 'الطبيعة ونسيم البحر' : 'Nature & Sea Breeze';
+      case 'Culture': return isArabic ? 'الثقافة والمتاحف' : 'Culture & Museums';
+      case 'Shopping': return isArabic ? 'الأسواق والتسوق' : 'Markets & Shopping';
+      case 'Mosques': return isArabic ? 'المعالم الدينية' : 'Spiritual Landmarks';
+      case 'Churches': return isArabic ? 'العمارة المقدسة' : 'Sacred Architecture';
+      case 'Streets': return isArabic ? 'شوارع وحياة محلية' : 'Streets & Local Life';
+      default: return isArabic ? (dayIndex == 0 ? 'أيقونات المدينة' : 'زوايا خفية') : (dayIndex == 0 ? 'City Icons' : 'Hidden Corners');
     }
   }
 
-  String _noteFor(PlaceModel p) => p.isHiddenGem
-      ? 'Hidden gem loved by locals.'
-      : 'Top-rated ${p.category.toLowerCase()} stop.';
+  String _noteFor(PlaceModel p, {bool isArabic = false}) => p.isHiddenGem
+      ? (isArabic ? 'جوهرة خفية يحبها السكان المحليون.' : 'Hidden gem loved by locals.')
+      : (isArabic ? 'وجهة ${p.category} مميزة ومُقيَّمة بعلامة عالية.' : 'Top-rated ${p.category.toLowerCase()} stop.');
 }

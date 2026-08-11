@@ -25,6 +25,7 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
   int _days = 2;
   String _budget = '\$\$';
   bool _busy = false;
+  String? _progressLabel;
   AiTripPlan? _plan;
   String? _error;
 
@@ -52,20 +53,32 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
       _error = null;
       _plan = null;
     });
+    HapticFeedback.mediumImpact();
     try {
       final places = context.read<PlaceProvider>().places;
+      // Stage progress so the user feels the work being done.
+      if (mounted) setState(() => _progressLabel = 'جاري تحليل طلبك…');
+      await Future.delayed(const Duration(milliseconds: 700));
+      if (mounted) setState(() => _progressLabel = 'بندور على أحسن الأماكن ليك…');
+      await Future.delayed(const Duration(milliseconds: 900));
+      if (mounted) setState(() => _progressLabel = 'بنرتب المسار جغرافياً…');
       final plan = await AiService.instance.generateTrip(
         prompt: prompt,
         availablePlaces: places,
         daysHint: _days,
         budget: _budget,
       );
-      setState(() => _plan = plan);
+      if (mounted) setState(() => _plan = plan);
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = context.tr('ai_err_failed', {'e': '$e'}));
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _progressLabel = null;
+        });
+      }
     }
   }
 
@@ -203,6 +216,19 @@ class _AiTripGeneratorScreenState extends State<AiTripGeneratorScreen> {
               ),
             ),
           ),
+          if (_busy && _progressLabel != null) ...[
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                _progressLabel!,
+                style: TextStyle(
+                  color: context.textSec,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
           if (_error != null) ...[
             const SizedBox(height: 14),
             Container(
@@ -239,33 +265,83 @@ class _DaysPicker extends StatelessWidget {
   final int value;
   final ValueChanged<int> onChanged;
   const _DaysPicker({required this.value, required this.onChanged});
+
+  Future<void> _open(BuildContext context) async {
+    final selected = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Text(
+                  ctx.tr('ai_days'),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [1, 2, 3, 4, 5]
+                      .map((d) => ChoiceChip(
+                            label: Text('$d'),
+                            selected: d == value,
+                            onSelected: (_) => Navigator.pop(ctx, d),
+                          ))
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (selected != null) onChanged(selected);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.calendar_today_rounded, size: 18, color: context.textPri),
-          const SizedBox(width: 8),
-          Text(context.tr('ai_days'),
-              style: const TextStyle(fontWeight: FontWeight.w600)),
-          const Spacer(),
-          DropdownButton<int>(
-            value: value,
-            underline: const SizedBox(),
-            items: const [1, 2, 3, 4, 5]
-                .map((d) => DropdownMenuItem(value: d, child: Text('$d')))
-                .toList(),
-            onChanged: (v) {
-              if (v != null) onChanged(v);
-            },
-          ),
-        ],
+    return InkWell(
+      onTap: () => _open(context),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today_rounded, size: 18, color: context.textPri),
+            const SizedBox(width: 8),
+            Text(context.tr('ai_days'),
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+            const Spacer(),
+            Text('$value',
+                style: const TextStyle(
+                    fontWeight: FontWeight.w800, fontSize: 16)),
+            const SizedBox(width: 4),
+            Icon(Icons.expand_more_rounded,
+                size: 20, color: context.textSec),
+          ],
+        ),
       ),
     );
   }
@@ -275,33 +351,84 @@ class _BudgetPicker extends StatelessWidget {
   final String value;
   final ValueChanged<String> onChanged;
   const _BudgetPicker({required this.value, required this.onChanged});
+
+  Future<void> _open(BuildContext context) async {
+    const options = [r'$', r'$$', r'$$$', r'$$$$'];
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Text(
+                  ctx.tr('ai_budget'),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: options
+                      .map((b) => ChoiceChip(
+                            label: Text(b),
+                            selected: b == value,
+                            onSelected: (_) => Navigator.pop(ctx, b),
+                          ))
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (selected != null) onChanged(selected);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.payments_rounded, size: 18, color: context.textPri),
-          const SizedBox(width: 8),
-          Text(context.tr('ai_budget'),
-              style: const TextStyle(fontWeight: FontWeight.w600)),
-          const Spacer(),
-          DropdownButton<String>(
-            value: value,
-            underline: const SizedBox(),
-            items: const [r'$', r'$$', r'$$$', r'$$$$']
-                .map((b) => DropdownMenuItem(value: b, child: Text(b)))
-                .toList(),
-            onChanged: (v) {
-              if (v != null) onChanged(v);
-            },
-          ),
-        ],
+    return InkWell(
+      onTap: () => _open(context),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: context.hintColor.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.payments_rounded, size: 18, color: context.textPri),
+            const SizedBox(width: 8),
+            Text(context.tr('ai_budget'),
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+            const Spacer(),
+            Text(value,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w800, fontSize: 16)),
+            const SizedBox(width: 4),
+            Icon(Icons.expand_more_rounded,
+                size: 20, color: context.textSec),
+          ],
+        ),
       ),
     );
   }

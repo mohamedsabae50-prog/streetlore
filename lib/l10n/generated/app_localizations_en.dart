@@ -637,10 +637,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get login_err_name => 'Please enter your name';
 
   @override
+  String get login_err_password_short =>
+      'Password must be at least 6 characters';
+
+  @override
+  String get login_err_account_exists =>
+      'An account with this email already exists. Try signing in.';
+
+  @override
+  String get login_err_no_account =>
+      'No account found with this email. Tap Sign Up to create one.';
+
+  @override
+  String get login_err_wrong_password => 'Wrong password. Please try again.';
+
+  @override
+  String get login_err_unknown => 'Something went wrong. Please try again.';
+
+  @override
+  String get login_password => 'Password';
+
+  @override
+  String get login_password_hint => 'Enter your password';
+
+  @override
+  String get login_password_hint_signup => 'At least 6 characters';
+
+  @override
   String get login_full_name => 'Full Name';
 
   @override
   String get login_google => 'Google';
+
+  @override
+  String get login_google_signed_in => 'Signed in with Google (local).';
+
+  @override
+  String get login_google_unavailable =>
+      'Google sign-in unavailable. Use email or continue as guest.';
+
+  @override
+  String get login_have_account => 'Already have an account?';
+
+  @override
+  String get login_no_account => 'No account yet?';
+
+  @override
+  String get login_sign_up => 'Sign Up';
 
   @override
   String get login_guest_name => 'Guest Explorer';

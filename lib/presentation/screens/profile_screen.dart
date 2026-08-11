@@ -35,13 +35,26 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ConfettiController _confetti = ConfettiController();
+  bool _notificationsEnabled = true;
+  bool _locationEnabled = true;
 
   @override
   void initState() {
     super.initState();
+    _loadTogglePrefs();
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _maybeCelebrateStreakBadge(),
     );
+  }
+
+  Future<void> _loadTogglePrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+        _locationEnabled = prefs.getBool('location_enabled') ?? true;
+      });
+    }
   }
 
   Future<void> _editName(BuildContext context, AuthProvider auth) async {
@@ -122,7 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (newName == null || newName.trim().isEmpty) return;
     if (!mounted) return;
     await auth.updateGuestName(newName);
-    if (!mounted) return;
+    if (!context.mounted) return;
     final gam = context.read<GamificationProvider>();
     gam.syncWithAuth(auth);
     HapticFeedback.lightImpact();
@@ -712,8 +725,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: context.tr('push_notif'),
                     subtitle: context.tr('push_notif_sub'),
                     color: AppColors.accent,
-                    value: true,
-                    onChanged: (_) {},
+                    value: _notificationsEnabled,
+                    onChanged: (v) async {
+                      HapticFeedback.lightImpact();
+                      setState(() => _notificationsEnabled = v);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('notifications_enabled', v);
+                    },
                   ),
                   _Div(),
                   _ToggleTile(
@@ -721,8 +739,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: context.tr('location_services'),
                     subtitle: context.tr('location_services_sub'),
                     color: AppColors.success,
-                    value: true,
-                    onChanged: (_) {},
+                    value: _locationEnabled,
+                    onChanged: (v) async {
+                      HapticFeedback.lightImpact();
+                      setState(() => _locationEnabled = v);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('location_enabled', v);
+                    },
                   ),
                   _Div(),
                   Consumer<LocaleProvider>(

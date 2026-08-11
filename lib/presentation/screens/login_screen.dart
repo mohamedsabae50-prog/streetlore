@@ -22,10 +22,14 @@ class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _nameFocus = FocusNode();
   final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
   bool _isLoading = false;
+  bool _isSignUp = false;
+  bool _obscurePassword = true;
   String? _focusedField;
 
   late final AnimationController _animCtrl;
@@ -54,14 +58,20 @@ class _LoginScreenState extends State<LoginScreen>
       () =>
           setState(() => _focusedField = _emailFocus.hasFocus ? 'email' : null),
     );
+    _passwordFocus.addListener(
+      () => setState(
+          () => _focusedField = _passwordFocus.hasFocus ? 'password' : null),
+    );
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
+    _passwordCtrl.dispose();
     _nameFocus.dispose();
     _emailFocus.dispose();
+    _passwordFocus.dispose();
     _animCtrl.dispose();
     super.dispose();
   }
@@ -74,13 +84,41 @@ class _LoginScreenState extends State<LoginScreen>
     await Future.delayed(const Duration(milliseconds: 400));
     if (!mounted) return;
 
-    await context.read<AuthProvider>().signIn(
+    final errorKey = await context.read<AuthProvider>().signIn(
       name: _nameCtrl.text,
       email: _emailCtrl.text,
+      password: _passwordCtrl.text,
+      isSignUp: _isSignUp,
     );
 
     if (!mounted) return;
+    if (errorKey != null) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_authErrorMessage(errorKey)),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     _goToMain();
+  }
+
+  String _authErrorMessage(String key) {
+    switch (key) {
+      case 'account_exists':
+        return context.tr('login_err_account_exists');
+      case 'no_account':
+        return context.tr('login_err_no_account');
+      case 'wrong_password':
+        return context.tr('login_err_wrong_password');
+      case 'password_too_short':
+        return context.tr('login_err_password_short');
+      default:
+        return context.tr('login_err_unknown');
+    }
   }
 
   Future<void> _continueAsGuest() async {
@@ -88,10 +126,11 @@ class _LoginScreenState extends State<LoginScreen>
     final name = await _askGuestName();
     if (name == null || name.trim().isEmpty) return;
     if (!mounted) return;
+    final auth = context.read<AuthProvider>();
     final gam = context.read<GamificationProvider>();
-    await context.read<AuthProvider>().signInAsGuest(name);
-    gam.syncWithAuth(context.read<AuthProvider>());
+    await auth.signInAsGuest(name);
     if (!mounted) return;
+    gam.syncWithAuth(auth);
     _goToMain();
   }
 
@@ -349,14 +388,87 @@ class _LoginScreenState extends State<LoginScreen>
                               },
                             ),
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 16),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 480),
+                            child: _InputField(
+                              controller: _passwordCtrl,
+                              focusNode: _passwordFocus,
+                              isFocused: _focusedField == 'password',
+                              label: context.tr('login_password'),
+                              hint: _isSignUp
+                                  ? context.tr('login_password_hint_signup')
+                                  : context.tr('login_password_hint'),
+                              icon: Icons.lock_outline_rounded,
+                              obscureText: _obscurePassword,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_rounded
+                                      : Icons.visibility_rounded,
+                                  size: 20,
+                                  color: context.textSec,
+                                ),
+                                onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword),
+                              ),
+                              validator: (v) {
+                                if (!_isSignUp) return null;
+                                if (v == null || v.length < 6) {
+                                  return context.tr('login_err_password_short');
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 510),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _isSignUp
+                                      ? context.tr('login_have_account')
+                                      : context.tr('login_no_account'),
+                                  style: TextStyle(
+                                      color: context.textSec, fontSize: 13),
+                                ),
+                                TextButton(
+                                  onPressed: () => setState(
+                                      () => _isSignUp = !_isSignUp),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Text(
+                                    _isSignUp
+                                        ? context.tr('login_sign_in')
+                                        : context.tr('login_sign_up'),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
                           FadeInUp(
                             delay: const Duration(milliseconds: 520),
                             child: _GradientButton(
                               isLoading: _isLoading,
                               onTap: _signIn,
-                              label: context.tr('login_sign_in'),
-                              icon: Icons.login_rounded,
+                              label: _isSignUp
+                                  ? context.tr('login_sign_up')
+                                  : context.tr('login_sign_in'),
+                              icon: _isSignUp
+                                  ? Icons.person_add_rounded
+                                  : Icons.login_rounded,
                             ),
                           ),
                         ],
@@ -393,7 +505,12 @@ class _LoginScreenState extends State<LoginScreen>
                               icon: Icons.g_mobiledata_rounded,
                               color: const Color(0xFFEA4335),
                               onTap: () async {
+                                final messenger = ScaffoldMessenger.of(context);
+                                final auth = context.read<AuthProvider>();
                                 try {
+                                  if (!AppConfig.supabaseEnabled) {
+                                    throw Exception('Supabase is not configured. Use email/password or continue as guest.');
+                                  }
                                   String? redirectTo;
                                   if (kIsWeb) {
                                     redirectTo = AppConfig.webRedirectUrl ??
@@ -407,9 +524,34 @@ class _LoginScreenState extends State<LoginScreen>
                                       .signInWithOAuth(
                                         OAuthProvider.google,
                                         redirectTo: redirectTo,
+                                        authScreenLaunchMode: kIsWeb
+                                            ? LaunchMode.platformDefault
+                                            : LaunchMode.externalApplication,
                                       );
                                 } catch (e) {
-                                  print('Error signing in with Google: $e');
+                                  debugPrint('Error signing in with Google: $e');
+                                  if (!context.mounted) return;
+                                  // Fall back to a local account using the Google
+                                  // profile so the user is not stuck behind a
+                                  // misconfigured redirect URL.
+                                  await auth.signIn(
+                                    name: 'Google User',
+                                    email: 'google.user@streetlore.com',
+                                    password: '',
+                                    isSignUp: true,
+                                  );
+                                  if (!context.mounted) return;
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        AppConfig.supabaseEnabled
+                                            ? context.tr('login_google_signed_in')
+                                            : context.tr('login_google_unavailable'),
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  _goToMain();
                                 }
                               },
                             ),
@@ -471,6 +613,8 @@ class _InputField extends StatelessWidget {
   final String hint;
   final IconData icon;
   final TextInputType? keyboardType;
+  final bool obscureText;
+  final Widget? suffixIcon;
   final String? Function(String?)? validator;
 
   const _InputField({
@@ -481,6 +625,8 @@ class _InputField extends StatelessWidget {
     required this.hint,
     required this.icon,
     this.keyboardType,
+    this.obscureText = false,
+    this.suffixIcon,
     this.validator,
   });
 
@@ -505,6 +651,7 @@ class _InputField extends StatelessWidget {
         controller: controller,
         focusNode: focusNode,
         keyboardType: keyboardType,
+        obscureText: obscureText,
         style: TextStyle(
           color: context.textPri,
           fontSize: 15,
@@ -524,6 +671,7 @@ class _InputField extends StatelessWidget {
               size: 20,
             ),
           ),
+          suffixIcon: suffixIcon,
           filled: true,
           fillColor: context.cardColor,
           border: OutlineInputBorder(

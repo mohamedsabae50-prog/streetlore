@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+// ignore_for_file: prefer_initializing_formals
 import 'package:flutter/material.dart' hide Badge;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/achievement_catalog.dart';
@@ -82,7 +82,7 @@ class AchievementProvider extends ChangeNotifier {
     _recalculateAll();
   }
 
-  String get _kKey => '${_kPrefix}_${_userKey}';
+  String get _kKey => '${_kPrefix}_$_userKey';
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();

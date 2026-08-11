@@ -663,9 +663,52 @@ class AppStrings {
       'en': 'Please enter a valid email',
       'ar': 'من فضلك أدخل بريدًا إلكترونيًا صحيحًا',
     },
+    'login_err_password_short': {
+      'en': 'Password must be at least 6 characters',
+      'ar': 'كلمة المرور لازم تكون 6 حروف على الأقل',
+    },
+    'login_err_account_exists': {
+      'en': 'An account with this email already exists. Try signing in.',
+      'ar': 'في حساب بالفعل بالإيميل ده. جرّب تسجّل دخول.',
+    },
+    'login_err_no_account': {
+      'en': 'No account found with this email. Tap Sign Up to create one.',
+      'ar': 'مفيش حساب بالإيميل ده. اعمل حساب جديد من تسجيل.',
+    },
+    'login_err_wrong_password': {
+      'en': 'Wrong password. Please try again.',
+      'ar': 'كلمة المرور غلط. حاول تاني.',
+    },
+    'login_err_unknown': {
+      'en': 'Something went wrong. Please try again.',
+      'ar': 'حصل حاجة غلط. حاول تاني.',
+    },
+    'login_password': {'en': 'Password', 'ar': 'كلمة المرور'},
+    'login_password_hint': {
+      'en': 'Enter your password',
+      'ar': 'اكتب كلمة مرورك',
+    },
+    'login_password_hint_signup': {
+      'en': 'At least 6 characters',
+      'ar': '6 حروف على الأقل',
+    },
     'login_sign_in': {'en': 'Sign In', 'ar': 'تسجيل الدخول'},
+    'login_sign_up': {'en': 'Sign Up', 'ar': 'إنشاء حساب'},
+    'login_no_account': {'en': 'No account yet?', 'ar': 'مفيش حساب لسه؟'},
+    'login_have_account': {
+      'en': 'Already have an account?',
+      'ar': 'عندك حساب بالفعل؟',
+    },
     'login_or': {'en': 'or', 'ar': 'أو'},
     'login_google': {'en': 'Google', 'ar': 'جوجل'},
+    'login_google_signed_in': {
+      'en': 'Signed in with Google (local).',
+      'ar': 'تم تسجيل الدخول بجوجل (محلي).',
+    },
+    'login_google_unavailable': {
+      'en': 'Google sign-in unavailable. Use email or continue as guest.',
+      'ar': 'جوجل مش متاح دلوقتي. استخدم الإيميل أو كمّل كضيف.',
+    },
     'login_just_exploring': {'en': 'Just exploring? ', 'ar': 'بتستكشف بس؟ '},
     'login_continue_guest': {'en': 'Continue as Guest', 'ar': 'ادخل كضيف'},
     'login_guest_name': {'en': 'Guest Explorer', 'ar': 'مستكشف زائر'},

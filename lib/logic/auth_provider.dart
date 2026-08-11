@@ -43,21 +43,58 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> signIn({required String name, required String email}) async {
+  Future<String?> signIn({
+    required String name,
+    required String email,
+    required String password,
+    required bool isSignUp,
+  }) async {
+    final cleanEmail = email.trim().toLowerCase();
+    final cleanName = name.trim();
+    final cleanPassword = password;
+    if (cleanEmail.isEmpty || !cleanEmail.contains('@')) {
+      return 'invalid_email';
+    }
+    if (cleanName.isEmpty) {
+      return 'invalid_name';
+    }
+    if (isSignUp && cleanPassword.length < 6) {
+      return 'password_too_short';
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+
+    if (isSignUp) {
+      final existing = prefs.getString('user_email_${cleanEmail}_password');
+      if (existing != null) {
+        return 'account_exists';
+      }
+      await prefs.setString('user_email_${cleanEmail}_name', cleanName);
+      await prefs.setString('user_email_${cleanEmail}_password', cleanPassword);
+    } else {
+      final stored = prefs.getString('user_email_${cleanEmail}_password');
+      if (stored == null) {
+        return 'no_account';
+      }
+      if (stored != cleanPassword) {
+        return 'wrong_password';
+      }
+    }
+
     _isLoggedIn = true;
     _isGuest = false;
-    _userName = name.trim().isEmpty ? 'Explorer' : name.trim();
-    _userEmail = email.trim().isEmpty ? 'explorer@streetlore.com' : email.trim();
+    _userName = cleanName;
+    _userEmail = cleanEmail;
     if (_userId.isEmpty) {
       _userId = const Uuid().v4();
     }
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_logged_in', true);
     await prefs.setBool('is_guest', false);
     await prefs.setString('user_name', _userName);
     await prefs.setString('user_email', _userEmail);
     await prefs.setString('user_id', _userId);
+    return null;
   }
 
   Future<void> signInAsGuest(String name) async {
