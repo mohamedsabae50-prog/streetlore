@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -507,19 +509,30 @@ class _LoginScreenState extends State<LoginScreen>
                               onTap: () async {
                                 final messenger = ScaffoldMessenger.of(context);
                                 final auth = context.read<AuthProvider>();
+                                if (!AppConfig.supabaseEnabled) {
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          context.tr('login_google_unavailable')),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                if (auth.isLoggedIn) {
+                                  _goToMain();
+                                  return;
+                                }
+                                setState(() => _isLoading = true);
+                                HapticFeedback.lightImpact();
                                 try {
-                                  if (!AppConfig.supabaseEnabled) {
-                                    throw Exception('Supabase is not configured. Use email/password or continue as guest.');
-                                  }
-                                  String? redirectTo;
-                                  if (kIsWeb) {
-                                    redirectTo = AppConfig.webRedirectUrl ??
-                                        (kIsWeb
-                                            ? Uri.base.origin
-                                            : null);
-                                  } else {
-                                    redirectTo = AppConfig.mobileRedirectUrl;
-                                  }
+                                  final redirectTo = kIsWeb
+                                      ? (AppConfig.webRedirectUrl ?? Uri.base.origin)
+                                      : AppConfig.mobileRedirectUrl;
+                                  // Race the OAuth flow against a 2-minute timeout.
+                                  // If the user closes the browser without picking
+                                  // an account, the future would otherwise hang and
+                                  // leave the app stuck on the loading spinner.
                                   await Supabase.instance.client.auth
                                       .signInWithOAuth(
                                         OAuthProvider.google,
@@ -527,31 +540,39 @@ class _LoginScreenState extends State<LoginScreen>
                                         authScreenLaunchMode: kIsWeb
                                             ? LaunchMode.platformDefault
                                             : LaunchMode.externalApplication,
-                                      );
-                                } catch (e) {
-                                  debugPrint('Error signing in with Google: $e');
-                                  if (!context.mounted) return;
-                                  // Fall back to a local account using the Google
-                                  // profile so the user is not stuck behind a
-                                  // misconfigured redirect URL.
-                                  await auth.signIn(
-                                    name: 'Google User',
-                                    email: 'google.user@streetlore.com',
-                                    password: '',
-                                    isSignUp: true,
-                                  );
+                                      )
+                                      .timeout(const Duration(minutes: 2));
+                                  // If the OAuth call returned and the user is
+                                  // signed in, navigate. Otherwise the deep link
+                                  // listener in main.dart will pick up the session.
+                                  if (auth.isLoggedIn) {
+                                    if (!mounted) return;
+                                    _goToMain();
+                                  }
+                                } on TimeoutException {
                                   if (!context.mounted) return;
                                   messenger.showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        AppConfig.supabaseEnabled
-                                            ? context.tr('login_google_signed_in')
-                                            : context.tr('login_google_unavailable'),
-                                      ),
+                                          context.tr('login_google_timeout')),
                                       behavior: SnackBarBehavior.floating,
                                     ),
                                   );
-                                  _goToMain();
+                                } catch (e) {
+                                  debugPrint('Google sign-in error: $e');
+                                  if (!context.mounted) return;
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          context.tr('login_google_failed')),
+                                      backgroundColor: AppColors.error,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _isLoading = false);
+                                  }
                                 }
                               },
                             ),

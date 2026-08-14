@@ -709,6 +709,14 @@ class AppStrings {
       'en': 'Google sign-in unavailable. Use email or continue as guest.',
       'ar': 'جوجل مش متاح دلوقتي. استخدم الإيميل أو كمّل كضيف.',
     },
+    'login_google_timeout': {
+      'en': 'Google sign-in took too long. Try again or use email.',
+      'ar': 'تسجيل الدخول بجوجل استغرق وقت طويل. حاول تاني أو استخدم الإيميل.',
+    },
+    'login_google_failed': {
+      'en': 'Google sign-in failed. Check your Supabase redirect URL settings.',
+      'ar': 'فشل تسجيل الدخول بجوجل. تأكد من إعدادات الـ redirect URL في Supabase.',
+    },
     'login_just_exploring': {'en': 'Just exploring? ', 'ar': 'بتستكشف بس؟ '},
     'login_continue_guest': {'en': 'Continue as Guest', 'ar': 'ادخل كضيف'},
     'login_guest_name': {'en': 'Guest Explorer', 'ar': 'مستكشف زائر'},
