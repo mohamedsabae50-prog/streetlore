@@ -1,7 +1,8 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/config/app_config.dart';
@@ -62,7 +63,8 @@ class _LoginScreenState extends State<LoginScreen>
     );
     _passwordFocus.addListener(
       () => setState(
-          () => _focusedField = _passwordFocus.hasFocus ? 'password' : null),
+        () => _focusedField = _passwordFocus.hasFocus ? 'password' : null,
+      ),
     );
   }
 
@@ -412,7 +414,8 @@ class _LoginScreenState extends State<LoginScreen>
                                   color: context.textSec,
                                 ),
                                 onPressed: () => setState(
-                                    () => _obscurePassword = !_obscurePassword),
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
                               ),
                               validator: (v) {
                                 if (!_isSignUp) return null;
@@ -434,14 +437,18 @@ class _LoginScreenState extends State<LoginScreen>
                                       ? context.tr('login_have_account')
                                       : context.tr('login_no_account'),
                                   style: TextStyle(
-                                      color: context.textSec, fontSize: 13),
+                                    color: context.textSec,
+                                    fontSize: 13,
+                                  ),
                                 ),
                                 TextButton(
-                                  onPressed: () => setState(
-                                      () => _isSignUp = !_isSignUp),
+                                  onPressed: () =>
+                                      setState(() => _isSignUp = !_isSignUp),
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     minimumSize: Size.zero,
                                     tapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
@@ -513,54 +520,73 @@ class _LoginScreenState extends State<LoginScreen>
                                   messenger.showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                          context.tr('login_google_unavailable')),
+                                        context.tr('login_google_unavailable'),
+                                      ),
                                       behavior: SnackBarBehavior.floating,
                                     ),
                                   );
                                   return;
                                 }
+
                                 if (auth.isLoggedIn) {
                                   _goToMain();
                                   return;
                                 }
+
                                 setState(() => _isLoading = true);
                                 HapticFeedback.lightImpact();
+
                                 try {
                                   if (kIsWeb) {
-                                    // On web use the OAuth flow with redirect.
-                                    final redirectTo = AppConfig.webRedirectUrl ??
-                                        Uri.base.origin;
+                                    final redirectTo =
+                                        AppConfig.webRedirectUrl ??
+                                            Uri.base.origin;
                                     await Supabase.instance.client.auth
                                         .signInWithOAuth(
-                                          OAuthProvider.google,
-                                          redirectTo: redirectTo,
-                                          authScreenLaunchMode:
-                                              LaunchMode.platformDefault,
-                                        )
-                                        .timeout(const Duration(minutes: 2));
+                                      OAuthProvider.google,
+                                      redirectTo: redirectTo,
+                                      authScreenLaunchMode:
+                                          LaunchMode.platformDefault,
+                                    ).timeout(const Duration(minutes: 2));
+
                                     if (auth.isLoggedIn && mounted) {
                                       _goToMain();
                                     }
                                   } else {
-                                    // On mobile use the native google_sign_in
-                                    // package — it handles the OAuth flow on
-                                    // the device and returns an id_token we can
-                                    // exchange for a Supabase session. This
-                                    // bypasses the deep-link flow entirely.
-                                    final errKey = await auth.signInWithGoogleNative();
-                                    if (errKey == 'cancelled') {
-                                      // User closed the picker — silent.
-                                    } else if (errKey != null) {
-                                      if (!context.mounted) return;
-                                      messenger.showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                              context.tr('login_google_failed')),
-                                          backgroundColor: AppColors.error,
-                                          behavior: SnackBarBehavior.floating,
-                                        ),
-                                      );
-                                    } else if (auth.isLoggedIn && mounted) {
+                                    final GoogleSignIn googleSignIn =
+                                        GoogleSignIn(
+                                      serverClientId:
+                                          '504340157609-pj8oox9662299u613glititqn4dqa7ij.apps.googleusercontent.com',
+                                    );
+
+                                    final googleUser =
+                                        await googleSignIn.signIn();
+
+                                    if (googleUser == null) {
+                                      if (mounted) {
+                                        setState(() => _isLoading = false);
+                                      }
+                                      return;
+                                    }
+
+                                    final googleAuth =
+                                        await googleUser.authentication;
+                                    final accessToken = googleAuth.accessToken;
+                                    final idToken = googleAuth.idToken;
+
+                                    if (idToken == null) {
+                                      throw 'No ID Token found.';
+                                    }
+
+                                    await Supabase
+                                        .instance.client.auth
+                                        .signInWithIdToken(
+                                      provider: OAuthProvider.google,
+                                      idToken: idToken,
+                                      accessToken: accessToken,
+                                    );
+
+                                    if (mounted) {
                                       _goToMain();
                                     }
                                   }
