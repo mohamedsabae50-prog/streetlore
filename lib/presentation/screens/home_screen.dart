@@ -123,8 +123,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return context.tr('greet_evening');
   }
 
-  List<PlaceModel> get _categoryFiltered {
-    final all = context.read<PlaceProvider>().places;
+  List<PlaceModel> _categoryFiltered(List<PlaceModel> all) {
     if (_selectedCategory == 'All') return all;
     return all.where((p) => p.category == _selectedCategory).toList();
   }
@@ -133,18 +132,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   bool get _isSearching => _searchTerm.isNotEmpty;
 
-  List<PlaceModel> get _searchResults => context
-      .read<PlaceProvider>()
-      .places
+  List<PlaceModel> _searchResults(List<PlaceModel> all) => all
       .where(
         (p) =>
             p.name.toLowerCase().contains(_searchTerm) ||
-            p.description.toLowerCase().contains(_searchTerm),
+            p.description.toLowerCase().contains(_searchTerm) ||
+            p.category.toLowerCase().contains(_searchTerm) ||
+            p.address.toLowerCase().contains(_searchTerm),
       )
       .toList();
 
-  List<PlaceModel> get _filtered {
-    final base = _isSearching ? _searchResults : _categoryFiltered;
+  List<PlaceModel> _filtered(List<PlaceModel> all) {
+    final base = _isSearching ? _searchResults(all) : _categoryFiltered(all);
     var result = base;
     if (_freeOnly) result = result.where((p) => p.isFree).toList();
     if (_hiddenGemsOnly) result = result.where((p) => p.isHiddenGem).toList();
@@ -192,8 +191,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    context.watch<PlaceProvider>();
-    final filtered = _filtered;
+    final placeProvider = context.watch<PlaceProvider>();
+    final filtered = _filtered(placeProvider.places);
     final isSearching = _isSearching;
 
     return Scaffold(
@@ -428,12 +427,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           color: context.textPri,
                         ),
                       ),
-                      Text(
-                        context.tr('see_all'),
-                        style: TextStyle(
-                          color: context.textPri,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          if (_selectedCategory != 'All') {
+                            setState(() => _selectedCategory = 'All');
+                          }
+                          if (_scrollCtrl.hasClients) {
+                            _scrollCtrl.animateTo(
+                              0,
+                              duration: const Duration(milliseconds: 400),
+                              curve: Curves.easeOut,
+                            );
+                          }
+                        },
+                        child: Text(
+                          context.tr('see_all'),
+                          style: const TextStyle(
+                            color: AppColors.accent,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            decoration: TextDecoration.underline,
+                            decorationColor: AppColors.accent,
+                          ),
                         ),
                       ),
                     ],

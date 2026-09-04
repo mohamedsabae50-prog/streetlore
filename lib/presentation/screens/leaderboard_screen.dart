@@ -312,9 +312,11 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color? avatarColor;
-    if (stats.avatarColorHex != null) {
-      avatarColor =
-          Color(int.parse(stats.avatarColorHex!.replaceFirst('0x', '0xff')));
+    if (stats.avatarColorHex != null && stats.avatarColorHex!.isNotEmpty) {
+      try {
+        final hex = stats.avatarColorHex!.replaceFirst('#', '0xff').replaceFirst('0x', '0xff');
+        avatarColor = Color(int.parse(hex));
+      } catch (_) {}
     }
     final isTop3 = rank <= 3;
     return Container(

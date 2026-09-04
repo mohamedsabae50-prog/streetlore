@@ -675,6 +675,14 @@ class AppLocalizationsAr extends AppLocalizations {
       'جوجل مش متاح دلوقتي. استخدم الإيميل أو كمّل كضيف.';
 
   @override
+  String get login_google_timeout =>
+      'تسجيل الدخول بجوجل استغرق وقت طويل. حاول تاني أو استخدم الإيميل.';
+
+  @override
+  String get login_google_failed =>
+      'فشل تسجيل الدخول بجوجل. تأكد من إعدادات الـ redirect URL في Supabase.';
+
+  @override
   String get login_have_account => 'عندك حساب بالفعل؟';
 
   @override

@@ -1340,6 +1340,18 @@ abstract class AppLocalizations {
   /// **'Google sign-in unavailable. Use email or continue as guest.'**
   String get login_google_unavailable;
 
+  /// Translation key: login_google_timeout
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in took too long. Try again or use email.'**
+  String get login_google_timeout;
+
+  /// Translation key: login_google_failed
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in failed. Check your Supabase redirect URL settings.'**
+  String get login_google_failed;
+
   /// Translation key: login_have_account
   ///
   /// In en, this message translates to:

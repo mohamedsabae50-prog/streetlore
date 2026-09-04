@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/models/itinerary_model.dart';
 import '../data/models/place_model.dart';
+import '../data/mock_data.dart' show fallbackTours;
 
 class TourProvider extends ChangeNotifier {
   SupabaseClient get _client => Supabase.instance.client;
@@ -34,13 +35,23 @@ class TourProvider extends ChangeNotifier {
       final res = await _client
           .from('tours_with_places')
           .select()
-          .order('id');
-      _tours = (res as List<dynamic>)
+          .order('id')
+          .timeout(const Duration(seconds: 10));
+      final loaded = (res as List<dynamic>)
           .map((e) => _tourFromSupabase(e as Map<String, dynamic>))
           .toList();
+      if (loaded.isEmpty) {
+        _tours = List<ItineraryModel>.from(fallbackTours);
+      } else {
+        _tours = loaded;
+      }
       _error = null;
     } catch (e) {
       _error = 'Failed to load tours: $e';
+      debugPrint('TourProvider: $e');
+      if (_tours.isEmpty) {
+        _tours = List<ItineraryModel>.from(fallbackTours);
+      }
     } finally {
       _loading = false;
       notifyListeners();
@@ -66,22 +77,37 @@ class TourProvider extends ChangeNotifier {
 
   PlaceModel _placeFromSupabaseJson(Map<String, dynamic> json) {
     return PlaceModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      description: json['description'] as String,
-      imageUrl: json['imageUrl'] as String,
-      rating: (json['rating'] as num).toDouble(),
-      category: json['category'] as String,
-      lat: (json['lat'] as num).toDouble(),
-      lng: (json['lng'] as num).toDouble(),
+      id: (json['id'] as String?) ?? '',
+      name: (json['name'] as String?) ?? 'Unknown Place',
+      description: (json['description'] as String?) ?? '',
+      // Supabase view may use either snake_case or camelCase — handle both
+      imageUrl: (json['image_url'] as String?) ??
+          (json['imageUrl'] as String?) ??
+          '',
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      category: (json['category'] as String?) ?? 'General',
+      lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
+      lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
       address: (json['address'] as String?) ?? 'Alexandria, Egypt',
-      openHours: (json['openHours'] as String?) ?? '9:00 AM - 6:00 PM',
-      reviewCount: (json['reviewCount'] as int?) ?? 0,
-      priceLevel: _priceLevelFromString(json['priceLevel'] as String?),
-      priceNote: (json['priceNote'] as String?) ?? '',
-      isHiddenGem: (json['isHiddenGem'] as bool?) ?? false,
-      priceLocalEgp: json['priceLocalEgp'] as int?,
-      priceForeignerEgp: json['priceForeignerEgp'] as int?,
+      openHours: (json['open_hours'] as String?) ??
+          (json['openHours'] as String?) ??
+          '9:00 AM - 6:00 PM',
+      reviewCount: (json['review_count'] as int?) ??
+          (json['reviewCount'] as int?) ??
+          0,
+      priceLevel: _priceLevelFromString(
+        (json['price_level'] as String?) ?? (json['priceLevel'] as String?),
+      ),
+      priceNote: (json['price_note'] as String?) ??
+          (json['priceNote'] as String?) ??
+          '',
+      isHiddenGem: (json['is_hidden_gem'] as bool?) ??
+          (json['isHiddenGem'] as bool?) ??
+          false,
+      priceLocalEgp: (json['price_local_egp'] as int?) ??
+          (json['priceLocalEgp'] as int?),
+      priceForeignerEgp: (json['price_foreigner_egp'] as int?) ??
+          (json['priceForeignerEgp'] as int?),
     );
   }
 

@@ -169,15 +169,61 @@ class PlaceProvider extends ChangeNotifier {
   List<PlaceModel> applyFilters(List<PlaceModel> initialPlaces) {
     List<PlaceModel> result = List<PlaceModel>.from(initialPlaces);
     if (_isFilterOpenNow) {
-      result = result.where((p) {
-        final now = DateTime.now();
-        final hour = now.hour;
-        return hour >= 9 && hour < 18;
-      }).toList();
+      result = result.where((p) => _isPlaceOpenNow(p.openHours)).toList();
     }
     if (_isFilterCheapest) {
-      result.sort((a, b) => a.reviewCount.compareTo(b.reviewCount));
+      result.sort((a, b) => a.priceLevel.index.compareTo(b.priceLevel.index));
+    }
+    if (_isFilterNearest) {
+      // Sort by proximity to Alexandria city center as default
+      const refLat = 31.2001;
+      const refLng = 29.9187;
+      result.sort((a, b) {
+        final da = (a.lat - refLat) * (a.lat - refLat) +
+            (a.lng - refLng) * (a.lng - refLng);
+        final db = (b.lat - refLat) * (b.lat - refLat) +
+            (b.lng - refLng) * (b.lng - refLng);
+        return da.compareTo(db);
+      });
     }
     return result;
+  }
+
+  /// Parses the openHours string (e.g. "9:00 AM - 5:00 PM" or "Open 24 hours")
+  /// and returns true if the current time falls within the range.
+  bool _isPlaceOpenNow(String openHours) {
+    final clean = openHours.trim();
+    if (clean.toLowerCase() == 'open 24 hours') return true;
+    // Try to parse "H:MM AM/PM - H:MM AM/PM" or "HH:MM - HH:MM"
+    final parts = clean.split('-');
+    if (parts.length < 2) return true; // can't parse → assume open
+    final open = _parseHourMin(parts[0].trim());
+    final close = _parseHourMin(parts[1].trim());
+    if (open == null || close == null) return true;
+    final now = DateTime.now();
+    final nowMins = now.hour * 60 + now.minute;
+    if (close > open) {
+      return nowMins >= open && nowMins < close;
+    } else {
+      // Wraps past midnight (e.g. 10 PM – 2 AM)
+      return nowMins >= open || nowMins < close;
+    }
+  }
+
+  /// Returns total minutes since midnight for strings like "9:00 AM", "5:30 PM", "17:00"
+  int? _parseHourMin(String s) {
+    final upper = s.toUpperCase();
+    final isPm = upper.contains('PM');
+    final isAm = upper.contains('AM');
+    final cleaned = upper.replaceAll('AM', '').replaceAll('PM', '').trim();
+    final colonIdx = cleaned.indexOf(':');
+    if (colonIdx < 0) return null;
+    final h = int.tryParse(cleaned.substring(0, colonIdx).trim());
+    final m = int.tryParse(cleaned.substring(colonIdx + 1).trim());
+    if (h == null || m == null) return null;
+    var hour = h;
+    if (isPm && hour < 12) hour += 12;
+    if (isAm && hour == 12) hour = 0;
+    return hour * 60 + m;
   }
 }

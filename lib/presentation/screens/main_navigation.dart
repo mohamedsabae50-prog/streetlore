@@ -7,6 +7,7 @@ import '../../logic/auth_provider.dart';
 import '../../logic/gamification_provider.dart';
 import '../../logic/journal_provider.dart';
 import '../../logic/streak_provider.dart';
+import '../../logic/place_photos_provider.dart';
 import 'home_screen.dart';
 import 'tours_screen.dart';
 import 'saved_tours_screen.dart';
@@ -74,6 +75,7 @@ class _MainNavigationState extends State<MainNavigation>
       context.read<GamificationProvider>().syncWithAuth(auth);
       context.read<StreakProvider>().setUserId(auth.userId);
       context.read<JournalProvider>().setUserId(auth.userId);
+      context.read<PlacePhotosProvider>().setUserId(auth.userId);
     });
   }
 

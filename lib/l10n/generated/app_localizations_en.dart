@@ -677,6 +677,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Google sign-in unavailable. Use email or continue as guest.';
 
   @override
+  String get login_google_timeout =>
+      'Google sign-in took too long. Try again or use email.';
+
+  @override
+  String get login_google_failed =>
+      'Google sign-in failed. Check your Supabase redirect URL settings.';
+
+  @override
   String get login_have_account => 'Already have an account?';
 
   @override
