@@ -103,11 +103,18 @@ class TripPlannerScreen extends StatelessWidget {
                             fit: BoxFit.cover,
                             memCacheWidth: 120,
                             memCacheHeight: 120,
+                            httpHeaders: const {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'},
                             placeholder: (_, __) => Container(
                               width: 60, height: 60, color: context.bgAlt,
                             ),
-                            errorWidget: (_, __, ___) => Container(
-                              width: 60, height: 60, color: context.bgAlt,
+                            errorWidget: (context, url, error) => Container(
+                              color: const Color(0xFF1C2433),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.image_rounded, color: Colors.white30, size: 36),
+                                ],
+                              ),
                             ),
                           ),
                         ),

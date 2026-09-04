@@ -1,4 +1,4 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -34,41 +34,28 @@ class ShimmerImage extends StatelessWidget {
         memCacheHeight: 720,
         maxWidthDiskCache: 1280,
         maxHeightDiskCache: 1280,
+        httpHeaders: const {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'},
         placeholder: (context, url) => Shimmer.fromColors(
           baseColor: const Color(0xFFE2E8F0),
           highlightColor: const Color(0xFFF8FAFC),
           period: const Duration(milliseconds: 1400),
           child: Container(color: const Color(0xFFE2E8F0)),
         ),
-        errorWidget: (context, url, error) => _Fallback(
-          icon: fallbackIcon,
-          color: fallbackColor ?? Colors.grey,
-          iconSize: fallbackIconSize,
+        errorWidget: (context, url, error) => Container(
+          color: const Color(0xFF1C2433),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.image_rounded, color: Colors.white30, size: 36),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _Fallback extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final double iconSize;
-  const _Fallback({
-    required this.icon,
-    required this.color,
-    required this.iconSize,
-  });
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF1F5F9),
-      alignment: Alignment.center,
-      child: Icon(icon, color: color, size: iconSize),
-    );
-  }
-}
 
 class ShimmerCardPlaceholder extends StatelessWidget {
   final double height;

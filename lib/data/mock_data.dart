@@ -1,4 +1,4 @@
-import 'models/place_model.dart';
+﻿import 'models/place_model.dart';
 import 'models/itinerary_model.dart';
 
 class MockData {
@@ -131,6 +131,7 @@ const List<PlaceModel> fallbackPlaces = [
     name: 'Citadel of Qaitbay',
     description:
         'A 15th-century defensive fortress located on the Mediterranean sea coast. Built upon the ruins of the ancient Lighthouse of Alexandria.',
+    descriptionAr: 'قلعة قايتباي هي حصن دفاعي يعود للقرن الخامس عشر الميلادي، مبني على أنقاض منارة الإسكندرية القديمة، إحدى عجائب الدنيا السبع. تقع على شاطئ البحر المتوسط وتتميز بمعمارها الأيوبي الرائع.',
     imageUrl:
         'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?auto=format&fit=crop&w=800&q=80',
     rating: 4.7,
@@ -151,6 +152,7 @@ const List<PlaceModel> fallbackPlaces = [
     name: 'Bibliotheca Alexandrina',
     description:
         'A major library and cultural center on the shore of the Mediterranean. A revival of the ancient Library of Alexandria.',
+    descriptionAr: 'مكتبة الإسكندرية الجديدة صرح ثقافي ضخم على شاطئ البحر المتوسط، تجسيد معاصر للمكتبة الأسطورية التي كانت مركزاً للعلوم والمعرفة في العالم القديم. تضم مليوني كتاب ومتاحف وقاعات عروض.',
     imageUrl:
         'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&w=800&q=80',
     rating: 4.8,
@@ -171,6 +173,7 @@ const List<PlaceModel> fallbackPlaces = [
     name: 'Pompey Pillar',
     description:
         'A Roman triumphal column in Alexandria. The largest of its kind constructed outside of Rome and the imperial capitals.',
+    descriptionAr: 'عمود بومبي عمود ضخم من الجرانيت يعود للعصر الروماني، يبلغ ارتفاعه 26 متراً، وهو أعلى عمود انتصار خارج روما. أُقيم عام 297 م تكريماً للإمبراطور دقلديانوس.',
     imageUrl:
         'https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3?auto=format&fit=crop&w=800&q=80',
     rating: 4.5,
@@ -191,6 +194,7 @@ const List<PlaceModel> fallbackPlaces = [
     name: 'Catacombs of Kom El Shoqafa',
     description:
         'A historical archaeological site considered one of the Seven Wonders of the Middle Ages. Multi-level labyrinth with chambers.',
+    descriptionAr: 'مقابر كوم الشقافة من أبرز المواقع الأثرية في الإسكندرية، تُعد إحدى عجائب الدنيا السبع في العصر الوسيط. متاهة متعددة الطوابق تمزج بين الفن الروماني والمصري القديم.',
     imageUrl:
         'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=800&q=80',
     rating: 4.6,
@@ -211,6 +215,7 @@ const List<PlaceModel> fallbackPlaces = [
     name: 'Alexandria Corniche',
     description:
         'A scenic waterfront promenade along the Mediterranean Sea. Perfect for sunset walks with stunning views.',
+    descriptionAr: 'كورنيش الإسكندرية ممشى ساحلي خلاب يمتد على طول البحر المتوسط. من أجمل الكورنيشات في مصر، مثالي لجلسات الغروب والتنزه مع الأسرة.',
     imageUrl:
         'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=800&q=80',
     rating: 4.7,
@@ -231,6 +236,7 @@ const List<PlaceModel> fallbackPlaces = [
     name: 'Montaza Palace Gardens',
     description:
         'Beautiful royal gardens with the Khedive Ismail palace. Green oasis by the sea with stunning views.',
+    descriptionAr: 'حدائق المنتزه الملكية خضراء غناء تحيط بقصر المنتزه التاريخي الذي بناه الخديوي عباس. واحة طبيعية خلابة تطل على البحر المتوسط وتجمع بين الجمال والتاريخ.',
     imageUrl:
         'https://images.unsplash.com/photo-1596395819057-e34c0e0f7f30?auto=format&fit=crop&w=800&q=80',
     rating: 4.5,
@@ -251,6 +257,7 @@ const List<PlaceModel> fallbackPlaces = [
     name: 'Attarine Mosque',
     description:
         'A historic mosque in the old heart of Alexandria. Beautiful Mamluk-era architecture with intricate details.',
+    descriptionAr: 'مسجد العطارين أحد المساجد التاريخية العريقة في قلب الإسكندرية القديمة. يعود تاريخه للعصر المملوكي ويتميز بزخارفه الإسلامية الرائعة وروحانيته العالية.',
     imageUrl:
         'https://images.unsplash.com/photo-1564769662533-4f00a87b4056?auto=format&fit=crop&w=800&q=80',
     rating: 4.3,
@@ -271,6 +278,7 @@ const List<PlaceModel> fallbackPlaces = [
     name: 'St. Mark Coptic Cathedral',
     description:
         'The historic seat of the Coptic Pope in Alexandria. Beautiful modern architecture with ancient Coptic heritage.',
+    descriptionAr: 'كاتدرائية القديس مرقس الأرثوذكسية مقر البابا الكوبي التاريخي في الإسكندرية. تجمع بين الإرث الكنسي الأصيل والعمارة الحديثة في قلب مدينة الإسكندرية.',
     imageUrl:
         'https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=800&q=80',
     rating: 4.6,
@@ -305,6 +313,7 @@ const List<ItineraryModel> fallbackTours = [
         id: 'fallback_qaitbay',
         name: 'Citadel of Qaitbay',
         description: 'A 15th-century fortress built on the ruins of the ancient Lighthouse of Alexandria.',
+        descriptionAr: 'قلعة قايتباي هي حصن دفاعي يعود للقرن الخامس عشر الميلادي، مبني على أنقاض منارة الإسكندرية القديمة، إحدى عجائب الدنيا السبع. تقع على شاطئ البحر المتوسط وتتميز بمعمارها الأيوبي الرائع.',
         imageUrl: 'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?auto=format&fit=crop&w=800&q=80',
         rating: 4.7,
         category: 'Historical',
@@ -322,6 +331,7 @@ const List<ItineraryModel> fallbackTours = [
         id: 'fallback_pompey',
         name: "Pompey's Pillar",
         description: 'The tallest ancient monument in Alexandria, a Roman triumphal column from 297 AD.',
+        descriptionAr: 'عمود بومبي عمود ضخم من الجرانيت يعود للعصر الروماني، يبلغ ارتفاعه 26 متراً، وهو أعلى عمود انتصار خارج روما. أُقيم عام 297 م تكريماً للإمبراطور دقلديانوس.',
         imageUrl: 'https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3?auto=format&fit=crop&w=800&q=80',
         rating: 4.5,
         category: 'Historical',
@@ -339,6 +349,7 @@ const List<ItineraryModel> fallbackTours = [
         id: 'fallback_catacombs',
         name: 'Catacombs of Kom El Shoqafa',
         description: 'A multi-level labyrinth considered one of the Seven Wonders of the Middle Ages.',
+        descriptionAr: 'مقابر كوم الشقافة من أبرز المواقع الأثرية في الإسكندرية، تُعد إحدى عجائب الدنيا السبع في العصر الوسيط. متاهة متعددة الطوابق تمزج بين الفن الروماني والمصري القديم.',
         imageUrl: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=800&q=80',
         rating: 4.6,
         category: 'Historical',
@@ -356,6 +367,7 @@ const List<ItineraryModel> fallbackTours = [
         id: 'fallback_biblio',
         name: 'Bibliotheca Alexandrina',
         description: 'A modern revival of the ancient Library of Alexandria on the Mediterranean shore.',
+        descriptionAr: 'مكتبة الإسكندرية الجديدة صرح ثقافي ضخم على شاطئ البحر المتوسط، تجسيد معاصر للمكتبة الأسطورية التي كانت مركزاً للعلوم والمعرفة في العالم القديم. تضم مليوني كتاب ومتاحف وقاعات عروض.',
         imageUrl: 'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&w=800&q=80',
         rating: 4.8,
         category: 'Culture',
@@ -384,6 +396,7 @@ const List<ItineraryModel> fallbackTours = [
         id: 'fallback_corniche',
         name: 'Alexandria Corniche',
         description: 'A scenic 20 km waterfront promenade along the Mediterranean — perfect for sunset walks.',
+        descriptionAr: 'كورنيش الإسكندرية ممشى ساحلي خلاب يمتد على طول البحر المتوسط. من أجمل الكورنيشات في مصر، مثالي لجلسات الغروب والتنزه مع الأسرة.',
         imageUrl: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=800&q=80',
         rating: 4.7,
         category: 'Streets',
@@ -401,6 +414,7 @@ const List<ItineraryModel> fallbackTours = [
         id: 'fallback_montaza',
         name: 'Montaza Palace Gardens',
         description: 'Beautiful royal gardens surrounding the Khedive Ismail palace — a green oasis by the sea.',
+        descriptionAr: 'حدائق المنتزه الملكية خضراء غناء تحيط بقصر المنتزه التاريخي الذي بناه الخديوي عباس. واحة طبيعية خلابة تطل على البحر المتوسط وتجمع بين الجمال والتاريخ.',
         imageUrl: 'https://images.unsplash.com/photo-1596395819057-e34c0e0f7f30?auto=format&fit=crop&w=800&q=80',
         rating: 4.5,
         category: 'Nature',
@@ -429,6 +443,7 @@ const List<ItineraryModel> fallbackTours = [
         id: 'fallback_attarine',
         name: 'Attarine Mosque',
         description: 'A historic Mamluk-era mosque in the old heart of Alexandria with intricate architectural details.',
+        descriptionAr: 'مسجد العطارين أحد المساجد التاريخية العريقة في قلب الإسكندرية القديمة. يعود تاريخه للعصر المملوكي ويتميز بزخارفه الإسلامية الرائعة وروحانيته العالية.',
         imageUrl: 'https://images.unsplash.com/photo-1564769662533-4f00a87b4056?auto=format&fit=crop&w=800&q=80',
         rating: 4.3,
         category: 'Mosques',
@@ -447,6 +462,7 @@ const List<ItineraryModel> fallbackTours = [
         id: 'fallback_stmark',
         name: 'St. Mark Coptic Cathedral',
         description: 'The historic seat of the Coptic Pope in Alexandria — blending ancient heritage and modern architecture.',
+        descriptionAr: 'كاتدرائية القديس مرقس الأرثوذكسية مقر البابا الكوبي التاريخي في الإسكندرية. تجمع بين الإرث الكنسي الأصيل والعمارة الحديثة في قلب مدينة الإسكندرية.',
         imageUrl: 'https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=800&q=80',
         rating: 4.6,
         category: 'Churches',
@@ -463,4 +479,5 @@ const List<ItineraryModel> fallbackTours = [
     ],
   ),
 ];
+
 

@@ -36,6 +36,7 @@ class PlaceModel {
   final String id;
   final String name;
   final String description;
+  final String? descriptionAr;
   final String imageUrl;
   final double rating;
   final String category;
@@ -54,6 +55,7 @@ class PlaceModel {
     required this.id,
     required this.name,
     required this.description,
+    this.descriptionAr,
     required this.imageUrl,
     required this.rating,
     this.category = 'General',
@@ -69,6 +71,16 @@ class PlaceModel {
     this.priceForeignerEgp,
   });
 
+  /// Returns description in the current locale
+  String localizedDescription(String locale) {
+    if (locale == 'ar' && descriptionAr != null && descriptionAr!.isNotEmpty) {
+      return descriptionAr!;
+    }
+    return description;
+  }
+
+
+
   bool get isFree => priceLevel == PriceLevel.free;
 
   bool get hasDualPrice =>
@@ -79,6 +91,7 @@ class PlaceModel {
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
+      descriptionAr: json['description_ar'] as String? ?? json['descriptionAr'] as String?,
       imageUrl: json['imageUrl'] as String,
       rating: (json['rating'] as num).toDouble(),
       category: json['category'] as String? ?? 'General',
@@ -100,6 +113,7 @@ class PlaceModel {
       'id': id,
       'name': name,
       'description': description,
+      'descriptionAr': descriptionAr,
       'imageUrl': imageUrl,
       'rating': rating,
       'category': category,

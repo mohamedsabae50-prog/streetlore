@@ -377,12 +377,18 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
                           width: 48, height: 48, fit: BoxFit.cover,
                           memCacheWidth: 96,
                           memCacheHeight: 96,
+                          httpHeaders: const {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'},
                           placeholder: (_, __) => Container(
                             width: 48, height: 48, color: context.bgAlt,
                           ),
-                          errorWidget: (_, __, ___) => Container(
-                            width: 48, height: 48, color: context.bgAlt,
-                            child: Icon(Icons.image_rounded, color: context.hintColor),
+                          errorWidget: (context, url, error) => Container(
+                            color: const Color(0xFF1C2433),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.image_rounded, color: Colors.white30, size: 36),
+                              ],
+                            ),
                           ),
                         ),
                       ),

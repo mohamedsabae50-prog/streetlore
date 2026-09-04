@@ -14,6 +14,7 @@ import '../../logic/auth_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/review_provider.dart';
 import '../../logic/streak_provider.dart';
+import '../../logic/locale_provider.dart';
 import '../../data/models/review_model.dart';
 import '../../l10n/app_strings.dart';
 import '../widgets/add_review_sheet.dart';
@@ -617,7 +618,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              place.description,
+                              place.localizedDescription(context.read<LocaleProvider>().locale.languageCode),
                               style: TextStyle(
                                 color: textSec,
                                 fontSize: 15,

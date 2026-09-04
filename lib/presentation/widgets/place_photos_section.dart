@@ -1,4 +1,4 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -199,7 +199,10 @@ class PlacePhotosSection extends StatelessWidget {
           if (i + 1 < photos.length) {
             final next = photos[i + 1].imageUrl;
             if (AppImage.isNetwork(next)) {
-              precacheImage(CachedNetworkImageProvider(next), context);
+              precacheImage(CachedNetworkImageProvider(
+                next,
+                headers: const {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'},
+              ), context);
             }
           }
           return _PhotoCard(
