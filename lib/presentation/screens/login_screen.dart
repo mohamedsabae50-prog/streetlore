@@ -526,28 +526,43 @@ class _LoginScreenState extends State<LoginScreen>
                                 setState(() => _isLoading = true);
                                 HapticFeedback.lightImpact();
                                 try {
-                                  final redirectTo = kIsWeb
-                                      ? (AppConfig.webRedirectUrl ?? Uri.base.origin)
-                                      : AppConfig.mobileRedirectUrl;
-                                  // Race the OAuth flow against a 2-minute timeout.
-                                  // If the user closes the browser without picking
-                                  // an account, the future would otherwise hang and
-                                  // leave the app stuck on the loading spinner.
-                                  await Supabase.instance.client.auth
-                                      .signInWithOAuth(
-                                        OAuthProvider.google,
-                                        redirectTo: redirectTo,
-                                        authScreenLaunchMode: kIsWeb
-                                            ? LaunchMode.platformDefault
-                                            : LaunchMode.externalApplication,
-                                      )
-                                      .timeout(const Duration(minutes: 2));
-                                  // If the OAuth call returned and the user is
-                                  // signed in, navigate. Otherwise the deep link
-                                  // listener in main.dart will pick up the session.
-                                  if (auth.isLoggedIn) {
-                                    if (!mounted) return;
-                                    _goToMain();
+                                  if (kIsWeb) {
+                                    // On web use the OAuth flow with redirect.
+                                    final redirectTo = AppConfig.webRedirectUrl ??
+                                        Uri.base.origin;
+                                    await Supabase.instance.client.auth
+                                        .signInWithOAuth(
+                                          OAuthProvider.google,
+                                          redirectTo: redirectTo,
+                                          authScreenLaunchMode:
+                                              LaunchMode.platformDefault,
+                                        )
+                                        .timeout(const Duration(minutes: 2));
+                                    if (auth.isLoggedIn && mounted) {
+                                      _goToMain();
+                                    }
+                                  } else {
+                                    // On mobile use the native google_sign_in
+                                    // package — it handles the OAuth flow on
+                                    // the device and returns an id_token we can
+                                    // exchange for a Supabase session. This
+                                    // bypasses the deep-link flow entirely.
+                                    final errKey = await auth.signInWithGoogleNative();
+                                    if (errKey == 'cancelled') {
+                                      // User closed the picker — silent.
+                                    } else if (errKey != null) {
+                                      if (!context.mounted) return;
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              context.tr('login_google_failed')),
+                                          backgroundColor: AppColors.error,
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    } else if (auth.isLoggedIn && mounted) {
+                                      _goToMain();
+                                    }
                                   }
                                 } on TimeoutException {
                                   if (!context.mounted) return;

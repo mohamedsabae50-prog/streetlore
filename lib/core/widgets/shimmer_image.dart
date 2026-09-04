@@ -1,7 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
+import 'robust_image.dart';
+
+/// Backwards-compatible wrapper that uses [RobustImage] (which sets
+/// User-Agent and bypasses CachedNetworkImage's broken cache on Android).
 class ShimmerImage extends StatelessWidget {
   final String imageUrl;
   final BoxFit fit;
@@ -22,40 +25,18 @@ class ShimmerImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = borderRadius ?? BorderRadius.zero;
-    return ClipRRect(
-      borderRadius: radius,
-      child: CachedNetworkImage(
-        imageUrl: imageUrl,
-        fit: fit,
-        fadeInDuration: const Duration(milliseconds: 220),
-        fadeOutDuration: const Duration(milliseconds: 150),
-        memCacheWidth: 720,
-        memCacheHeight: 720,
-        maxWidthDiskCache: 1280,
-        maxHeightDiskCache: 1280,
-        httpHeaders: const {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'},
-        placeholder: (context, url) => Shimmer.fromColors(
-          baseColor: const Color(0xFFE2E8F0),
-          highlightColor: const Color(0xFFF8FAFC),
-          period: const Duration(milliseconds: 1400),
-          child: Container(color: const Color(0xFFE2E8F0)),
-        ),
-        errorWidget: (context, url, error) => Container(
-          color: const Color(0xFF1C2433),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.image_rounded, color: Colors.white30, size: 36),
-            ],
-          ),
-        ),
-      ),
+    return RobustImage(
+      imageUrl: imageUrl,
+      fit: fit,
+      borderRadius: borderRadius,
+      fallbackIcon: fallbackIcon,
+      fallbackColor: fallbackColor,
+      fallbackIconSize: fallbackIconSize,
+      memCacheWidth: 720,
+      memCacheHeight: 720,
     );
   }
 }
-
-
 
 class ShimmerCardPlaceholder extends StatelessWidget {
   final double height;

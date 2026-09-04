@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -199,6 +200,40 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_logged_in', false);
     await prefs.setBool('is_guest', false);
+  }
+
+  /// Native Google Sign-In using the google_sign_in package directly.
+  /// This bypasses the OAuth deep link flow and works reliably on Android.
+  Future<String?> signInWithGoogleNative() async {
+    if (!AppConfig.supabaseEnabled) return 'supabase_disabled';
+    try {
+      final googleSignIn = GoogleSignIn(
+        scopes: const ['email', 'profile'],
+      );
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        return 'cancelled';
+      }
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) {
+        return 'no_id_token';
+      }
+      // Exchange the Google ID token for a Supabase session.
+      await Supabase.instance.client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: googleAuth.accessToken,
+      );
+      return null;
+    } catch (e) {
+      debugPrint('Google sign-in error: $e');
+      if (e.toString().contains('sign_in_canceled') ||
+          e.toString().contains('User canceled')) {
+        return 'cancelled';
+      }
+      return 'error';
+    }
   }
 
   Future<void> completeOnboarding() async {
