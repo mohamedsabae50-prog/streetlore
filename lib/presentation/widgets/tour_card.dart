@@ -181,14 +181,16 @@ class TourCard extends StatelessWidget {
             child: Material(
               type: MaterialType.transparency,
               child: Text(
-                tour.title,
+                tour.localizedTitle(
+                    Localizations.localeOf(context).languageCode),
                 style: AppTextStyles.cardTitle.copyWith(color: context.textPri),
               ),
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            tour.description,
+            tour.localizedDescription(
+                Localizations.localeOf(context).languageCode),
             style: AppTextStyles.placeDescription,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

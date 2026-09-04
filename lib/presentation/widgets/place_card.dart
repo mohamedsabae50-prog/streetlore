@@ -186,7 +186,8 @@ class _PlaceCardState extends State<PlaceCard> {
           const SizedBox(height: 5),
 
           Text(
-            widget.place.description,
+            widget.place.localizedDescription(
+                Localizations.localeOf(context).languageCode),
             style: AppTextStyles.placeDescription,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
