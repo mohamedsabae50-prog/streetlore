@@ -600,16 +600,68 @@ class _LoginScreenState extends State<LoginScreen>
                                       behavior: SnackBarBehavior.floating,
                                     ),
                                   );
-                                } catch (e) {
+                                } catch (e, st) {
                                   debugPrint('Google sign-in error: $e');
+                                  debugPrint('Stack: $st');
                                   if (!context.mounted) return;
+
+                                  final errorStr = e.toString().toLowerCase();
+                                  String message;
+                                  bool showDetails = false;
+
+                                  if (errorStr.contains('api exception: 10') ||
+                                      errorStr.contains('developer_error') ||
+                                      errorStr.contains('10:')) {
+                                    message =
+                                        'Google sign-in failed (code 10).\n'
+                                        'Likely cause: SHA-1 fingerprint mismatch.\n'
+                                        'Add this Android debug SHA-1 to Google Cloud Console '
+                                        'OAuth client for com.example.streetlore.';
+                                    showDetails = true;
+                                  } else if (errorStr.contains('network') ||
+                                      errorStr.contains('socket') ||
+                                      errorStr.contains('timeout')) {
+                                    message = context.tr('login_google_timeout');
+                                  } else if (errorStr.contains('platform') ||
+                                      errorStr.contains('sign_in_failed')) {
+                                    message =
+                                        'Google sign-in failed (Platform).\n'
+                                        'Check that io.supabase.streetlore://login-callback/ '
+                                        'is registered as a redirect URL in your Supabase project.';
+                                    showDetails = true;
+                                  } else {
+                                    message = context.tr('login_google_failed');
+                                    showDetails = true;
+                                  }
+
                                   messenger.showSnackBar(
                                     SnackBar(
-                                      content: Text(
-                                        context.tr('login_google_failed'),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(message),
+                                          if (showDetails)
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.only(top: 6),
+                                              child: Text(
+                                                e.toString(),
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.white70,
+                                                  fontFamily: 'monospace',
+                                                ),
+                                                maxLines: 4,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                       backgroundColor: AppColors.error,
                                       behavior: SnackBarBehavior.floating,
+                                      duration: const Duration(seconds: 8),
                                     ),
                                   );
                                 } finally {
