@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -55,7 +55,10 @@ class WeatherService {
     if (_loading) return _cached;
     _loading = true;
     try {
-      const apiKey = String.fromEnvironment('OPENWEATHER_API_KEY', defaultValue: '');
+      const apiKey = String.fromEnvironment(
+        'OPENWEATHER_API_KEY',
+        defaultValue: '',
+      );
       if (apiKey.isEmpty) {
         return _mockWeather();
       }
@@ -70,7 +73,8 @@ class WeatherService {
       final json = jsonDecode(res.body) as Map<String, dynamic>;
       final main = json['main'] as Map<String, dynamic>;
       final wind = json['wind'] as Map<String, dynamic>? ?? const {};
-      final weather = (json['weather'] as List?)?.first as Map<String, dynamic>?;
+      final weather =
+          (json['weather'] as List?)?.first as Map<String, dynamic>?;
       if (weather == null) return _mockWeather();
       final data = WeatherData(
         tempC: (main['temp'] as num).toDouble(),

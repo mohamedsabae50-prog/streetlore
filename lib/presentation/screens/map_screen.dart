@@ -37,7 +37,6 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _initializeMap() async {
     try {
-      
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -60,13 +59,11 @@ class _MapScreenState extends State<MapScreen> {
         return;
       }
 
-      
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
       _currentLocation = LatLng(position.latitude, position.longitude);
 
-      
       await _getRoute();
     } catch (e) {
       if (!mounted) return;
@@ -96,7 +93,6 @@ class _MapScreenState extends State<MapScreen> {
             data['routes'][0]['geometry']['coordinates'];
 
         setState(() {
-          
           _routePoints = coords
               .map((c) => LatLng(c[1] as double, c[0] as double))
               .toList();
@@ -144,19 +140,17 @@ class _MapScreenState extends State<MapScreen> {
             )
           : FlutterMap(
               options: MapOptions(
-                
                 initialCenter: _currentLocation ?? destination,
                 initialZoom: 14.0,
               ),
               children: [
-                
                 TileLayer(
                   urlTemplate: mapTileUrl,
                   userAgentPackageName: 'com.example.streetlore',
-                  
+
                   subdomains: const ['a', 'b', 'c', 'd'],
                 ),
-                
+
                 if (_routePoints.isNotEmpty)
                   PolylineLayer(
                     polylines: [
@@ -167,7 +161,7 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ],
                   ),
-                
+
                 MarkerLayer(
                   markers: [
                     if (_currentLocation != null)

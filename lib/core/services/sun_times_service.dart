@@ -45,13 +45,18 @@ class SunTimesService {
   }) {
     final d = date ?? DateTime.now();
     final dayOfYear = int.parse(
-      DateTime(d.year, d.month, d.day)
-          .difference(DateTime(d.year, 1, 1))
-          .inDays
-          .toString(),
+      DateTime(
+        d.year,
+        d.month,
+        d.day,
+      ).difference(DateTime(d.year, 1, 1)).inDays.toString(),
     );
 
-    final decl = 23.45 * math.pi / 180.0 * math.sin(2 * math.pi * (284 + dayOfYear) / 365.0);
+    final decl =
+        23.45 *
+        math.pi /
+        180.0 *
+        math.sin(2 * math.pi * (284 + dayOfYear) / 365.0);
 
     final latRad = latitude * math.pi / 180.0;
 
@@ -93,7 +98,8 @@ class SunTimesService {
     final d = DateTime(date.year, date.month, date.day);
     final dayOfYear = d.difference(DateTime(date.year, 1, 1)).inDays + 1;
     final b = 2 * math.pi * (dayOfYear - 81) / 365.0;
-    final equationOfTime = 9.87 * math.sin(2 * b) - 7.53 * math.cos(b) - 1.5 * math.sin(b);
+    final equationOfTime =
+        9.87 * math.sin(2 * b) - 7.53 * math.cos(b) - 1.5 * math.sin(b);
     final timeCorrectionMinutes = 4 * longitude + equationOfTime;
     final solarNoonUtc = 12.0 - timeCorrectionMinutes / 60.0;
     final localOffset = date.timeZoneOffset.inHours;

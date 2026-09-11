@@ -80,8 +80,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Future.delayed(const Duration(milliseconds: 1400), () {
       if (mounted) setState(() => _isLoading = false);
     });
-    // Ask the user for location permission the first time the home screen
-    // appears. This powers "near me", distance filters, and geofence alerts.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _ensureLocationPermission();
     });

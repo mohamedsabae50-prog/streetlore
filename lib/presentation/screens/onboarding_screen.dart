@@ -100,19 +100,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       body: FadeTransition(
         opacity: _entryFade,
         child: AnimatedGradientBackground(
-          colorSets: _slides
-              .map((s) => [s.color1, s.color2])
-              .toList(),
+          colorSets: _slides.map((s) => [s.color1, s.color2]).toList(),
           duration: const Duration(seconds: 8),
           child: Stack(
             children: [
-              
               const Positioned.fill(
                 child: IgnorePointer(
                   child: ParticleField(count: 18, color: Colors.white),
                 ),
               ),
-              
+
               PageView.builder(
                 controller: _pageCtrl,
                 physics: const BouncingScrollPhysics(),
@@ -127,7 +124,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   pageCtrl: _pageCtrl,
                 ),
               ),
-              
+
               Positioned(
                 top: MediaQuery.of(context).padding.top + 12,
                 right: 20,
@@ -135,12 +132,15 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   onTap: _finish,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.16),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.25)),
+                        color: Colors.white.withValues(alpha: 0.25),
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -155,28 +155,31 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.arrow_forward_rounded,
-                            color: Colors.white, size: 14),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 14,
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
-              
+
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
                 child: Container(
                   padding: EdgeInsets.fromLTRB(
-                      28,
-                      24,
-                      28,
-                      MediaQuery.of(context).padding.bottom + 32),
+                    28,
+                    24,
+                    28,
+                    MediaQuery.of(context).padding.bottom + 32,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      
                       Row(
                         children: List.generate(_slides.length, (i) {
                           return AnimatedContainer(
@@ -193,22 +196,25 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                               boxShadow: _currentPage == i
                                   ? [
                                       BoxShadow(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.5),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.5,
+                                        ),
                                         blurRadius: 8,
-                                      )
+                                      ),
                                     ]
                                   : null,
                             ),
                           );
                         }),
                       ),
-                      
+
                       PressScale(
                         onTap: _next,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 28, vertical: 14),
+                            horizontal: 28,
+                            vertical: 14,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(50),
@@ -292,45 +298,50 @@ class _SlideViewState extends State<_SlideView>
     );
     _iconScale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 0.3, end: 1.15)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween(
+          begin: 0.3,
+          end: 1.15,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 60,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 1.15, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeInOut)),
+        tween: Tween(
+          begin: 1.15,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 40,
       ),
     ]).animate(_ctrl);
-    _iconRotate = Tween<double>(begin: -0.5, end: 0.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
-    );
+    _iconRotate = Tween<double>(
+      begin: -0.5,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     _iconFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _ctrl,
         curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
       ),
     );
-    _titleSlide = Tween<Offset>(
-      begin: const Offset(0, 0.4),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.3, 1.0, curve: Curves.easeOutCubic),
-    ));
+    _titleSlide = Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _ctrl,
+            curve: const Interval(0.3, 1.0, curve: Curves.easeOutCubic),
+          ),
+        );
     _titleFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _ctrl,
         curve: const Interval(0.3, 1.0, curve: Curves.easeIn),
       ),
     );
-    _subSlide = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
-    ));
+    _subSlide = Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _ctrl,
+            curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
+          ),
+        );
     _subFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _ctrl,
@@ -338,7 +349,6 @@ class _SlideViewState extends State<_SlideView>
       ),
     );
 
-    
     _ctrl.forward();
   }
 
@@ -362,7 +372,6 @@ class _SlideViewState extends State<_SlideView>
                 Stack(
                   alignment: Alignment.center,
                   children: [
-                    
                     FadeTransition(
                       opacity: _iconFade,
                       child: Container(
@@ -379,7 +388,7 @@ class _SlideViewState extends State<_SlideView>
                         ),
                       ),
                     ),
-                    
+
                     FadeTransition(
                       opacity: _iconFade,
                       child: Transform.rotate(
@@ -390,18 +399,21 @@ class _SlideViewState extends State<_SlideView>
                             width: 130,
                             height: 130,
                             decoration: BoxDecoration(
-                              color: widget.slide.iconBg
-                                  .withValues(alpha: 0.25),
+                              color: widget.slide.iconBg.withValues(
+                                alpha: 0.25,
+                              ),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: widget.slide.accent
-                                    .withValues(alpha: 0.5),
+                                color: widget.slide.accent.withValues(
+                                  alpha: 0.5,
+                                ),
                                 width: 2,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: widget.slide.accent
-                                      .withValues(alpha: 0.3),
+                                  color: widget.slide.accent.withValues(
+                                    alpha: 0.3,
+                                  ),
                                   blurRadius: 30,
                                   spreadRadius: 4,
                                 ),

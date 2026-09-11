@@ -53,8 +53,7 @@ class ShimmerCardPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final base = dark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
-    final highlight =
-        dark ? const Color(0xFF4A5568) : const Color(0xFFF8FAFC);
+    final highlight = dark ? const Color(0xFF4A5568) : const Color(0xFFF8FAFC);
     return Shimmer.fromColors(
       baseColor: base,
       highlightColor: highlight,
@@ -85,31 +84,32 @@ class ShimmerCardPlaceholder extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                        width: 180,
-                        height: 14,
-                        color: Colors.white,
-                        margin: const EdgeInsets.only(bottom: 8)),
+                      width: 180,
+                      height: 14,
+                      color: Colors.white,
+                      margin: const EdgeInsets.only(bottom: 8),
+                    ),
                     Container(
-                        width: double.infinity,
-                        height: 10,
-                        color: Colors.white,
-                        margin: const EdgeInsets.only(bottom: 6)),
+                      width: double.infinity,
+                      height: 10,
+                      color: Colors.white,
+                      margin: const EdgeInsets.only(bottom: 6),
+                    ),
                     Container(
-                        width: 220,
-                        height: 10,
-                        color: Colors.white,
-                        margin: const EdgeInsets.only(bottom: 12)),
+                      width: 220,
+                      height: 10,
+                      color: Colors.white,
+                      margin: const EdgeInsets.only(bottom: 12),
+                    ),
                     Row(
                       children: [
                         Container(
-                            width: 60,
-                            height: 22,
-                            color: Colors.white,
-                            margin: const EdgeInsets.only(right: 6)),
-                        Container(
-                            width: 70,
-                            height: 22,
-                            color: Colors.white),
+                          width: 60,
+                          height: 22,
+                          color: Colors.white,
+                          margin: const EdgeInsets.only(right: 6),
+                        ),
+                        Container(width: 70, height: 22, color: Colors.white),
                       ],
                     ),
                   ],

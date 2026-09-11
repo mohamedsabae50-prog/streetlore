@@ -15,29 +15,23 @@ class SupabaseService {
   SupabaseClient? get clientOrNull => _client;
   bool get isLive => _client != null;
 
-  
   Future<void> init() async {
     if (_initialised) return;
     _initialised = true;
     if (!AppConfig.supabaseEnabled) {
       debugPrint(
-          'SupabaseService: disabled in config - using local mocks for social features.');
+        'SupabaseService: disabled in config - using local mocks for social features.',
+      );
       return;
     }
     try {
-      await Supabase.initialize(
-        url: AppConfig.supabaseUrl,
-        publishableKey: AppConfig.supabaseAnonKey,
-      );
       _client = Supabase.instance.client;
-      debugPrint('SupabaseService: initialised.');
     } catch (e) {
       debugPrint('SupabaseService: init failed: $e');
       _client = null;
     }
   }
 
-  
   Future<List<ChatMessage>> fetchMessages(String placeId) async {
     if (_client == null) return const [];
     try {
@@ -57,7 +51,7 @@ class SupabaseService {
   }
 
   Future<void> postMessage(ChatMessage message) async {
-    if (_client == null) return; 
+    if (_client == null) return;
     try {
       await _client!.from('place_chat').insert(message.toJson());
     } catch (e) {
@@ -73,16 +67,17 @@ class SupabaseService {
           .stream(primaryKey: ['id'])
           .eq('place_id', placeId)
           .order('sent_at')
-          .map((rows) => rows
-              .map((j) => ChatMessage.fromJson(Map<String, dynamic>.from(j)))
-              .toList());
+          .map(
+            (rows) => rows
+                .map((j) => ChatMessage.fromJson(Map<String, dynamic>.from(j)))
+                .toList(),
+          );
     } catch (e) {
       debugPrint('Supabase.streamMessages error: $e');
       return null;
     }
   }
 
-  
   Future<List<GamificationStats>> fetchLeaderboard({int limit = 50}) async {
     if (_client == null) return const [];
     try {

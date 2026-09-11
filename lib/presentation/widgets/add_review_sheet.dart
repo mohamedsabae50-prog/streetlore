@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -153,8 +153,11 @@ class _AddReviewSheetState extends State<AddReviewSheet> {
                     ),
                   ),
                   const SizedBox(width: 3),
-                  const Icon(Icons.star_rounded,
-                      color: AppColors.warning, size: 18),
+                  const Icon(
+                    Icons.star_rounded,
+                    color: AppColors.warning,
+                    size: 18,
+                  ),
                 ],
               ),
 

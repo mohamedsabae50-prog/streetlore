@@ -30,7 +30,8 @@ class BestTimeService {
     final hour = t.hour;
     final minute = t.minute;
     final weekday = t.weekday;
-    final isWeekend = weekday == DateTime.friday || weekday == DateTime.saturday;
+    final isWeekend =
+        weekday == DateTime.friday || weekday == DateTime.saturday;
     final category = place.category.toLowerCase();
 
     final slot = _slotFor(hour);
@@ -39,7 +40,13 @@ class BestTimeService {
     int bestScore = 0;
     _Window best = windows.first;
     for (final w in windows) {
-      final s = _scoreForSlot(slot, w, isWeekend: isWeekend, hour: hour, minute: minute);
+      final s = _scoreForSlot(
+        slot,
+        w,
+        isWeekend: isWeekend,
+        hour: hour,
+        minute: minute,
+      );
       if (s > bestScore) {
         bestScore = s;
         best = w;
@@ -88,27 +95,57 @@ class BestTimeService {
   List<_Window> _windowsFor(String category) {
     if (category.contains('nature') || category.contains('beach')) {
       return const [
-        _Window('early_morning', 95, 'bt_reason_quietest', Icons.wb_twilight_rounded),
+        _Window(
+          'early_morning',
+          95,
+          'bt_reason_quietest',
+          Icons.wb_twilight_rounded,
+        ),
         _Window('morning', 80, 'bt_reason_cool_photo', Icons.wb_sunny_rounded),
         _Window('midday', 30, 'bt_reason_hot_crowd', Icons.wb_sunny_outlined),
         _Window('afternoon', 55, 'bt_reason_warm_ok', Icons.wb_cloudy_rounded),
-        _Window('evening', 90, 'bt_reason_golden_hour', Icons.wb_twilight_rounded),
+        _Window(
+          'evening',
+          90,
+          'bt_reason_golden_hour',
+          Icons.wb_twilight_rounded,
+        ),
         _Window('night', 20, 'bt_reason_closed_unsafe', Icons.nightlight_round),
       ];
     }
     if (category.contains('historical')) {
       return const [
-        _Window('early_morning', 90, 'bt_reason_cool_empty', Icons.wb_twilight_rounded),
+        _Window(
+          'early_morning',
+          90,
+          'bt_reason_cool_empty',
+          Icons.wb_twilight_rounded,
+        ),
         _Window('morning', 88, 'bt_reason_best_photos', Icons.wb_sunny_rounded),
         _Window('midday', 55, 'bt_reason_hot_shaded', Icons.wb_sunny_outlined),
-        _Window('afternoon', 70, 'bt_reason_soft_light', Icons.wb_cloudy_rounded),
-        _Window('evening', 60, 'bt_reason_often_closing', Icons.wb_twilight_rounded),
+        _Window(
+          'afternoon',
+          70,
+          'bt_reason_soft_light',
+          Icons.wb_cloudy_rounded,
+        ),
+        _Window(
+          'evening',
+          60,
+          'bt_reason_often_closing',
+          Icons.wb_twilight_rounded,
+        ),
         _Window('night', 5, 'bt_reason_closed', Icons.nightlight_round),
       ];
     }
     if (category.contains('culture') || category.contains('museum')) {
       return const [
-        _Window('early_morning', 65, 'bt_reason_quietest', Icons.wb_twilight_rounded),
+        _Window(
+          'early_morning',
+          65,
+          'bt_reason_quietest',
+          Icons.wb_twilight_rounded,
+        ),
         _Window('morning', 92, 'bt_reason_cool_photo', Icons.wb_sunny_rounded),
         _Window('midday', 70, 'bt_reason_hot_shaded', Icons.wb_sunny_outlined),
         _Window('afternoon', 80, 'bt_reason_warm_ok', Icons.wb_cloudy_rounded),
@@ -118,7 +155,12 @@ class BestTimeService {
     }
     if (category.contains('food')) {
       return const [
-        _Window('early_morning', 30, 'bt_reason_too_early', Icons.wb_twilight_rounded),
+        _Window(
+          'early_morning',
+          30,
+          'bt_reason_too_early',
+          Icons.wb_twilight_rounded,
+        ),
         _Window('morning', 60, 'bt_reason_breakfast', Icons.wb_sunny_rounded),
         _Window('midday', 90, 'bt_reason_lunch', Icons.restaurant_rounded),
         _Window('afternoon', 50, 'bt_reason_warm_ok', Icons.coffee_rounded),
@@ -127,11 +169,21 @@ class BestTimeService {
       ];
     }
     return const [
-      _Window('early_morning', 75, 'bt_reason_quietest', Icons.wb_twilight_rounded),
+      _Window(
+        'early_morning',
+        75,
+        'bt_reason_quietest',
+        Icons.wb_twilight_rounded,
+      ),
       _Window('morning', 85, 'bt_reason_best_photos', Icons.wb_sunny_rounded),
       _Window('midday', 55, 'bt_reason_hot_crowd', Icons.wb_sunny_outlined),
       _Window('afternoon', 65, 'bt_reason_warm_ok', Icons.wb_cloudy_rounded),
-      _Window('evening', 80, 'bt_reason_golden_hour', Icons.wb_twilight_rounded),
+      _Window(
+        'evening',
+        80,
+        'bt_reason_golden_hour',
+        Icons.wb_twilight_rounded,
+      ),
       _Window('night', 25, 'bt_reason_closed', Icons.nightlight_round),
     ];
   }
@@ -198,15 +250,9 @@ class BestTimeService {
       }
     }
     if (nextBestHour == null) {
-      return _NextWindow(
-        titleKey: 'bt_label_wait',
-        bodyKey: labelKey,
-      );
+      return _NextWindow(titleKey: 'bt_label_wait', bodyKey: labelKey);
     }
-    return _NextWindow(
-      titleKey: 'bt_label_wait',
-      bodyKey: labelKey,
-    );
+    return _NextWindow(titleKey: 'bt_label_wait', bodyKey: labelKey);
   }
 
   int _slotStart(String slot) {

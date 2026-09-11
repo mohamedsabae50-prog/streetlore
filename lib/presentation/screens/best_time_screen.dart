@@ -139,9 +139,7 @@ class _BestTimeScreenState extends State<BestTimeScreen> {
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            sliver: SliverToBoxAdapter(
-              child: _SunTimesCard(),
-            ),
+            sliver: SliverToBoxAdapter(child: _SunTimesCard()),
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
@@ -196,12 +194,16 @@ class _BestTimeScreenState extends State<BestTimeScreen> {
 
   List<_RankedPlace> _ranked(List<PlaceModel> places, DateTime now) {
     final list = places
-        .map((p) => _RankedPlace(
-              place: p,
-              recommendation: BestTimeService.instance.recommend(p, now: now),
-            ))
+        .map(
+          (p) => _RankedPlace(
+            place: p,
+            recommendation: BestTimeService.instance.recommend(p, now: now),
+          ),
+        )
         .toList();
-    list.sort((a, b) => b.recommendation.score.compareTo(a.recommendation.score));
+    list.sort(
+      (a, b) => b.recommendation.score.compareTo(a.recommendation.score),
+    );
     return list;
   }
 
@@ -214,7 +216,12 @@ class _BestTimeScreenState extends State<BestTimeScreen> {
   }
 
   String _nowSubtitle(
-      BuildContext context, DateTime now, int great, int okay, int skip) {
+    BuildContext context,
+    DateTime now,
+    int great,
+    int okay,
+    int skip,
+  ) {
     final day = _dayName(context, now.weekday);
     if (great > 0) {
       return context.tr('bt_sub_great', {
@@ -235,7 +242,16 @@ class _BestTimeScreenState extends State<BestTimeScreen> {
 
   String _dayName(BuildContext context, int weekday) {
     return context.tr(
-        ['day_mon', 'day_tue', 'day_wed', 'day_thu', 'day_fri', 'day_sat', 'day_sun'][weekday - 1]);
+      [
+        'day_mon',
+        'day_tue',
+        'day_wed',
+        'day_thu',
+        'day_fri',
+        'day_sat',
+        'day_sun',
+      ][weekday - 1],
+    );
   }
 }
 
@@ -347,7 +363,10 @@ class _BestTimeCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            _ScoreRing(score: recommendation.score, color: recommendation.color),
+            _ScoreRing(
+              score: recommendation.score,
+              color: recommendation.color,
+            ),
           ],
         ),
       ),
@@ -422,7 +441,8 @@ class _SunTimesCard extends StatelessWidget {
             time: svc.formatTime(times.sunrise),
           ),
           Container(
-            width: 1, height: 36,
+            width: 1,
+            height: 36,
             color: Colors.white.withValues(alpha: 0.3),
             margin: const EdgeInsets.symmetric(horizontal: 12),
           ),
@@ -432,7 +452,8 @@ class _SunTimesCard extends StatelessWidget {
             time: svc.formatDuration(times.daylight),
           ),
           Container(
-            width: 1, height: 36,
+            width: 1,
+            height: 36,
             color: Colors.white.withValues(alpha: 0.3),
             margin: const EdgeInsets.symmetric(horizontal: 12),
           ),

@@ -45,14 +45,16 @@ class _OfflineModeScreenState extends State<OfflineModeScreen> {
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF1E293B), Color(0xFF334155)],
-                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 48, height: 48,
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(14),
@@ -72,12 +74,24 @@ class _OfflineModeScreenState extends State<OfflineModeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(context.tr('offline_hero_title'),
-                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                          Text(
+                            context.tr('offline_hero_title'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(context.tr('offline_mb_downloaded',
-                                  {'n': '${off.totalDownloadedMb}'}),
-                              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                          Text(
+                            context.tr('offline_mb_downloaded', {
+                              'n': '${off.totalDownloadedMb}',
+                            }),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -86,17 +100,23 @@ class _OfflineModeScreenState extends State<OfflineModeScreen> {
               ),
               const SizedBox(height: 20),
               if (downloaded.isNotEmpty) ...[
-                Text(context.tr('offline_downloaded'),
-                    style: AppTextStyles.sectionTitle
-                        .copyWith(color: context.textPri)),
+                Text(
+                  context.tr('offline_downloaded'),
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: context.textPri,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 for (final p in downloaded) _DownloadedTile(pack: p),
                 const SizedBox(height: 20),
               ],
               if (available.isNotEmpty) ...[
-                Text(context.tr('offline_available'),
-                    style: AppTextStyles.sectionTitle
-                        .copyWith(color: context.textPri)),
+                Text(
+                  context.tr('offline_available'),
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: context.textPri,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 for (final p in available) _AvailableTile(pack: p),
               ],
@@ -129,20 +149,27 @@ class _DownloadedTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(pack.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(
+                  pack.name,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: 2),
                 Text(
-                    context.tr('offline_pack_size', {
-                      'mb': '${pack.sizeMb}',
-                      'n': '${pack.placeIds.length}',
-                    }),
-                    style: TextStyle(color: context.textSec, fontSize: 12)),
+                  context.tr('offline_pack_size', {
+                    'mb': '${pack.sizeMb}',
+                    'n': '${pack.placeIds.length}',
+                  }),
+                  style: TextStyle(color: context.textSec, fontSize: 12),
+                ),
               ],
             ),
           ),
           IconButton(
             onPressed: () => context.read<OfflineProvider>().remove(pack),
-            icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: AppColors.error,
+            ),
             tooltip: context.tr('delete'),
           ),
         ],
@@ -216,18 +243,25 @@ class _AvailableTileState extends State<_AvailableTile> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(pack.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(
+                  pack.name,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: 2),
-                Text(pack.description,
-                    style: TextStyle(color: context.textSec, fontSize: 12),
-                    maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(
+                  pack.description,
+                  style: TextStyle(color: context.textSec, fontSize: 12),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 4),
                 Text(
-                    context.tr('offline_pack_size', {
-                      'mb': '${pack.sizeMb}',
-                      'n': '${pack.placeIds.length}',
-                    }),
-                    style: TextStyle(color: context.hintColor, fontSize: 11)),
+                  context.tr('offline_pack_size', {
+                    'mb': '${pack.sizeMb}',
+                    'n': '${pack.placeIds.length}',
+                  }),
+                  style: TextStyle(color: context.hintColor, fontSize: 11),
+                ),
               ],
             ),
           ),
@@ -238,7 +272,9 @@ class _AvailableTileState extends State<_AvailableTile> {
               backgroundColor: AppColors.primary,
               disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: _downloading
                 ? const SizedBox(
@@ -249,8 +285,14 @@ class _AvailableTileState extends State<_AvailableTile> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : Text(context.tr('offline_download'),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+                : Text(
+                    context.tr('offline_download'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
           ),
         ],
       ),
@@ -266,20 +308,26 @@ class _PackIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final icon = _iconFor(emoji);
     return Container(
-      width: 44, height: 44,
+      width: 44,
+      height: 44,
       decoration: BoxDecoration(
-        color: (downloaded ? AppColors.success : AppColors.primary)
-            .withValues(alpha: 0.12),
+        color: (downloaded ? AppColors.success : AppColors.primary).withValues(
+          alpha: 0.12,
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon,
-          color: downloaded ? AppColors.success : AppColors.primary, size: 24),
+      child: Icon(
+        icon,
+        color: downloaded ? AppColors.success : AppColors.primary,
+        size: 24,
+      ),
     );
   }
 
   IconData _iconFor(String e) {
-    
-    if (e.contains('book') || e.contains('read')) return Icons.menu_book_rounded;
+    if (e.contains('book') || e.contains('read')) {
+      return Icons.menu_book_rounded;
+    }
     if (e.contains('museum') || e.contains('pillar') || e.contains('castle')) {
       return Icons.account_balance_rounded;
     }

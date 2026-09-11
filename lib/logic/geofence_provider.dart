@@ -22,8 +22,13 @@ class GeofenceProvider extends ChangeNotifier {
     final raw = prefs.getStringList(_kKey) ?? const [];
     _alerts
       ..clear()
-      ..addAll(raw.map((s) => GeofenceAlert.fromJson(
-          Map<String, dynamic>.from(jsonDecode(s) as Map))));
+      ..addAll(
+        raw.map(
+          (s) => GeofenceAlert.fromJson(
+            Map<String, dynamic>.from(jsonDecode(s) as Map),
+          ),
+        ),
+      );
     notifyListeners();
   }
 

@@ -41,11 +41,7 @@ class JournalEntry {
     );
   }
 
-  JournalEntry copyWith({
-    String? note,
-    int? rating,
-    String? photoUrl,
-  }) {
+  JournalEntry copyWith({String? note, int? rating, String? photoUrl}) {
     return JournalEntry(
       id: id,
       placeId: placeId,

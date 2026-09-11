@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/weather_service.dart';
@@ -43,20 +43,24 @@ class _WeatherWidgetState extends State<WeatherWidget> {
       if (d != null) _data = d;
     });
     if (d == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('location_denied'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('location_denied'))));
     }
   }
 
   IconData _iconForCode(String code) {
-    if (code.startsWith('01')) return Icons.wb_sunny_rounded;
-    if (code.startsWith('02')) return Icons.wb_cloudy_rounded;
-    if (code.startsWith('03') || code.startsWith('04')) return Icons.cloud_rounded;
-    if (code.startsWith('09') || code.startsWith('10')) return Icons.umbrella_rounded;
-    if (code.startsWith('11')) return Icons.thunderstorm_rounded;
-    if (code.startsWith('13')) return Icons.ac_unit_rounded;
-    if (code.startsWith('50')) return Icons.foggy;
+    if (code.startsWith('01')) { return Icons.wb_sunny_rounded; }
+    if (code.startsWith('02')) { return Icons.wb_cloudy_rounded; }
+    if (code.startsWith('03') || code.startsWith('04')) {
+      return Icons.cloud_rounded;
+    }
+    if (code.startsWith('09') || code.startsWith('10')) {
+      return Icons.umbrella_rounded;
+    }
+    if (code.startsWith('11')) { return Icons.thunderstorm_rounded; }
+    if (code.startsWith('13')) { return Icons.ac_unit_rounded; }
+    if (code.startsWith('50')) { return Icons.foggy; }
     return Icons.wb_sunny_rounded;
   }
 
@@ -72,7 +76,8 @@ class _WeatherWidgetState extends State<WeatherWidget> {
         ),
         child: const Center(
           child: SizedBox(
-            width: 22, height: 22,
+            width: 22,
+            height: 22,
             child: CircularProgressIndicator(strokeWidth: 2.5),
           ),
         ),
@@ -145,15 +150,22 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                       color: Colors.white,
                     ),
                   )
-                : const Icon(Icons.my_location_rounded,
-                    color: Colors.white, size: 20),
+                : const Icon(
+                    Icons.my_location_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
           ),
           IconButton(
             onPressed: _load,
             tooltip: context.tr('refresh'),
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
           ),
@@ -163,16 +175,26 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   }
 
   List<Color> _gradientFor(String code) {
-    if (code.startsWith('01')) return [const Color(0xFF60A5FA), const Color(0xFFFBBF24)];
-    if (code.startsWith('02') || code.startsWith('03') || code.startsWith('04')) {
+    if (code.startsWith('01')) {
+      return [const Color(0xFF60A5FA), const Color(0xFFFBBF24)];
+    }
+    if (code.startsWith('02') ||
+        code.startsWith('03') ||
+        code.startsWith('04')) {
       return [const Color(0xFF64748B), const Color(0xFF94A3B8)];
     }
     if (code.startsWith('09') || code.startsWith('10')) {
       return [const Color(0xFF1E40AF), const Color(0xFF3B82F6)];
     }
-    if (code.startsWith('11')) return [const Color(0xFF1E1B4B), const Color(0xFF4338CA)];
-    if (code.startsWith('13')) return [const Color(0xFFE0F2FE), const Color(0xFFBAE6FD)];
-    if (code.startsWith('50')) return [const Color(0xFF6B7280), const Color(0xFF9CA3AF)];
+    if (code.startsWith('11')) {
+      return [const Color(0xFF1E1B4B), const Color(0xFF4338CA)];
+    }
+    if (code.startsWith('13')) {
+      return [const Color(0xFFE0F2FE), const Color(0xFFBAE6FD)];
+    }
+    if (code.startsWith('50')) {
+      return [const Color(0xFF6B7280), const Color(0xFF9CA3AF)];
+    }
     return [const Color(0xFF3B82F6), const Color(0xFF60A5FA)];
   }
 }

@@ -1,4 +1,4 @@
-﻿import 'place_model.dart';
+import 'place_model.dart';
 
 class ItineraryModel {
   final String id;

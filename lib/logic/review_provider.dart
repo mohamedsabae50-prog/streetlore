@@ -10,7 +10,6 @@ class ReviewProvider extends ChangeNotifier {
     _loadReviews();
   }
 
-  
   Future<void> _loadReviews() async {
     final prefs = await SharedPreferences.getInstance();
     final data = prefs.getStringList('community_reviews') ?? [];
@@ -18,26 +17,22 @@ class ReviewProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  
   List<ReviewModel> getReviewsForPlace(String placeId) {
     return _reviews.where((review) => review.placeId == placeId).toList();
   }
 
-  
   Future<void> addReview(ReviewModel review) async {
     _reviews.add(review);
     await _saveReviews();
     notifyListeners();
   }
 
-  
   Future<void> removeReview(String reviewId) async {
     _reviews.removeWhere((r) => r.id == reviewId);
     await _saveReviews();
     notifyListeners();
   }
 
-  
   Future<void> _saveReviews() async {
     final prefs = await SharedPreferences.getInstance();
     final data = _reviews.map((r) => r.toJson()).toList();

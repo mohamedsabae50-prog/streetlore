@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -11,16 +11,26 @@ import 'place_details_screen.dart';
 
 String _catLabel(BuildContext context, String cat) {
   switch (cat) {
-    case 'All': return context.tr('cat_all');
-    case 'Historical': return context.tr('cat_historical');
-    case 'Culture': return context.tr('cat_culture');
-    case 'Nature': return context.tr('cat_nature');
-    case 'Food': return context.tr('cat_food');
-    case 'Shopping': return context.tr('cat_shopping');
-    case 'Mosques': return context.tr('cat_mosques');
-    case 'Churches': return context.tr('cat_churches');
-    case 'Streets': return context.tr('cat_streets');
-    default: return cat;
+    case 'All':
+      return context.tr('cat_all');
+    case 'Historical':
+      return context.tr('cat_historical');
+    case 'Culture':
+      return context.tr('cat_culture');
+    case 'Nature':
+      return context.tr('cat_nature');
+    case 'Food':
+      return context.tr('cat_food');
+    case 'Shopping':
+      return context.tr('cat_shopping');
+    case 'Mosques':
+      return context.tr('cat_mosques');
+    case 'Churches':
+      return context.tr('cat_churches');
+    case 'Streets':
+      return context.tr('cat_streets');
+    default:
+      return cat;
   }
 }
 
@@ -60,35 +70,52 @@ class _MapViewScreenState extends State<MapViewScreen> {
         _initialCentered = true;
         _mapController.move(here, 13.5);
       }
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   IconData _iconForCategory(String category) {
     switch (category) {
-      case 'Historical': return Icons.account_balance_rounded;
-      case 'Culture': return Icons.museum_rounded;
-      case 'Nature': return Icons.park_rounded;
-      case 'Food': return Icons.restaurant_rounded;
-      case 'Shopping': return Icons.shopping_bag_rounded;
-      case 'Mosques': return Icons.mosque_rounded;
-      case 'Churches': return Icons.church_rounded;
-      case 'Streets': return Icons.signpost_rounded;
-      default: return Icons.location_on_rounded;
+      case 'Historical':
+        return Icons.account_balance_rounded;
+      case 'Culture':
+        return Icons.museum_rounded;
+      case 'Nature':
+        return Icons.park_rounded;
+      case 'Food':
+        return Icons.restaurant_rounded;
+      case 'Shopping':
+        return Icons.shopping_bag_rounded;
+      case 'Mosques':
+        return Icons.mosque_rounded;
+      case 'Churches':
+        return Icons.church_rounded;
+      case 'Streets':
+        return Icons.signpost_rounded;
+      default:
+        return Icons.location_on_rounded;
     }
   }
 
   Color _colorForCategory(String category) {
     switch (category) {
-      case 'Historical': return const Color(0xFF8B5CF6);
-      case 'Culture': return const Color(0xFFEC4899);
-      case 'Nature': return const Color(0xFF10B981);
-      case 'Food': return const Color(0xFFF59E0B);
-      case 'Shopping': return const Color(0xFF3B82F6);
-      case 'Mosques': return const Color(0xFF14B8A6);
-      case 'Churches': return const Color(0xFFF97316);
-      case 'Streets': return const Color(0xFF6366F1);
-      default: return AppColors.primary;
+      case 'Historical':
+        return const Color(0xFF8B5CF6);
+      case 'Culture':
+        return const Color(0xFFEC4899);
+      case 'Nature':
+        return const Color(0xFF10B981);
+      case 'Food':
+        return const Color(0xFFF59E0B);
+      case 'Shopping':
+        return const Color(0xFF3B82F6);
+      case 'Mosques':
+        return const Color(0xFF14B8A6);
+      case 'Churches':
+        return const Color(0xFFF97316);
+      case 'Streets':
+        return const Color(0xFF6366F1);
+      default:
+        return AppColors.primary;
     }
   }
 
@@ -135,8 +162,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
                           border: Border.all(color: Colors.white, width: 3),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF3B82F6)
-                                  .withValues(alpha: 0.5),
+                              color: const Color(
+                                0xFF3B82F6,
+                              ).withValues(alpha: 0.5),
                               blurRadius: 10,
                               spreadRadius: 2,
                             ),
@@ -160,7 +188,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: _colorForCategory(p.category).withValues(alpha: 0.5),
+                                color: _colorForCategory(
+                                  p.category,
+                                ).withValues(alpha: 0.5),
                                 blurRadius: 8,
                                 spreadRadius: 2,
                               ),
@@ -195,7 +225,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: context.cardColor,
                         borderRadius: BorderRadius.circular(14),
@@ -223,7 +256,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
           ),
           if (_selectedPlace != null)
             Positioned(
-              left: 16, right: 16, bottom: 16,
+              left: 16,
+              right: 16,
+              bottom: 16,
               child: _SelectedPlaceCard(
                 place: _selectedPlace!,
                 color: _colorForCategory(_selectedPlace!.category),
@@ -233,7 +268,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => PlaceDetailsScreen(place: _selectedPlace!),
+                      builder: (_) =>
+                          PlaceDetailsScreen(place: _selectedPlace!),
                     ),
                   );
                 },
@@ -247,12 +283,17 @@ class _MapViewScreenState extends State<MapViewScreen> {
               tooltip: context.tr('map_my_location'),
               onPressed: () => _locateUser(move: true),
               backgroundColor: Theme.of(context).cardColor,
-              child: Icon(Icons.my_location_rounded,
-                  size: 20, color: context.textPri),
+              child: Icon(
+                Icons.my_location_rounded,
+                size: 20,
+                color: context.textPri,
+              ),
             ),
           ),
           Positioned(
-            left: 0, right: 0, bottom: _selectedPlace != null ? 110 : 16,
+            left: 0,
+            right: 0,
+            bottom: _selectedPlace != null ? 110 : 16,
             child: _CategoryFilter(
               selected: _selectedCategory,
               onSelect: (cat) => setState(() => _selectedCategory = cat),
@@ -299,7 +340,8 @@ class _SelectedPlaceCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 48, height: 48,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(12),
@@ -334,7 +376,11 @@ class _SelectedPlaceCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.star_rounded, size: 12, color: Color(0xFFFBBF24)),
+                    const Icon(
+                      Icons.star_rounded,
+                      size: 12,
+                      color: Color(0xFFFBBF24),
+                    ),
                     const SizedBox(width: 2),
                     Text(
                       place.rating.toString(),
@@ -382,7 +428,15 @@ class _CategoryFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const cats = ['All', 'Historical', 'Culture', 'Nature', 'Food', 'Mosques', 'Churches'];
+    const cats = [
+      'All',
+      'Historical',
+      'Culture',
+      'Nature',
+      'Food',
+      'Mosques',
+      'Churches',
+    ];
     return SizedBox(
       height: 44,
       child: ListView.builder(

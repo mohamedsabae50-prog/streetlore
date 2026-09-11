@@ -1,10 +1,8 @@
-﻿
-
 class AiTripPlan {
   final String title;
   final String summary;
   final int totalDays;
-  final String estimatedBudget; 
+  final String estimatedBudget;
   final List<AiTripDay> days;
   final List<String> tips;
 
@@ -32,8 +30,8 @@ class AiTripDay {
 
 class AiTripStop {
   final String placeId;
-  final String suggestedTime; 
-  final String note; 
+  final String suggestedTime;
+  final String note;
 
   const AiTripStop({
     required this.placeId,

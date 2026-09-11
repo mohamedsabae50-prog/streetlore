@@ -83,8 +83,11 @@ class PlacePhotosSection extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.photo_library_rounded,
-                      color: AppColors.primary, size: 18),
+                  const Icon(
+                    Icons.photo_library_rounded,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     context.tr('photos'),
@@ -96,8 +99,10 @@ class PlacePhotosSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(10),
@@ -116,7 +121,9 @@ class PlacePhotosSection extends StatelessWidget {
                     onTap: () => _addPhoto(context),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         gradient: AppColors.primaryGradient,
                         borderRadius: BorderRadius.circular(14),
@@ -124,8 +131,11 @@ class PlacePhotosSection extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.add_a_photo_rounded,
-                              color: Colors.white, size: 14),
+                          const Icon(
+                            Icons.add_a_photo_rounded,
+                            color: Colors.white,
+                            size: 14,
+                          ),
                           const SizedBox(width: 5),
                           Text(
                             context.tr('add'),
@@ -167,8 +177,11 @@ class PlacePhotosSection extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.camera_alt_rounded,
-              color: AppColors.primary.withValues(alpha: 0.5), size: 32),
+          Icon(
+            Icons.camera_alt_rounded,
+            color: AppColors.primary.withValues(alpha: 0.5),
+            size: 32,
+          ),
           const SizedBox(height: 8),
           Text(
             context.tr('first_photo'),
@@ -195,23 +208,30 @@ class PlacePhotosSection extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, i) {
           final photo = photos[i];
-          // Pre-cache the next image so swiping feels instant (no white flash).
+
           if (i + 1 < photos.length) {
             final next = photos[i + 1].imageUrl;
             if (AppImage.isNetwork(next)) {
-              precacheImage(CachedNetworkImageProvider(
-                next,
-                headers: const {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'},
-              ), context);
+              precacheImage(
+                CachedNetworkImageProvider(
+                  next,
+                  headers: const {
+                    'User-Agent':
+                        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+                  },
+                ),
+                context,
+              );
             }
           }
           return _PhotoCard(
             photo: photo,
             onLike: () {
               HapticFeedback.lightImpact();
-              context
-                  .read<PlacePhotosProvider>()
-                  .toggleLike(place.id, photo.id);
+              context.read<PlacePhotosProvider>().toggleLike(
+                place.id,
+                photo.id,
+              );
             },
             onDelete: () => _confirmDelete(context, photo),
           );
@@ -281,7 +301,9 @@ class _PhotoCard extends StatelessWidget {
                 onTap: onLike,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(20),
@@ -441,8 +463,10 @@ class _SourceTile extends StatelessWidget {
         ),
         child: Icon(icon, color: color, size: 20),
       ),
-      title: Text(label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+      title: Text(
+        label,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      ),
       onTap: onTap,
     );
   }

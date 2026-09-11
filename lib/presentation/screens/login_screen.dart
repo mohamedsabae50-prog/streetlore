@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -540,27 +540,28 @@ class _LoginScreenState extends State<LoginScreen>
                                   if (kIsWeb) {
                                     final redirectTo =
                                         AppConfig.webRedirectUrl ??
-                                            Uri.base.origin;
+                                        Uri.base.origin;
                                     await Supabase.instance.client.auth
                                         .signInWithOAuth(
-                                      OAuthProvider.google,
-                                      redirectTo: redirectTo,
-                                      authScreenLaunchMode:
-                                          LaunchMode.platformDefault,
-                                    ).timeout(const Duration(minutes: 2));
+                                          OAuthProvider.google,
+                                          redirectTo: redirectTo,
+                                          authScreenLaunchMode:
+                                              LaunchMode.platformDefault,
+                                        )
+                                        .timeout(const Duration(minutes: 2));
 
                                     if (auth.isLoggedIn && mounted) {
                                       _goToMain();
                                     }
                                   } else {
-                                    final GoogleSignIn googleSignIn =
-                                        GoogleSignIn(
+                                    final GoogleSignIn
+                                    googleSignIn = GoogleSignIn(
                                       serverClientId:
                                           '504340157609-pj8oox9662299u613glititqn4dqa7ij.apps.googleusercontent.com',
                                     );
 
-                                    final googleUser =
-                                        await googleSignIn.signIn();
+                                    final googleUser = await googleSignIn
+                                        .signIn();
 
                                     if (googleUser == null) {
                                       if (mounted) {
@@ -578,13 +579,12 @@ class _LoginScreenState extends State<LoginScreen>
                                       throw 'No ID Token found.';
                                     }
 
-                                    await Supabase
-                                        .instance.client.auth
+                                    await Supabase.instance.client.auth
                                         .signInWithIdToken(
-                                      provider: OAuthProvider.google,
-                                      idToken: idToken,
-                                      accessToken: accessToken,
-                                    );
+                                          provider: OAuthProvider.google,
+                                          idToken: idToken,
+                                          accessToken: accessToken,
+                                        );
 
                                     if (mounted) {
                                       _goToMain();
@@ -595,7 +595,8 @@ class _LoginScreenState extends State<LoginScreen>
                                   messenger.showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                          context.tr('login_google_timeout')),
+                                        context.tr('login_google_timeout'),
+                                      ),
                                       behavior: SnackBarBehavior.floating,
                                     ),
                                   );
@@ -605,7 +606,8 @@ class _LoginScreenState extends State<LoginScreen>
                                   messenger.showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                          context.tr('login_google_failed')),
+                                        context.tr('login_google_failed'),
+                                      ),
                                       backgroundColor: AppColors.error,
                                       behavior: SnackBarBehavior.floating,
                                     ),

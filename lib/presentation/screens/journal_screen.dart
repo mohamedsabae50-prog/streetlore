@@ -44,7 +44,9 @@ class JournalScreen extends StatelessWidget {
                   if (p != null) {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => PlaceDetailsScreen(place: p)),
+                      MaterialPageRoute(
+                        builder: (_) => PlaceDetailsScreen(place: p),
+                      ),
                     );
                   }
                 },
@@ -63,7 +65,10 @@ class JournalScreen extends StatelessWidget {
             icon: const Icon(Icons.add_rounded, color: Colors.white),
             label: Text(
               context.tr('journal_add_memory'),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           );
         },
@@ -95,17 +100,15 @@ class JournalScreen extends StatelessWidget {
     JournalEntry? existing, {
     PlaceModel? place,
   }) async {
-    final place0 = place ??
+    final place0 =
+        place ??
         context.read<PlaceProvider>().findById(existing?.placeId ?? '');
     if (place0 == null) return;
     final result = await showModalBottomSheet<JournalEntry>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _JournalEditorSheet(
-        place: place0,
-        existing: existing,
-      ),
+      builder: (ctx) => _JournalEditorSheet(place: place0, existing: existing),
     );
     if (result != null) {
       if (existing == null) {
@@ -129,12 +132,17 @@ class _EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80, height: 80,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.menu_book_rounded, size: 40, color: context.textPri),
+              child: Icon(
+                Icons.menu_book_rounded,
+                size: 40,
+                color: context.textPri,
+              ),
             ),
             const SizedBox(height: 20),
             Text(
@@ -163,7 +171,10 @@ class _EmptyState extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -245,7 +256,9 @@ class _JournalCard extends StatelessWidget {
                 Row(
                   children: List.generate(5, (i) {
                     return Icon(
-                      i < entry.rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                      i < entry.rating
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
                       size: 16,
                       color: const Color(0xFFFBBF24),
                     );
@@ -258,8 +271,14 @@ class _JournalCard extends StatelessWidget {
                     if (v == 'delete') onDelete();
                   },
                   itemBuilder: (_) => [
-                    PopupMenuItem(value: 'edit', child: Text(context.tr('edit'))),
-                    PopupMenuItem(value: 'delete', child: Text(context.tr('delete'))),
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Text(context.tr('edit')),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Text(context.tr('delete')),
+                    ),
                   ],
                 ),
               ],
@@ -305,7 +324,9 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
     final term = _search.text.toLowerCase().trim();
     final filtered = term.isEmpty
         ? widget.places
-        : widget.places.where((p) => p.name.toLowerCase().contains(term)).toList();
+        : widget.places
+              .where((p) => p.name.toLowerCase().contains(term))
+              .toList();
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.85,
@@ -320,7 +341,8 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
             children: [
               const SizedBox(height: 10),
               Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
                   color: context.hintColor,
                   borderRadius: BorderRadius.circular(2),
@@ -332,8 +354,13 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(context.tr('journal_pick_place'),
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        context.tr('journal_pick_place'),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
@@ -374,25 +401,39 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
                         borderRadius: BorderRadius.circular(8),
                         child: CachedNetworkImage(
                           imageUrl: p.imageUrl,
-                          width: 48, height: 48, fit: BoxFit.cover,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
                           memCacheWidth: 96,
                           memCacheHeight: 96,
-                          httpHeaders: const {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'},
+                          httpHeaders: const {
+                            'User-Agent':
+                                'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+                          },
                           placeholder: (_, __) => Container(
-                            width: 48, height: 48, color: context.bgAlt,
+                            width: 48,
+                            height: 48,
+                            color: context.bgAlt,
                           ),
                           errorWidget: (context, url, error) => Container(
                             color: const Color(0xFF1C2433),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.image_rounded, color: Colors.white30, size: 36),
+                                Icon(
+                                  Icons.image_rounded,
+                                  color: Colors.white30,
+                                  size: 36,
+                                ),
                               ],
                             ),
                           ),
                         ),
                       ),
-                      title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      title: Text(
+                        p.name,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
                       subtitle: Text(p.category),
                       onTap: () {
                         HapticFeedback.lightImpact();
@@ -441,7 +482,9 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.7,
@@ -450,7 +493,9 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
           return Container(
             decoration: BoxDecoration(
               color: context.bgColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
             child: ListView(
               controller: scroll,
@@ -458,7 +503,8 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
               children: [
                 Center(
                   child: Container(
-                    width: 40, height: 4,
+                    width: 40,
+                    height: 4,
                     decoration: BoxDecoration(
                       color: context.hintColor,
                       borderRadius: BorderRadius.circular(2),
@@ -470,8 +516,9 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
                   widget.existing == null
                       ? context.tr('journal_new_memory')
                       : context.tr('journal_edit_memory'),
-                  style: AppTextStyles.screenTitle
-                      .copyWith(color: context.textPri),
+                  style: AppTextStyles.screenTitle.copyWith(
+                    color: context.textPri,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -483,9 +530,12 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                Text(context.tr('rating_label'),
-                    style: AppTextStyles.sectionTitle
-                        .copyWith(color: context.textPri)),
+                Text(
+                  context.tr('rating_label'),
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: context.textPri,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: List.generate(5, (i) {
@@ -502,9 +552,12 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
                   }),
                 ),
                 const SizedBox(height: 12),
-                Text(context.tr('journal_notes'),
-                    style: AppTextStyles.sectionTitle
-                        .copyWith(color: context.textPri)),
+                Text(
+                  context.tr('journal_notes'),
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: context.textPri,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _noteCtrl,
@@ -519,7 +572,9 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: context.hintColor.withValues(alpha: 0.3)),
+                      borderSide: BorderSide(
+                        color: context.hintColor.withValues(alpha: 0.3),
+                      ),
                     ),
                   ),
                 ),
@@ -532,7 +587,9 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
                         id: widget.existing?.id ?? const Uuid().v4(),
                         placeId: widget.place.id,
                         placeName: widget.place.name,
-                        note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+                        note: _noteCtrl.text.trim().isEmpty
+                            ? null
+                            : _noteCtrl.text.trim(),
                         visitedAt: _visitedAt,
                         rating: _rating,
                       );
@@ -540,7 +597,9 @@ class _JournalEditorSheetState extends State<_JournalEditorSheet> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     icon: const Icon(Icons.check_rounded, color: Colors.white),
                     label: Text(

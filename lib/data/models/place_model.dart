@@ -79,19 +79,17 @@ class PlaceModel {
     return description;
   }
 
-
-
   bool get isFree => priceLevel == PriceLevel.free;
 
-  bool get hasDualPrice =>
-      priceLocalEgp != null && priceForeignerEgp != null;
+  bool get hasDualPrice => priceLocalEgp != null && priceForeignerEgp != null;
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
     return PlaceModel(
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
-      descriptionAr: json['description_ar'] as String? ?? json['descriptionAr'] as String?,
+      descriptionAr:
+          json['description_ar'] as String? ?? json['descriptionAr'] as String?,
       imageUrl: json['imageUrl'] as String,
       rating: (json['rating'] as num).toDouble(),
       category: json['category'] as String? ?? 'General',

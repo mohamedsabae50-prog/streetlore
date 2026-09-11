@@ -28,8 +28,10 @@ class _ToursScreenState extends State<ToursScreen>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     )..forward();
-    _fadeAnim = Tween<double>(begin: 0.0, end: 1.0)
-        .animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeIn));
+    _fadeAnim = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeIn));
   }
 
   @override
@@ -65,13 +67,13 @@ class _ToursScreenState extends State<ToursScreen>
                   children: [
                     Text(
                       context.tr('tours_subtitle'),
-                      style: TextStyle(
-                          fontSize: 12, color: context.textSec),
+                      style: TextStyle(fontSize: 12, color: context.textSec),
                     ),
                     Text(
                       context.tr('tours_title'),
-                      style: AppTextStyles.screenTitle
-                          .copyWith(color: context.textPri),
+                      style: AppTextStyles.screenTitle.copyWith(
+                        color: context.textPri,
+                      ),
                     ),
                   ],
                 ),
@@ -82,8 +84,9 @@ class _ToursScreenState extends State<ToursScreen>
                   child: Text(
                     filtered.isEmpty
                         ? context.tr('no_tours')
-                        : context.tr('tours_available',
-                            {'n': '${filtered.length}'}),
+                        : context.tr('tours_available', {
+                            'n': '${filtered.length}',
+                          }),
                     style: TextStyle(
                       color: context.textSec,
                       fontSize: 13,
@@ -98,37 +101,34 @@ class _ToursScreenState extends State<ToursScreen>
                   child: Center(
                     child: Padding(
                       padding: const EdgeInsets.all(40),
-                      child: Text(context.tr('loading_tours'),
-                          style:
-                              TextStyle(color: context.textSec)),
+                      child: Text(
+                        context.tr('loading_tours'),
+                        style: TextStyle(color: context.textSec),
+                      ),
                     ),
                   ),
                 )
               else
                 SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) {
-                      final tour = filtered[i];
-                      return FadeInUp(
-                        delay: Duration(milliseconds: 100 * i + 200),
-                        offsetY: 30,
-                        child: TourCard(
-                          tour: tour,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    TourDetailsScreen(tour: tour),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                    childCount: filtered.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, i) {
+                    final tour = filtered[i];
+                    return FadeInUp(
+                      delay: Duration(milliseconds: 100 * i + 200),
+                      offsetY: 30,
+                      child: TourCard(
+                        tour: tour,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TourDetailsScreen(tour: tour),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  }, childCount: filtered.length),
                 ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],

@@ -31,7 +31,11 @@ class PublicTransportScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.directions_transit_rounded, color: Colors.white, size: 32),
+                const Icon(
+                  Icons.directions_transit_rounded,
+                  color: Colors.white,
+                  size: 32,
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
@@ -48,22 +52,26 @@ class PublicTransportScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Text(context.tr('transport_bus_routes'),
-              style: AppTextStyles.sectionTitle
-                  .copyWith(color: context.textPri)),
+          Text(
+            context.tr('transport_bus_routes'),
+            style: AppTextStyles.sectionTitle.copyWith(color: context.textPri),
+          ),
           const SizedBox(height: 8),
-          ..._busRoutes.map((b) => _TransportCard(
-            icon: Icons.directions_bus_rounded,
-            color: const Color(0xFFF59E0B),
-            title: b['title'] as String,
-            description: b['description'] as String,
-            price: b['price'] as String,
-            stations: (b['stations'] as List).cast<String>(),
-          )),
+          ..._busRoutes.map(
+            (b) => _TransportCard(
+              icon: Icons.directions_bus_rounded,
+              color: const Color(0xFFF59E0B),
+              title: b['title'] as String,
+              description: b['description'] as String,
+              price: b['price'] as String,
+              stations: (b['stations'] as List).cast<String>(),
+            ),
+          ),
           const SizedBox(height: 20),
-          Text(context.tr('transport_taxi_section'),
-              style: AppTextStyles.sectionTitle
-                  .copyWith(color: context.textPri)),
+          Text(
+            context.tr('transport_taxi_section'),
+            style: AppTextStyles.sectionTitle.copyWith(color: context.textPri),
+          ),
           const SizedBox(height: 8),
           _TransportCard(
             icon: Icons.local_taxi_rounded,
@@ -106,11 +114,17 @@ class PublicTransportScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.success.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.success.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.tips_and_updates_rounded, color: AppColors.success, size: 22),
+                const Icon(
+                  Icons.tips_and_updates_rounded,
+                  color: AppColors.success,
+                  size: 22,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -136,13 +150,23 @@ class PublicTransportScreen extends StatelessWidget {
       'title': 'CTA Bus 215',
       'description': 'Corniche route. Frequent, scenic, cheap.',
       'price': 'EGP 5-8',
-      'stations': <String>['Raml Station', 'Corniche', 'Qaitbay Citadel', 'Anfushi'],
+      'stations': <String>[
+        'Raml Station',
+        'Corniche',
+        'Qaitbay Citadel',
+        'Anfushi',
+      ],
     },
     {
       'title': 'CTA Bus 730',
       'description': 'To Bibliotheca Alexandrina & Shatby.',
       'price': 'EGP 5',
-      'stations': <String>['Raml Station', 'Bibliotheca', 'Shatby', 'San Stefano'],
+      'stations': <String>[
+        'Raml Station',
+        'Bibliotheca',
+        'Shatby',
+        'San Stefano',
+      ],
     },
     {
       'title': 'East Bus (Abu Qir)',
@@ -185,7 +209,8 @@ class _TransportCard extends StatelessWidget {
           tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
           leading: Container(
-            width: 42, height: 42,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
@@ -200,7 +225,11 @@ class _TransportCard extends StatelessWidget {
             padding: const EdgeInsets.only(top: 4),
             child: Row(
               children: [
-                const Icon(Icons.payments_rounded, size: 12, color: AppColors.success),
+                const Icon(
+                  Icons.payments_rounded,
+                  size: 12,
+                  color: AppColors.success,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   price,
@@ -247,9 +276,16 @@ class _TransportCard extends StatelessWidget {
               children: [
                 for (var i = 0; i < stations.length; i++) ...[
                   if (i > 0)
-                    Icon(Icons.arrow_forward_rounded, size: 12, color: context.hintColor),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 12,
+                      color: context.hintColor,
+                    ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),

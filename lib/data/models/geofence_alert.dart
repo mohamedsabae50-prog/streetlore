@@ -1,5 +1,3 @@
-﻿
-
 class GeofenceAlert {
   final String placeId;
   final String placeName;
@@ -23,36 +21,35 @@ class GeofenceAlert {
     bool? enabled,
     int? radiusMeters,
     DateTime? lastTriggeredAt,
-  }) =>
-      GeofenceAlert(
-        placeId: placeId,
-        placeName: placeName,
-        lat: lat,
-        lng: lng,
-        radiusMeters: radiusMeters ?? this.radiusMeters,
-        enabled: enabled ?? this.enabled,
-        lastTriggeredAt: lastTriggeredAt ?? this.lastTriggeredAt,
-      );
+  }) => GeofenceAlert(
+    placeId: placeId,
+    placeName: placeName,
+    lat: lat,
+    lng: lng,
+    radiusMeters: radiusMeters ?? this.radiusMeters,
+    enabled: enabled ?? this.enabled,
+    lastTriggeredAt: lastTriggeredAt ?? this.lastTriggeredAt,
+  );
 
   Map<String, dynamic> toJson() => {
-        'place_id': placeId,
-        'place_name': placeName,
-        'lat': lat,
-        'lng': lng,
-        'radius_meters': radiusMeters,
-        'enabled': enabled,
-        'last_triggered_at': lastTriggeredAt?.toIso8601String(),
-      };
+    'place_id': placeId,
+    'place_name': placeName,
+    'lat': lat,
+    'lng': lng,
+    'radius_meters': radiusMeters,
+    'enabled': enabled,
+    'last_triggered_at': lastTriggeredAt?.toIso8601String(),
+  };
 
   factory GeofenceAlert.fromJson(Map<String, dynamic> json) => GeofenceAlert(
-        placeId: json['place_id'] as String,
-        placeName: json['place_name'] as String,
-        lat: (json['lat'] as num).toDouble(),
-        lng: (json['lng'] as num).toDouble(),
-        radiusMeters: (json['radius_meters'] as num?)?.toInt() ?? 500,
-        enabled: json['enabled'] as bool? ?? true,
-        lastTriggeredAt: json['last_triggered_at'] == null
-            ? null
-            : DateTime.parse(json['last_triggered_at'] as String),
-      );
+    placeId: json['place_id'] as String,
+    placeName: json['place_name'] as String,
+    lat: (json['lat'] as num).toDouble(),
+    lng: (json['lng'] as num).toDouble(),
+    radiusMeters: (json['radius_meters'] as num?)?.toInt() ?? 500,
+    enabled: json['enabled'] as bool? ?? true,
+    lastTriggeredAt: json['last_triggered_at'] == null
+        ? null
+        : DateTime.parse(json['last_triggered_at'] as String),
+  );
 }

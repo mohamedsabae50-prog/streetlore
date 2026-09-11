@@ -1,11 +1,10 @@
-
 class Badge {
   final String id;
   final String name;
   final String description;
-  final String iconName; 
-  final String tier; 
-  final DateTime? earnedAt; 
+  final String iconName;
+  final String tier;
+  final DateTime? earnedAt;
   final int pointsAwarded;
 
   const Badge({
@@ -28,7 +27,7 @@ class GamificationStats {
   final int reviewsPosted;
   final int photosUploaded;
   final List<Badge> badges;
-  final String level; 
+  final String level;
 
   const GamificationStats({
     required this.userId,
@@ -49,40 +48,41 @@ class GamificationStats {
     int? photosUploaded,
     List<Badge>? badges,
     String? level,
-  }) =>
-      GamificationStats(
-        userId: userId,
-        userName: userName,
-        avatarColorHex: avatarColorHex,
-        totalPoints: totalPoints ?? this.totalPoints,
-        placesVisited: placesVisited ?? this.placesVisited,
-        reviewsPosted: reviewsPosted ?? this.reviewsPosted,
-        photosUploaded: photosUploaded ?? this.photosUploaded,
-        badges: badges ?? this.badges,
-        level: level ?? this.level,
-      );
+  }) => GamificationStats(
+    userId: userId,
+    userName: userName,
+    avatarColorHex: avatarColorHex,
+    totalPoints: totalPoints ?? this.totalPoints,
+    placesVisited: placesVisited ?? this.placesVisited,
+    reviewsPosted: reviewsPosted ?? this.reviewsPosted,
+    photosUploaded: photosUploaded ?? this.photosUploaded,
+    badges: badges ?? this.badges,
+    level: level ?? this.level,
+  );
 
   Map<String, dynamic> toJson() => {
-        'user_id': userId,
-        'user_name': userName,
-        'avatar_color_hex': avatarColorHex,
-        'total_points': totalPoints,
-        'places_visited': placesVisited,
-        'reviews_posted': reviewsPosted,
-        'photos_uploaded': photosUploaded,
-        'badges': badges
-            .map((b) => {
-                  'id': b.id,
-                  'name': b.name,
-                  'description': b.description,
-                  'icon_name': b.iconName,
-                  'tier': b.tier,
-                  'earned_at': b.earnedAt?.toIso8601String(),
-                  'points_awarded': b.pointsAwarded,
-                })
-            .toList(),
-        'level': level,
-      };
+    'user_id': userId,
+    'user_name': userName,
+    'avatar_color_hex': avatarColorHex,
+    'total_points': totalPoints,
+    'places_visited': placesVisited,
+    'reviews_posted': reviewsPosted,
+    'photos_uploaded': photosUploaded,
+    'badges': badges
+        .map(
+          (b) => {
+            'id': b.id,
+            'name': b.name,
+            'description': b.description,
+            'icon_name': b.iconName,
+            'tier': b.tier,
+            'earned_at': b.earnedAt?.toIso8601String(),
+            'points_awarded': b.pointsAwarded,
+          },
+        )
+        .toList(),
+    'level': level,
+  };
 
   factory GamificationStats.fromJson(Map<String, dynamic> json) =>
       GamificationStats(
@@ -94,22 +94,23 @@ class GamificationStats {
         reviewsPosted: (json['reviews_posted'] as num?)?.toInt() ?? 0,
         photosUploaded: (json['photos_uploaded'] as num?)?.toInt() ?? 0,
         badges: ((json['badges'] as List<dynamic>?) ?? const [])
-            .map((b) => Badge(
-                  id: b['id'] as String,
-                  name: b['name'] as String,
-                  description: b['description'] as String,
-                  iconName: b['icon_name'] as String,
-                  tier: b['tier'] as String,
-                  earnedAt: b['earned_at'] == null
-                      ? null
-                      : DateTime.parse(b['earned_at'] as String),
-                  pointsAwarded: (b['points_awarded'] as num?)?.toInt() ?? 0,
-                ))
+            .map(
+              (b) => Badge(
+                id: b['id'] as String,
+                name: b['name'] as String,
+                description: b['description'] as String,
+                iconName: b['icon_name'] as String,
+                tier: b['tier'] as String,
+                earnedAt: b['earned_at'] == null
+                    ? null
+                    : DateTime.parse(b['earned_at'] as String),
+                pointsAwarded: (b['points_awarded'] as num?)?.toInt() ?? 0,
+              ),
+            )
             .toList(),
         level: json['level'] as String? ?? 'Explorer',
       );
 
-  
   static String levelForPoints(int points) {
     if (points >= 5000) return 'Lorekeeper';
     if (points >= 2000) return 'Cartographer';
@@ -117,7 +118,6 @@ class GamificationStats {
     return 'Explorer';
   }
 
-  
   static int pointsFor(String action) {
     switch (action) {
       case 'check_in':

@@ -42,22 +42,23 @@ class AiService {
       );
     }
 
-    final availablePlaceIds =
-        availablePlaces.map((p) => p.id).toList(growable: false);
+    final availablePlaceIds = availablePlaces
+        .map((p) => p.id)
+        .toList(growable: false);
 
     final bool isArabic = _isArabic(prompt);
 
     final placesForContext = availablePlaces
-        .map((p) =>
-            '{"id":"${p.id}","name":${jsonEncode(p.name)},"category":"${p.category}","lat":${p.lat},"lng":${p.lng}}')
+        .map(
+          (p) =>
+              '{"id":"${p.id}","name":${jsonEncode(p.name)},"category":"${p.category}","lat":${p.lat},"lng":${p.lng}}',
+        )
         .join(',');
 
-    // Build a per-request seed so the same prompt produces different content
-    // across runs. Without this the model tends to return near-identical
-    // recommendations and "stops" feel templated.
     final seed = DateTime.now().millisecondsSinceEpoch.toString();
 
-    final system = """
+    final system =
+        """
 You are a creative travel planner for Alexandria, Egypt. Given a user prompt,
 a budget level, and a JSON list of available places, return ONLY a JSON
 object matching this shape:
@@ -88,7 +89,8 @@ Rules:
 - Variety seed for this request: $seed. Treat as opaque; used only to encourage fresh wording.
 """;
 
-    final user = 'User prompt: ${jsonEncode(prompt)}\n'
+    final user =
+        'User prompt: ${jsonEncode(prompt)}\n'
         'Days hint: ${daysHint ?? "auto"}\n'
         'Budget: ${budget ?? r"\$\$"}\n'
         'Variety seed: $seed\n'
@@ -133,18 +135,21 @@ Rules:
             return AiTripStop(
               placeId: (raw['placeId'] as String?) ?? '',
               suggestedTime: _normalizeTime(
-                  (raw['suggestedTime'] as String?) ?? 'Flexible'),
+                (raw['suggestedTime'] as String?) ?? 'Flexible',
+              ),
               note: (raw['note'] as String?) ?? '',
             );
           })
           .where((s) => availablePlaceIds.contains(s.placeId))
           .toList();
       if (stops.isEmpty) continue;
-      days.add(AiTripDay(
-        dayNumber: dayNumber,
-        theme: (d['theme'] as String?) ?? 'Explore',
-        stops: stops,
-      ));
+      days.add(
+        AiTripDay(
+          dayNumber: dayNumber,
+          theme: (d['theme'] as String?) ?? 'Explore',
+          stops: stops,
+        ),
+      );
     }
     return AiTripPlan(
       title: (json['title'] as String?) ?? 'Your Alexandria Adventure',
@@ -202,30 +207,105 @@ Rules:
         totalDays: daysHint,
         estimatedBudget: budget,
         days: const [],
-        tips: const [
-          'Pull to refresh and try again once places are loaded.',
-        ],
+        tips: const ['Pull to refresh and try again once places are loaded.'],
       );
     }
 
     final q = prompt.toLowerCase();
 
     const categoryKeywords = <String, List<String>>{
-      'Historical': ['history', 'historical', 'castle', 'fort', 'ancient', 'roman', 'ruins', 'citadel', 'ØªØ§Ø±ÙŠØ®', 'ØªØ§Ø±ÙŠØ®ÙŠ', 'Ù‚Ù„Ø¹Ø©', 'Ø¢Ø«Ø§Ø±', 'Ø­ØµÙ†'],
-      'Culture': ['culture', 'museum', 'art', 'library', 'Ø«Ù‚Ø§ÙØ©', 'Ø«Ù‚Ø§ÙÙŠ', 'Ù…ØªØ­Ù', 'ÙÙ†', 'Ù…ÙƒØªØ¨Ø©'],
-      'Food': ['food', 'seafood', 'restaurant', 'eat', 'fish', 'cafe', 'cafÃ©', 'coffee', 'dinner', 'lunch', 'Ø£ÙƒÙ„', 'Ø§ÙƒÙ„', 'Ø³Ù…Ùƒ', 'Ù…Ø·Ø¹Ù…', 'Ù…Ø£ÙƒÙˆÙ„Ø§Øª', 'Ù‚Ù‡ÙˆØ©', 'ÙƒØ§ÙÙŠÙ‡'],
-      'Nature': ['nature', 'beach', 'park', 'garden', 'sea', 'corniche', 'Ø·Ø¨ÙŠØ¹Ø©', 'Ø´Ø§Ø·Ø¦', 'Ø¨Ø­Ø±', 'Ø¬Ù†ÙŠÙ†Ø©', 'Ø­Ø¯ÙŠÙ‚Ø©', 'ÙƒÙˆØ±Ù†ÙŠØ´'],
-      'Shopping': ['shopping', 'shop', 'market', 'bazaar', 'Ø³ÙˆÙ‚', 'ØªØ³ÙˆÙ‚'],
+      'Historical': [
+        'history',
+        'historical',
+        'castle',
+        'fort',
+        'ancient',
+        'roman',
+        'ruins',
+        'citadel',
+        'ØªØ§Ø±ÙŠØ®',
+        'ØªØ§Ø±ÙŠØ®ÙŠ',
+        'Ù‚Ù„Ø¹Ø©',
+        'Ø¢Ø«Ø§Ø±',
+        'Ø­ØµÙ†',
+      ],
+      'Culture': [
+        'culture',
+        'museum',
+        'art',
+        'library',
+        'Ø«Ù‚Ø§ÙØ©',
+        'Ø«Ù‚Ø§ÙÙŠ',
+        'Ù…ØªØ­Ù',
+        'ÙÙ†',
+        'Ù…ÙƒØªØ¨Ø©',
+      ],
+      'Food': [
+        'food',
+        'seafood',
+        'restaurant',
+        'eat',
+        'fish',
+        'cafe',
+        'cafÃ©',
+        'coffee',
+        'dinner',
+        'lunch',
+        'Ø£ÙƒÙ„',
+        'Ø§ÙƒÙ„',
+        'Ø³Ù…Ùƒ',
+        'Ù…Ø·Ø¹Ù…',
+        'Ù…Ø£ÙƒÙˆÙ„Ø§Øª',
+        'Ù‚Ù‡ÙˆØ©',
+        'ÙƒØ§ÙÙŠÙ‡',
+      ],
+      'Nature': [
+        'nature',
+        'beach',
+        'park',
+        'garden',
+        'sea',
+        'corniche',
+        'Ø·Ø¨ÙŠØ¹Ø©',
+        'Ø´Ø§Ø·Ø¦',
+        'Ø¨Ø­Ø±',
+        'Ø¬Ù†ÙŠÙ†Ø©',
+        'Ø­Ø¯ÙŠÙ‚Ø©',
+        'ÙƒÙˆØ±Ù†ÙŠØ´',
+      ],
+      'Shopping': [
+        'shopping',
+        'shop',
+        'market',
+        'bazaar',
+        'Ø³ÙˆÙ‚',
+        'ØªØ³ÙˆÙ‚',
+      ],
       'Mosques': ['mosque', 'Ù…Ø³Ø¬Ø¯', 'Ø¬Ø§Ù…Ø¹', 'Ù…Ø³Ø§Ø¬Ø¯'],
       'Churches': ['church', 'ÙƒÙ†ÙŠØ³Ø©', 'ÙƒÙ†Ø§Ø¦Ø³'],
-      'Streets': ['street', 'walk', 'downtown', 'stroll', 'Ø´Ø§Ø±Ø¹', 'Ø´ÙˆØ§Ø±Ø¹', 'Ù…Ù…Ø´Ù‰', 'ÙˆØ³Ø· Ø§Ù„Ø¨Ù„Ø¯'],
+      'Streets': [
+        'street',
+        'walk',
+        'downtown',
+        'stroll',
+        'Ø´Ø§Ø±Ø¹',
+        'Ø´ÙˆØ§Ø±Ø¹',
+        'Ù…Ù…Ø´Ù‰',
+        'ÙˆØ³Ø· Ø§Ù„Ø¨Ù„Ø¯',
+      ],
     };
 
-    final wantsHidden =
-        ['hidden', 'gem', 'gems', 'Ù…Ø®ÙÙŠ', 'Ù…Ø®ÙÙŠØ©', 'Ø¬ÙˆØ§Ù‡Ø±'].any(q.contains);
+    final wantsHidden = [
+      'hidden',
+      'gem',
+      'gems',
+      'Ù…Ø®ÙÙŠ',
+      'Ù…Ø®ÙÙŠØ©',
+      'Ø¬ÙˆØ§Ù‡Ø±',
+    ].any(q.contains);
 
     double score(PlaceModel p) {
-      var s = p.rating; // quality signal 0..5
+      var s = p.rating;
       final kws = categoryKeywords[p.category] ?? const <String>[];
       for (final k in kws) {
         if (q.contains(k)) {
@@ -258,30 +338,34 @@ Rules:
       final slice = ranked.sublist(index, end);
       index = end;
       final ordered = _geoOrder(slice);
-      days.add(AiTripDay(
-        dayNumber: d + 1,
-        theme: _themeFor(ordered, d, isArabic: isArabic),
-        stops: [
-          for (var j = 0; j < ordered.length; j++)
-            AiTripStop(
-              placeId: ordered[j].id,
-              suggestedTime:
-                  '${(9 + j * 3).toString().padLeft(2, '0')}:00 - ${(11 + j * 3).toString().padLeft(2, '0')}:00',
-              note: _noteFor(ordered[j], isArabic: isArabic),
-            ),
-        ],
-      ));
+      days.add(
+        AiTripDay(
+          dayNumber: d + 1,
+          theme: _themeFor(ordered, d, isArabic: isArabic),
+          stops: [
+            for (var j = 0; j < ordered.length; j++)
+              AiTripStop(
+                placeId: ordered[j].id,
+                suggestedTime:
+                    '${(9 + j * 3).toString().padLeft(2, '0')}:00 - ${(11 + j * 3).toString().padLeft(2, '0')}:00',
+                note: _noteFor(ordered[j], isArabic: isArabic),
+              ),
+          ],
+        ),
+      );
     }
     return AiTripPlan(
-      title: isArabic ? 'خطتك لـ $daysHint يوم في الإسكندرية' : 'Your $daysHint-Day Alexandria Plan',
-      summary: isArabic 
+      title: isArabic
+          ? 'خطتك لـ $daysHint يوم في الإسكندرية'
+          : 'Your $daysHint-Day Alexandria Plan',
+      summary: isArabic
           ? 'خطة مُعدّة على جهازك بناءً على طلبك: أفضل الأماكن مرتبة جغرافياً ليومك.'
           : 'Planned on your device from your request: best-matching places, '
-            'ordered so each day flows as one walkable route.',
+                'ordered so each day flows as one walkable route.',
       totalDays: daysHint,
       estimatedBudget: budget,
       days: days,
-      tips: isArabic 
+      tips: isArabic
           ? const [
               'ابدأ مبكراً لتجنب الازدحام في أشهر المواقع.',
               'احمل جاكيت خفيف — النسيم المتوسطي يفاجئك مساءً.',
@@ -296,15 +380,12 @@ Rules:
   }
 
   List<PlaceModel> _geoOrder(List<PlaceModel> places) {
-    final remaining = [...places]
-      ..sort((a, b) => b.lat.compareTo(a.lat));
+    final remaining = [...places]..sort((a, b) => b.lat.compareTo(a.lat));
     final ordered = <PlaceModel>[];
     var current = remaining.removeAt(0);
     ordered.add(current);
     while (remaining.isNotEmpty) {
-      remaining.sort(
-        (a, b) => _dist(current, a).compareTo(_dist(current, b)),
-      );
+      remaining.sort((a, b) => _dist(current, a).compareTo(_dist(current, b)));
       current = remaining.removeAt(0);
       ordered.add(current);
     }
@@ -317,7 +398,11 @@ Rules:
     return dx * dx + dy * dy;
   }
 
-  String _themeFor(List<PlaceModel> dayPlaces, int dayIndex, {bool isArabic = false}) {
+  String _themeFor(
+    List<PlaceModel> dayPlaces,
+    int dayIndex, {
+    bool isArabic = false,
+  }) {
     final counts = <String, int>{};
     for (final p in dayPlaces) {
       counts[p.category] = (counts[p.category] ?? 0) + 1;
@@ -331,19 +416,34 @@ Rules:
       }
     });
     switch (top) {
-      case 'Historical': return isArabic ? 'أبرز المواقع التاريخية' : 'Historical Highlights';
-      case 'Food': return isArabic ? 'نكهات المدينة' : 'Tastes of the City';
-      case 'Nature': return isArabic ? 'الطبيعة ونسيم البحر' : 'Nature & Sea Breeze';
-      case 'Culture': return isArabic ? 'الثقافة والمتاحف' : 'Culture & Museums';
-      case 'Shopping': return isArabic ? 'الأسواق والتسوق' : 'Markets & Shopping';
-      case 'Mosques': return isArabic ? 'المعالم الدينية' : 'Spiritual Landmarks';
-      case 'Churches': return isArabic ? 'العمارة المقدسة' : 'Sacred Architecture';
-      case 'Streets': return isArabic ? 'شوارع وحياة محلية' : 'Streets & Local Life';
-      default: return isArabic ? (dayIndex == 0 ? 'أيقونات المدينة' : 'زوايا خفية') : (dayIndex == 0 ? 'City Icons' : 'Hidden Corners');
+      case 'Historical':
+        return isArabic ? 'أبرز المواقع التاريخية' : 'Historical Highlights';
+      case 'Food':
+        return isArabic ? 'نكهات المدينة' : 'Tastes of the City';
+      case 'Nature':
+        return isArabic ? 'الطبيعة ونسيم البحر' : 'Nature & Sea Breeze';
+      case 'Culture':
+        return isArabic ? 'الثقافة والمتاحف' : 'Culture & Museums';
+      case 'Shopping':
+        return isArabic ? 'الأسواق والتسوق' : 'Markets & Shopping';
+      case 'Mosques':
+        return isArabic ? 'المعالم الدينية' : 'Spiritual Landmarks';
+      case 'Churches':
+        return isArabic ? 'العمارة المقدسة' : 'Sacred Architecture';
+      case 'Streets':
+        return isArabic ? 'شوارع وحياة محلية' : 'Streets & Local Life';
+      default:
+        return isArabic
+            ? (dayIndex == 0 ? 'أيقونات المدينة' : 'زوايا خفية')
+            : (dayIndex == 0 ? 'City Icons' : 'Hidden Corners');
     }
   }
 
   String _noteFor(PlaceModel p, {bool isArabic = false}) => p.isHiddenGem
-      ? (isArabic ? 'جوهرة خفية يحبها السكان المحليون.' : 'Hidden gem loved by locals.')
-      : (isArabic ? 'وجهة ${p.category} مميزة ومُقيَّمة بعلامة عالية.' : 'Top-rated ${p.category.toLowerCase()} stop.');
+      ? (isArabic
+            ? 'جوهرة خفية يحبها السكان المحليون.'
+            : 'Hidden gem loved by locals.')
+      : (isArabic
+            ? 'وجهة ${p.category} مميزة ومُقيَّمة بعلامة عالية.'
+            : 'Top-rated ${p.category.toLowerCase()} stop.');
 }

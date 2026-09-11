@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../logic/locale_provider.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/best_time_service.dart';
@@ -98,10 +100,7 @@ class _PlaceCardState extends State<PlaceCard> {
     BuildContext toHeroContext,
   ) {
     final toHero = toHeroContext.widget as Hero;
-    return Material(
-      color: Colors.transparent,
-      child: toHero.child,
-    );
+    return Material(color: Colors.transparent, child: toHero.child);
   }
 
   Widget _nameFlight(
@@ -144,7 +143,10 @@ class _PlaceCardState extends State<PlaceCard> {
                 child: Material(
                   type: MaterialType.transparency,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(6),
@@ -187,7 +189,8 @@ class _PlaceCardState extends State<PlaceCard> {
 
           Text(
             widget.place.localizedDescription(
-                Localizations.localeOf(context).languageCode),
+              context.read<LocaleProvider>().locale.languageCode,
+            ),
             style: AppTextStyles.placeDescription,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

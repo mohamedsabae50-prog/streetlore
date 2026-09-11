@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
@@ -36,7 +36,6 @@ class GeofencingService {
     return status.isGranted;
   }
 
-  
   Future<void> setAlerts(List<GeofenceAlert> alerts) async {
     _alerts
       ..clear()
@@ -52,14 +51,18 @@ class GeofencingService {
       return;
     }
     await _ensureInit();
-    _positionSub = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 50,
-      ),
-    ).listen(_onPosition, onError: (e) {
-      debugPrint('GeofencingService: position error: $e');
-    });
+    _positionSub =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 50,
+          ),
+        ).listen(
+          _onPosition,
+          onError: (e) {
+            debugPrint('GeofencingService: position error: $e');
+          },
+        );
   }
 
   Future<void> stop() async {
@@ -84,7 +87,6 @@ class GeofencingService {
   DateTime? _lastFire;
   String? _lastFirePlaceId;
   void _maybeFire(GeofenceAlert a, double distance) {
-    
     final now = DateTime.now();
     if (_lastFirePlaceId == a.placeId &&
         _lastFire != null &&

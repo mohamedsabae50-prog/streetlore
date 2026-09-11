@@ -72,10 +72,7 @@ class OfflineProvider extends ChangeNotifier {
       id: 'nature_sea',
       name: 'Nature & Sea Breeze',
       description: 'Gardens, corniche, and the Mediterranean breeze.',
-      placeIds: const [
-        'fallback_montaza',
-        'fallback_corniche',
-      ],
+      placeIds: const ['fallback_montaza', 'fallback_corniche'],
       sizeMb: 6,
       coverEmoji: 'beach',
     ),
@@ -96,9 +93,7 @@ class OfflineProvider extends ChangeNotifier {
         .where((p) => pack.placeIds.contains(p.id))
         .toList();
     if (places.isEmpty) {
-      debugPrint(
-        'OfflineProvider: no places matched pack "${pack.id}"',
-      );
+      debugPrint('OfflineProvider: no places matched pack "${pack.id}"');
       return DownloadEmpty(pack);
     }
     await _storage.cachePlaces(places);

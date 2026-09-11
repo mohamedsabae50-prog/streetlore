@@ -86,15 +86,17 @@ class PrayerTimesService {
     if (_inflight != null && !force) return _inflight!;
     final completer = Completer<PrayerTimes>();
     _inflight = completer.future;
-    _fetch(force: force).then((times) {
-      _cached = times;
-      _cachedAt = DateTime.now();
-      _inflight = null;
-      if (!completer.isCompleted) completer.complete(times);
-    }).catchError((Object e) {
-      _inflight = null;
-      if (!completer.isCompleted) completer.complete(_computeFallback());
-    });
+    _fetch(force: force)
+        .then((times) {
+          _cached = times;
+          _cachedAt = DateTime.now();
+          _inflight = null;
+          if (!completer.isCompleted) completer.complete(times);
+        })
+        .catchError((Object e) {
+          _inflight = null;
+          if (!completer.isCompleted) completer.complete(_computeFallback());
+        });
     return completer.future;
   }
 
@@ -161,9 +163,11 @@ class PrayerTimesService {
     final D = julian - 2451545.0;
     final g = (357.529 + 0.98560028 * D) % 360;
     final q = (280.459 + 0.98564736 * D) % 360;
-    final L = (q + 1.915 * math.sin(g * d2r) + 0.020 * math.sin(2 * g * d2r)) % 360;
+    final L =
+        (q + 1.915 * math.sin(g * d2r) + 0.020 * math.sin(2 * g * d2r)) % 360;
     final e = 23.439 - 0.00000036 * D;
-    final raRad = r2d *
+    final raRad =
+        r2d *
         math.atan2(math.cos(e * d2r) * math.sin(L * d2r), math.cos(L * d2r)) /
         15.0;
     final decl = r2d * math.asin(math.sin(e * d2r) * math.sin(L * d2r));
@@ -209,10 +213,16 @@ class PrayerTimesService {
   }
 
   Duration _hourAngle(
-      DateTime d, double decl, double angle, double d2r, double r2d) {
+    DateTime d,
+    double decl,
+    double angle,
+    double d2r,
+    double r2d,
+  ) {
     final lat = _lat * d2r;
     final dec = decl * d2r;
-    final cosH = (math.sin(angle * d2r) - math.sin(lat) * math.sin(dec)) /
+    final cosH =
+        (math.sin(angle * d2r) - math.sin(lat) * math.sin(dec)) /
         (math.cos(lat) * math.cos(dec));
     if (cosH > 1) return const Duration(hours: 6);
     if (cosH < -1) return const Duration(hours: 6);
@@ -221,13 +231,19 @@ class PrayerTimesService {
   }
 
   Duration _asrHourAngle(
-      DateTime d, double decl, int asrMethod, double d2r, double r2d) {
+    DateTime d,
+    double decl,
+    int asrMethod,
+    double d2r,
+    double r2d,
+  ) {
     final lat = _lat * d2r;
     final dec = decl * d2r;
     final angle = asrMethod == 1
         ? r2d * math.atan(1.0 / (1 + math.tan((lat - dec).abs() / 2.0)))
         : r2d * math.atan(1.0 / (2 + math.tan((lat - dec).abs() / 2.0)));
-    final cosH = (math.sin((90 - angle) * d2r) - math.sin(lat) * math.sin(dec)) /
+    final cosH =
+        (math.sin((90 - angle) * d2r) - math.sin(lat) * math.sin(dec)) /
         (math.cos(lat) * math.cos(dec));
     if (cosH > 1) return const Duration(hours: 3);
     if (cosH < -1) return const Duration(hours: 3);

@@ -76,7 +76,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'AI Tour Guide',
+              context.tr('ai_tour_guide'),
               style: TextStyle(
                 fontSize: 14,
                 color: context.textSec,
@@ -118,10 +118,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
       itemCount: msgs.length,
       itemBuilder: (context, i) {
         final m = msgs[i];
-        return _MessageBubble(
-          text: m.text,
-          isUser: m.isUser,
-        );
+        return _MessageBubble(text: m.text, isUser: m.isUser);
       },
     );
   }
@@ -136,9 +133,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
       ),
       decoration: BoxDecoration(
         color: context.cardColor,
-        border: Border(
-          top: BorderSide(color: context.borderColor, width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: context.borderColor, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -150,8 +145,9 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _send(),
               decoration: InputDecoration(
-                hintText: context.tr('tour_guide_hint',
-                    {'name': widget.place.name}),
+                hintText: context.tr('tour_guide_hint', {
+                  'name': widget.place.name,
+                }),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(22),
                   borderSide: BorderSide.none,
@@ -194,8 +190,9 @@ class _MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUser)

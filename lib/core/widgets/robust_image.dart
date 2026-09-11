@@ -2,11 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
 
-/// A robust image widget that:
-/// - Uses Flutter's native HTTP client (not CachedNetworkImage) with proper User-Agent
-/// - Falls back gracefully on errors
-/// - Shows a shimmer placeholder while loading
-/// - Works on both Android and web
 class RobustImage extends StatefulWidget {
   final String imageUrl;
   final BoxFit fit;

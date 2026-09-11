@@ -38,7 +38,9 @@ class JournalProvider extends ChangeNotifier {
     }
     final data = prefs.getStringList(_key) ?? [];
     _entries = data
-        .map((s) => JournalEntry.fromJson(jsonDecode(s) as Map<String, dynamic>))
+        .map(
+          (s) => JournalEntry.fromJson(jsonDecode(s) as Map<String, dynamic>),
+        )
         .toList();
     _entries.sort((a, b) => b.visitedAt.compareTo(a.visitedAt));
     _ready = true;

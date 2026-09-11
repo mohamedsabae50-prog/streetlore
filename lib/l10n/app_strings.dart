@@ -64,6 +64,11 @@ class AppStrings {
     'quick_prayer': {'en': 'Prayer', 'ar': 'الصلاة'},
     'quick_badges': {'en': 'Badges', 'ar': 'إنجازات'},
     'quick_routes': {'en': 'Routes', 'ar': 'مسارات'},
+    'ai_tour_guide': {'en': 'AI Tour Guide', 'ar': 'دليل سياحي ذكي'},
+    'max_route_places': {
+      'en': 'Max 5 places per route',
+      'ar': 'أقصى عدد 5 أماكن في المسار',
+    },
 
     'weather_feels': {
       'en': 'feels {t}  · {h}% humidity',
@@ -82,7 +87,10 @@ class AppStrings {
       'en': 'Ask travelers about this place',
       'ar': 'اسأل المسافرين عن هذا المكان',
     },
-    'ai_planner_title': {'en': 'Smart Trip Planner', 'ar': 'مخطط الرحلات الذكي'},
+    'ai_planner_title': {
+      'en': 'Smart Trip Planner',
+      'ar': 'مخطط الرحلات الذكي',
+    },
     'ai_planner_sub': {
       'en': "Describe your ideal Alexandria trip and we'll plan it.",
       'ar': 'صف رحلتك المثالية في إسكندرية وهنخططها لك.',
@@ -324,20 +332,14 @@ class AppStrings {
       'ar': 'كن أول من يشارك صورة',
     },
     'rating_label': {'en': 'Rating', 'ar': 'التقييم'},
-    'review_hint': {
-      'en': 'Share your experience...',
-      'ar': 'شاركنا تجربتك...',
-    },
+    'review_hint': {'en': 'Share your experience...', 'ar': 'شاركنا تجربتك...'},
     'add_photo_btn': {'en': 'Add Photo', 'ar': 'أضف صورة'},
     'post_review': {'en': 'Post Review', 'ar': 'انشر التقييم'},
     'review_empty_warn': {
       'en': 'Please write a comment first',
       'ar': 'من فضلك اكتب تعليقًا أولًا',
     },
-    'review_failed': {
-      'en': 'Could not post review',
-      'ar': 'تعذر نشر التقييم',
-    },
+    'review_failed': {'en': 'Could not post review', 'ar': 'تعذر نشر التقييم'},
     'delete_photo_q': {'en': 'Delete this photo?', 'ar': 'حذف هذه الصورة؟'},
     'delete_review_q': {'en': 'Delete this review?', 'ar': 'حذف هذا التقييم؟'},
     'delete': {'en': 'Delete', 'ar': 'حذف'},
@@ -348,23 +350,20 @@ class AppStrings {
       'en': 'Your trip is empty.\nAdd places from the explore screen!',
       'ar': 'رحلتك فاضية.\nضيف أماكن من شاشة الاستكشاف!',
     },
-    'trip_places_planned': {
-      'en': '{n} Places Planned',
-      'ar': '{n} مكان مخطط',
-    },
+    'trip_places_planned': {'en': '{n} Places Planned', 'ar': '{n} مكان مخطط'},
     'trip_clear_all': {'en': 'Clear All', 'ar': 'مسح الكل'},
 
     'offline_title': {'en': 'Offline Mode', 'ar': 'الوضع دون اتصال'},
-    'offline_hero_title': {'en': 'Travel without signal', 'ar': 'سافر من غير شبكة'},
+    'offline_hero_title': {
+      'en': 'Travel without signal',
+      'ar': 'سافر من غير شبكة',
+    },
     'offline_mb_downloaded': {
       'en': '{n} MB downloaded',
       'ar': '{n} ميجابايت محمّلة',
     },
     'offline_downloaded': {'en': 'Downloaded', 'ar': 'المحمّلة'},
-    'offline_available': {
-      'en': 'Available to download',
-      'ar': 'متاحة للتحميل',
-    },
+    'offline_available': {'en': 'Available to download', 'ar': 'متاحة للتحميل'},
     'offline_pack_size': {
       'en': '{mb} MB · {n} places',
       'ar': '{mb} ميجابايت · {n} مكان',
@@ -372,7 +371,10 @@ class AppStrings {
     'offline_download': {'en': 'Download', 'ar': 'تحميل'},
 
     'geo_title': {'en': 'Geofencing Alerts', 'ar': 'تنبيهات الموقع'},
-    'geo_hero_title': {'en': 'Get notified nearby', 'ar': 'تنبيهات عند الاقتراب'},
+    'geo_hero_title': {
+      'en': 'Get notified nearby',
+      'ar': 'تنبيهات عند الاقتراب',
+    },
     'geo_hero_sub': {
       'en': 'Choose the places you want alerts for - within 500m by default.',
       'ar': 'اختار الأماكن اللي عايز تنبيهات لها - في نطاق ٥٠٠ متر افتراضيًا.',
@@ -500,8 +502,14 @@ class AppStrings {
       'en': 'Please describe what kind of trip you want.',
       'ar': 'من فضلك صف نوع الرحلة اللي عايزها.',
     },
-    'ai_err_failed': {'en': 'Failed to generate: {e}', 'ar': 'فشل التوليد: {e}'},
-    'ai_prompt_title': {'en': 'Tell us about your trip', 'ar': 'قولنا عن رحلتك'},
+    'ai_err_failed': {
+      'en': 'Failed to generate: {e}',
+      'ar': 'فشل التوليد: {e}',
+    },
+    'ai_prompt_title': {
+      'en': 'Tell us about your trip',
+      'ar': 'قولنا عن رحلتك',
+    },
     'ai_prompt_hint': {
       'en': 'e.g. two days in Alexandria, mid-budget, love history',
       'ar': 'مثال: يومين في إسكندرية، ميزانية متوسطة، بحب التاريخ',
@@ -552,7 +560,10 @@ class AppStrings {
       'en': 'Meter: EGP 7-10 base + EGP 3/km',
       'ar': 'العداد: ٧-١٠ جنيه أساسي + ٣ جنيه لكل كم',
     },
-    'transport_taxi_s1': {'en': 'Available citywide', 'ar': 'متاح في كل المدينة'},
+    'transport_taxi_s1': {
+      'en': 'Available citywide',
+      'ar': 'متاح في كل المدينة',
+    },
     'transport_taxi_s2': {
       'en': 'Black & yellow cabs',
       'ar': 'تاكسي أسود وأصفر',
@@ -639,7 +650,10 @@ class AppStrings {
       'ar': 'اضغط على أي رقم للاتصال. احفظ الصفحة دي للوصول السريع.',
     },
 
-    'login_welcome': {'en': 'Welcome to\nStreetlore', 'ar': 'أهلًا بك في\nستريت لور'},
+    'login_welcome': {
+      'en': 'Welcome to\nStreetlore',
+      'ar': 'أهلًا بك في\nستريت لور',
+    },
     'login_subtitle': {
       'en': 'Sign in to save your favorite places and access exclusive tours.',
       'ar': 'سجّل دخولك لحفظ أماكنك المفضلة والوصول لجولات حصرية.',
@@ -715,12 +729,16 @@ class AppStrings {
     },
     'login_google_failed': {
       'en': 'Google sign-in failed. Check your Supabase redirect URL settings.',
-      'ar': 'فشل تسجيل الدخول بجوجل. تأكد من إعدادات الـ redirect URL في Supabase.',
+      'ar':
+          'فشل تسجيل الدخول بجوجل. تأكد من إعدادات الـ redirect URL في Supabase.',
     },
     'login_just_exploring': {'en': 'Just exploring? ', 'ar': 'بتستكشف بس؟ '},
     'login_continue_guest': {'en': 'Continue as Guest', 'ar': 'ادخل كضيف'},
     'login_guest_name': {'en': 'Guest Explorer', 'ar': 'مستكشف زائر'},
-    'guest_dialog_title': {'en': 'Pick a display name', 'ar': 'اختار اسم للعرض'},
+    'guest_dialog_title': {
+      'en': 'Pick a display name',
+      'ar': 'اختار اسم للعرض',
+    },
     'guest_dialog_sub': {
       'en':
           'Other travellers will see this name on the leaderboard. You can change it later.',
@@ -738,7 +756,8 @@ class AppStrings {
     'ob_sub_1': {
       'en':
           'Uncover 30+ hidden gems and landmarks of Alexandria that most tourists never find.',
-      'ar': 'اكتشف أكتر من ٣٠ جوهرة مخفية ومعلم في إسكندرية معظم السياح مبيعرفوهاش.',
+      'ar':
+          'اكتشف أكتر من ٣٠ جوهرة مخفية ومعلم في إسكندرية معظم السياح مبيعرفوهاش.',
     },
     'ob_title_2': {'en': 'Plan Your Journey', 'ar': 'خطط رحلتك'},
     'ob_sub_2': {
@@ -756,17 +775,24 @@ class AppStrings {
     'ob_get_started': {'en': 'Get Started', 'ar': 'يلا نبدأ'},
     'ob_next': {'en': 'Next', 'ar': 'التالي'},
 
-    // Best-time recommendation labels (formerly hardcoded in best_time_service.dart)
     'bt_label_go_now': {'en': 'Go now', 'ar': 'روح دلوقتي'},
     'bt_label_decent_now': {'en': 'Decent now', 'ar': 'كويس دلوقتي'},
     'bt_label_wait': {'en': 'Wait for a better window', 'ar': 'استنى وقت أحسن'},
 
-    // Best-time window reason phrases
-    'bt_reason_quietest': {'en': 'Quietest, best light', 'ar': 'أهدأ وقت وأفضل إضاءة'},
-    'bt_reason_cool_photo': {'en': 'Cool, photogenic', 'ar': 'مناخس، وقت التصوير'},
+    'bt_reason_quietest': {
+      'en': 'Quietest, best light',
+      'ar': 'أهدأ وقت وأفضل إضاءة',
+    },
+    'bt_reason_cool_photo': {
+      'en': 'Cool, photogenic',
+      'ar': 'مناخس، وقت التصوير',
+    },
     'bt_reason_hot_crowd': {'en': 'Hot & crowded', 'ar': 'حر وزحمة'},
     'bt_reason_warm_ok': {'en': 'Warm but ok', 'ar': 'دافي بس مقبول'},
-    'bt_reason_golden_hour': {'en': 'Golden hour magic', 'ar': 'سحر الساعة الذهبية'},
+    'bt_reason_golden_hour': {
+      'en': 'Golden hour magic',
+      'ar': 'سحر الساعة الذهبية',
+    },
     'bt_reason_closed_unsafe': {'en': 'Closed, unsafe', 'ar': 'مقفول ومش آمن'},
     'bt_reason_cool_empty': {'en': 'Cool & empty', 'ar': 'مناخس وفاضي'},
     'bt_reason_best_photos': {'en': 'Best for photos', 'ar': 'أفضل وقت للصور'},
@@ -781,19 +807,13 @@ class AppStrings {
     'bt_reason_too_early': {'en': 'Too early', 'ar': 'بدري أوي'},
     'bt_reason_too_late': {'en': 'Too late', 'ar': 'متأخر أوي'},
 
-    // AI tour guide hint placeholder
-    'tour_guide_hint': {
-      'en': 'Ask about {name}...',
-      'ar': 'اسأل عن {name}...',
-    },
+    'tour_guide_hint': {'en': 'Ask about {name}...', 'ar': 'اسأل عن {name}...'},
 
-    // Prayer times screen fallback
     'prayer_load_failed': {
       'en': 'Failed to load prayer times',
       'ar': 'فشل تحميل مواقيت الصلاة',
     },
 
-    // Prayer time labels (Islamic terms kept in English for clarity; add Arabic)
     'prayer_fajr': {'en': 'Fajr', 'ar': 'الفجر'},
     'prayer_sunrise': {'en': 'Sunrise', 'ar': 'الشروق'},
     'prayer_dhuhr': {'en': 'Dhuhr', 'ar': 'الظهر'},
@@ -801,24 +821,24 @@ class AppStrings {
     'prayer_maghrib': {'en': 'Maghrib', 'ar': 'المغرب'},
     'prayer_isha': {'en': 'Isha', 'ar': 'العشاء'},
 
-    // Location permission flow
     'loc_perm_blocked': {
       'en': 'Location is blocked. Enable it in Settings to get nearby alerts.',
       'ar': 'تم رفض إذن الموقع. فعّله من الإعدادات عشان توصلك التنبيهات.',
     },
     'loc_service_off': {
-      'en': 'Location services are off. Turn them on to see what is around you.',
+      'en':
+          'Location services are off. Turn them on to see what is around you.',
       'ar': 'خدمات الموقع مقفولة. شغّلها عشان تشوف اللي حواليك.',
     },
     'open_settings': {'en': 'Open settings', 'ar': 'افتح الإعدادات'},
 
-    // Offline pack download feedback
     'offline_downloaded_n': {
       'en': 'Saved {n} place{s} for offline use',
       'ar': 'تم حفظ {n} مكان{s} للاستخدام أوفلاين',
     },
     'offline_no_places': {
-      'en': 'No matching places found for this pack. The data may still be loading.',
+      'en':
+          'No matching places found for this pack. The data may still be loading.',
       'ar': 'مفيش أماكن مطابقة للحزمة. البيانات ممكن تكون لسه بتتحمل.',
     },
   };

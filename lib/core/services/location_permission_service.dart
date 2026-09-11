@@ -5,7 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationPermissionService {
   LocationPermissionService._();
-  static final LocationPermissionService instance = LocationPermissionService._();
+  static final LocationPermissionService instance =
+      LocationPermissionService._();
 
   static const _kAskedKey = 'loc_perm_asked_v1';
 

@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../core/services/supabase_service.dart';
@@ -22,7 +22,7 @@ class ChatProvider extends ChangeNotifier {
   void _subscribe(String placeId) {
     _subs[placeId]?.cancel();
     final stream = _supa.streamMessages(placeId);
-    if (stream == null) return; 
+    if (stream == null) return;
     _subs[placeId] = stream.listen((rows) {
       _byPlace[placeId] = rows;
       notifyListeners();
@@ -37,8 +37,6 @@ class ChatProvider extends ChangeNotifier {
     await _supa.postMessage(message);
   }
 
-  
-  
   void appendLocal(ChatMessage message) {
     final list = List<ChatMessage>.from(_byPlace[message.placeId] ?? const []);
     list.add(message);

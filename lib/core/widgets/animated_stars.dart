@@ -34,13 +34,16 @@ class _AnimatedStarsState extends State<AnimatedStars>
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: widget.duration);
     _scales = List.generate(widget.max, (i) {
-      final start = (i * widget.stagger.inMilliseconds) /
-          (widget.max * widget.stagger.inMilliseconds + widget.duration.inMilliseconds);
-      final end = (start +
-              widget.duration.inMilliseconds /
-                  (widget.max * widget.stagger.inMilliseconds +
-                      widget.duration.inMilliseconds))
-          .clamp(0.0, 1.0);
+      final start =
+          (i * widget.stagger.inMilliseconds) /
+          (widget.max * widget.stagger.inMilliseconds +
+              widget.duration.inMilliseconds);
+      final end =
+          (start +
+                  widget.duration.inMilliseconds /
+                      (widget.max * widget.stagger.inMilliseconds +
+                          widget.duration.inMilliseconds))
+              .clamp(0.0, 1.0);
       return Tween<double>(begin: 0.4, end: 1.0).animate(
         CurvedAnimation(
           parent: _ctrl,
@@ -75,8 +78,8 @@ class _AnimatedStarsState extends State<AnimatedStars>
                 half
                     ? Icons.star_half_rounded
                     : (filled
-                        ? Icons.star_rounded
-                        : Icons.star_outline_rounded),
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded),
                 color: filled || half ? widget.color : widget.emptyColor,
                 size: widget.size,
               ),

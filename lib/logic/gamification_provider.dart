@@ -22,8 +22,7 @@ class GamificationProvider extends ChangeNotifier {
 
   void syncWithAuth(AuthProvider auth) {
     if (auth.userId.isEmpty) return;
-    if (_stats.userId == auth.userId &&
-        _stats.userName == auth.userName) {
+    if (_stats.userId == auth.userId && _stats.userName == auth.userName) {
       return;
     }
     setUserIdentity(
@@ -144,7 +143,8 @@ class GamificationProvider extends ChangeNotifier {
       badges: [..._stats.badges, badge],
       totalPoints: _stats.totalPoints + badge.pointsAwarded,
       level: GamificationStats.levelForPoints(
-          _stats.totalPoints + badge.pointsAwarded),
+        _stats.totalPoints + badge.pointsAwarded,
+      ),
     );
     await _save();
     notifyListeners();

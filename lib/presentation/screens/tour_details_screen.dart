@@ -38,9 +38,11 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
     );
     _contentSlide =
         Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
-      CurvedAnimation(
-          parent: _contentController, curve: Curves.easeOutCubic),
-    );
+          CurvedAnimation(
+            parent: _contentController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
   }
 
   @override
@@ -119,7 +121,6 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
       ),
       body: CustomScrollView(
         slivers: [
-          
           SliverAppBar(
             automaticallyImplyLeading: false,
             expandedHeight: 300,
@@ -131,33 +132,40 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                 children: [
                   Hero(
                     tag: 'tour-image-${tour.id}',
-                    flightShuttleBuilder: (
-                      BuildContext flightContext,
-                      Animation<double> animation,
-                      HeroFlightDirection flightDirection,
-                      BuildContext fromHeroContext,
-                      BuildContext toHeroContext,
-                    ) {
-                      return Material(
-                        color: Colors.transparent,
-                        child: (toHeroContext.widget as Hero).child,
-                      );
-                    },
+                    flightShuttleBuilder:
+                        (
+                          BuildContext flightContext,
+                          Animation<double> animation,
+                          HeroFlightDirection flightDirection,
+                          BuildContext fromHeroContext,
+                          BuildContext toHeroContext,
+                        ) {
+                          return Material(
+                            color: Colors.transparent,
+                            child: (toHeroContext.widget as Hero).child,
+                          );
+                        },
                     child: CachedNetworkImage(
                       imageUrl: tour.imageUrl,
                       fit: BoxFit.cover,
                       memCacheWidth: 1080,
                       memCacheHeight: 1080,
-                      httpHeaders: const {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'},
-                      placeholder: (_, __) => Container(
-                        color: AppColors.primaryLight,
-                      ),
+                      httpHeaders: const {
+                        'User-Agent':
+                            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+                      },
+                      placeholder: (_, __) =>
+                          Container(color: AppColors.primaryLight),
                       errorWidget: (context, url, error) => Container(
                         color: const Color(0xFF1C2433),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.image_rounded, color: Colors.white30, size: 36),
+                            Icon(
+                              Icons.image_rounded,
+                              color: Colors.white30,
+                              size: 36,
+                            ),
                           ],
                         ),
                       ),
@@ -188,7 +196,9 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
@@ -199,8 +209,11 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.access_time_rounded,
-                                      color: Colors.white, size: 11),
+                                  const Icon(
+                                    Icons.access_time_rounded,
+                                    color: Colors.white,
+                                    size: 11,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     tour.duration,
@@ -218,18 +231,21 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                         const SizedBox(height: 8),
                         Hero(
                           tag: 'tour-title-${tour.id}',
-                          flightShuttleBuilder: (
-                            BuildContext flightContext,
-                            Animation<double> animation,
-                            HeroFlightDirection flightDirection,
-                            BuildContext fromHeroContext,
-                            BuildContext toHeroContext,
-                          ) {
-                            return DefaultTextStyle(
-                              style: DefaultTextStyle.of(toHeroContext).style,
-                              child: (toHeroContext.widget as Hero).child,
-                            );
-                          },
+                          flightShuttleBuilder:
+                              (
+                                BuildContext flightContext,
+                                Animation<double> animation,
+                                HeroFlightDirection flightDirection,
+                                BuildContext fromHeroContext,
+                                BuildContext toHeroContext,
+                              ) {
+                                return DefaultTextStyle(
+                                  style: DefaultTextStyle.of(
+                                    toHeroContext,
+                                  ).style,
+                                  child: (toHeroContext.widget as Hero).child,
+                                );
+                              },
                           child: Material(
                             type: MaterialType.transparency,
                             child: Text(
@@ -246,12 +262,16 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(Icons.location_on_rounded,
-                                color: Colors.white60, size: 14),
+                            const Icon(
+                              Icons.location_on_rounded,
+                              color: Colors.white60,
+                              size: 14,
+                            ),
                             const SizedBox(width: 4),
                             Text(
-                              context.tr('tour_stops_along',
-                                  {'n': '${tour.places.length}'}),
+                              context.tr('tour_stops_along', {
+                                'n': '${tour.places.length}',
+                              }),
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
@@ -267,7 +287,6 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
             ),
           ),
 
-          
           SliverToBoxAdapter(
             child: FadeTransition(
               opacity: _contentFade,
@@ -277,13 +296,13 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                   decoration: BoxDecoration(
                     color: context.bgColor,
                     borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(28)),
+                      top: Radius.circular(28),
+                    ),
                   ),
                   transform: Matrix4.translationValues(0, -28, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      
                       Padding(
                         padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
                         child: Row(
@@ -318,34 +337,42 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                         ),
                       ),
 
-                      
                       Padding(
                         padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(context.tr('tour_about'),
-                                style: AppTextStyles.sectionTitle
-                                    .copyWith(color: context.textPri)),
+                            Text(
+                              context.tr('tour_about'),
+                              style: AppTextStyles.sectionTitle.copyWith(
+                                color: context.textPri,
+                              ),
+                            ),
                             const SizedBox(height: 10),
-                            Text(tour.description, style: AppTextStyles.bodyMedium),
+                            Text(
+                              tour.description,
+                              style: AppTextStyles.bodyMedium,
+                            ),
                           ],
                         ),
                       ),
 
-                      
                       if (tour.places.isNotEmpty) ...[
                         Padding(
                           padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(context.tr('tour_itinerary'),
-                                  style: AppTextStyles.sectionTitle
-                                      .copyWith(color: context.textPri)),
                               Text(
-                                context.tr('tour_stops_count',
-                                    {'n': '${tour.places.length}'}),
+                                context.tr('tour_itinerary'),
+                                style: AppTextStyles.sectionTitle.copyWith(
+                                  color: context.textPri,
+                                ),
+                              ),
+                              Text(
+                                context.tr('tour_stops_count', {
+                                  'n': '${tour.places.length}',
+                                }),
                                 style: TextStyle(
                                   color: context.textSec,
                                   fontSize: 13,
@@ -387,7 +414,9 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                                       color: AppColors.primary,
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                          color: Colors.white, width: 2),
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
                                     ),
                                     child: Center(
                                       child: Text(
@@ -407,7 +436,6 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                         }),
                       ],
 
-                      
                       Padding(
                         padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
                         child: _buildStartButton(),
@@ -458,11 +486,7 @@ class _GlassButton extends StatelessWidget {
   final Color? iconColor;
   final VoidCallback onTap;
 
-  const _GlassButton({
-    required this.icon,
-    this.iconColor,
-    required this.onTap,
-  });
+  const _GlassButton({required this.icon, this.iconColor, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

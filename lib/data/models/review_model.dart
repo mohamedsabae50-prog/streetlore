@@ -2,13 +2,12 @@ import 'dart:convert';
 
 class ReviewModel {
   final String id;
-  final String placeId; 
+  final String placeId;
   final String userName;
   final String userId;
   final double rating;
   final String comment;
-  final String?
-  imagePath; 
+  final String? imagePath;
   final DateTime date;
 
   ReviewModel({

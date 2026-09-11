@@ -36,10 +36,7 @@ class TourCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildImageHeader(context),
-            _buildContent(context),
-          ],
+          children: [_buildImageHeader(context), _buildContent(context)],
         ),
       ),
     );
@@ -56,18 +53,19 @@ class TourCard extends StatelessWidget {
           children: [
             Hero(
               tag: 'tour-image-${tour.id}',
-              flightShuttleBuilder: (
-                BuildContext flightContext,
-                Animation<double> animation,
-                HeroFlightDirection flightDirection,
-                BuildContext fromHeroContext,
-                BuildContext toHeroContext,
-              ) {
-                return Material(
-                  color: Colors.transparent,
-                  child: (toHeroContext.widget as Hero).child,
-                );
-              },
+              flightShuttleBuilder:
+                  (
+                    BuildContext flightContext,
+                    Animation<double> animation,
+                    HeroFlightDirection flightDirection,
+                    BuildContext fromHeroContext,
+                    BuildContext toHeroContext,
+                  ) {
+                    return Material(
+                      color: Colors.transparent,
+                      child: (toHeroContext.widget as Hero).child,
+                    );
+                  },
               child: ShimmerImage(
                 imageUrl: tour.imageUrl,
                 fit: BoxFit.cover,
@@ -76,7 +74,7 @@ class TourCard extends StatelessWidget {
                 fallbackIconSize: 40,
               ),
             ),
-            
+
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -87,13 +85,15 @@ class TourCard extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             Positioned(
               top: 12,
               left: 12,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 5),
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(20),
@@ -104,8 +104,11 @@ class TourCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.access_time_rounded,
-                        color: Colors.white, size: 12),
+                    const Icon(
+                      Icons.access_time_rounded,
+                      color: Colors.white,
+                      size: 12,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       tour.duration,
@@ -119,13 +122,15 @@ class TourCard extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             Positioned(
               bottom: 12,
               right: 12,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 5),
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -136,12 +141,16 @@ class TourCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.location_on_rounded,
-                        color: Colors.white, size: 12),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      color: Colors.white,
+                      size: 12,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      context.tr('tour_stops_count',
-                          {'n': '${tour.places.length}'}),
+                      context.tr('tour_stops_count', {
+                        'n': '${tour.places.length}',
+                      }),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -166,23 +175,25 @@ class TourCard extends StatelessWidget {
         children: [
           Hero(
             tag: 'tour-title-${tour.id}',
-            flightShuttleBuilder: (
-              BuildContext flightContext,
-              Animation<double> animation,
-              HeroFlightDirection flightDirection,
-              BuildContext fromHeroContext,
-              BuildContext toHeroContext,
-            ) {
-              return DefaultTextStyle(
-                style: DefaultTextStyle.of(toHeroContext).style,
-                child: (toHeroContext.widget as Hero).child,
-              );
-            },
+            flightShuttleBuilder:
+                (
+                  BuildContext flightContext,
+                  Animation<double> animation,
+                  HeroFlightDirection flightDirection,
+                  BuildContext fromHeroContext,
+                  BuildContext toHeroContext,
+                ) {
+                  return DefaultTextStyle(
+                    style: DefaultTextStyle.of(toHeroContext).style,
+                    child: (toHeroContext.widget as Hero).child,
+                  );
+                },
             child: Material(
               type: MaterialType.transparency,
               child: Text(
                 tour.localizedTitle(
-                    Localizations.localeOf(context).languageCode),
+                  Localizations.localeOf(context).languageCode,
+                ),
                 style: AppTextStyles.cardTitle.copyWith(color: context.textPri),
               ),
             ),
@@ -190,7 +201,8 @@ class TourCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             tour.localizedDescription(
-                Localizations.localeOf(context).languageCode),
+              Localizations.localeOf(context).languageCode,
+            ),
             style: AppTextStyles.placeDescription,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -210,8 +222,9 @@ class TourCard extends StatelessWidget {
                 child: _buildTag(
                   context,
                   icon: Icons.route_rounded,
-                  label: context.tr('tour_locations_count',
-                      {'n': '${tour.places.length}'}),
+                  label: context.tr('tour_locations_count', {
+                    'n': '${tour.places.length}',
+                  }),
                 ),
               ),
               Container(
@@ -233,7 +246,11 @@ class TourCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTag(BuildContext context, {required IconData icon, required String label}) {
+  Widget _buildTag(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(

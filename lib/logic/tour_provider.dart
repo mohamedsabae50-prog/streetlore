@@ -80,33 +80,35 @@ class TourProvider extends ChangeNotifier {
       id: (json['id'] as String?) ?? '',
       name: (json['name'] as String?) ?? 'Unknown Place',
       description: (json['description'] as String?) ?? '',
-      // Supabase view may use either snake_case or camelCase — handle both
-      imageUrl: (json['image_url'] as String?) ??
-          (json['imageUrl'] as String?) ??
-          '',
+
+      imageUrl:
+          (json['image_url'] as String?) ?? (json['imageUrl'] as String?) ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       category: (json['category'] as String?) ?? 'General',
       lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
       lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
       address: (json['address'] as String?) ?? 'Alexandria, Egypt',
-      openHours: (json['open_hours'] as String?) ??
+      openHours:
+          (json['open_hours'] as String?) ??
           (json['openHours'] as String?) ??
           '9:00 AM - 6:00 PM',
-      reviewCount: (json['review_count'] as int?) ??
-          (json['reviewCount'] as int?) ??
-          0,
+      reviewCount:
+          (json['review_count'] as int?) ?? (json['reviewCount'] as int?) ?? 0,
       priceLevel: _priceLevelFromString(
         (json['price_level'] as String?) ?? (json['priceLevel'] as String?),
       ),
-      priceNote: (json['price_note'] as String?) ??
+      priceNote:
+          (json['price_note'] as String?) ??
           (json['priceNote'] as String?) ??
           '',
-      isHiddenGem: (json['is_hidden_gem'] as bool?) ??
+      isHiddenGem:
+          (json['is_hidden_gem'] as bool?) ??
           (json['isHiddenGem'] as bool?) ??
           false,
-      priceLocalEgp: (json['price_local_egp'] as int?) ??
-          (json['priceLocalEgp'] as int?),
-      priceForeignerEgp: (json['price_foreigner_egp'] as int?) ??
+      priceLocalEgp:
+          (json['price_local_egp'] as int?) ?? (json['priceLocalEgp'] as int?),
+      priceForeignerEgp:
+          (json['price_foreigner_egp'] as int?) ??
           (json['priceForeignerEgp'] as int?),
     );
   }

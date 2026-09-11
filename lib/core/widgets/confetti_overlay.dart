@@ -1,4 +1,4 @@
-﻿import 'dart:math';
+import 'dart:math';
 import 'package:flutter/material.dart';
 
 class ConfettiOverlay extends StatefulWidget {
@@ -41,7 +41,8 @@ class _ConfettiOverlayState extends State<ConfettiOverlay>
     super.initState();
     widget.controller._attach(this);
     _ctrl = AnimationController(vsync: this, duration: widget.duration);
-    _palette = widget.colors ??
+    _palette =
+        widget.colors ??
         const [
           Color(0xFFE11D48),
           Color(0xFFF59E0B),
@@ -91,13 +92,13 @@ class _ConfettiOverlayState extends State<ConfettiOverlay>
 }
 
 class _Confetto {
-  final double startX; 
-  final double velocityX; 
-  final double velocityY; 
-  final double gravity; 
+  final double startX;
+  final double velocityX;
+  final double velocityY;
+  final double gravity;
   final double rotationSpeed;
   final double initialRotation;
-  final double size; 
+  final double size;
   final Color color;
   final bool isCircle;
   final double phaseOffset;
@@ -117,9 +118,9 @@ class _Confetto {
 
   factory _Confetto.random(Random rng, List<Color> palette) {
     return _Confetto(
-      startX: 0.2 + rng.nextDouble() * 0.6, 
+      startX: 0.2 + rng.nextDouble() * 0.6,
       velocityX: (rng.nextDouble() - 0.5) * 1.4,
-      velocityY: -(1.5 + rng.nextDouble() * 1.5), 
+      velocityY: -(1.5 + rng.nextDouble() * 1.5),
       gravity: 1.6 + rng.nextDouble() * 0.6,
       rotationSpeed: (rng.nextDouble() - 0.5) * 8,
       initialRotation: rng.nextDouble() * pi * 2,
@@ -141,14 +142,13 @@ class _ConfettiPainter extends CustomPainter {
     for (final c in confetti) {
       final p = (progress - c.phaseOffset).clamp(0.0, 1.0);
       if (p <= 0) continue;
-      final t = p * 2.4; 
+      final t = p * 2.4;
 
-      
       final x = (c.startX + c.velocityX * t * 0.18) * size.width;
-      final y = size.height * 0.18 +
+      final y =
+          size.height * 0.18 +
           (c.velocityY * t + 0.5 * c.gravity * t * t) * size.height * 0.18;
 
-      
       final opacity = (1 - p).clamp(0.0, 1.0);
 
       canvas.save();

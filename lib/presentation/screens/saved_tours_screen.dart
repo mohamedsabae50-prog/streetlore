@@ -52,14 +52,14 @@ class _SavedToursScreenState extends State<SavedToursScreen>
                     children: [
                       Text(
                         context.tr('saved_collection'),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: context.textSec,
+                        style: TextStyle(fontSize: 12, color: context.textSec),
+                      ),
+                      Text(
+                        context.tr('saved_title'),
+                        style: AppTextStyles.screenTitle.copyWith(
+                          color: context.textPri,
                         ),
                       ),
-                      Text(context.tr('saved_title'),
-                          style: AppTextStyles.screenTitle
-                              .copyWith(color: context.textPri)),
                     ],
                   ),
                 ],
@@ -133,9 +133,7 @@ class _SavedPlacesTab extends StatelessWidget {
             actionLabel: context.tr('discover_places'),
             onAction: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(context.tr('switch_explore')),
-                ),
+                SnackBar(content: Text(context.tr('switch_explore'))),
               );
             },
           );
@@ -170,10 +168,7 @@ class _SavedPlacesTab extends StatelessWidget {
                     const SizedBox(width: 10),
                     Text(
                       context.tr('swipe_remove_hint'),
-                      style: TextStyle(
-                        color: context.textSec,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: context.textSec, fontSize: 12),
                     ),
                     const Spacer(),
                     GestureDetector(
@@ -225,8 +220,9 @@ class _SavedPlacesTab extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          context.tr('removed_from_saved',
-                              {'name': place.name}),
+                          context.tr('removed_from_saved', {
+                            'name': place.name,
+                          }),
                         ),
                         action: SnackBarAction(
                           label: context.tr('undo'),
@@ -275,11 +271,7 @@ class _SavedPlacesTab extends StatelessWidget {
         content: Text(
           context.tr('clear_all_warning'),
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: ctx.textSec,
-            fontSize: 14,
-            height: 1.5,
-          ),
+          style: TextStyle(color: ctx.textSec, fontSize: 14, height: 1.5),
         ),
         actions: [
           TextButton(
@@ -303,8 +295,10 @@ class _SavedPlacesTab extends StatelessWidget {
                 ),
               );
             },
-            child: Text(context.tr('clear'),
-                style: const TextStyle(color: Colors.white)),
+            child: Text(
+              context.tr('clear'),
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -329,9 +323,7 @@ class _SavedToursTab extends StatelessWidget {
             actionLabel: context.tr('browse_tours'),
             onAction: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(context.tr('switch_tours')),
-                ),
+                SnackBar(content: Text(context.tr('switch_tours'))),
               );
             },
           );
@@ -407,8 +399,10 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 28),
             Text(
               title,
-              style: AppTextStyles.displayMedium
-                  .copyWith(fontSize: 22, color: context.textPri),
+              style: AppTextStyles.displayMedium.copyWith(
+                fontSize: 22,
+                color: context.textPri,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/place_model.dart';
 import '../../logic/place_provider.dart';
+import '../../l10n/app_strings.dart';
 
 class WalkingRoutesScreen extends StatefulWidget {
   const WalkingRoutesScreen({super.key});
@@ -29,7 +30,8 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
     const r = 6371.0;
     final dLat = _toRad(b.latitude - a.latitude);
     final dLng = _toRad(b.longitude - a.longitude);
-    final h = sin(dLat / 2) * sin(dLat / 2) +
+    final h =
+        sin(dLat / 2) * sin(dLat / 2) +
         cos(_toRad(a.latitude)) *
             cos(_toRad(b.latitude)) *
             sin(dLng / 2) *
@@ -65,9 +67,9 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
         _selected.add(p);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Max 5 places per route'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(context.tr('max_route_places')),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -198,8 +200,9 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFFEC4899)
-                                            .withValues(alpha: 0.4),
+                                        color: const Color(
+                                          0xFFEC4899,
+                                        ).withValues(alpha: 0.4),
                                         blurRadius: 8,
                                         offset: const Offset(0, 3),
                                       ),
@@ -240,10 +243,7 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
           ),
           Expanded(
             flex: 4,
-            child: _PlaceSelector(
-              selected: _selected,
-              onToggle: _togglePlace,
-            ),
+            child: _PlaceSelector(selected: _selected, onToggle: _togglePlace),
           ),
         ],
       ),
@@ -346,10 +346,7 @@ class _PlaceSelector extends StatelessWidget {
   final List<PlaceModel> selected;
   final ValueChanged<PlaceModel> onToggle;
 
-  const _PlaceSelector({
-    required this.selected,
-    required this.onToggle,
-  });
+  const _PlaceSelector({required this.selected, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -432,9 +429,7 @@ class _PlaceSelector extends StatelessWidget {
                                           ],
                                         )
                                       : null,
-                                  color: isSelected
-                                      ? null
-                                      : context.bgAlt,
+                                  color: isSelected ? null : context.bgAlt,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Center(

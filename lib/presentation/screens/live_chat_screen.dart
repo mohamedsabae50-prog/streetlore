@@ -52,7 +52,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       userAvatarColor: '0xFF3B82F6',
     );
     _input.clear();
-    
+
     chat.send(msg);
   }
 
@@ -66,22 +66,34 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         title: Row(
           children: [
             Container(
-              width: 36, height: 36,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 gradient: AppColors.primaryGradient,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 20),
+              child: const Icon(
+                Icons.location_on_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(place.name,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
-                  Text(context.tr('chat_live'),
-                      style: TextStyle(fontSize: 11, color: context.textSec)),
+                  Text(
+                    place.name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    context.tr('chat_live'),
+                    style: TextStyle(fontSize: 11, color: context.textSec),
+                  ),
                 ],
               ),
             ),
@@ -111,11 +123,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Text(context.tr('chat_empty'),
-                              style: TextStyle(
-                                color: context.textSec,
-                                fontWeight: FontWeight.w600,
-                              )),
+                          Text(
+                            context.tr('chat_empty'),
+                            style: TextStyle(
+                              color: context.textSec,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -164,8 +178,14 @@ class _MessageBubble extends StatelessWidget {
             radius: 16,
             backgroundColor: color,
             child: Text(
-              message.userName.isNotEmpty ? message.userName[0].toUpperCase() : '?',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12),
+              message.userName.isNotEmpty
+                  ? message.userName[0].toUpperCase()
+                  : '?',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -175,22 +195,34 @@ class _MessageBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 color: context.cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: context.hintColor.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: context.hintColor.withValues(alpha: 0.2),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Text(message.userName,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                      Text(
+                        message.userName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
                       const Spacer(),
-                      Text(_relativeTime(context, message.sentAt),
-                          style: TextStyle(color: context.textSec, fontSize: 10)),
+                      Text(
+                        _relativeTime(context, message.sentAt),
+                        style: TextStyle(color: context.textSec, fontSize: 10),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(message.text, style: const TextStyle(fontSize: 14, height: 1.4)),
+                  Text(
+                    message.text,
+                    style: const TextStyle(fontSize: 14, height: 1.4),
+                  ),
                 ],
               ),
             ),
@@ -219,7 +251,9 @@ class _Composer extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
         color: context.cardColor,
-        border: Border(top: BorderSide(color: context.hintColor.withValues(alpha: 0.2))),
+        border: Border(
+          top: BorderSide(color: context.hintColor.withValues(alpha: 0.2)),
+        ),
       ),
       child: Row(
         children: [
@@ -228,14 +262,19 @@ class _Composer extends StatelessWidget {
               controller: controller,
               decoration: InputDecoration(
                 hintText: context.tr('chat_hint'),
-                hintStyle: TextStyle(color: context.textSec.withValues(alpha: 0.6)),
+                hintStyle: TextStyle(
+                  color: context.textSec.withValues(alpha: 0.6),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
                 fillColor: context.bgColor,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
               ),
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => onSend(),

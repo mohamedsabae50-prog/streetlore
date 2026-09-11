@@ -49,13 +49,15 @@ class EmergencyScreen extends StatelessWidget {
             title: context.tr('emg_numbers'),
           ),
           const SizedBox(height: 10),
-          ..._emergencyNumbers.map((e) => _CallCard(
-                title: e.title,
-                number: e.number,
-                color: e.color,
-                icon: e.icon,
-                onTap: () => _call(context, e.number),
-              )),
+          ..._emergencyNumbers.map(
+            (e) => _CallCard(
+              title: e.title,
+              number: e.number,
+              color: e.color,
+              icon: e.icon,
+              onTap: () => _call(context, e.number),
+            ),
+          ),
           const SizedBox(height: 22),
           _SectionHeader(
             icon: Icons.local_hospital_rounded,
@@ -63,13 +65,15 @@ class EmergencyScreen extends StatelessWidget {
             title: context.tr('emg_hospitals'),
           ),
           const SizedBox(height: 10),
-          ..._hospitals.map((h) => _PlaceCard24(
-                title: h.name,
-                subtitle: h.address,
-                phone: h.phone,
-                color: h.color,
-                onCall: () => _call(context, h.phone),
-              )),
+          ..._hospitals.map(
+            (h) => _PlaceCard24(
+              title: h.name,
+              subtitle: h.address,
+              phone: h.phone,
+              color: h.color,
+              onCall: () => _call(context, h.phone),
+            ),
+          ),
           const SizedBox(height: 22),
           _SectionHeader(
             icon: Icons.flag_rounded,
@@ -77,13 +81,15 @@ class EmergencyScreen extends StatelessWidget {
             title: context.tr('emg_embassies'),
           ),
           const SizedBox(height: 10),
-          ..._embassies.map((e) => _PlaceCard24(
-                title: e.name,
-                subtitle: e.address,
-                phone: e.phone,
-                color: e.color,
-                onCall: () => _call(context, e.phone),
-              )),
+          ..._embassies.map(
+            (e) => _PlaceCard24(
+              title: e.name,
+              subtitle: e.address,
+              phone: e.phone,
+              color: e.color,
+              onCall: () => _call(context, e.phone),
+            ),
+          ),
           const SizedBox(height: 22),
           _SectionHeader(
             icon: Icons.local_pharmacy_rounded,
@@ -91,13 +97,15 @@ class EmergencyScreen extends StatelessWidget {
             title: context.tr('emg_pharmacies'),
           ),
           const SizedBox(height: 10),
-          ..._pharmacies.map((p) => _PlaceCard24(
-                title: p.name,
-                subtitle: p.address,
-                phone: p.phone,
-                color: p.color,
-                onCall: () => _call(context, p.phone),
-              )),
+          ..._pharmacies.map(
+            (p) => _PlaceCard24(
+              title: p.name,
+              subtitle: p.address,
+              phone: p.phone,
+              color: p.color,
+              onCall: () => _call(context, p.phone),
+            ),
+          ),
           const SizedBox(height: 22),
           _SectionHeader(
             icon: Icons.taxi_alert_rounded,
@@ -105,13 +113,15 @@ class EmergencyScreen extends StatelessWidget {
             title: context.tr('emg_transport'),
           ),
           const SizedBox(height: 10),
-          ..._transport.map((t) => _CallCard(
-                title: t.title,
-                number: t.number,
-                color: t.color,
-                icon: t.icon,
-                onTap: () => _call(context, t.number),
-              )),
+          ..._transport.map(
+            (t) => _CallCard(
+              title: t.title,
+              number: t.number,
+              color: t.color,
+              icon: t.icon,
+              onTap: () => _call(context, t.number),
+            ),
+          ),
         ],
       ),
     );
@@ -362,8 +372,11 @@ class _PlaceCard24 extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.location_on_outlined,
-                          size: 12, color: context.hintColor),
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 12,
+                        color: context.hintColor,
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -379,8 +392,11 @@ class _PlaceCard24 extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.phone_outlined,
-                          size: 12, color: context.hintColor),
+                      Icon(
+                        Icons.phone_outlined,
+                        size: 12,
+                        color: context.hintColor,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         phone,
@@ -401,10 +417,7 @@ class _PlaceCard24 extends StatelessWidget {
               child: Container(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                 child: const Icon(
                   Icons.phone_rounded,
                   color: Colors.white,
@@ -440,13 +453,28 @@ const _emergencyNumbers = <_Emerg>[
   _Emerg('Ambulance', '123', Color(0xFFEF4444), Icons.medical_services_rounded),
   _Emerg('Fire', '180', Color(0xFFF59E0B), Icons.local_fire_department_rounded),
   _Emerg('Tourist Police', '126', Color(0xFF8B5CF6), Icons.tour_rounded),
-  _Emerg('Coast Guard', '122', Color(0xFF0EA5E9), Icons.directions_boat_rounded),
+  _Emerg(
+    'Coast Guard',
+    '122',
+    Color(0xFF0EA5E9),
+    Icons.directions_boat_rounded,
+  ),
 ];
 
 const _transport = <_Emerg>[
   _Emerg('Careem (Ride)', '16622', Color(0xFF10B981), Icons.local_taxi_rounded),
-  _Emerg('Uber Egypt', '16222', Color(0xFF0F172A), Icons.directions_car_rounded),
-  _Emerg('Alexandria Taxi', '19595', Color(0xFFF59E0B), Icons.local_taxi_rounded),
+  _Emerg(
+    'Uber Egypt',
+    '16222',
+    Color(0xFF0F172A),
+    Icons.directions_car_rounded,
+  ),
+  _Emerg(
+    'Alexandria Taxi',
+    '19595',
+    Color(0xFFF59E0B),
+    Icons.local_taxi_rounded,
+  ),
 ];
 
 const _hospitals = <_Contact>[

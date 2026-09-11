@@ -34,9 +34,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   int _computeMyRank(List<GamificationStats> entries, GamificationStats mine) {
-    
-    
-    final better = entries.where((e) => e.totalPoints > mine.totalPoints).length;
+    final better = entries
+        .where((e) => e.totalPoints > mine.totalPoints)
+        .length;
     return better + 1;
   }
 
@@ -80,16 +80,22 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     title: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(context.tr('lb_subtitle'),
-                            style: TextStyle(
-                                fontSize: 12, color: context.textSec)),
-                        Text(context.tr('lb_title'),
-                            style: AppTextStyles.screenTitle
-                                .copyWith(color: context.textPri)),
+                        Text(
+                          context.tr('lb_subtitle'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.textSec,
+                          ),
+                        ),
+                        Text(
+                          context.tr('lb_title'),
+                          style: AppTextStyles.screenTitle.copyWith(
+                            color: context.textPri,
+                          ),
+                        ),
                       ],
                     ),
                     actions: [
-                      
                       Padding(
                         padding: const EdgeInsets.only(right: 16),
                         child: SizedBox(
@@ -134,10 +140,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               );
             },
           ),
-          
-          Positioned.fill(
-            child: ConfettiOverlay(controller: _confetti),
-          ),
+
+          Positioned.fill(child: ConfettiOverlay(controller: _confetti)),
         ],
       ),
     );
@@ -165,13 +169,15 @@ class _MyCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(context.tr('lb_your_rank'),
-              style: const TextStyle(
-                color: Colors.white60,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-              )),
+          Text(
+            context.tr('lb_your_rank'),
+            style: const TextStyle(
+              color: Colors.white60,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+            ),
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -199,11 +205,14 @@ class _MyCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(stats.userName,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800)),
+                    Text(
+                      stats.userName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                     AnimatedCounter(
                       value: stats.totalPoints,
                       suffix: context.tr('lb_points_level', {
@@ -211,14 +220,19 @@ class _MyCard extends StatelessWidget {
                         'l': AppStrings.level(context, stats.level),
                       }),
                       style: const TextStyle(
-                          color: Colors.white70, fontSize: 12),
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
               ),
-              
+
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [AppColors.warning, AppColors.goldLight],
@@ -236,14 +250,19 @@ class _MyCard extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.emoji_events_rounded,
-                        color: Colors.white, size: 18),
-                    Text('#$rank',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                        )),
+                    const Icon(
+                      Icons.emoji_events_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    Text(
+                      '#$rank',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -252,11 +271,17 @@ class _MyCard extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _miniStat(Icons.location_on_rounded, '${stats.placesVisited}',
-                  context.tr('stat_visited')),
+              _miniStat(
+                Icons.location_on_rounded,
+                '${stats.placesVisited}',
+                context.tr('stat_visited'),
+              ),
               const SizedBox(width: 16),
-              _miniStat(Icons.star_rounded, '${stats.reviewsPosted}',
-                  context.tr('stat_reviews')),
+              _miniStat(
+                Icons.star_rounded,
+                '${stats.reviewsPosted}',
+                context.tr('stat_reviews'),
+              ),
             ],
           ),
           if (stats.badges.isNotEmpty) ...[
@@ -265,25 +290,37 @@ class _MyCard extends StatelessWidget {
               spacing: 6,
               runSpacing: 6,
               children: stats.badges
-                  .map((b) => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.workspace_premium,
-                              color: Colors.white, size: 12),
+                  .map(
+                    (b) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.workspace_premium,
+                            color: Colors.white,
+                            size: 12,
+                          ),
                           const SizedBox(width: 4),
-                          Text(b.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              )),
-                        ]),
-                      ))
+                          Text(
+                            b.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ],
@@ -293,16 +330,20 @@ class _MyCard extends StatelessWidget {
   }
 
   Widget _miniStat(IconData icon, String value, String label) => Row(
-        children: [
-          Icon(icon, color: Colors.white70, size: 16),
-          const SizedBox(width: 4),
-          Text(value,
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w800)),
-          const SizedBox(width: 2),
-          Text(label, style: const TextStyle(color: Colors.white60, fontSize: 11)),
-        ],
-      );
+    children: [
+      Icon(icon, color: Colors.white70, size: 16),
+      const SizedBox(width: 4),
+      Text(
+        value,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      const SizedBox(width: 2),
+      Text(label, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+    ],
+  );
 }
 
 class _Row extends StatelessWidget {
@@ -314,7 +355,9 @@ class _Row extends StatelessWidget {
     Color? avatarColor;
     if (stats.avatarColorHex != null && stats.avatarColorHex!.isNotEmpty) {
       try {
-        final hex = stats.avatarColorHex!.replaceFirst('#', '0xff').replaceFirst('0x', '0xff');
+        final hex = stats.avatarColorHex!
+            .replaceFirst('#', '0xff')
+            .replaceFirst('0x', '0xff');
         avatarColor = Color(int.parse(hex));
       } catch (_) {}
     }
@@ -342,7 +385,6 @@ class _Row extends StatelessWidget {
       ),
       child: Row(
         children: [
-          
           Container(
             width: 36,
             height: 36,
@@ -363,22 +405,24 @@ class _Row extends StatelessWidget {
                     color: AppColors.warning,
                     size: 20,
                   )
-                : Text('$rank',
+                : Text(
+                    '$rank',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       color: context.textSec,
-                    )),
+                    ),
+                  ),
           ),
           const SizedBox(width: 12),
           CircleAvatar(
             radius: 18,
             backgroundColor: avatarColor ?? AppColors.primary,
             child: Text(
-              stats.userName.isNotEmpty
-                  ? stats.userName[0].toUpperCase()
-                  : '?',
+              stats.userName.isNotEmpty ? stats.userName[0].toUpperCase() : '?',
               style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w800),
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -386,16 +430,20 @@ class _Row extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(stats.userName,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 14)),
                 Text(
-                    context.tr('lb_row_sub', {
-                      'v': '${stats.placesVisited}',
-                      'r': '${stats.reviewsPosted}',
-                    }),
-                    style: TextStyle(
-                        color: context.textSec, fontSize: 12)),
+                  stats.userName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  context.tr('lb_row_sub', {
+                    'v': '${stats.placesVisited}',
+                    'r': '${stats.reviewsPosted}',
+                  }),
+                  style: TextStyle(color: context.textSec, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -405,12 +453,15 @@ class _Row extends StatelessWidget {
               AnimatedCounter(
                 value: stats.totalPoints,
                 style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: context.textPri)),
-              Text(AppStrings.level(context, stats.level),
-                  style: TextStyle(
-                      color: context.textSec, fontSize: 11)),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: context.textPri,
+                ),
+              ),
+              Text(
+                AppStrings.level(context, stats.level),
+                style: TextStyle(color: context.textSec, fontSize: 11),
+              ),
             ],
           ),
         ],

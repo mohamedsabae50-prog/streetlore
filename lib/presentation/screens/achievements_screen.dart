@@ -32,7 +32,8 @@ class AchievementsScreen extends StatelessWidget {
           final points = ach.totalPointsEarned;
           final ratio = ach.completionRatio;
 
-          final byCategory = <AchievementCategory, List<AchievementDefinition>>{};
+          final byCategory =
+              <AchievementCategory, List<AchievementDefinition>>{};
           for (final def in AchievementCatalog.all) {
             byCategory.putIfAbsent(def.category, () => []).add(def);
           }
@@ -86,21 +87,18 @@ class AchievementsScreen extends StatelessWidget {
                   sliver: SliverGrid(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.78,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) {
-                        final def = entry.value[i];
-                        return _AchievementTile(
-                          definition: def,
-                          progress: ach.progressFor(def.id),
-                        );
-                      },
-                      childCount: entry.value.length,
-                    ),
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.78,
+                        ),
+                    delegate: SliverChildBuilderDelegate((context, i) {
+                      final def = entry.value[i];
+                      return _AchievementTile(
+                        definition: def,
+                        progress: ach.progressFor(def.id),
+                      );
+                    }, childCount: entry.value.length),
                   ),
                 ),
               ],
@@ -288,10 +286,7 @@ class _Header extends StatelessWidget {
 class _AchievementTile extends StatelessWidget {
   final AchievementDefinition definition;
   final AchievementProgress progress;
-  const _AchievementTile({
-    required this.definition,
-    required this.progress,
-  });
+  const _AchievementTile({required this.definition, required this.progress});
 
   @override
   Widget build(BuildContext context) {
@@ -411,8 +406,7 @@ class _AchievementTile extends StatelessWidget {
                   value: ratio,
                   minHeight: 5,
                   backgroundColor: context.bgAlt,
-                  valueColor:
-                      AlwaysStoppedAnimation(definition.color),
+                  valueColor: AlwaysStoppedAnimation(definition.color),
                 ),
               ),
               const SizedBox(height: 4),
@@ -428,11 +422,7 @@ class _AchievementTile extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.bolt_rounded,
-                    size: 12,
-                    color: tierColor,
-                  ),
+                  Icon(Icons.bolt_rounded, size: 12, color: tierColor),
                   Text(
                     '+${definition.points} XP',
                     style: TextStyle(
@@ -455,10 +445,8 @@ class _AchievementTile extends StatelessWidget {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (sheetCtx) => _AchievementDetailsSheet(
-        definition: definition,
-        progress: progress,
-      ),
+      builder: (sheetCtx) =>
+          _AchievementDetailsSheet(definition: definition, progress: progress),
     );
   }
 
@@ -621,11 +609,7 @@ class _AchievementDetailsSheet extends StatelessWidget {
           Text(
             _desc(context, definition),
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: context.textSec,
-              fontSize: 14,
-              height: 1.5,
-            ),
+            style: TextStyle(color: context.textSec, fontSize: 14, height: 1.5),
           ),
           const SizedBox(height: 20),
           if (unlocked)
@@ -638,8 +622,11 @@ class _AchievementDetailsSheet extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: const [
-                  Icon(Icons.check_circle_rounded,
-                      color: Color(0xFF22C55E), size: 18),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF22C55E),
+                    size: 18,
+                  ),
                   SizedBox(width: 6),
                   Text(
                     'Unlocked',

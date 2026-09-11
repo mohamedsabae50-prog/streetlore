@@ -175,13 +175,14 @@ class PlaceProvider extends ChangeNotifier {
       result.sort((a, b) => a.priceLevel.index.compareTo(b.priceLevel.index));
     }
     if (_isFilterNearest) {
-      // Sort by proximity to Alexandria city center as default
       const refLat = 31.2001;
       const refLng = 29.9187;
       result.sort((a, b) {
-        final da = (a.lat - refLat) * (a.lat - refLat) +
+        final da =
+            (a.lat - refLat) * (a.lat - refLat) +
             (a.lng - refLng) * (a.lng - refLng);
-        final db = (b.lat - refLat) * (b.lat - refLat) +
+        final db =
+            (b.lat - refLat) * (b.lat - refLat) +
             (b.lng - refLng) * (b.lng - refLng);
         return da.compareTo(db);
       });
@@ -194,9 +195,9 @@ class PlaceProvider extends ChangeNotifier {
   bool _isPlaceOpenNow(String openHours) {
     final clean = openHours.trim();
     if (clean.toLowerCase() == 'open 24 hours') return true;
-    // Try to parse "H:MM AM/PM - H:MM AM/PM" or "HH:MM - HH:MM"
+
     final parts = clean.split('-');
-    if (parts.length < 2) return true; // can't parse → assume open
+    if (parts.length < 2) return true;
     final open = _parseHourMin(parts[0].trim());
     final close = _parseHourMin(parts[1].trim());
     if (open == null || close == null) return true;
@@ -205,7 +206,6 @@ class PlaceProvider extends ChangeNotifier {
     if (close > open) {
       return nowMins >= open && nowMins < close;
     } else {
-      // Wraps past midnight (e.g. 10 PM – 2 AM)
       return nowMins >= open || nowMins < close;
     }
   }

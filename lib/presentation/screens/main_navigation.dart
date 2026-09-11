@@ -102,7 +102,7 @@ class _MainNavigationState extends State<MainNavigation>
     final cardColor = Theme.of(context).cardColor;
     final borderColor = Theme.of(context).dividerColor;
     final mediaWidth = MediaQuery.of(context).size.width;
-    
+
     final tabWidth = (mediaWidth - 16) / _navItems.length;
 
     return Scaffold(
@@ -145,7 +145,6 @@ class _MainNavigationState extends State<MainNavigation>
             height: 68,
             child: Stack(
               children: [
-                
                 AnimatedBuilder(
                   animation: _indicatorAnim,
                   builder: (context, _) {
@@ -161,8 +160,7 @@ class _MainNavigationState extends State<MainNavigation>
                           width: 56,
                           height: 32,
                           decoration: BoxDecoration(
-                            color:
-                                AppColors.primary.withValues(alpha: 0.10),
+                            color: AppColors.primary.withValues(alpha: 0.10),
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
@@ -170,7 +168,7 @@ class _MainNavigationState extends State<MainNavigation>
                     );
                   },
                 ),
-                
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Row(
@@ -232,7 +230,6 @@ class _NavBarItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            
             AnimatedScale(
               scale: isSelected ? 1.15 : 1.0,
               duration: const Duration(milliseconds: 250),
@@ -242,8 +239,7 @@ class _NavBarItem extends StatelessWidget {
                 child: Icon(
                   isSelected ? item.activeIcon : item.icon,
                   key: ValueKey(isSelected),
-                  color:
-                      isSelected ? AppColors.primary : context.textSec,
+                  color: isSelected ? AppColors.primary : context.textSec,
                   size: 24,
                 ),
               ),
@@ -254,9 +250,7 @@ class _NavBarItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                color: isSelected
-                    ? AppColors.primary
-                    : context.textSec,
+                color: isSelected ? AppColors.primary : context.textSec,
               ),
               child: Text(context.tr(item.label)),
             ),

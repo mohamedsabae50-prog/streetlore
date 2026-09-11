@@ -9,9 +9,7 @@ class PrayerTimesScreen extends StatelessWidget {
 
   String _formatTime(DateTime t) {
     final h24 = t.hour;
-    final h12 = h24 == 0
-        ? 12
-        : (h24 > 12 ? h24 - 12 : h24);
+    final h12 = h24 == 0 ? 12 : (h24 > 12 ? h24 - 12 : h24);
     final ampm = h24 >= 12 ? 'PM' : 'AM';
     final hh = h12.toString().padLeft(2, '0');
     final m = t.minute.toString().padLeft(2, '0');
@@ -47,9 +45,7 @@ class PrayerTimesScreen extends StatelessWidget {
         future: PrayerTimesService.instance.getTimes(),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
           if (!snap.hasData) {
             return Center(
@@ -97,8 +93,7 @@ class PrayerTimesScreen extends StatelessWidget {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color:
-                            const Color(0xFF14B8A6).withValues(alpha: 0.12),
+                        color: const Color(0xFF14B8A6).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(

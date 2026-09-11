@@ -30,11 +30,7 @@ class TripPlannerScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.map_outlined,
-                    size: 80,
-                    color: context.hintColor,
-                  ),
+                  Icon(Icons.map_outlined, size: 80, color: context.hintColor),
                   const SizedBox(height: 16),
                   Text(
                     context.tr('trip_empty'),
@@ -54,8 +50,9 @@ class TripPlannerScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      context.tr('trip_places_planned',
-                          {'n': '${tripPlaces.length}'}),
+                      context.tr('trip_places_planned', {
+                        'n': '${tripPlaces.length}',
+                      }),
                       style: TextStyle(
                         color: context.textPri,
                         fontSize: 18,
@@ -103,16 +100,25 @@ class TripPlannerScreen extends StatelessWidget {
                             fit: BoxFit.cover,
                             memCacheWidth: 120,
                             memCacheHeight: 120,
-                            httpHeaders: const {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'},
+                            httpHeaders: const {
+                              'User-Agent':
+                                  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+                            },
                             placeholder: (_, __) => Container(
-                              width: 60, height: 60, color: context.bgAlt,
+                              width: 60,
+                              height: 60,
+                              color: context.bgAlt,
                             ),
                             errorWidget: (context, url, error) => Container(
                               color: const Color(0xFF1C2433),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.image_rounded, color: Colors.white30, size: 36),
+                                  Icon(
+                                    Icons.image_rounded,
+                                    color: Colors.white30,
+                                    size: 36,
+                                  ),
                                 ],
                               ),
                             ),

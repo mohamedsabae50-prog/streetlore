@@ -17,7 +17,8 @@ class CompassService {
   double get heading => _smoothedHeading;
   double get rawHeading => _heading;
   bool get isAvailable => _eventsExist;
-  bool get isActuallyWorking => _firstEventReceived &&
+  bool get isActuallyWorking =>
+      _firstEventReceived &&
       DateTime.now().difference(_lastUpdateAt).inSeconds < 4;
 
   Stream<double> get headingStream => _controller.stream;

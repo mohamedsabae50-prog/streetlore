@@ -45,9 +45,10 @@ class _CompassCardState extends State<CompassCard>
       TweenSequenceItem(tween: Tween(begin: -0.15, end: 0.0), weight: 25),
     ]).animate(CurvedAnimation(parent: _introCtrl, curve: Curves.easeOut));
 
-    _introOffset = Tween<double>(begin: 26, end: 0).animate(
-      CurvedAnimation(parent: _introCtrl, curve: Curves.easeOutQuint),
-    );
+    _introOffset = Tween<double>(
+      begin: 26,
+      end: 0,
+    ).animate(CurvedAnimation(parent: _introCtrl, curve: Curves.easeOutQuint));
 
     _pulseCtrl = AnimationController(
       vsync: this,
@@ -56,9 +57,7 @@ class _CompassCardState extends State<CompassCard>
     _pulse = TweenSequence<double>([
       TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 50),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 50),
-    ]).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
+    ]).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
 
     _iconCtrl = AnimationController(
       vsync: this,
@@ -216,10 +215,10 @@ class _CompassCardState extends State<CompassCard>
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF22C55E)
-                                          .withValues(alpha: 0.18),
-                                      borderRadius:
-                                          BorderRadius.circular(6),
+                                      color: const Color(
+                                        0xFF22C55E,
+                                      ).withValues(alpha: 0.18),
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
                                       dir,

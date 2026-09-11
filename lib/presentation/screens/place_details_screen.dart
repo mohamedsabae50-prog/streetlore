@@ -69,12 +69,16 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
     setState(() {
       _nearby
         ..clear()
-        ..addAll(allPlaces
-            .where((p) =>
-                p.id != current.id &&
-                (p.lat - current.lat).abs() < 0.05 &&
-                (p.lng - current.lng).abs() < 0.05)
-            .take(4));
+        ..addAll(
+          allPlaces
+              .where(
+                (p) =>
+                    p.id != current.id &&
+                    (p.lat - current.lat).abs() < 0.05 &&
+                    (p.lng - current.lng).abs() < 0.05,
+              )
+              .take(4),
+        );
     });
   }
 
@@ -157,496 +161,526 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
         children: [
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverAppBar(
-            automaticallyImplyLeading: false,
-            expandedHeight: 320,
-            pinned: false,
-            backgroundColor: AppColors.primary,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Hero(
-                    tag: 'place-image-${place.id}',
-                    flightShuttleBuilder: (
-                      BuildContext flightContext,
-                      Animation<double> animation,
-                      HeroFlightDirection flightDirection,
-                      BuildContext fromHeroContext,
-                      BuildContext toHeroContext,
-                    ) {
-                      return Material(
-                        color: Colors.transparent,
-                        child: (toHeroContext.widget as Hero).child,
-                      );
-                    },
-                    child: ShimmerImage(
-                      imageUrl: place.imageUrl,
-                      fit: BoxFit.cover,
-                      fallbackIcon: Icons.broken_image_rounded,
-                      fallbackColor: Colors.white38,
-                      fallbackIconSize: 60,
-                    ),
-                  ),
-                  Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Color(0x880F172A),
-                          Color(0xEE0F172A),
-                        ],
-                        stops: [0.4, 0.7, 1.0],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 100,
-                    right: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: _isOpen
-                              ? AppColors.success.withValues(alpha: 0.6)
-                              : AppColors.error.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 7,
-                            height: 7,
-                            decoration: BoxDecoration(
-                              color: _isOpen
-                                  ? AppColors.success
-                                  : AppColors.error,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            _isOpen
-                                ? context.tr('open_now')
-                                : context.tr('closed'),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 20,
-                    left: 20,
-                    right: 80,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Hero(
-                          tag: 'place-category-${place.id}',
-                          flightShuttleBuilder: (
-                            BuildContext flightContext,
-                            Animation<double> animation,
-                            HeroFlightDirection flightDirection,
-                            BuildContext fromHeroContext,
-                            BuildContext toHeroContext,
-                          ) {
-                            return Material(
-                              type: MaterialType.transparency,
-                              child: (toHeroContext.widget as Hero).child,
-                            );
-                          },
-                          child: Material(
-                            type: MaterialType.transparency,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.accent.withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                place.category.toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Hero(
-                          tag: 'place-name-${place.id}',
-                          flightShuttleBuilder: (
-                            BuildContext flightContext,
-                            Animation<double> animation,
-                            HeroFlightDirection flightDirection,
-                            BuildContext fromHeroContext,
-                            BuildContext toHeroContext,
-                          ) {
-                            return DefaultTextStyle(
-                              style: DefaultTextStyle.of(toHeroContext).style,
-                              child: (toHeroContext.widget as Hero).child,
-                            );
-                          },
-                          child: Material(
-                            type: MaterialType.transparency,
-                            child: Text(
-                              place.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 26,
-                                fontWeight: FontWeight.w800,
-                                height: 1.1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 20,
-                    right: 20,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          const Icon(
-                            Icons.star_rounded,
-                            color: AppColors.ratingGold,
-                            size: 20,
-                          ),
-                          Text(
-                            place.rating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: FadeTransition(
-              opacity: _contentFade,
-              child: SlideTransition(
-                position: _contentSlide,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: scaffoldBgColor,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(28),
-                    ),
-                  ),
-                  transform: Matrix4.translationValues(0, -28, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            slivers: [
+              SliverAppBar(
+                automaticallyImplyLeading: false,
+                expandedHeight: 320,
+                pinned: false,
+                backgroundColor: AppColors.primary,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Stack(
+                    fit: StackFit.expand,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Consumer<PlaceProvider>(
-                                builder: (context, pp, _) {
-                                  final saved = pp.isSaved(place.id);
-                                  return _QuickAction(
-                                    icon: saved
-                                        ? Icons.bookmark_rounded
-                                        : Icons.bookmark_border_rounded,
-                                    label: saved
-                                        ? context.tr('saved')
-                                        : context.tr('save'),
-                                    color: saved
-                                        ? AppColors.ratingGold
-                                        : AppColors.primary,
-                                    onTap: () {
-                                      HapticFeedback.lightImpact();
-                                      pp.toggleSave(place);
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _QuickAction(
-                                icon: _isVisited
-                                    ? Icons.check_circle_rounded
-                                    : Icons.flag_outlined,
-                                label: _isVisited
-                                    ? context.tr('visited')
-                                    : context.tr('checkin'),
-                                color: AppColors.success,
-                                onTap: () async {
-                                  HapticFeedback.mediumImpact();
-                                  final wasVisited = _isVisited;
-                                  setState(() => _isVisited = !_isVisited);
-                                  if (!wasVisited) {
-                                    final streak = context.read<StreakProvider>();
-                                    final gamification =
-                                        context.read<GamificationProvider>();
-                                    final messenger = ScaffoldMessenger.of(context);
-                                    final achievements =
-                                        context.read<AchievementProvider>();
-                                    final newStreak =
-                                        await streak.registerVisit();
-                                    await gamification.applyAction('check_in');
-                                    achievements.refreshFromStats();
-                                    final milestoneBadge = await gamification
-                                        .checkStreakMilestone(newStreak);
-                                    if (milestoneBadge != null) {
-                                      HapticFeedback.heavyImpact();
-                                      _confetti.play();
-                                    } else if (newStreak > 1 &&
-                                        newStreak % 3 == 0) {
-                                      _confetti.play();
-                                    }
-                                    if (!context.mounted) return;
-                                    messenger.showSnackBar(
-                                      SnackBar(
-                                        content: Row(
-                                          children: [
-                                            const Icon(
-                                                Icons.local_fire_department_rounded,
-                                                color: Colors.white,
-                                                size: 18),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                milestoneBadge != null
-                                                    ? context.tr(
-                                                        'badge_unlocked',
-                                                        {
-                                                          'name': context.tr(
-                                                              milestoneBadge
-                                                                  .name),
-                                                        },
-                                                      )
-                                                    : context.tr(
-                                                        'checked_in_streak',
-                                                        {'n': '$newStreak'},
-                                                      ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        backgroundColor:
-                                            AppColors.success,
-                                      ),
-                                    );
-                                  } else {
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Row(
-                                          children: [
-                                            const Icon(
-                                                Icons.cancel_rounded,
-                                                color: Colors.white,
-                                                size: 18),
-                                            const SizedBox(width: 8),
-                                            Text(context
-                                                .tr('checkin_removed')),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _QuickAction(
-                                icon: Icons.directions_rounded,
-                                label: context.tr('go'),
-                                color: AppColors.primary,
-                                onTap: _openMaps,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      AITourGuideScreen(place: place),
-                                ),
+                      Hero(
+                        tag: 'place-image-${place.id}',
+                        flightShuttleBuilder:
+                            (
+                              BuildContext flightContext,
+                              Animation<double> animation,
+                              HeroFlightDirection flightDirection,
+                              BuildContext fromHeroContext,
+                              BuildContext toHeroContext,
+                            ) {
+                              return Material(
+                                color: Colors.transparent,
+                                child: (toHeroContext.widget as Hero).child,
                               );
                             },
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF6366F1),
-                                    Color(0xFF8B5CF6),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF6366F1)
-                                        .withValues(alpha: 0.3),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.2),
-                                      borderRadius:
-                                          BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(
-                                      Icons.smart_toy_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'AI Tour Guide',
-                                          style: TextStyle(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.85),
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: 0.6,
-                                          ),
-                                        ),
-                                        const Text(
-                                          'Ask me anything about this place',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                ],
-                              ),
-                            ),
+                        child: ShimmerImage(
+                          imageUrl: place.imageUrl,
+                          fit: BoxFit.cover,
+                          fallbackIcon: Icons.broken_image_rounded,
+                          fallbackColor: Colors.white38,
+                          fallbackIconSize: 60,
+                        ),
+                      ),
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Color(0x880F172A),
+                              Color(0xEE0F172A),
+                            ],
+                            stops: [0.4, 0.7, 1.0],
                           ),
                         ),
                       ),
-
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                      Positioned(
+                        top: 100,
+                        right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: _isOpen
+                                  ? AppColors.success.withValues(alpha: 0.6)
+                                  : AppColors.error.withValues(alpha: 0.6),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: BoxDecoration(
+                                  color: _isOpen
+                                      ? AppColors.success
+                                      : AppColors.error,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                _isOpen
+                                    ? context.tr('open_now')
+                                    : context.tr('closed'),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 20,
+                        left: 20,
+                        right: 80,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _PriceBanner(place: place),
-                            const SizedBox(height: 22),
-                            Row(
-                              children: [
-                                Text(
-                                  context.tr('about_place'),
-                                  style: TextStyle(
-                                    color: textPri,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
+                            Hero(
+                              tag: 'place-category-${place.id}',
+                              flightShuttleBuilder:
+                                  (
+                                    BuildContext flightContext,
+                                    Animation<double> animation,
+                                    HeroFlightDirection flightDirection,
+                                    BuildContext fromHeroContext,
+                                    BuildContext toHeroContext,
+                                  ) {
+                                    return Material(
+                                      type: MaterialType.transparency,
+                                      child:
+                                          (toHeroContext.widget as Hero).child,
+                                    );
+                                  },
+                              child: Material(
+                                type: MaterialType.transparency,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent.withValues(
+                                      alpha: 0.9,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    place.category.toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1,
+                                    ),
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
-                            const SizedBox(height: 10),
-                            Text(
-                              place.localizedDescription(context.read<LocaleProvider>().locale.languageCode),
-                              style: TextStyle(
-                                color: textSec,
-                                fontSize: 15,
-                                height: 1.6,
+                            const SizedBox(height: 8),
+                            Hero(
+                              tag: 'place-name-${place.id}',
+                              flightShuttleBuilder:
+                                  (
+                                    BuildContext flightContext,
+                                    Animation<double> animation,
+                                    HeroFlightDirection flightDirection,
+                                    BuildContext fromHeroContext,
+                                    BuildContext toHeroContext,
+                                  ) {
+                                    return DefaultTextStyle(
+                                      style: DefaultTextStyle.of(
+                                        toHeroContext,
+                                      ).style,
+                                      child:
+                                          (toHeroContext.widget as Hero).child,
+                                    );
+                                  },
+                              child: Material(
+                                type: MaterialType.transparency,
+                                child: Text(
+                                  place.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.1,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-
-                      
-                      PlacePhotosSection(place: place),
-                      const SizedBox(height: 24),
-                      _ChatEntryCard(place: place),
-                      _ReviewsSection(place: place),
-
-                      
-                      if (_nearby.isNotEmpty)
-                        _NearbySection(places: _nearby),
-
-                      const SizedBox(height: 32),
+                      Positioned(
+                        bottom: 20,
+                        right: 20,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons.star_rounded,
+                                color: AppColors.ratingGold,
+                                size: 20,
+                              ),
+                              Text(
+                                place.rating.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+              SliverToBoxAdapter(
+                child: FadeTransition(
+                  opacity: _contentFade,
+                  child: SlideTransition(
+                    position: _contentSlide,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: scaffoldBgColor,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(28),
+                        ),
+                      ),
+                      transform: Matrix4.translationValues(0, -28, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Consumer<PlaceProvider>(
+                                    builder: (context, pp, _) {
+                                      final saved = pp.isSaved(place.id);
+                                      return _QuickAction(
+                                        icon: saved
+                                            ? Icons.bookmark_rounded
+                                            : Icons.bookmark_border_rounded,
+                                        label: saved
+                                            ? context.tr('saved')
+                                            : context.tr('save'),
+                                        color: saved
+                                            ? AppColors.ratingGold
+                                            : AppColors.primary,
+                                        onTap: () {
+                                          HapticFeedback.lightImpact();
+                                          pp.toggleSave(place);
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _QuickAction(
+                                    icon: _isVisited
+                                        ? Icons.check_circle_rounded
+                                        : Icons.flag_outlined,
+                                    label: _isVisited
+                                        ? context.tr('visited')
+                                        : context.tr('checkin'),
+                                    color: AppColors.success,
+                                    onTap: () async {
+                                      HapticFeedback.mediumImpact();
+                                      final wasVisited = _isVisited;
+                                      setState(() => _isVisited = !_isVisited);
+                                      if (!wasVisited) {
+                                        final streak = context
+                                            .read<StreakProvider>();
+                                        final gamification = context
+                                            .read<GamificationProvider>();
+                                        final messenger = ScaffoldMessenger.of(
+                                          context,
+                                        );
+                                        final achievements = context
+                                            .read<AchievementProvider>();
+                                        final newStreak = await streak
+                                            .registerVisit();
+                                        await gamification.applyAction(
+                                          'check_in',
+                                        );
+                                        achievements.refreshFromStats();
+                                        final milestoneBadge =
+                                            await gamification
+                                                .checkStreakMilestone(
+                                                  newStreak,
+                                                );
+                                        if (milestoneBadge != null) {
+                                          HapticFeedback.heavyImpact();
+                                          _confetti.play();
+                                        } else if (newStreak > 1 &&
+                                            newStreak % 3 == 0) {
+                                          _confetti.play();
+                                        }
+                                        if (!context.mounted) return;
+                                        messenger.showSnackBar(
+                                          SnackBar(
+                                            content: Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons
+                                                      .local_fire_department_rounded,
+                                                  color: Colors.white,
+                                                  size: 18,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    milestoneBadge != null
+                                                        ? context.tr(
+                                                            'badge_unlocked',
+                                                            {
+                                                              'name': context.tr(
+                                                                milestoneBadge
+                                                                    .name,
+                                                              ),
+                                                            },
+                                                          )
+                                                        : context.tr(
+                                                            'checked_in_streak',
+                                                            {'n': '$newStreak'},
+                                                          ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            backgroundColor: AppColors.success,
+                                          ),
+                                        );
+                                      } else {
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.cancel_rounded,
+                                                  color: Colors.white,
+                                                  size: 18,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  context.tr('checkin_removed'),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _QuickAction(
+                                    icon: Icons.directions_rounded,
+                                    label: context.tr('go'),
+                                    color: AppColors.primary,
+                                    onTap: _openMaps,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          AITourGuideScreen(place: place),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFF6366F1),
+                                        Color(0xFF8B5CF6),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFF6366F1,
+                                        ).withValues(alpha: 0.3),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.smart_toy_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'AI Tour Guide',
+                                              style: TextStyle(
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.85,
+                                                ),
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                                letterSpacing: 0.6,
+                                              ),
+                                            ),
+                                            const Text(
+                                              'Ask me anything about this place',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _PriceBanner(place: place),
+                                const SizedBox(height: 22),
+                                Row(
+                                  children: [
+                                    Text(
+                                      context.tr('about_place'),
+                                      style: TextStyle(
+                                        color: textPri,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  place.localizedDescription(
+                                    context
+                                        .read<LocaleProvider>()
+                                        .locale
+                                        .languageCode,
+                                  ),
+                                  style: TextStyle(
+                                    color: textSec,
+                                    fontSize: 15,
+                                    height: 1.6,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          PlacePhotosSection(place: place),
+                          const SizedBox(height: 24),
+                          _ChatEntryCard(place: place),
+                          _ReviewsSection(place: place),
+
+                          if (_nearby.isNotEmpty)
+                            _NearbySection(places: _nearby),
+
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           ConfettiOverlay(controller: _confetti),
         ],
@@ -679,9 +713,7 @@ class _GlassBtn extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.3),
           shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.2),
-          ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
         child: Icon(icon, color: iconColor, size: 20),
       ),
@@ -719,10 +751,7 @@ class _QuickAction extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -766,8 +795,11 @@ class _ChatEntryCard extends StatelessWidget {
                   gradient: AppColors.primaryGradient,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.chat_bubble_rounded,
-                    color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.chat_bubble_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -777,7 +809,9 @@ class _ChatEntryCard extends StatelessWidget {
                     Text(
                       context.tr('community_chat'),
                       style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w800),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -790,8 +824,11 @@ class _ChatEntryCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 14, color: AppColors.primary),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: AppColors.primary,
+              ),
             ],
           ),
         ),
@@ -920,7 +957,10 @@ class _ReviewItem extends StatelessWidget {
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: Text(
                   review.userName[0].toUpperCase(),
-                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -930,7 +970,11 @@ class _ReviewItem extends StatelessWidget {
                   children: [
                     Text(
                       review.userName,
-                      style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(
+                        color: textPri,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     Row(
                       children: List.generate(
@@ -938,7 +982,9 @@ class _ReviewItem extends StatelessWidget {
                         (index) => Icon(
                           Icons.star_rounded,
                           size: 14,
-                          color: index < review.rating ? AppColors.ratingGold : Colors.grey[300],
+                          color: index < review.rating
+                              ? AppColors.ratingGold
+                              : Colors.grey[300],
                         ),
                       ),
                     ),
@@ -971,7 +1017,11 @@ class _ReviewItem extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             review.comment,
-            style: TextStyle(color: textPri.withValues(alpha: 0.8), fontSize: 14, height: 1.4),
+            style: TextStyle(
+              color: textPri.withValues(alpha: 0.8),
+              fontSize: 14,
+              height: 1.4,
+            ),
           ),
           if (review.imagePath != null && review.imagePath!.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -1042,14 +1092,10 @@ class _NearbyCard extends StatelessWidget {
       onTap: () => Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, animation, __) =>
-              PlaceDetailsScreen(place: place),
+          pageBuilder: (_, animation, __) => PlaceDetailsScreen(place: place),
           transitionDuration: const Duration(milliseconds: 450),
           transitionsBuilder: (_, animation, __, child) =>
-              FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
+              FadeTransition(opacity: animation, child: child),
         ),
       ),
       child: Container(
@@ -1101,8 +1147,10 @@ class _ShareSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(context.tr('share_app'),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(
+            context.tr('share_app'),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1131,7 +1179,10 @@ class _ShareIcon extends StatelessWidget {
         Container(
           width: 56,
           height: 56,
-          decoration: BoxDecoration(color: context.bgAlt, shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: context.bgAlt,
+            shape: BoxShape.circle,
+          ),
           child: Icon(icon, color: context.textPri),
         ),
         const SizedBox(height: 8),
@@ -1290,9 +1341,7 @@ class _PricePill extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: isDark
-                  ? const Color(0xFF94A3B8)
-                  : const Color(0xFF64748B),
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
               fontSize: 9,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.3,

@@ -6,9 +6,7 @@ class PrayerTimesWidget extends StatelessWidget {
 
   String _formatTime(DateTime t) {
     final h24 = t.hour;
-    final h12 = h24 == 0
-        ? 12
-        : (h24 > 12 ? h24 - 12 : h24);
+    final h12 = h24 == 0 ? 12 : (h24 > 12 ? h24 - 12 : h24);
     final ampm = h24 >= 12 ? 'PM' : 'AM';
     final hh = h12.toString().padLeft(2, '0');
     final m = t.minute.toString().padLeft(2, '0');
@@ -52,9 +50,7 @@ class PrayerTimesWidget extends StatelessWidget {
     final remaining = times.timeUntilNext;
     final hh = remaining.inHours;
     final mm = remaining.inMinutes % 60;
-    final remainingStr = hh > 0
-        ? '${hh}h ${mm}m'
-        : '${mm}m';
+    final remainingStr = hh > 0 ? '${hh}h ${mm}m' : '${mm}m';
 
     final prayers = [
       ('Fajr', times.fajr),
@@ -160,8 +156,7 @@ class PrayerTimesWidget extends StatelessWidget {
                             ? Colors.white
                             : Colors.white.withValues(alpha: 0.75),
                         fontSize: 10,
-                        fontWeight:
-                            isNext ? FontWeight.w800 : FontWeight.w600,
+                        fontWeight: isNext ? FontWeight.w800 : FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -174,8 +169,8 @@ class PrayerTimesWidget extends StatelessWidget {
                         color: isNext
                             ? Colors.white
                             : (isCurrent
-                                ? Colors.white.withValues(alpha: 0.28)
-                                : Colors.white.withValues(alpha: 0.10)),
+                                  ? Colors.white.withValues(alpha: 0.28)
+                                  : Colors.white.withValues(alpha: 0.10)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(

@@ -8,7 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_colors.dart';
 import 'core/services/offline_storage_service.dart';
 import 'core/services/supabase_service.dart';
-import 'core/config/supabase_config.dart';
+import 'core/config/app_config.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'logic/place_provider.dart';
 import 'logic/tour_provider.dart';
@@ -28,8 +28,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
-    url: SupabaseConfig.url,
-    publishableKey: SupabaseConfig.anonKey,
+    url: AppConfig.supabaseUrl,
+    publishableKey: AppConfig.supabaseAnonKey,
   );
 
   await OfflineStorageService.instance.init();
@@ -37,9 +37,6 @@ Future<void> main() async {
 
   final auth = AuthProvider();
   await auth.bootstrap();
-
-  // Listen for the Supabase OAuth deep link (e.g. when the browser returns
-  // the user to the app via `io.supabase.streetlore://login-callback/...`).
   unawaited(_bindAuthDeepLink(auth));
 
   final placeProvider = PlaceProvider();

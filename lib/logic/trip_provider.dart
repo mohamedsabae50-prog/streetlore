@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/models/place_model.dart';
@@ -33,9 +33,6 @@ class TripProvider extends ChangeNotifier {
     await _saveTrip();
   }
 
-  
-  
-  
   Future<void> reorderTrip(int oldIndex, int newIndex) async {
     if (oldIndex < 0 || oldIndex >= _tripPlaces.length) return;
     if (newIndex < 0 || newIndex > _tripPlaces.length) return;

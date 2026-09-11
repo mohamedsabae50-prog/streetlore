@@ -1,5 +1,5 @@
 import 'dart:async';
-// ignore_for_file: prefer_initializing_formals
+
 import 'package:flutter/material.dart' hide Badge;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/achievement_catalog.dart';
@@ -27,11 +27,11 @@ class AchievementProgress {
   double get ratio => target == 0 ? 0 : (current / target).clamp(0.0, 1.0);
 
   Map<String, dynamic> toJson() => {
-        'achievement_id': achievementId,
-        'current': current,
-        'unlocked': unlocked,
-        'unlocked_at': unlockedAt?.toIso8601String(),
-      };
+    'achievement_id': achievementId,
+    'current': current,
+    'unlocked': unlocked,
+    'unlocked_at': unlockedAt?.toIso8601String(),
+  };
 
   factory AchievementProgress.fromJson(Map<String, dynamic> json) =>
       AchievementProgress(
@@ -46,31 +46,28 @@ class AchievementProgress {
 }
 
 class AchievementProvider extends ChangeNotifier {
-  final AuthProvider _auth;
-  final GamificationProvider _gam;
-  final PlaceProvider _places;
-  final StreakProvider _streak;
+  final AuthProvider auth;
+  final GamificationProvider gam;
+  final PlaceProvider places;
+  final StreakProvider streak;
 
   String _userKey = 'guest';
   Map<String, AchievementProgress> _progress = {};
   static const _kPrefix = 'achievements_v2';
 
   AchievementProvider({
-    required AuthProvider auth,
-    required GamificationProvider gam,
-    required PlaceProvider places,
-    required StreakProvider streak,
-  })  : _auth = auth,
-        _gam = gam,
-        _places = places,
-        _streak = streak {
+    required this.auth,
+    required this.gam,
+    required this.places,
+    required this.streak,
+  }) {
     _userKey = _effectiveKey();
     _load();
     _recalculateAll();
   }
 
   String _effectiveKey() {
-    final id = _auth.userId;
+    final id = auth.userId;
     return id.isEmpty ? 'guest' : id;
   }
 
@@ -120,10 +117,12 @@ class AchievementProvider extends ChangeNotifier {
 
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
-    final entries = _progress.entries.map((e) {
-      final p = e.value;
-      return '${p.achievementId}::${p.current}::${p.unlocked ? 1 : 0}::${p.unlockedAt?.toIso8601String() ?? ''}';
-    }).join('|');
+    final entries = _progress.entries
+        .map((e) {
+          final p = e.value;
+          return '${p.achievementId}::${p.current}::${p.unlocked ? 1 : 0}::${p.unlockedAt?.toIso8601String() ?? ''}';
+        })
+        .join('|');
     await prefs.setString(_kKey, entries);
   }
 
@@ -137,8 +136,7 @@ class AchievementProvider extends ChangeNotifier {
         );
   }
 
-  int get totalUnlocked =>
-      _progress.values.where((p) => p.unlocked).length;
+  int get totalUnlocked => _progress.values.where((p) => p.unlocked).length;
   int get totalAvailable => AchievementCatalog.all.length;
   double get completionRatio =>
       totalAvailable == 0 ? 0 : totalUnlocked / totalAvailable;
@@ -154,10 +152,11 @@ class AchievementProvider extends ChangeNotifier {
   }
 
   List<AchievementDefinition> recentUnlocked({int limit = 3}) {
-    final entries = _progress.entries
-        .where((e) => e.value.unlocked && e.value.unlockedAt != null)
-        .toList()
-      ..sort((a, b) => b.value.unlockedAt!.compareTo(a.value.unlockedAt!));
+    final entries =
+        _progress.entries
+            .where((e) => e.value.unlocked && e.value.unlockedAt != null)
+            .toList()
+          ..sort((a, b) => b.value.unlockedAt!.compareTo(a.value.unlockedAt!));
     return entries
         .take(limit)
         .map((e) => AchievementCatalog.byId(e.key))
@@ -166,9 +165,9 @@ class AchievementProvider extends ChangeNotifier {
   }
 
   void _recalculateAll() {
-    final stats = _gam.stats;
-    final all = _places.places;
-    final streakDays = _streak.currentStreak;
+    final stats = gam.stats;
+    final all = places.places;
+    final streakDays = streak.currentStreak;
 
     final byCategory = <String, int>{};
     for (final p in all) {
@@ -183,8 +182,7 @@ class AchievementProvider extends ChangeNotifier {
     }
 
     final hiddenGemsVisited = all
-        .where((p) =>
-            p.isHiddenGem && visitedCount > all.indexOf(p))
+        .where((p) => p.isHiddenGem && visitedCount > all.indexOf(p))
         .length;
 
     for (final def in AchievementCatalog.all) {
@@ -199,7 +197,10 @@ class AchievementProvider extends ChangeNotifier {
           break;
         case 'culture_buff':
         case 'history_nerd':
-          cur = _estimateVisitedIn(all, ['Culture', 'Historical'], visitedCount);
+          cur = _estimateVisitedIn(all, [
+            'Culture',
+            'Historical',
+          ], visitedCount);
           break;
         case 'foodie':
         case 'gourmet':
@@ -242,7 +243,10 @@ class AchievementProvider extends ChangeNotifier {
   }
 
   int _estimateVisitedIn(
-      List<dynamic> all, List<String> cats, int visitedCount) {
+    List<dynamic> all,
+    List<String> cats,
+    int visitedCount,
+  ) {
     if (visitedCount <= 0) return 0;
     final filtered = all.where((p) => cats.contains(p.category)).toList();
     return filtered.length < visitedCount ? filtered.length : visitedCount;
@@ -258,9 +262,7 @@ class AchievementProvider extends ChangeNotifier {
       current: current,
       target: def.target,
       unlocked: shouldUnlock,
-      unlockedAt: shouldUnlock
-          ? (wasAt ?? DateTime.now())
-          : null,
+      unlockedAt: shouldUnlock ? (wasAt ?? DateTime.now()) : null,
     );
     if (shouldUnlock && !wasUnlocked) {
       _grantBadge(def);
@@ -272,15 +274,17 @@ class AchievementProvider extends ChangeNotifier {
   }
 
   void _grantBadge(AchievementDefinition def) {
-    _gam.addBadgeIfMissing(Badge(
-      id: def.id,
-      name: def.nameKey,
-      description: def.descKey,
-      iconName: _iconName(def.icon),
-      tier: _tierName(def.tier),
-      earnedAt: DateTime.now(),
-      pointsAwarded: def.points,
-    ));
+    gam.addBadgeIfMissing(
+      Badge(
+        id: def.id,
+        name: def.nameKey,
+        description: def.descKey,
+        iconName: _iconName(def.icon),
+        tier: _tierName(def.tier),
+        earnedAt: DateTime.now(),
+        pointsAwarded: def.points,
+      ),
+    );
   }
 
   String _iconName(IconData icon) {

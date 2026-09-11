@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
@@ -37,21 +37,21 @@ class FeaturedCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              
               Hero(
                 tag: 'place-image-${place.id}',
-                flightShuttleBuilder: (
-                  BuildContext flightContext,
-                  Animation<double> animation,
-                  HeroFlightDirection flightDirection,
-                  BuildContext fromHeroContext,
-                  BuildContext toHeroContext,
-                ) {
-                  return Material(
-                    color: Colors.transparent,
-                    child: (toHeroContext.widget as Hero).child,
-                  );
-                },
+                flightShuttleBuilder:
+                    (
+                      BuildContext flightContext,
+                      Animation<double> animation,
+                      HeroFlightDirection flightDirection,
+                      BuildContext fromHeroContext,
+                      BuildContext toHeroContext,
+                    ) {
+                      return Material(
+                        color: Colors.transparent,
+                        child: (toHeroContext.widget as Hero).child,
+                      );
+                    },
                 child: ShimmerImage(
                   imageUrl: place.imageUrl,
                   fit: BoxFit.cover,
@@ -61,7 +61,6 @@ class FeaturedCard extends StatelessWidget {
                 ),
               ),
 
-              
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -77,18 +76,20 @@ class FeaturedCard extends StatelessWidget {
                 ),
               ),
 
-              
               Positioned(
                 top: 12,
                 right: 12,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2)),
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Text(
                     place.category,
@@ -102,7 +103,6 @@ class FeaturedCard extends StatelessWidget {
                 ),
               ),
 
-              
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -115,18 +115,19 @@ class FeaturedCard extends StatelessWidget {
                     children: [
                       Hero(
                         tag: 'place-name-${place.id}',
-                        flightShuttleBuilder: (
-                          BuildContext flightContext,
-                          Animation<double> animation,
-                          HeroFlightDirection flightDirection,
-                          BuildContext fromHeroContext,
-                          BuildContext toHeroContext,
-                        ) {
-                          return DefaultTextStyle(
-                            style: DefaultTextStyle.of(toHeroContext).style,
-                            child: (toHeroContext.widget as Hero).child,
-                          );
-                        },
+                        flightShuttleBuilder:
+                            (
+                              BuildContext flightContext,
+                              Animation<double> animation,
+                              HeroFlightDirection flightDirection,
+                              BuildContext fromHeroContext,
+                              BuildContext toHeroContext,
+                            ) {
+                              return DefaultTextStyle(
+                                style: DefaultTextStyle.of(toHeroContext).style,
+                                child: (toHeroContext.widget as Hero).child,
+                              );
+                            },
                         child: Material(
                           type: MaterialType.transparency,
                           child: Text(
@@ -145,8 +146,11 @@ class FeaturedCard extends StatelessWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.star_rounded,
-                              color: AppColors.ratingGold, size: 14),
+                          const Icon(
+                            Icons.star_rounded,
+                            color: AppColors.ratingGold,
+                            size: 14,
+                          ),
                           const SizedBox(width: 3),
                           Text(
                             place.rating.toStringAsFixed(1),

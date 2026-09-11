@@ -1,15 +1,7 @@
-﻿import 'dart:math';
+import 'dart:math';
 import 'package:flutter/material.dart';
 
-enum LottieAnimations {
-  compass, 
-  camera, 
-  trophy, 
-  route, 
-  cloud, 
-  radar, 
-  chat, 
-}
+enum LottieAnimations { compass, camera, trophy, route, cloud, radar, chat }
 
 class AnimatedLottieIcon extends StatefulWidget {
   final LottieAnimations animation;
@@ -88,7 +80,7 @@ class _AnimatedLottieIconState extends State<AnimatedLottieIcon>
 
 class _LottiePainter extends CustomPainter {
   final LottieAnimations type;
-  final double progress; 
+  final double progress;
   final Color primary;
   final Color secondary;
 
@@ -137,11 +129,9 @@ class _LottiePainter extends CustomPainter {
     }
   }
 
-  void _drawCompass(
-      Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
-    
+  void _drawCompass(Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
     canvas.drawCircle(c, r * 0.85, p);
-    
+
     for (var i = 0; i < 4; i++) {
       final a = i * pi / 2;
       canvas.drawLine(
@@ -150,7 +140,7 @@ class _LottiePainter extends CustomPainter {
         p,
       );
     }
-    
+
     final angle = progress * 2 * pi;
     canvas.save();
     canvas.translate(c.dx, c.dy);
@@ -171,16 +161,13 @@ class _LottiePainter extends CustomPainter {
       ..close();
     canvas.drawPath(path2, south);
     canvas.restore();
-    
+
     canvas.drawCircle(c, r * 0.1, pFill);
   }
 
-  void _drawCamera(
-      Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
-    
+  void _drawCamera(Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
     final blades = 6;
-    final openAmount =
-        0.5 + 0.5 * sin(progress * 2 * pi); 
+    final openAmount = 0.5 + 0.5 * sin(progress * 2 * pi);
     final rotation = progress * 2 * pi / blades;
     for (var i = 0; i < blades; i++) {
       final angle = i * 2 * pi / blades + rotation;
@@ -195,19 +182,16 @@ class _LottiePainter extends CustomPainter {
       canvas.drawPath(blade, pFill..color = primary);
       canvas.restore();
     }
-    
+
     canvas.drawCircle(c, r * 0.12, Paint()..color = Colors.white);
   }
 
-  void _drawTrophy(
-      Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
-    
+  void _drawTrophy(Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
     final scale = 1.0 + 0.08 * sin(progress * 2 * pi);
     canvas.save();
     canvas.translate(c.dx, c.dy);
     canvas.scale(scale);
 
-    
     final cupRect = Rect.fromCenter(
       center: Offset(0, -r * 0.15),
       width: r * 0.7,
@@ -223,57 +207,78 @@ class _LottiePainter extends CustomPainter {
       ),
       pFill,
     );
-    
+
     canvas.drawArc(
-      Rect.fromCenter(center: Offset(-r * 0.35, -r * 0.15),
-          width: r * 0.3, height: r * 0.4),
-      pi / 2, pi, false,
+      Rect.fromCenter(
+        center: Offset(-r * 0.35, -r * 0.15),
+        width: r * 0.3,
+        height: r * 0.4,
+      ),
+      pi / 2,
+      pi,
+      false,
       p..style = PaintingStyle.stroke,
     );
     canvas.drawArc(
-      Rect.fromCenter(center: Offset(r * 0.35, -r * 0.15),
-          width: r * 0.3, height: r * 0.4),
-      -pi / 2, pi, false,
+      Rect.fromCenter(
+        center: Offset(r * 0.35, -r * 0.15),
+        width: r * 0.3,
+        height: r * 0.4,
+      ),
+      -pi / 2,
+      pi,
+      false,
       p,
     );
-    
+
     canvas.drawRect(
-      Rect.fromCenter(center: Offset(0, r * 0.2), width: r * 0.12, height: r * 0.18),
+      Rect.fromCenter(
+        center: Offset(0, r * 0.2),
+        width: r * 0.12,
+        height: r * 0.18,
+      ),
       pFill,
     );
-    
+
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(0, r * 0.42),
-            width: r * 0.5, height: r * 0.12),
+        Rect.fromCenter(
+          center: Offset(0, r * 0.42),
+          width: r * 0.5,
+          height: r * 0.12,
+        ),
         Radius.circular(r * 0.04),
       ),
       pFill,
     );
-    
+
     final spark = Paint()..color = Colors.white;
     canvas.drawCircle(Offset(0, -r * 0.4), r * 0.07, spark);
     canvas.restore();
     p.style = PaintingStyle.fill;
   }
 
-  void _drawRoute(
-      Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
-    
+  void _drawRoute(Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
     final path = Path();
     path.moveTo(c.dx - r * 0.6, c.dy + r * 0.2);
     path.cubicTo(
-      c.dx - r * 0.3, c.dy - r * 0.4,
-      c.dx + r * 0.1, c.dy + r * 0.4,
-      c.dx + r * 0.4, c.dy - r * 0.1,
+      c.dx - r * 0.3,
+      c.dy - r * 0.4,
+      c.dx + r * 0.1,
+      c.dy + r * 0.4,
+      c.dx + r * 0.4,
+      c.dy - r * 0.1,
     );
     path.cubicTo(
-      c.dx + r * 0.5, c.dy - r * 0.3,
-      c.dx + r * 0.7, c.dy,
-      c.dx + r * 0.6, c.dy + r * 0.3,
+      c.dx + r * 0.5,
+      c.dy - r * 0.3,
+      c.dx + r * 0.7,
+      c.dy,
+      c.dx + r * 0.6,
+      c.dy + r * 0.3,
     );
     canvas.drawPath(path, p);
-    
+
     final metric = path.computeMetrics().first;
     final tan = metric.getTangentForOffset(metric.length * progress);
     if (tan != null) {
@@ -288,28 +293,41 @@ class _LottiePainter extends CustomPainter {
     }
   }
 
-  void _drawCloud(
-      Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
-    
+  void _drawCloud(Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
     final cloudPaint = Paint()..color = primary.withValues(alpha: 0.85);
     final pOutline = Paint()
       ..color = primary
       ..style = PaintingStyle.stroke
       ..strokeWidth = r * 0.08;
     final body = Path()
-      ..addOval(Rect.fromCenter(
-          center: c + Offset(-r * 0.25, 0), width: r * 0.7, height: r * 0.55))
-      ..addOval(Rect.fromCenter(
-          center: c + Offset(0, -r * 0.2), width: r * 0.65, height: r * 0.6))
-      ..addOval(Rect.fromCenter(
-          center: c + Offset(r * 0.3, 0), width: r * 0.6, height: r * 0.5));
+      ..addOval(
+        Rect.fromCenter(
+          center: c + Offset(-r * 0.25, 0),
+          width: r * 0.7,
+          height: r * 0.55,
+        ),
+      )
+      ..addOval(
+        Rect.fromCenter(
+          center: c + Offset(0, -r * 0.2),
+          width: r * 0.65,
+          height: r * 0.6,
+        ),
+      )
+      ..addOval(
+        Rect.fromCenter(
+          center: c + Offset(r * 0.3, 0),
+          width: r * 0.6,
+          height: r * 0.5,
+        ),
+      );
     canvas.drawPath(body, cloudPaint);
     canvas.drawPath(body, pOutline);
-    
+
     canvas.save();
     canvas.translate(0, sin(progress * 2 * pi) * r * 0.05);
     canvas.restore();
-    
+
     for (var i = 0; i < 3; i++) {
       final fall = (progress * 1.5 + i * 0.33) % 1.0;
       final x = c.dx - r * 0.2 + i * r * 0.2;
@@ -322,25 +340,23 @@ class _LottiePainter extends CustomPainter {
     }
   }
 
-  void _drawRadar(
-      Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
-    
+  void _drawRadar(Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
     for (var i = 1; i <= 3; i++) {
-      canvas.drawCircle(c, r * 0.3 * i,
-          Paint()
-            ..color = primary.withValues(alpha: 0.5)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = r * 0.05);
+      canvas.drawCircle(
+        c,
+        r * 0.3 * i,
+        Paint()
+          ..color = primary.withValues(alpha: 0.5)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = r * 0.05,
+      );
     }
-    
+
     final sweep = progress * 2 * pi;
     final shader = SweepGradient(
       startAngle: 0,
       endAngle: pi / 2,
-      colors: [
-        primary.withValues(alpha: 0.0),
-        primary.withValues(alpha: 0.4),
-      ],
+      colors: [primary.withValues(alpha: 0.0), primary.withValues(alpha: 0.4)],
       transform: GradientRotation(sweep - pi / 2),
     ).createShader(Rect.fromCircle(center: c, radius: r * 0.9));
     canvas.drawArc(
@@ -350,29 +366,19 @@ class _LottiePainter extends CustomPainter {
       true,
       Paint()..shader = shader,
     );
-    
-    final blips = [
-      (0.3, 0.4, 0.7),
-      (0.6, 0.7, 0.3),
-      (0.8, 0.5, 0.9),
-    ];
+
+    final blips = [(0.3, 0.4, 0.7), (0.6, 0.7, 0.3), (0.8, 0.5, 0.9)];
     for (final b in blips) {
       final blipProgress = (progress * 2 - b.$3) % 1.0;
       if (blipProgress > 0 && blipProgress < 0.2) {
         final x = c.dx + cos(b.$1 * 2 * pi) * r * 0.7 * b.$2;
         final y = c.dy + sin(b.$1 * 2 * pi) * r * 0.7 * b.$2;
-        canvas.drawCircle(
-          Offset(x, y),
-          r * 0.1,
-          Paint()..color = primary,
-        );
+        canvas.drawCircle(Offset(x, y), r * 0.1, Paint()..color = primary);
       }
     }
   }
 
-  void _drawChat(
-      Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
-    
+  void _drawChat(Canvas canvas, Offset c, double r, Paint p, Paint pFill) {
     final scale = 1.0 + 0.12 * sin(progress * 2 * pi);
     canvas.save();
     canvas.translate(c.dx, c.dy);
@@ -386,14 +392,14 @@ class _LottiePainter extends CustomPainter {
       RRect.fromRectAndRadius(rect, Radius.circular(r * 0.25)),
       pFill,
     );
-    
+
     final tail = Path()
       ..moveTo(-r * 0.2, r * 0.4)
       ..lineTo(-r * 0.05, r * 0.4)
       ..lineTo(-r * 0.2, r * 0.6)
       ..close();
     canvas.drawPath(tail, pFill);
-    
+
     for (var i = 0; i < 3; i++) {
       final dx = (i - 1) * r * 0.2;
       final dotPhase = (progress * 3 - i * 0.3) % 1.0;

@@ -34,8 +34,6 @@ class AuthProvider extends ChangeNotifier {
 
   AuthProvider() {
     if (AppConfig.supabaseEnabled) {
-      // React to Supabase auth state changes (e.g. session established after
-      // the OAuth browser redirect back into the app via the deep link).
       Supabase.instance.client.auth.onAuthStateChange.listen((data) {
         final event = data.event;
         if (event == AuthChangeEvent.signedIn ||
@@ -55,8 +53,6 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     if (AppConfig.supabaseEnabled) {
-      // If Supabase already has a session (e.g. app was reopened after OAuth),
-      // pick it up so the user does not have to sign in again.
       final session = Supabase.instance.client.auth.currentSession;
       if (session?.user != null) {
         _syncFromSupabase();
@@ -84,7 +80,8 @@ class AuthProvider extends ChangeNotifier {
     _isGuest = false;
     _userId = user.id;
     final meta = user.userMetadata ?? const <String, dynamic>{};
-    _userName = (meta['full_name'] as String?) ??
+    _userName =
+        (meta['full_name'] as String?) ??
         (meta['name'] as String?) ??
         (user.email?.split('@').first) ??
         'Explorer';
@@ -100,7 +97,7 @@ class AuthProvider extends ChangeNotifier {
 
   /// Exchanges the deep-link URI (from the OAuth redirect) for a Supabase
   /// session. Called from the platform `app_links` / `uni_links` callback
-  /// when the browser returns to `io.supabase.streetlore://login-callback/`.
+  /// when the browser returns to `io.supabase.streetlore:
   Future<bool> handleAuthCallback(Uri uri) async {
     if (!AppConfig.supabaseEnabled) return false;
     try {
@@ -207,9 +204,7 @@ class AuthProvider extends ChangeNotifier {
   Future<String?> signInWithGoogleNative() async {
     if (!AppConfig.supabaseEnabled) return 'supabase_disabled';
     try {
-      final googleSignIn = GoogleSignIn(
-        scopes: const ['email', 'profile'],
-      );
+      final googleSignIn = GoogleSignIn(scopes: const ['email', 'profile']);
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         return 'cancelled';
@@ -219,7 +214,7 @@ class AuthProvider extends ChangeNotifier {
       if (idToken == null) {
         return 'no_id_token';
       }
-      // Exchange the Google ID token for a Supabase session.
+
       await Supabase.instance.client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,

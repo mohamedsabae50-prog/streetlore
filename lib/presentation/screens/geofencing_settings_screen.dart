@@ -32,7 +32,8 @@ class GeofencingSettingsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFF59E0B), Color(0xFFFB923C)],
-                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -56,11 +57,22 @@ class GeofencingSettingsScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(context.tr('geo_hero_title'),
-                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                          Text(
+                            context.tr('geo_hero_title'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(context.tr('geo_hero_sub'),
-                              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                          Text(
+                            context.tr('geo_hero_sub'),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -70,18 +82,23 @@ class GeofencingSettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               _MonitoringTile(
                 isMonitoring: geo.isMonitoring,
-                onChanged: (v) => v ? geo.startMonitoring() : geo.stopMonitoring(),
+                onChanged: (v) =>
+                    v ? geo.startMonitoring() : geo.stopMonitoring(),
               ),
               const SizedBox(height: 20),
-              Text(context.tr('geo_choose_places'),
-                  style: AppTextStyles.sectionTitle
-                      .copyWith(color: context.textPri)),
+              Text(
+                context.tr('geo_choose_places'),
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: context.textPri,
+                ),
+              ),
               const SizedBox(height: 8),
               for (final place in places)
                 _PlaceToggle(
                   place: place,
-                  enabled: geo.alerts
-                      .any((a) => a.placeId == place.id && a.enabled),
+                  enabled: geo.alerts.any(
+                    (a) => a.placeId == place.id && a.enabled,
+                  ),
                   onToggle: () {
                     final existing = geo.alerts.firstWhere(
                       (a) => a.placeId == place.id,
@@ -119,13 +136,17 @@ class _MonitoringTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(isMonitoring ? Icons.gps_fixed : Icons.gps_off,
-              color: isMonitoring ? AppColors.success : context.textSec),
+          Icon(
+            isMonitoring ? Icons.gps_fixed : Icons.gps_off,
+            color: isMonitoring ? AppColors.success : context.textSec,
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(isMonitoring
-                ? context.tr('geo_monitoring_on')
-                : context.tr('geo_monitoring_off')),
+            child: Text(
+              isMonitoring
+                  ? context.tr('geo_monitoring_on')
+                  : context.tr('geo_monitoring_off'),
+            ),
           ),
           Switch.adaptive(
             value: isMonitoring,
@@ -142,7 +163,11 @@ class _PlaceToggle extends StatelessWidget {
   final PlaceModel place;
   final bool enabled;
   final VoidCallback onToggle;
-  const _PlaceToggle({required this.place, required this.enabled, required this.onToggle});
+  const _PlaceToggle({
+    required this.place,
+    required this.enabled,
+    required this.onToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -168,17 +193,27 @@ class _PlaceToggle extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 child: CachedNetworkImage(
                   imageUrl: place.imageUrl,
-                  width: 50, height: 50, fit: BoxFit.cover,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
                   memCacheWidth: 100,
                   memCacheHeight: 100,
-                  httpHeaders: const {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'},
-                  placeholder: (_, __) => Container(width: 50, height: 50, color: context.bgAlt),
+                  httpHeaders: const {
+                    'User-Agent':
+                        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+                  },
+                  placeholder: (_, __) =>
+                      Container(width: 50, height: 50, color: context.bgAlt),
                   errorWidget: (context, url, error) => Container(
                     color: const Color(0xFF1C2433),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.image_rounded, color: Colors.white30, size: 36),
+                        Icon(
+                          Icons.image_rounded,
+                          color: Colors.white30,
+                          size: 36,
+                        ),
                       ],
                     ),
                   ),
@@ -189,15 +224,25 @@ class _PlaceToggle extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(place.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                    Text(
+                      place.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
-                        context.tr('geo_distance', {
-                          'd': Geolocator.distanceBetween(
-                                  0, 0, place.lat, place.lng)
-                              .toStringAsFixed(0),
-                        }),
-                        style: TextStyle(color: context.textSec, fontSize: 11)),
+                      context.tr('geo_distance', {
+                        'd': Geolocator.distanceBetween(
+                          0,
+                          0,
+                          place.lat,
+                          place.lng,
+                        ).toStringAsFixed(0),
+                      }),
+                      style: TextStyle(color: context.textSec, fontSize: 11),
+                    ),
                   ],
                 ),
               ),
