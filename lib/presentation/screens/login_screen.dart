@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -538,10 +538,9 @@ class _LoginScreenState extends State<LoginScreen>
 
                                 try {
                                   if (kIsWeb) {
-                                    final redirectTo =
-                                        kReleaseMode
-                                            ? AppConfig.webRedirectUrl
-                                            : Uri.base.origin;
+                                    final redirectTo = kReleaseMode
+                                        ? AppConfig.webRedirectUrl
+                                        : Uri.base.origin;
                                     await Supabase.instance.client.auth
                                         .signInWithOAuth(
                                           OAuthProvider.google,
@@ -558,7 +557,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     final GoogleSignIn
                                     googleSignIn = GoogleSignIn(
                                       serverClientId:
-                                          '504340157609-pj8oox9662299u613glititqn4dqa7ij.apps.googleusercontent.com',
+                                          '504340157609-pj8ook9662299u613glititqn4dqa1jp.apps.googleusercontent.com',
                                     );
 
                                     final googleUser = await googleSignIn
@@ -622,7 +621,9 @@ class _LoginScreenState extends State<LoginScreen>
                                   } else if (errorStr.contains('network') ||
                                       errorStr.contains('socket') ||
                                       errorStr.contains('timeout')) {
-                                    message = context.tr('login_google_timeout');
+                                    message = context.tr(
+                                      'login_google_timeout',
+                                    );
                                   } else if (errorStr.contains('platform') ||
                                       errorStr.contains('sign_in_failed')) {
                                     message =
@@ -645,8 +646,9 @@ class _LoginScreenState extends State<LoginScreen>
                                           Text(message),
                                           if (showDetails)
                                             Padding(
-                                              padding:
-                                                  const EdgeInsets.only(top: 6),
+                                              padding: const EdgeInsets.only(
+                                                top: 6,
+                                              ),
                                               child: Text(
                                                 e.toString(),
                                                 style: const TextStyle(
