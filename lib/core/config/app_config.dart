@@ -11,7 +11,8 @@ class AppConfig {
   static const bool newFeaturesEnabled = true;
   static const int defaultGeofenceRadius = 500;
 
-  static const String? webRedirectUrl = null;
+  static const String webRedirectUrl =
+      'https://mohamedsabae50-prog.github.io/streetlore-web-app/';
 
   static const String mobileRedirectUrl =
       'io.supabase.streetlore://login-callback/';

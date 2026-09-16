@@ -539,8 +539,9 @@ class _LoginScreenState extends State<LoginScreen>
                                 try {
                                   if (kIsWeb) {
                                     final redirectTo =
-                                        AppConfig.webRedirectUrl ??
-                                        Uri.base.origin;
+                                        kReleaseMode
+                                            ? AppConfig.webRedirectUrl
+                                            : Uri.base.origin;
                                     await Supabase.instance.client.auth
                                         .signInWithOAuth(
                                           OAuthProvider.google,
