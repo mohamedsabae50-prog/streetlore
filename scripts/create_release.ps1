@@ -61,8 +61,8 @@ $lines = @(
 $releaseBody = $lines -join "`n"
 
 $payload = @{
-    tag_name = "v1.0.6"
-    name = "v1.0.6 - Diagnostic Google sign-in error"
+    tag_name = "v1.0.7"
+    name = "v1.0.7 - OAuth redirect fix + diagnostic Google sign-in"
     body = $releaseBody
     draft = $false
     prerelease = $false
@@ -70,7 +70,7 @@ $payload = @{
 
 Write-Host "Checking existing release..."
 try {
-    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/mohamedsabae50-prog/streetlore/releases/tags/v1.0.6" -Headers $headers
+    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/mohamedsabae50-prog/streetlore/releases/tags/v1.0.7" -Headers $headers
     Write-Host "Found existing release id=$($release.id) url=$($release.html_url)"
 } catch {
     Write-Host "Creating new release..."
@@ -81,7 +81,7 @@ try {
 $uploadUrl = $release.upload_url -replace '\{.*$',''
 Write-Host "Upload URL: $uploadUrl"
 
-$apkPath = "D:\codes\streetlore\build\app\outputs\flutter-apk\streetlore-v1.0.6-arm64.apk"
+$apkPath = "D:\codes\streetlore\build\app\outputs\flutter-apk\streetlore-v1.0.7-arm64.apk"
 Write-Host "Uploading $apkPath..."
 
 $uploadHeaders = @{
@@ -92,7 +92,7 @@ $uploadHeaders = @{
     "Content-Type" = "application/vnd.android.package-archive"
 }
 
-$uploadUrlWithName = $uploadUrl + '?name=streetlore-v1.0.6-arm64.apk'
+$uploadUrlWithName = $uploadUrl + '?name=streetlore-v1.0.7-arm64.apk'
 Write-Host "Final upload URL: $uploadUrlWithName"
 Invoke-RestMethod -Uri $uploadUrlWithName -Method Post -Headers $uploadHeaders -InFile $apkPath -ContentType "application/vnd.android.package-archive"
 Write-Host "Upload complete!"
