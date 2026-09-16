@@ -53,7 +53,16 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     if (AppConfig.supabaseEnabled) {
-      final session = Supabase.instance.client.auth.currentSession;
+      // Force-load session from secure storage; refresh if access token expired.
+      Session? session = Supabase.instance.client.auth.currentSession;
+      if (session == null) {
+        try {
+          final response = await Supabase.instance.client.auth.refreshSession();
+          session = response.session;
+        } catch (_) {
+          // refresh may fail when no stored session exists; fall through.
+        }
+      }
       if (session?.user != null) {
         _syncFromSupabase();
         _isLoading = false;
