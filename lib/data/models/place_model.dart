@@ -35,18 +35,22 @@ enum PriceLevel {
 class PlaceModel {
   final String id;
   final String name;
+  final String? nameAr;
   final String description;
   final String? descriptionAr;
   final String imageUrl;
   final double rating;
   final String category;
+  final String? categoryAr;
   final double lat;
   final double lng;
   final String address;
+  final String? addressAr;
   final String openHours;
   final int reviewCount;
   final PriceLevel priceLevel;
   final String priceNote;
+  final String? priceNoteAr;
   final bool isHiddenGem;
   final int? priceLocalEgp;
   final int? priceForeignerEgp;
@@ -54,30 +58,40 @@ class PlaceModel {
   const PlaceModel({
     required this.id,
     required this.name,
+    this.nameAr,
     required this.description,
     this.descriptionAr,
     required this.imageUrl,
     required this.rating,
     this.category = 'General',
+    this.categoryAr,
     required this.lat,
     required this.lng,
     this.address = 'Alexandria, Egypt',
+    this.addressAr,
     this.openHours = '9:00 AM - 6:00 PM',
     this.reviewCount = 0,
     this.priceLevel = PriceLevel.free,
     this.priceNote = '',
+    this.priceNoteAr,
     this.isHiddenGem = false,
     this.priceLocalEgp,
     this.priceForeignerEgp,
   });
 
-  /// Returns description in the current locale
-  String localizedDescription(String locale) {
-    if (locale == 'ar' && descriptionAr != null && descriptionAr!.isNotEmpty) {
-      return descriptionAr!;
-    }
-    return description;
+  /// Returns a string field in the current locale, falling back to English.
+  String _pick(String en, String? ar, String locale) {
+    if (locale == 'ar' && ar != null && ar.isNotEmpty) return ar;
+    return en;
   }
+
+  String localizedName(String locale) => _pick(name, nameAr, locale);
+  String localizedDescription(String locale) =>
+      _pick(description, descriptionAr, locale);
+  String localizedCategory(String locale) => _pick(category, categoryAr, locale);
+  String localizedAddress(String locale) => _pick(address, addressAr, locale);
+  String localizedPriceNote(String locale) =>
+      _pick(priceNote, priceNoteAr, locale);
 
   bool get isFree => priceLevel == PriceLevel.free;
 
@@ -87,19 +101,23 @@ class PlaceModel {
     return PlaceModel(
       id: json['id'] as String,
       name: json['name'] as String,
+      nameAr: json['name_ar'] as String? ?? json['nameAr'] as String?,
       description: json['description'] as String,
       descriptionAr:
           json['description_ar'] as String? ?? json['descriptionAr'] as String?,
       imageUrl: json['imageUrl'] as String,
       rating: (json['rating'] as num).toDouble(),
       category: json['category'] as String? ?? 'General',
+      categoryAr: json['category_ar'] as String? ?? json['categoryAr'] as String?,
       lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
       lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
       address: json['address'] as String? ?? 'Alexandria, Egypt',
+      addressAr: json['address_ar'] as String? ?? json['addressAr'] as String?,
       openHours: json['openHours'] as String? ?? '9:00 AM - 6:00 PM',
       reviewCount: json['reviewCount'] as int? ?? 0,
       priceLevel: PriceLevel.fromName(json['priceLevel'] as String?),
       priceNote: json['priceNote'] as String? ?? '',
+      priceNoteAr: json['price_note_ar'] as String? ?? json['priceNoteAr'] as String?,
       isHiddenGem: json['isHiddenGem'] as bool? ?? false,
       priceLocalEgp: json['priceLocalEgp'] as int?,
       priceForeignerEgp: json['priceForeignerEgp'] as int?,
@@ -110,21 +128,73 @@ class PlaceModel {
     return {
       'id': id,
       'name': name,
+      'name_ar': nameAr,
       'description': description,
-      'descriptionAr': descriptionAr,
+      'description_ar': descriptionAr,
       'imageUrl': imageUrl,
       'rating': rating,
       'category': category,
+      'category_ar': categoryAr,
       'lat': lat,
       'lng': lng,
       'address': address,
+      'address_ar': addressAr,
       'openHours': openHours,
       'reviewCount': reviewCount,
       'priceLevel': priceLevel.name,
       'priceNote': priceNote,
+      'price_note_ar': priceNoteAr,
       'isHiddenGem': isHiddenGem,
       'priceLocalEgp': priceLocalEgp,
       'priceForeignerEgp': priceForeignerEgp,
     };
+  }
+
+  PlaceModel copyWith({
+    String? id,
+    String? name,
+    String? nameAr,
+    String? description,
+    String? descriptionAr,
+    String? imageUrl,
+    double? rating,
+    String? category,
+    String? categoryAr,
+    double? lat,
+    double? lng,
+    String? address,
+    String? addressAr,
+    String? openHours,
+    int? reviewCount,
+    PriceLevel? priceLevel,
+    String? priceNote,
+    String? priceNoteAr,
+    bool? isHiddenGem,
+    int? priceLocalEgp,
+    int? priceForeignerEgp,
+  }) {
+    return PlaceModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      nameAr: nameAr ?? this.nameAr,
+      description: description ?? this.description,
+      descriptionAr: descriptionAr ?? this.descriptionAr,
+      imageUrl: imageUrl ?? this.imageUrl,
+      rating: rating ?? this.rating,
+      category: category ?? this.category,
+      categoryAr: categoryAr ?? this.categoryAr,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
+      address: address ?? this.address,
+      addressAr: addressAr ?? this.addressAr,
+      openHours: openHours ?? this.openHours,
+      reviewCount: reviewCount ?? this.reviewCount,
+      priceLevel: priceLevel ?? this.priceLevel,
+      priceNote: priceNote ?? this.priceNote,
+      priceNoteAr: priceNoteAr ?? this.priceNoteAr,
+      isHiddenGem: isHiddenGem ?? this.isHiddenGem,
+      priceLocalEgp: priceLocalEgp ?? this.priceLocalEgp,
+      priceForeignerEgp: priceForeignerEgp ?? this.priceForeignerEgp,
+    );
   }
 }

@@ -97,7 +97,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
         builder: (context) => MapScreen(
           destinationLat: widget.place.lat,
           destinationLng: widget.place.lng,
-          placeName: widget.place.name,
+          placeName: widget.place.localizedName(
+            context.read<LocaleProvider>().locale.languageCode,
+          ),
         ),
       ),
     );
@@ -290,7 +292,14 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    place.category.toUpperCase(),
+                                    place
+                                        .localizedCategory(
+                                          context
+                                              .read<LocaleProvider>()
+                                              .locale
+                                              .languageCode,
+                                        )
+                                        .toUpperCase(),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
@@ -323,7 +332,12 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                               child: Material(
                                 type: MaterialType.transparency,
                                 child: Text(
-                                  place.name,
+                                  place.localizedName(
+                                    context
+                                        .read<LocaleProvider>()
+                                        .locale
+                                        .languageCode,
+                                  ),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 26,
@@ -1120,7 +1134,9 @@ class _NearbyCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              place.name,
+              place.localizedName(
+                context.read<LocaleProvider>().locale.languageCode,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -1292,17 +1308,26 @@ class _PriceBanner extends StatelessWidget {
                     ],
                   ),
                 ] else
-                  Text(
-                    place.priceNote.isEmpty
-                        ? place.priceLevel.label
-                        : place.priceNote,
-                    style: TextStyle(
-                      color: isDark
-                          ? const Color(0xFFCBD5E1)
-                          : const Color(0xFF475569),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final locale = context
+                          .read<LocaleProvider>()
+                          .locale
+                          .languageCode;
+                      final priceNote = place.localizedPriceNote(locale);
+                      return Text(
+                        priceNote.isEmpty
+                            ? place.priceLevel.label
+                            : priceNote,
+                        style: TextStyle(
+                          color: isDark
+                              ? const Color(0xFFCBD5E1)
+                              : const Color(0xFF475569),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    },
                   ),
               ],
             ),
