@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/routing_service.dart';
 import '../../data/models/place_model.dart';
 import '../../logic/place_provider.dart';
 import '../../l10n/app_strings.dart';
@@ -20,10 +21,42 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
   static const _alexCenter = LatLng(31.2001, 29.9187);
   final MapController _mapController = MapController();
 
+  /// Road-snapped polyline (filled in by OSRM). Empty = use straight fallback.
+  List<LatLng> _routePoints = const [];
+  /// Inline metric summary returned with the route.
+  RouteMetrics? _routeMetrics;
+  bool _routeLoading = false;
+
   @override
   void dispose() {
     _mapController.dispose();
     super.dispose();
+  }
+
+  /// Recompute the road-snapped route whenever the user changes the
+  /// selection.
+  Future<void> _refreshRoute() async {
+    if (_selected.length < 2) {
+      setState(() {
+        _routePoints = const [];
+        _routeMetrics = null;
+      });
+      return;
+    }
+    setState(() => _routeLoading = true);
+    final coords = _selected.map((p) => LatLng(p.lat, p.lng)).toList();
+    final route = await RoutingService.instance.getRoute(coords);
+    final metrics = await RoutingService.instance.getMetrics(coords);
+    if (!mounted) return;
+    setState(() {
+      _routeLoading = false;
+      if (route == null) {
+        _routePoints = const [];
+      } else {
+        _routePoints = route;
+      }
+      _routeMetrics = metrics;
+    });
   }
 
   double _haversineKm(LatLng a, LatLng b) {
@@ -74,6 +107,7 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
         );
       }
     });
+    _refreshRoute();
     if (_selected.isNotEmpty) {
       Future.delayed(const Duration(milliseconds: 200), () {
         if (!mounted) return;
@@ -165,10 +199,14 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
                           PolylineLayer(
                             polylines: [
                               Polyline(
-                                points: _selected
-                                    .map((p) => LatLng(p.lat, p.lng))
-                                    .toList(),
-                                color: const Color(0xFFEC4899),
+                                points: _routePoints.isNotEmpty
+                                    ? _routePoints
+                                    : _selected
+                                        .map((p) => LatLng(p.lat, p.lng))
+                                        .toList(),
+                                color: _routePoints.isNotEmpty
+                                    ? const Color(0xFF14B8A6)
+                                    : const Color(0xFFEC4899),
                                 strokeWidth: 4,
                                 borderColor: Colors.white,
                                 borderStrokeWidth: 2,
@@ -234,6 +272,8 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
                           minutes: _walkingMinutes,
                           stopCount: _selected.length,
                           onAutoSort: _autoSortByNearest,
+                          realMetrics: _routeMetrics,
+                          routeLoading: _routeLoading,
                         ),
                       ),
                   ],
@@ -256,12 +296,16 @@ class _RouteSummary extends StatelessWidget {
   final int minutes;
   final int stopCount;
   final VoidCallback onAutoSort;
+  final RouteMetrics? realMetrics;
+  final bool routeLoading;
 
   const _RouteSummary({
     required this.distanceKm,
     required this.minutes,
     required this.stopCount,
     required this.onAutoSort,
+    this.realMetrics,
+    this.routeLoading = false,
   });
 
   String _formatTime(int mins) {
@@ -273,18 +317,24 @@ class _RouteSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasRealRoute = realMetrics != null;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+          colors: hasRealRoute
+              ? const [Color(0xFF14B8A6), Color(0xFF0EA5E9)]
+              : const [Color(0xFFEC4899), Color(0xFF8B5CF6)],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFEC4899).withValues(alpha: 0.35),
+            color: (hasRealRoute
+                    ? const Color(0xFF14B8A6)
+                    : const Color(0xFFEC4899))
+                .withValues(alpha: 0.35),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -299,11 +349,21 @@ class _RouteSummary extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.22),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.directions_walk_rounded,
-              color: Colors.white,
-              size: 22,
-            ),
+            child: routeLoading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Icon(
+                    Icons.directions_walk_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -321,7 +381,9 @@ class _RouteSummary extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${distanceKm.toStringAsFixed(1)} km · ${_formatTime(minutes)}',
+                  hasRealRoute
+                      ? '${realMetrics!.distanceKm} · ${realMetrics!.durationText}'
+                      : '${distanceKm.toStringAsFixed(1)} km · ${_formatTime(minutes)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,

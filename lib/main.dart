@@ -88,20 +88,21 @@ Future<void> main() async {
 Future<void> _waitForInitialSession() async {
   // currentSession may still be null immediately after Supabase.initialize()
   // returns because the auth client restores the persisted session from
-  // secure storage asynchronously. Wait for the initialSession event (or a
-  // short timeout) so callers can read a fully hydrated session.
+  // secure storage asynchronously. Wait for the initialSession event so
+  // callers can read a fully hydrated session.
   final client = Supabase.instance.client.auth;
   if (client.currentSession != null) return;
   final completer = Completer<void>();
   late final StreamSubscription<AuthState> sub;
   sub = client.onAuthStateChange.listen((state) {
-    if (state.event == AuthChangeEvent.initialSession) {
+    if (state.event == AuthChangeEvent.initialSession ||
+        state.event == AuthChangeEvent.signedIn) {
       if (!completer.isCompleted) completer.complete();
       sub.cancel();
     }
   });
   try {
-    await completer.future.timeout(const Duration(seconds: 5));
+    await completer.future.timeout(const Duration(seconds: 10));
   } on TimeoutException {
     if (!completer.isCompleted) completer.complete();
     await sub.cancel();

@@ -35,7 +35,10 @@ class BestTimeService {
     final category = place.category.toLowerCase();
 
     final slot = _slotFor(hour);
-    final windows = _windowsFor(category);
+    // Per-place override (when admin filled it) wins over category default.
+    final windows = place.bestTimeOverride != null
+        ? _windowsFromOverride(place.bestTimeOverride!, category)
+        : _windowsFor(category);
 
     int bestScore = 0;
     _Window best = windows.first;
@@ -272,6 +275,22 @@ class BestTimeService {
       default:
         return 9;
     }
+  }
+
+  /// Convert a per-place override map (slot -> score) into a full
+  /// `_Window` list, filling any missing slots from the category default
+  /// so we always return six ordered slots.
+  List<_Window> _windowsFromOverride(
+    Map<String, int> override,
+    String category,
+  ) {
+    final fallback = _windowsFor(category);
+    return fallback.map((w) {
+      final v = override[w.slot];
+      return v == null
+          ? w
+          : _Window(w.slot, v.clamp(0, 100), w.reasonKey, w.icon);
+    }).toList(growable: false);
   }
 }
 

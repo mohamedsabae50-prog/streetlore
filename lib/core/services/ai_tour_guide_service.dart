@@ -29,26 +29,46 @@ class AITourGuideService {
   bool _busy = false;
   bool get isBusy => _busy;
 
+  // ignore_for_file: unnecessary_brace_in_string_interps
   String _buildSystemPrompt(PlaceModel place) {
-    return '''You are an enthusiastic local tour guide for Alexandria, Egypt. You are currently talking about "${place.name}" (category: ${place.category}).
+    final now = DateTime.now();
+    final hour = now.hour;
+    final isRushHour = (hour >= 8 && hour <= 10) ||
+        (hour >= 16 && hour <= 19);
+    final isLunchHour = hour >= 12 && hour <= 14;
+    final isLateNight = hour >= 22 || hour < 6;
+    final todayWeekday = now.weekday;
+    final isWeekend =
+        todayWeekday == DateTime.friday || todayWeekday == DateTime.saturday;
 
-Key facts about this place:
+    return '''You are an enthusiastic LOCAL tour guide for Alexandria, Egypt — you are currently helping a visitor who just opened the detail page for "${place.name}" (category: ${place.category}).
+
+CURRENT CONTEXT (use this to tailor every answer):
+- Local time: ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} on weekday #${todayWeekday} (weekend: ${isWeekend ? 'yes' : 'no'})
+- Rush hour: ${isRushHour ? 'YES — mention traffic' : 'no'}
+- Lunch hour: ${isLunchHour ? 'YES — recommend nearby food' : 'no'}
+- Late night: ${isLateNight ? 'YES — most places are closed' : 'no'}
+
+KEY FACTS about this place:
 - Description: ${place.description}
 - Address: ${place.address}
 - Open hours: ${place.openHours}
-- Rating: ${place.rating}/5
+- Rating: ${place.rating}/5 (${place.reviewCount} reviews)
 ${place.priceLocalEgp != null ? '- Local price: ${place.priceLocalEgp} EGP\n- Foreigner price: ${place.priceForeignerEgp} EGP' : ''}
-- Coordinates: ${place.lat}, ${place.lng}
+- Coordinates: ${place.lat.toStringAsFixed(4)}, ${place.lng.toStringAsFixed(4)}
+- Indoor? ${place.isIndoor ? 'yes' : 'no (outdoor)'}
 
-Your personality:
-- Friendly, warm, and uses Egyptian expressions like "يا باشا" sparingly
-- Gives practical, actionable tips
-- Mixes English with Arabic when appropriate
-- Keeps answers concise (2-4 sentences typically)
-- Suggests nearby places or related activities when relevant
-- Never makes up facts - if unsure, say so
+YOUR BEHAVIOR:
+1. ALWAYS consider the current local time + day of week when answering questions about "now", "today", or "best time" — never give a generic answer.
+2. If the user asks "is it good now?" or similar, evaluate against the place's open hours + the current time + day.
+3. If it's rush hour or late night, proactively warn or suggest alternative timing.
+4. Mix English with Egyptian Arabic naturally — use "يا باشا", "إن شاء الله", "يلا" sparingly when the user is in Arabic mode or for warmth.
+5. Keep answers concise (2-4 sentences) but SPECIFIC to this place and this moment.
+6. Suggest 1-2 nearby activities or food spots whenever relevant.
+7. NEVER make up facts. If unsure, say so honestly.
+8. Prefer concrete numbers and times over vague advice ("go before 10 AM" beats "go early").
 
-You can answer about: history, best times to visit, what to wear, nearby food, how to get there, photo tips, similar places in Alexandria.''';
+You can answer about: history, best times to visit, what to wear, nearby food, how to get there, photo tips, similar places in Alexandria, family-friendliness, safety, and accessibility.''';
   }
 
   Future<void> start(PlaceModel place) async {
@@ -131,8 +151,11 @@ You can answer about: history, best times to visit, what to wear, nearby food, h
     _messages.add(
       ChatMessage(text: userText, isUser: true, timestamp: DateTime.now()),
     );
+    // Inject fresh, dynamic context with each turn so the model adapts
+    // its answers to the current time, day, and place state.
+    final contextualTurn = _buildContextualUserPrompt(userText);
     try {
-      final res = await _session!.sendMessage(Content.text(userText));
+      final res = await _session!.sendMessage(Content.text(contextualTurn));
       final reply = res.text ?? '(empty reply)';
       _messages.add(
         ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()),
@@ -148,6 +171,22 @@ You can answer about: history, best times to visit, what to wear, nearby food, h
     } finally {
       _busy = false;
     }
+  }
+
+  /// Wrap the raw user text with fresh context (current time, day,
+  /// placeholder for weather) so every reply reflects the actual moment
+  /// the user is asking about.
+  String _buildContextualUserPrompt(String userText) {
+    final now = DateTime.now();
+    return '''
+[Live context — use this to answer]
+- Local time: ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}
+- Day: weekday ${now.weekday}
+- Place rating: ${_currentPlace?.rating ?? '-'} / 5
+- Current open-hour check (best-effort): '${_currentPlace?.openHours ?? ''}'
+
+[User question]
+$userText''';
   }
 
   String _offlineAnswer(String q, PlaceModel place) {

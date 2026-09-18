@@ -54,6 +54,16 @@ class PlaceModel {
   final bool isHiddenGem;
   final int? priceLocalEgp;
   final int? priceForeignerEgp;
+  /// Per-place override for best-time scores per slot. Keys:
+  /// early_morning, morning, midday, afternoon, evening, night.
+  /// When null, the category default is used.
+  final Map<String, int>? bestTimeOverride;
+  /// Per-place note shown on the Best Time screen (already localized by
+  /// admin when entered).
+  final String? bestTimeNote;
+  /// Whether the place is indoors (museum, mall, etc.) — used to refine
+  /// recommendations when no explicit override is supplied.
+  final bool isIndoor;
 
   const PlaceModel({
     required this.id,
@@ -77,6 +87,9 @@ class PlaceModel {
     this.isHiddenGem = false,
     this.priceLocalEgp,
     this.priceForeignerEgp,
+    this.bestTimeOverride,
+    this.bestTimeNote,
+    this.isIndoor = false,
   });
 
   /// Returns a string field in the current locale, falling back to English.
@@ -98,6 +111,13 @@ class PlaceModel {
   bool get hasDualPrice => priceLocalEgp != null && priceForeignerEgp != null;
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
+    Map<String, int>? bestTimeOverride;
+    final raw = json['best_time_override'];
+    if (raw is Map) {
+      bestTimeOverride = raw.map(
+        (k, v) => MapEntry(k.toString(), (v as num).toInt()),
+      );
+    }
     return PlaceModel(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -121,6 +141,9 @@ class PlaceModel {
       isHiddenGem: json['isHiddenGem'] as bool? ?? false,
       priceLocalEgp: json['priceLocalEgp'] as int?,
       priceForeignerEgp: json['priceForeignerEgp'] as int?,
+      bestTimeOverride: bestTimeOverride,
+      bestTimeNote: json['best_time_note'] as String?,
+      isIndoor: json['is_indoor'] as bool? ?? false,
     );
   }
 
@@ -147,6 +170,9 @@ class PlaceModel {
       'isHiddenGem': isHiddenGem,
       'priceLocalEgp': priceLocalEgp,
       'priceForeignerEgp': priceForeignerEgp,
+      'best_time_override': bestTimeOverride,
+      'best_time_note': bestTimeNote,
+      'is_indoor': isIndoor,
     };
   }
 
@@ -172,6 +198,9 @@ class PlaceModel {
     bool? isHiddenGem,
     int? priceLocalEgp,
     int? priceForeignerEgp,
+    Map<String, int>? bestTimeOverride,
+    String? bestTimeNote,
+    bool? isIndoor,
   }) {
     return PlaceModel(
       id: id ?? this.id,
@@ -195,6 +224,9 @@ class PlaceModel {
       isHiddenGem: isHiddenGem ?? this.isHiddenGem,
       priceLocalEgp: priceLocalEgp ?? this.priceLocalEgp,
       priceForeignerEgp: priceForeignerEgp ?? this.priceForeignerEgp,
+      bestTimeOverride: bestTimeOverride ?? this.bestTimeOverride,
+      bestTimeNote: bestTimeNote ?? this.bestTimeNote,
+      isIndoor: isIndoor ?? this.isIndoor,
     );
   }
 }

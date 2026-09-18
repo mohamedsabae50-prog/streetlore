@@ -466,13 +466,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         checkmarkColor: context.textPri,
                       ),
                       const SizedBox(width: 8),
+                      // "Only free" filter chip
                       FilterChip(
-                        label: Text(context.tr('filter_cheapest')),
-                        selected: placeProvider.isFilterCheapest,
-                        onSelected: (_) => placeProvider.toggleFilterCheapest(),
+                        label: Text(context.tr('filter_only_free')),
+                        selected: placeProvider.onlyFree,
+                        onSelected: (_) =>
+                            placeProvider.toggleOnlyFree(),
                         selectedColor: AppColors.primary.withValues(alpha: 0.2),
                         checkmarkColor: context.textPri,
                       ),
+                      const SizedBox(width: 8),
+                      // Max price level chips: Any / ≤ Cheap / ≤ Moderate / ≤ Expensive
+                      for (final level in PriceLevel.values)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            label: Text(_maxPriceLabel(level, context)),
+                            selected:
+                                placeProvider.maxPriceLevel == level,
+                            onSelected: (_) {
+                              placeProvider.setMaxPriceLevel(
+                                placeProvider.maxPriceLevel == level
+                                    ? null
+                                    : level,
+                              );
+                            },
+                            selectedColor:
+                                AppColors.primary.withValues(alpha: 0.2),
+                            checkmarkColor: context.textPri,
+                          ),
+                        ),
                       const SizedBox(width: 8),
                       FilterChip(
                         label: Text(context.tr('filter_nearest')),
@@ -1008,6 +1031,21 @@ class _QuickAccessGrid extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Returns a localized "≤ X" label for the price-level filter chip.
+String _maxPriceLabel(PriceLevel level, BuildContext context) {
+  final l = Localizations.localeOf(context).languageCode;
+  switch (level) {
+    case PriceLevel.free:
+      return l == 'ar' ? '≤ مجاني' : '≤ Free';
+    case PriceLevel.cheap:
+      return l == 'ar' ? '≤ رخيص' : '≤ Cheap';
+    case PriceLevel.moderate:
+      return l == 'ar' ? '≤ متوسط' : '≤ Moderate';
+    case PriceLevel.expensive:
+      return l == 'ar' ? 'فاخر' : 'Any price';
   }
 }
 

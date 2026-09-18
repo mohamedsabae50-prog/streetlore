@@ -23,10 +23,16 @@ class PlaceProvider extends ChangeNotifier {
   bool _isFilterOpenNow = false;
   bool _isFilterCheapest = false;
   bool _isFilterNearest = false;
+  /// Max price level the user wants to see (null = any).
+  PriceLevel? _maxPriceLevel;
+  /// Show only free places when true (overrides _maxPriceLevel).
+  bool _onlyFree = false;
 
   bool get isFilterOpenNow => _isFilterOpenNow;
   bool get isFilterCheapest => _isFilterCheapest;
   bool get isFilterNearest => _isFilterNearest;
+  PriceLevel? get maxPriceLevel => _maxPriceLevel;
+  bool get onlyFree => _onlyFree;
 
   PlaceProvider() {
     _loadSavedPlaces();
@@ -151,6 +157,10 @@ class PlaceProvider extends ChangeNotifier {
 
   void toggleFilterCheapest() {
     _isFilterCheapest = !_isFilterCheapest;
+    if (!_isFilterCheapest) {
+      _maxPriceLevel = null;
+      _onlyFree = false;
+    }
     notifyListeners();
   }
 
@@ -159,10 +169,27 @@ class PlaceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Set the maximum price level (Free, Cheap, Moderate, Expensive).
+  /// Pass null to clear.
+  void setMaxPriceLevel(PriceLevel? level) {
+    _maxPriceLevel = level;
+    _isFilterCheapest = level != null;
+    notifyListeners();
+  }
+
+  /// Toggle "only free places" filter.
+  void toggleOnlyFree() {
+    _onlyFree = !_onlyFree;
+    _isFilterCheapest = _onlyFree || _maxPriceLevel != null;
+    notifyListeners();
+  }
+
   void clearFilters() {
     _isFilterOpenNow = false;
     _isFilterCheapest = false;
     _isFilterNearest = false;
+    _maxPriceLevel = null;
+    _onlyFree = false;
     notifyListeners();
   }
 
@@ -170,6 +197,13 @@ class PlaceProvider extends ChangeNotifier {
     List<PlaceModel> result = List<PlaceModel>.from(initialPlaces);
     if (_isFilterOpenNow) {
       result = result.where((p) => _isPlaceOpenNow(p.openHours)).toList();
+    }
+    if (_onlyFree) {
+      result = result.where((p) => p.priceLevel == PriceLevel.free).toList();
+    } else if (_maxPriceLevel != null) {
+      result = result
+          .where((p) => p.priceLevel.index <= _maxPriceLevel!.index)
+          .toList();
     }
     if (_isFilterCheapest) {
       result.sort((a, b) => a.priceLevel.index.compareTo(b.priceLevel.index));
