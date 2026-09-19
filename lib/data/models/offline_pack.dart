@@ -2,7 +2,12 @@ class OfflinePack {
   final String id;
   final String name;
   final String description;
+  /// Explicit place IDs included in this pack. Use `['__all__']` to
+  /// include every place (mutually exclusive with [categories]).
   final List<String> placeIds;
+  /// Categories matched (case-insensitive) when this pack is downloaded.
+  /// Ignored if [placeIds] is `['__all__']` or contains a real ID.
+  final List<String> categories;
   final int sizeMb;
   final DateTime? downloadedAt;
   final String coverEmoji;
@@ -11,7 +16,8 @@ class OfflinePack {
     required this.id,
     required this.name,
     required this.description,
-    required this.placeIds,
+    this.placeIds = const [],
+    this.categories = const [],
     this.sizeMb = 0,
     this.downloadedAt,
     this.coverEmoji = '',
@@ -24,6 +30,7 @@ class OfflinePack {
     name: name,
     description: description,
     placeIds: placeIds,
+    categories: categories,
     sizeMb: sizeMb,
     downloadedAt: downloadedAt ?? this.downloadedAt,
     coverEmoji: coverEmoji,
@@ -34,6 +41,7 @@ class OfflinePack {
     'name': name,
     'description': description,
     'place_ids': placeIds,
+    'categories': categories,
     'size_mb': sizeMb,
     'downloaded_at': downloadedAt?.toIso8601String(),
     'cover_emoji': coverEmoji,
@@ -43,7 +51,10 @@ class OfflinePack {
     id: json['id'] as String,
     name: json['name'] as String,
     description: json['description'] as String,
-    placeIds: (json['place_ids'] as List<dynamic>).cast<String>(),
+    placeIds: ((json['place_ids'] as List<dynamic>?) ?? const [])
+        .cast<String>(),
+    categories: ((json['categories'] as List<dynamic>?) ?? const [])
+        .cast<String>(),
     sizeMb: (json['size_mb'] as num?)?.toInt() ?? 0,
     downloadedAt: json['downloaded_at'] == null
         ? null

@@ -903,12 +903,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get prof_tours => 'جولات';
 
   @override
-  String get public_transport => 'المواصلات العامة';
-
-  @override
-  String get public_transport_sub => 'ميكروباص وأتوبيسات وتاكسي في الإسكندرية';
-
-  @override
   String get push_notif => 'الإشعارات';
 
   @override

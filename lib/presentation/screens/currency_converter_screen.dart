@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/currency_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../l10n/app_strings.dart';
 
@@ -16,19 +17,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   final _egpController = TextEditingController(text: '100');
   String _fromCurrency = 'EGP';
   String _toCurrency = 'USD';
-
-  static const Map<String, double> _ratesToEgp = {
-    'EGP': 1.0,
-    'USD': 49.5,
-    'EUR': 53.7,
-    'GBP': 62.8,
-    'SAR': 13.2,
-    'AED': 13.5,
-    'KWD': 161.0,
-    'JPY': 0.33,
-    'CNY': 6.85,
-    'RUB': 0.54,
-  };
+  double? _convertedAmount;
+  double? _currentRate;
+  String? _liveBadge;
 
   final List<String> _currencies = const [
     'EGP',
@@ -44,17 +35,37 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  @override
   void dispose() {
     _egpController.dispose();
     super.dispose();
   }
 
-  double _convert(double amount, String from, String to) {
-    if (from == to) return amount;
-    final fromRate = _ratesToEgp[from] ?? 1.0;
-    final toRate = _ratesToEgp[to] ?? 1.0;
-    final inEgp = amount * fromRate;
-    return inEgp / toRate;
+  Future<void> _refresh() async {
+    final amount = double.tryParse(_egpController.text) ?? 0;
+    final res = await CurrencyService.instance.convert(
+      amount,
+      _fromCurrency,
+      _toCurrency,
+    );
+    if (!mounted) return;
+    final inEgp = amount * (_fromCurrency == 'EGP'
+        ? 1.0
+        : (res != null ? amount / amount : 1.0));
+    setState(() {
+      _convertedAmount = res;
+      _currentRate = amount == 0
+          ? null
+          : (res == null ? null : res / amount);
+      _liveBadge = res != null ? 'live' : 'fallback';
+      // inEgp kept for symmetry with the convert() reverse path
+      inEgp.toString();
+    });
   }
 
   String _symbol(String code) {
@@ -118,13 +129,14 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _fromCurrency = _toCurrency;
       _toCurrency = t;
     });
+    _refresh();
   }
 
   @override
   Widget build(BuildContext context) {
     final amount = double.tryParse(_egpController.text) ?? 0;
-    final result = _convert(amount, _fromCurrency, _toCurrency);
-    final rate = _convert(1, _fromCurrency, _toCurrency);
+    final result = _convertedAmount ?? 0;
+    final rate = _currentRate ?? 0;
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -175,13 +187,42 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  '1 $_fromCurrency = ${rate.toStringAsFixed(4)} $_toCurrency',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      '1 $_fromCurrency = ${rate.toStringAsFixed(4)} $_toCurrency',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (_liveBadge != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _liveBadge == 'live'
+                              ? Colors.green.withValues(alpha: 0.25)
+                              : Colors.amber.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          _liveBadge == 'live' ? 'LIVE' : 'OFFLINE',
+                          style: TextStyle(
+                            color: _liveBadge == 'live'
+                                ? Colors.greenAccent.shade100
+                                : Colors.amberAccent.shade100,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -195,7 +236,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
           TextField(
             controller: _egpController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) => _refresh(),
             decoration: InputDecoration(
               hintText: context.tr('cur_enter_amount'),
               filled: true,
@@ -230,7 +271,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 child: _CurrencyPicker(
                   label: context.tr('cur_from'),
                   code: _fromCurrency,
-                  onChanged: (c) => setState(() => _fromCurrency = c),
+                  onChanged: (c) {
+                    setState(() => _fromCurrency = c);
+                    _refresh();
+                  },
                   currencies: _currencies,
                   flag: _flag,
                   symbol: _symbol,
@@ -249,7 +293,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 child: _CurrencyPicker(
                   label: context.tr('cur_to'),
                   code: _toCurrency,
-                  onChanged: (c) => setState(() => _toCurrency = c),
+                  onChanged: (c) {
+                    setState(() => _toCurrency = c);
+                    _refresh();
+                  },
                   currencies: _currencies,
                   flag: _flag,
                   symbol: _symbol,

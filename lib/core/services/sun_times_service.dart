@@ -83,14 +83,23 @@ class SunTimesService {
     final h = math.acos(cosH) * 180.0 / math.pi;
     final solarNoon = _solarNoon(d, longitude);
 
-    final sunrise = solarNoon.subtract(Duration(minutes: (h * 60).round()));
-    final sunset = solarNoon.add(Duration(minutes: (h * 60).round()));
+    final halfMinutes = (h * 60).round().clamp(0, 720); // <= 12h
+    final sunrise =
+        solarNoon.subtract(Duration(minutes: halfMinutes));
+    final sunset =
+        solarNoon.add(Duration(minutes: halfMinutes));
+    var daylight = sunset.difference(sunrise);
+    // Clamp to [0, 24h] so out-of-range calculations don't blow up the UI.
+    if (daylight.isNegative) daylight = Duration.zero;
+    if (daylight > const Duration(hours: 24)) {
+      daylight = const Duration(hours: 24);
+    }
 
     return SunTimes(
       sunrise: sunrise,
       sunset: sunset,
       solarNoon: solarNoon,
-      daylight: sunset.difference(sunrise),
+      daylight: daylight,
     );
   }
 
@@ -116,9 +125,15 @@ class SunTimesService {
   }
 
   String formatDuration(Duration d) {
-    if (d.inHours == 0 && d.inMinutes == 0) return '0m';
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
+    // Sanitize: clamp negative durations to zero and cap at 24h so
+    // upstream math bugs never leak into the UI.
+    final clamped = d.isNegative ? Duration.zero : d;
+    final capped = clamped > const Duration(hours: 24)
+        ? const Duration(hours: 24)
+        : clamped;
+    if (capped.inHours == 0 && capped.inMinutes == 0) return '0m';
+    final h = capped.inHours;
+    final m = capped.inMinutes.remainder(60);
     if (h == 0) return '${m}m';
     if (m == 0) return '${h}h';
     return '${h}h ${m}m';

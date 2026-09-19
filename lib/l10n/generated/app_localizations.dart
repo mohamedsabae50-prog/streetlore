@@ -1760,18 +1760,6 @@ abstract class AppLocalizations {
   /// **'Tours'**
   String get prof_tours;
 
-  /// Translation key: public_transport
-  ///
-  /// In en, this message translates to:
-  /// **'Public Transport'**
-  String get public_transport;
-
-  /// Translation key: public_transport_sub
-  ///
-  /// In en, this message translates to:
-  /// **'Microbuses, buses & taxis in Alexandria'**
-  String get public_transport_sub;
-
   /// Translation key: push_notif
   ///
   /// In en, this message translates to:

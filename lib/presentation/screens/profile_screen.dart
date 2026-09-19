@@ -21,7 +21,6 @@ import 'login_screen.dart';
 import 'emergency_screen.dart';
 import 'map_view_screen.dart';
 import 'currency_converter_screen.dart';
-import 'public_transport_screen.dart';
 import 'journal_screen.dart';
 import 'prayer_times_screen.dart';
 import 'achievements_screen.dart';
@@ -868,22 +867,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => const CurrencyConverterScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        _Div(),
-                        _ActionTile(
-                          icon: Icons.directions_transit_rounded,
-                          title: context.tr('public_transport'),
-                          subtitle: context.tr('public_transport_sub'),
-                          color: const Color(0xFFEC4899),
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const PublicTransportScreen(),
                               ),
                             );
                           },

@@ -31,16 +31,8 @@ class OfflineProvider extends ChangeNotifier {
       id: 'all_alexandria',
       name: 'All Alexandria',
       description: 'Every place, every description, every photo URL.',
-      placeIds: const [
-        'fallback_qaitbay',
-        'fallback_biblio',
-        'fallback_pompey',
-        'fallback_catacombs',
-        'fallback_corniche',
-        'fallback_montaza',
-        'fallback_attarine',
-        'fallback_stmark',
-      ],
+      placeIds: const ['__all__'],
+      categories: const [],
       sizeMb: 24,
       coverEmoji: 'book',
     ),
@@ -48,11 +40,8 @@ class OfflineProvider extends ChangeNotifier {
       id: 'historical',
       name: 'Historical Alexandria',
       description: 'Citadels, catacombs, pillars, museums.',
-      placeIds: const [
-        'fallback_qaitbay',
-        'fallback_pompey',
-        'fallback_catacombs',
-      ],
+      placeIds: const [],
+      categories: const ['Historical'],
       sizeMb: 9,
       coverEmoji: 'museum',
     ),
@@ -60,11 +49,8 @@ class OfflineProvider extends ChangeNotifier {
       id: 'culture',
       name: 'Culture & Museums',
       description: 'Libraries, museums and cultural landmarks.',
-      placeIds: const [
-        'fallback_biblio',
-        'fallback_stmark',
-        'fallback_attarine',
-      ],
+      placeIds: const [],
+      categories: const ['Culture', 'Museums'],
       sizeMb: 8,
       coverEmoji: 'museum',
     ),
@@ -72,7 +58,8 @@ class OfflineProvider extends ChangeNotifier {
       id: 'nature_sea',
       name: 'Nature & Sea Breeze',
       description: 'Gardens, corniche, and the Mediterranean breeze.',
-      placeIds: const ['fallback_montaza', 'fallback_corniche'],
+      placeIds: const [],
+      categories: const ['Nature', 'Beach'],
       sizeMb: 6,
       coverEmoji: 'beach',
     ),
@@ -89,9 +76,18 @@ class OfflineProvider extends ChangeNotifier {
     OfflinePack pack, {
     required List<PlaceModel> availablePlaces,
   }) async {
-    final places = availablePlaces
-        .where((p) => pack.placeIds.contains(p.id))
-        .toList();
+    final places = availablePlaces.where((p) {
+      final matchesAll = pack.placeIds.contains('__all__');
+      if (matchesAll) return true;
+      if (pack.placeIds.contains(p.id)) return true;
+      if (pack.categories.isNotEmpty &&
+          pack.categories
+              .map((c) => c.toLowerCase())
+              .contains(p.category.toLowerCase())) {
+        return true;
+      }
+      return false;
+    }).toList();
     if (places.isEmpty) {
       debugPrint('OfflineProvider: no places matched pack "${pack.id}"');
       return DownloadEmpty(pack);

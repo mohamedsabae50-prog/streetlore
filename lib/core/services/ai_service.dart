@@ -26,6 +26,31 @@ class AiService {
     return text.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
   }
 
+  /// Reference knowledge the AI should ground every plan in. Keep this
+  /// short — these are the high-signal Alexandria facts users actually
+  /// care about. The model can elaborate; these are anchors.
+  static const String _alexandriaKnowledge = '''
+ALEXANDRIA — ANCHOR FACTS (always ground answers here):
+- Founded 331 BC by Alexander the Great. Ptolemaic capital. Once the
+  largest city in the ancient world and home to the Lighthouse of
+  Pharos (one of the Seven Wonders).
+- Climate: Mediterranean. Hot dry summers (26-32°C, May-Sep) and mild
+  wet winters (12-18°C, Nov-Feb). Sea breeze moderates heat.
+- Corniche stretches ~30 km along the harbour — best sunset walks.
+- Local currency: Egyptian Pound (EGP). Mid-2024 rate ~50 EGP/USD.
+- Best walking districts: Downtown (Mansheya) for cafes and the
+  Cecil Hotel legacy, Anfushi for seafood and bay views.
+- Famous landmarks: Bibliotheca Alexandrina, Qaitbay Citadel
+  (1480), Pompey's Pillar, Catacombs of Kom El Shoqafa, Montaza
+  Palace gardens, Stanley Bridge, Abu Qir Bay.
+- Signature foods: seafood (sea bass, calamari, shrimp), ful & ta'amiya,
+  alexandrian liver (kibda alexandriya), roz bel laban, ice cream
+  from Azza, mango juice at Abo Youssef.
+- Day-trip options: Rosetta (Rashid) 65 km east, Abu Qir
+  (battlefields + fort) 32 km NE, Wadi El Natrun monasteries 100 km.
+- Rush hours: 8-10 AM and 4-7 PM. Friday is the weekend — expect
+  closures and crowds at mosques mid-day.''';
+
   Future<AiTripPlan> generateTrip({
     required String prompt,
     required List<PlaceModel> availablePlaces,
@@ -59,10 +84,19 @@ class AiService {
 
     final system =
         """
-You are a creative travel planner for Alexandria, Egypt. Given a user prompt,
-a budget level, and a JSON list of available places, return ONLY a JSON
-object matching this shape:
+You are an expert local travel planner who actually lives in Alexandria, Egypt.
+Your tone: warm, specific, opinionated — like a friend showing a visitor around.
+NEVER give generic filler. Every note, theme, and tip must mention a real
+detail (time of day, what to eat, which side to photograph from, etc.).
 
+$_alexandriaKnowledge
+
+USER REQUEST:
+- Prompt: ${jsonEncode(prompt)}
+- Days: ${daysHint ?? 'auto (pick 2-4 based on the prompt)'}
+- Budget: ${budget ?? r'$$'}
+
+OUTPUT SCHEMA (return ONLY this JSON, no markdown fences):
 {
   "title": string,
   "summary": string,
@@ -76,17 +110,34 @@ object matching this shape:
   "tips": [string]
 }
 
-Rules:
-- Only use placeIds from the provided list.
-- Order stops logically (geographically + chronologically).
-- Be concise; "note" should be <= 18 words.
-- Vary wording: each note, theme, tip must be UNIQUE across the response — no copy-paste.
-- Adapt to the user's prompt: family, romantic, foodie, history, hidden gems, budget trip, etc. — recommendations and notes must reflect what the user asked for.
-- Reflect the budget: \$ is free/street-food, \$\$ is casual, \$\$\$ is mid-range, \$\$\$\$ is premium — adjust tip and summary tone accordingly.
-- For totalDays, prefer the user hint when provided; otherwise pick what fits the prompt.
-- Output raw JSON, no markdown fences.
-- IMPORTANT: The user's prompt language is ${isArabic ? 'Arabic' : 'English'}. Respond in the SAME language. All text fields (title, summary, theme, note, tips) must be in ${isArabic ? 'Arabic' : 'English'}.
-- Variety seed for this request: $seed. Treat as opaque; used only to encourage fresh wording.
+STRICT RULES:
+- ONLY use placeId values from the available list below. If a place you want
+  to recommend is not in the list, do not invent an id — skip it.
+- Order stops geographically + chronologically (morning first, sunset last
+  where possible). 2-4 stops per day.
+- "suggestedTime" must be a real window like "09:00 - 11:00" — use the 24h
+  clock. Reflect rush hour, prayer time, sunset, or meal windows.
+- "note" must be <= 18 words, include at least one concrete detail
+  (specific food, time, photo angle, or local tip). NO "Visit this place"
+  filler.
+- Reflect the budget in tip + summary tone:
+    \$    = street food / free attractions
+    \$\$  = casual local spots
+    \$\$\$ = mid-range restaurants, paid entries
+    \$\$\$\$ = premium dining, private tours
+- Adapt to the user's vibe: family, romantic, foodie, history, hidden gems,
+  photography, budget trip, day trip, etc. Recommendations and notes MUST
+  mirror that vibe.
+- "tips" must be 3-5 unique local secrets — not generic ("wear sunscreen").
+  Mention a real Alexandria detail (e.g. "the rooftop of the Sofitel faces
+  the sunset — order a fresh lemon mint at golden hour").
+- Language: respond in the SAME language as the user's prompt
+  (${isArabic ? 'Arabic — keep proper nouns in Arabic where natural' : 'English'}).
+- All title / summary / theme / note / tips text must be unique — no repeats.
+- Variety seed: $seed — use as opaque nudge to avoid stock phrasings.
+
+AVAILABLE PLACES (use these placeId values exactly):
+[$placesForContext]
 """;
 
     final user =
@@ -201,13 +252,24 @@ Rules:
     final all = availablePlaces;
     if (all.isEmpty) {
       return AiTripPlan(
-        title: 'No places available',
-        summary:
-            'Connect to the network or add places to start planning your trip.',
+        title: isArabic
+            ? 'مفيش أماكن متاحة'
+            : 'No places available',
+        summary: isArabic
+            ? 'اتصل بالنت أو ضيف أماكن علشان تبدأ تخطط لرحلتك.'
+            : 'Connect to the network or add places to start planning your trip.',
         totalDays: daysHint,
         estimatedBudget: budget,
         days: const [],
-        tips: const ['Pull to refresh and try again once places are loaded.'],
+        tips: isArabic
+            ? const [
+                'اسحب لتحديث الصفحة وحاول تاني لما الأماكن تظهر.',
+                'حمل التطبيق أحدث نسخة من الموقع علشان تشوف أماكن جديدة.',
+              ]
+            : const [
+                'Pull to refresh and try again once places are loaded.',
+                'Update the app to see newly added places.',
+              ],
       );
     }
 
@@ -359,22 +421,27 @@ Rules:
           ? 'خطتك لـ $daysHint يوم في الإسكندرية'
           : 'Your $daysHint-Day Alexandria Plan',
       summary: isArabic
-          ? 'خطة مُعدّة على جهازك بناءً على طلبك: أفضل الأماكن مرتبة جغرافياً ليومك.'
-          : 'Planned on your device from your request: best-matching places, '
-                'ordered so each day flows as one walkable route.',
+          ? 'خطة مخصصة لإسكندرية بناءً على طلبك: أماكن مختارة ورتبتها جغرافياً ووقت الذروة علشان كل يوم يكون مشي واحد سلس من الصبح للّهِلة.'
+          : 'A local-style $daysHint-day Alexandria plan built from your '
+                'request: hand-picked places, geo-sorted so each day is one '
+                'walkable route from morning to sunset.',
       totalDays: daysHint,
       estimatedBudget: budget,
       days: days,
       tips: isArabic
           ? const [
-              'ابدأ مبكراً لتجنب الازدحام في أشهر المواقع.',
-              'احمل جاكيت خفيف — النسيم المتوسطي يفاجئك مساءً.',
-              'جرّب المأكولات البحرية المحلية لتجربة إسكندرانية أصيلة.',
+              'ابدأ الصبح قبل الـ9 — البحر بيكون هادي والشوارع فاضية.',
+              'الكورنيش وقت الغروب (الساعة 6 تقريباً) أحلى وقت للتصوير من الجهة الشمالية.',
+              'لو بتفكر تجرب سي فود، Anfushi فيها أكل بحري أضمن من وسط البلد.',
+              'اشرب عصير مانجو من Abo Youssef — من أحسن العصائر في إسكندرية.',
+              'الجمعة بكون زحمة عند الجوامع — اتجنب وسط البلد الضهر.',
             ]
           : const [
-              'Start early to avoid crowds at the most popular sites.',
-              'Carry a light jacket - Mediterranean breeze surprises in the evening.',
-              'Try the local seafood for an authentic Alexandrian dinner.',
+              'Start before 9 AM — the sea is calm and the streets are quiet.',
+              'Corniche at sunset (~6 PM) is the best golden-hour photo spot.',
+              'For reliable seafood, head to Anfushi — better than downtown.',
+              'Mango juice from Abo Youssef is the city\'s best cold drink.',
+              'Avoid downtown at noon on Fridays — mosque crowds and traffic.',
             ],
     );
   }
@@ -439,11 +506,49 @@ Rules:
     }
   }
 
-  String _noteFor(PlaceModel p, {bool isArabic = false}) => p.isHiddenGem
-      ? (isArabic
-            ? 'جوهرة خفية يحبها السكان المحليون.'
-            : 'Hidden gem loved by locals.')
-      : (isArabic
+  String _noteFor(PlaceModel p, {bool isArabic = false}) {
+    if (p.isHiddenGem) {
+      return isArabic
+          ? 'جوهرة خفية، السكان المحليين بيزوروها أكتر من السياح.'
+          : 'Local-favorite hidden gem — worth the detour off the main route.';
+    }
+    switch (p.category) {
+      case 'Historical':
+        return isArabic
+            ? 'تأخدلها ساعة، وخد جاكيت خفيف لو بتمشي في الكورنيش بعدها.'
+            : 'Allow an hour inside; pair with a Corniche walk afterwards.';
+      case 'Food':
+        return isArabic
+            ? 'اطلب السمك الطازة المحلي — أحسن من المنيو المجمّد.'
+            : 'Order the fresh catch of the day — better than the set menu.';
+      case 'Nature':
+        return isArabic
+            ? 'وقت الغروب أحلى وقت هنا، والإضاءة الذهبية بتفرق في الصور.'
+            : 'Sunset is magic here — golden hour makes the photos sing.';
+      case 'Culture':
+        return isArabic
+            ? 'خد جولة مع الدليل المحلي أو حمّل الإلي دي بسرعة قبل الدخول.'
+            : 'Grab a free audio guide at the door — worth the 10 minutes.';
+      case 'Shopping':
+        return isArabic
+            ? 'فوّت على الأسعار الأولى — اسأل السكان المحليين عن المحلات المعتمدة.'
+            : 'Skip the first prices — ask a local for the trusted shop.';
+      case 'Mosques':
+        return isArabic
+            ? 'البس محتشم، واطلع من الجزمة قبل الدخول.'
+            : 'Dress modestly and remove shoes before entering.';
+      case 'Churches':
+        return isArabic
+            ? 'ادخل من الباب الرئيسي واسأل عن مواعيد القداس.'
+            : 'Enter via the main door; ask about service times on arrival.';
+      case 'Streets':
+        return isArabic
+            ? 'امشي ببطء — أحلى تجارب إسكندرية في تفاصيل الشوارع.'
+            : 'Walk slowly — Alexandrian magic hides in street-level detail.';
+      default:
+        return isArabic
             ? 'وجهة ${p.category} مميزة ومُقيَّمة بعلامة عالية.'
-            : 'Top-rated ${p.category.toLowerCase()} stop.');
+            : 'Top-rated ${p.category.toLowerCase()} stop worth your time.';
+    }
+  }
 }

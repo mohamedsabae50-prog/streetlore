@@ -41,7 +41,26 @@ class AITourGuideService {
     final isWeekend =
         todayWeekday == DateTime.friday || todayWeekday == DateTime.saturday;
 
-    return '''You are an enthusiastic LOCAL tour guide for Alexandria, Egypt — you are currently helping a visitor who just opened the detail page for "${place.name}" (category: ${place.category}).
+    return '''You are an enthusiastic LOCAL tour guide for Alexandria, Egypt — you have actually walked these streets for years. You are currently helping a visitor who just opened the detail page for "${place.name}" (category: ${place.category}).
+
+ALEXANDRIA — ANCHOR FACTS (use these as truth anchors):
+- Founded 331 BC by Alexander the Great. Ptolemaic capital. Once the largest
+  city in the ancient world and home to the Lighthouse of Pharos.
+- Climate: Mediterranean. Hot dry summers (26-32°C, May-Sep), mild wet winters
+  (12-18°C, Nov-Feb). Sea breeze moderates heat.
+- Corniche stretches ~30 km along the harbour — best sunset walks.
+- Local currency: Egyptian Pound (EGP). Mid-2024 ~50 EGP/USD.
+- Best walking districts: Downtown (Mansheya), Anfushi for seafood + bay views.
+- Famous landmarks: Bibliotheca Alexandrina, Qaitbay Citadel (1480),
+  Pompey's Pillar, Catacombs of Kom El Shoqafa, Montaza Palace, Stanley Bridge,
+  Abu Qir Bay.
+- Signature foods: seafood (sea bass, calamari, shrimp), ful & ta'amiya,
+  alexandrian liver (kibda alexandriya), roz bel laban, ice cream from Azza,
+  mango juice at Abo Youssef.
+- Day-trip options: Rosetta (Rashid) 65 km east, Abu Qir (fort + battlefields)
+  32 km NE, Wadi El Natrun monasteries 100 km.
+- Rush hours: 8-10 AM and 4-7 PM. Friday is the weekend — expect closures and
+  crowds at mosques mid-day.
 
 CURRENT CONTEXT (use this to tailor every answer):
 - Local time: ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} on weekday #${todayWeekday} (weekend: ${isWeekend ? 'yes' : 'no'})
@@ -59,16 +78,27 @@ ${place.priceLocalEgp != null ? '- Local price: ${place.priceLocalEgp} EGP\n- Fo
 - Indoor? ${place.isIndoor ? 'yes' : 'no (outdoor)'}
 
 YOUR BEHAVIOR:
-1. ALWAYS consider the current local time + day of week when answering questions about "now", "today", or "best time" — never give a generic answer.
-2. If the user asks "is it good now?" or similar, evaluate against the place's open hours + the current time + day.
-3. If it's rush hour or late night, proactively warn or suggest alternative timing.
-4. Mix English with Egyptian Arabic naturally — use "يا باشا", "إن شاء الله", "يلا" sparingly when the user is in Arabic mode or for warmth.
-5. Keep answers concise (2-4 sentences) but SPECIFIC to this place and this moment.
-6. Suggest 1-2 nearby activities or food spots whenever relevant.
+1. ALWAYS consider the current local time + day of week when answering
+   questions about "now", "today", or "best time" — never give a generic
+   answer.
+2. If the user asks "is it good now?" or similar, evaluate against the
+   place's open hours + the current time + day.
+3. If it's rush hour or late night, proactively warn or suggest alternative
+   timing (e.g. "come back after 7 PM when the rush dies").
+4. Mix English with Egyptian Arabic naturally — use "يا باشا", "إن شاء الله",
+   "يلا" sparingly when the user is in Arabic mode or for warmth.
+5. Keep answers concise (2-4 sentences) but SPECIFIC to this place and this
+   moment. Mention a real detail: a food spot, a photo angle, a time, a
+   nearby landmark.
+6. Suggest 1-2 nearby activities or food spots whenever relevant. Prefer
+   ones from the anchor list above.
 7. NEVER make up facts. If unsure, say so honestly.
-8. Prefer concrete numbers and times over vague advice ("go before 10 AM" beats "go early").
+8. Prefer concrete numbers and times over vague advice ("go before 10 AM"
+   beats "go early").
 
-You can answer about: history, best times to visit, what to wear, nearby food, how to get there, photo tips, similar places in Alexandria, family-friendliness, safety, and accessibility.''';
+You can answer about: history, best times to visit, what to wear, nearby food,
+how to get there, photo tips, similar places in Alexandria, family-friendliness,
+safety, and accessibility.''';
   }
 
   Future<void> start(PlaceModel place) async {
@@ -201,9 +231,28 @@ $userText''';
         lower.contains('ساعة') ||
         lower.contains('متى') ||
         lower.contains('when')) {
+      final localHour = DateTime.now().hour;
+      String timeHint;
+      if (localHour >= 8 && localHour <= 10) {
+        timeHint = isArabic
+            ? 'دلوقتي وقت الذروة — جرب بعد الـ7.'
+            : 'Right now it\'s rush hour — try after 7 PM.';
+      } else if (localHour >= 12 && localHour <= 14) {
+        timeHint = isArabic
+            ? 'وقت الغدا — ممكن تستنى 30 دقيقة أو تجرب قبل 12.'
+            : 'Lunch hour — wait 30 min or arrive before noon.';
+      } else if (localHour >= 22 || localHour < 6) {
+        timeHint = isArabic
+            ? 'المكان غالباً مقفول دلوقتي — الصبح أحسن وقت.'
+            : 'Most places are closed now — morning is best.';
+      } else {
+        timeHint = isArabic
+            ? 'وقت مناسب للزيارة دلوقتي.'
+            : 'Good time to visit right now.';
+      }
       return isArabic
-          ? '🕐 ${place.name} مفتوح: ${place.openHours}.\nحاول تزور بدري الصبح لتجنب الزحام!'
-          : '🕐 ${place.name} is open: ${place.openHours}.\nTip: Visit early morning to avoid crowds!';
+          ? '🕐 ${place.name} مفتوح: ${place.openHours}.\n$timeHint'
+          : '🕐 ${place.name} hours: ${place.openHours}.\n$timeHint';
     }
     if (lower.contains('price') ||
         lower.contains('cost') ||
@@ -261,11 +310,10 @@ $userText''';
         lower.contains('نصايح') ||
         lower.contains('توصية') ||
         lower.contains('الأفضل') ||
-        lower.contains('أحسن') ||
-        lower.contains('متى') && lower.contains('visit')) {
+        lower.contains('أحسن')) {
       return isArabic
-          ? '💡 نصايح لزيارة ${place.name}:\n• زور بدري الصبح لتجنب الزحام\n• خد معك مياه كتير\n• الكاميرا تجيب صور جامدة من الجهة الشمالية\n• الوقت المثالي: ${place.openHours}'
-          : '💡 Tips for ${place.name}:\n• Go early morning to avoid crowds\n• Bring plenty of water\n• Best photos from the north side\n• Best visiting time: ${place.openHours}';
+          ? '💡 نصايح لزيارة ${place.name}:\n• زور قبل الـ9 الصبح — البحر هادي والشوارع فاضية\n• خد معك مية واقي شمس (إسكندرية حارة الشتا قصاد)\n• أحسن وقت للتصوير: قبل الغروب بساعة من الجهة الشمالية\n• المواعيد: ${place.openHours}'
+          : '💡 Tips for ${place.name}:\n• Arrive before 9 AM — calm sea and quiet streets\n• Bring water + sunblock (Alex sun is stronger than it feels)\n• Best photos: 1 hour before sunset, north-facing angle\n• Hours: ${place.openHours}';
     }
     if (lower.contains('rating') ||
         lower.contains('review') ||
@@ -304,8 +352,8 @@ $userText''';
         lower.contains('مجاور') ||
         lower.contains('جنب')) {
       return isArabic
-          ? '🗺️ الأماكن القريبة من ${place.name} هتظهر في صفحة المكان (Place Details) تحت خريطة. أو شوف شاشة "استكشاف" للأماكن القريبة.'
-          : '🗺️ Nearby places from ${place.name} are shown on the Place Details page under the map. Or check the Discover screen for close-by spots.';
+          ? '🗺️ الأماكن القريبة من ${place.name} هتظهر في صفحة المكان تحت الخريطة. أو من شاشة Discover استكشف أماكن قريبة بالعافية.'
+          : '🗺️ Nearby spots from ${place.name} are listed on the Place Details page under the map. The Discover screen also surfaces close-by places with current open status.';
     }
     if (lower.contains('parking') ||
         lower.contains('باص') ||
@@ -322,9 +370,17 @@ $userText''';
             place.descriptionAr!.isNotEmpty
         ? place.descriptionAr!
         : place.description;
+    final localHour = DateTime.now().hour;
+    final liveHint = (localHour >= 8 && localHour <= 10)
+        ? (isArabic ? '⏰ دلوقتي ذروة — الزحمة كبيرة.' : '⏰ Rush hour right now — traffic is heavy.')
+        : (localHour >= 12 && localHour <= 14)
+            ? (isArabic ? '🍽️ وقت الغدا.' : '🍽️ Lunch hour.')
+            : (localHour >= 22 || localHour < 6)
+                ? (isArabic ? '🌙 معظم الأماكن مقفولة.' : '🌙 Most places closed now.')
+                : (isArabic ? '☀️ وقت مناسب للزيارة.' : '☀️ Good time to be out.');
     return isArabic
-        ? '🌟 $description\n\n⭐ التقييم: ${place.rating}/5 من ${place.reviewCount} زيارة\n🕐 المواعيد: ${place.openHours}\n📍 العنوان: ${place.address}\n\nاسألني عن: الأسعار، المواعيد، العنوان، التاريخ، نصايح الزيارة، أو أحسن وقت للتصوير!'
-        : '🌟 $description\n\n⭐ Rating: ${place.rating}/5 from ${place.reviewCount} visits\n🕐 Hours: ${place.openHours}\n📍 Address: ${place.address}\n\nYou can ask me about: prices, opening hours, address, history, visiting tips, or the best photo times!';
+        ? '🌟 $description\n\n⭐ التقييم: ${place.rating}/5 من ${place.reviewCount} زيارة\n🕐 المواعيد: ${place.openHours}\n📍 العنوان: ${place.address}\n$liveHint\n\nاسألني عن: الأسعار، المواعيد، العنوان، التاريخ، نصايح الزيارة، أو أحسن وقت للتصوير!'
+        : '🌟 $description\n\n⭐ Rating: ${place.rating}/5 from ${place.reviewCount} visits\n🕐 Hours: ${place.openHours}\n📍 Address: ${place.address}\n$liveHint\n\nAsk me about: prices, opening hours, address, history, visiting tips, or the best photo times!';
   }
 
   void clear() {

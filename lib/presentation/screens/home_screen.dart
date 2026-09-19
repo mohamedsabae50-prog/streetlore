@@ -23,7 +23,6 @@ import 'place_details_screen.dart';
 import 'ai_trip_generator_screen.dart';
 import 'leaderboard_screen.dart';
 import 'map_view_screen.dart';
-import 'journal_screen.dart';
 import 'offline_mode_screen.dart';
 import 'geofencing_settings_screen.dart';
 import 'best_time_screen.dart';
@@ -458,6 +457,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Row(
                     children: [
+                      // Featured filter row is intentionally limited to
+                      // just two chips per design: Open Now + Nearest.
                       FilterChip(
                         label: Text(context.tr('filter_open_now')),
                         selected: placeProvider.isFilterOpenNow,
@@ -465,37 +466,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         selectedColor: AppColors.primary.withValues(alpha: 0.2),
                         checkmarkColor: context.textPri,
                       ),
-                      const SizedBox(width: 8),
-                      // "Only free" filter chip
-                      FilterChip(
-                        label: Text(context.tr('filter_only_free')),
-                        selected: placeProvider.onlyFree,
-                        onSelected: (_) =>
-                            placeProvider.toggleOnlyFree(),
-                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                        checkmarkColor: context.textPri,
-                      ),
-                      const SizedBox(width: 8),
-                      // Max price level chips: Any / ≤ Cheap / ≤ Moderate / ≤ Expensive
-                      for (final level in PriceLevel.values)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(_maxPriceLabel(level, context)),
-                            selected:
-                                placeProvider.maxPriceLevel == level,
-                            onSelected: (_) {
-                              placeProvider.setMaxPriceLevel(
-                                placeProvider.maxPriceLevel == level
-                                    ? null
-                                    : level,
-                              );
-                            },
-                            selectedColor:
-                                AppColors.primary.withValues(alpha: 0.2),
-                            checkmarkColor: context.textPri,
-                          ),
-                        ),
                       const SizedBox(width: 8),
                       FilterChip(
                         label: Text(context.tr('filter_nearest')),
@@ -950,15 +920,6 @@ class _QuickAccessGrid extends StatelessWidget {
         ),
       ),
       _QuickItem(
-        icon: Icons.menu_book_rounded,
-        label: 'quick_journal',
-        color: const Color(0xFF8B5CF6),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const JournalScreen()),
-        ),
-      ),
-      _QuickItem(
         icon: Icons.emoji_events_rounded,
         label: 'quick_ranking',
         color: AppColors.warning,
@@ -1031,21 +992,6 @@ class _QuickAccessGrid extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-/// Returns a localized "≤ X" label for the price-level filter chip.
-String _maxPriceLabel(PriceLevel level, BuildContext context) {
-  final l = Localizations.localeOf(context).languageCode;
-  switch (level) {
-    case PriceLevel.free:
-      return l == 'ar' ? '≤ مجاني' : '≤ Free';
-    case PriceLevel.cheap:
-      return l == 'ar' ? '≤ رخيص' : '≤ Cheap';
-    case PriceLevel.moderate:
-      return l == 'ar' ? '≤ متوسط' : '≤ Moderate';
-    case PriceLevel.expensive:
-      return l == 'ar' ? 'فاخر' : 'Any price';
   }
 }
 

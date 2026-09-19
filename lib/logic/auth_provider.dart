@@ -137,6 +137,61 @@ class AuthProvider extends ChangeNotifier {
       return 'password_too_short';
     }
 
+    // Prefer Supabase auth when available so the user account is real
+    // and syncs across devices.
+    if (AppConfig.supabaseEnabled) {
+      try {
+        if (isSignUp) {
+          await Supabase.instance.client.auth.signUp(
+            email: cleanEmail,
+            password: cleanPassword,
+            data: {'full_name': cleanName},
+          );
+        }
+        final res = await Supabase.instance.client.auth
+            .signInWithPassword(email: cleanEmail, password: cleanPassword);
+        if (res.user != null) {
+          _isLoggedIn = true;
+          _isGuest = false;
+          _userId = res.user!.id;
+          _userEmail = res.user!.email ?? cleanEmail;
+          final meta = res.user!.userMetadata ?? const <String, dynamic>{};
+          _userName = (meta['full_name'] as String?) ?? cleanName;
+          notifyListeners();
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('is_logged_in', true);
+          await prefs.setBool('is_guest', false);
+          await prefs.setString('user_name', _userName);
+          await prefs.setString('user_email', _userEmail);
+          await prefs.setString('user_id', _userId);
+          return null;
+        }
+        return 'auth_failed';
+      } on AuthException catch (e) {
+        // Map common Supabase errors to UI strings.
+        final msg = e.message.toLowerCase();
+        if (isSignUp && msg.contains('already registered')) {
+          return 'account_exists';
+        }
+        if (!isSignUp && msg.contains('invalid login')) {
+          return 'wrong_password';
+        }
+        if (msg.contains('email not confirmed')) {
+          return 'email_not_confirmed';
+        }
+        if (msg.contains('rate limit')) {
+          return 'rate_limited';
+        }
+        debugPrint('AuthProvider.signIn error: ${e.message}');
+        return 'auth_failed';
+      } catch (e) {
+        debugPrint('AuthProvider.signIn unexpected: $e');
+        // Fall through to local-only sign-in below.
+      }
+    }
+
+    // Offline / Supabase-disabled fallback: store the credentials locally
+    // so the user can still try the app without a backend.
     final prefs = await SharedPreferences.getInstance();
 
     if (isSignUp) {

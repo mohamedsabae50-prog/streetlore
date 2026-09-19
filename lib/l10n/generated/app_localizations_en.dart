@@ -905,12 +905,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prof_tours => 'Tours';
 
   @override
-  String get public_transport => 'Public Transport';
-
-  @override
-  String get public_transport_sub => 'Microbuses, buses & taxis in Alexandria';
-
-  @override
   String get push_notif => 'Push Notifications';
 
   @override

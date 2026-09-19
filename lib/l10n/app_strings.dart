@@ -154,11 +154,6 @@ class AppStrings {
       'en': 'EGP ↔ USD, EUR, GBP, SAR + more',
       'ar': 'جنيه ↔ دولار، يورو، إسترليني، ريال وأكثر',
     },
-    'public_transport': {'en': 'Public Transport', 'ar': 'المواصلات العامة'},
-    'public_transport_sub': {
-      'en': 'Microbuses, buses & taxis in Alexandria',
-      'ar': 'ميكروباص وأتوبيسات وتاكسي في الإسكندرية',
-    },
     'travel_journal': {'en': 'Travel Journal', 'ar': 'يوميات السفر'},
     'travel_journal_sub': {
       'en': 'Save memories, notes & photos',
