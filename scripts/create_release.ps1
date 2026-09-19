@@ -43,62 +43,54 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.12"
-$apkName = "streetlore-v1.0.12-arm64.apk"
+$tag = "v1.0.13"
+$apkName = "streetlore-v1.0.13-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.12',
+    '## What is new in v1.0.13',
     '',
-    '### Auth and session',
-    '- Email/Password sign-in is now wired to Supabase `auth.signInWithPassword`',
-    '  (and `signUp` for registration) with proper `AuthException` mapping:',
-    '  wrong password, email not confirmed, rate-limited, and account-exists',
-    '  cases now surface friendly messages instead of generic crashes.',
-    '- Local SharedPreferences fallback is preserved so the app still works',
-    '  offline for returning users.',
+    '### 1. Session persistence - bulletproof restore (radical fix)',
+    '- Supabase.initialize keeps its default `SharedPreferencesLocalStorage` (already reliable on Android),',
+    '  AND we now mirror the active session to plain SharedPreferences on every',
+    '  signed-in / token-refreshed event.',
+    '- On bootstrap we try, in order: `currentSession` -> explicit',
+    '  `refreshSession()` -> wait up to 5s for `initialSession` event',
+    '  -> `setSession(accessToken)` from the SharedPreferences mirror.',
+    '- This fixes the "logged out after every restart" symptom when Supabase''s',
+    '  own storage layer fails silently on devices with broken keystores.',
     '',
-    '### Smart Trip Planner + Place chatbot',
-    '- System prompt now anchors every answer to a curated set of Alexandria',
-    '  facts (lighthouse history, climate, Corniche, Bibliotheca, Qaitbay,',
-    '  signature foods, rush hours, day-trip options).',
-    '- Local fallback plan now produces unique tips, category-aware notes,',
-    '  and time-of-day-aware replies (`is it good now?` returns a real verdict).',
+    '### 2. Sign-In form - no more username field',
+    '- Username field removed from `LoginScreen`. The form now strictly requires',
+    '  Email + Password.',
+    '- `AuthProvider.signIn()` makes `name` optional and derives a friendly',
+    '  display name from the email local-part when not provided (e.g.',
+    '  `mohamed.sabae` -> `Mohamed Sabae`).',
     '',
-    '### Currency Converter',
-    '- Live rates via `open.er-api.com` (no API key, CORS-enabled).',
-    '- 6-hour in-memory cache + static fallback table.',
-    '- LIVE / OFFLINE badge shows whether the current rate is live or cached.',
-    '',
-    '### Best Time to Visit + Daylight',
-    '- Sun-times clamped to [0, 24h]; daylight duration handles negative',
-    '  or wraparound windows safely (no more 99h/24h garbage).',
-    '',
-    '### Offline download',
-    '- Pack matching now supports `__all__` plus category-based filtering.',
-    '  No more `No places found` for valid packs.',
-    '',
-    '### Featured section (Home)',
-    '- Filter chips trimmed to **Open Now** + **Nearest** only - less',
-    '  clutter, faster decisions.',
-    '',
-    '### Admin Panel',
-    '- Place form reorganized: all English fields in one section, all Arabic',
-    '  fields in another, and a dedicated Identification section.',
-    '',
-    '### Removed',
-    '- Public Transport screen and localization keys removed entirely.',
-    '- Journal quick-action removed from Home (still accessible from Profile).',
+    '### 3. AI chatbots - real Gemini API integration',
+    '- Removed the restrictive `key.startsWith(''AIza'')` check that was',
+    '  silently rejecting the configured Gemini key and forcing every reply',
+    '  down the static offline path.',
+    '- New `_looksLikeRealKey()` heuristic accepts AIza*, Vertex-style, and',
+    '  any sufficiently long token while still rejecting obvious placeholders',
+    '  (`YOUR_*`, empty, too-short).',
+    '- Real Gemini calls are now attempted for both Smart Trip Planner and',
+    '  Place chatbot. If the API rejects the key or the network fails, the',
+    '  chat surfaces the actual error (400/403/429/DNS/timeout) so the user',
+    '  knows the key needs updating.',
+    '- New `AiSource { live, local }` enum on `AiTripPlan` and chat replies',
+    '  marks live vs local so the UI can label local answers honestly.',
     '',
     '## Build',
     '- Target: arm64 only (`--split-per-abi --target-platform android-arm64`).',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): 70:83:CF:1D:21:86:FC:35:65:94:05:B8:C5:4A:DD:A4:E5:31:AE:7D'
+    '- SHA-1 (release): 70:83:CF:1D:21:86:FC:35:65:94:05:B8:C5:4A:DD:A4:E5:31:AE:7D',
+    '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.12 - 8 fixes: auth, AI, currency, offline, daylight, admin UI'
+    name = 'v1.0.13 - radical fixes: session persistence, no-username login, real Gemini API'
     body = $releaseBody
     draft = $false
     prerelease = $false
