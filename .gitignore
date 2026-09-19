@@ -51,3 +51,4 @@ serve.dart
 
 # Local one-off scripts
 strip_comments.ps1
+.release_payload.json
