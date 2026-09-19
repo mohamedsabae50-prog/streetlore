@@ -1,3 +1,8 @@
+/// Provenance of a generated plan or chat reply. UI uses this to label the
+/// answer as `live` (real Gemini API) or `local` (offline fallback) so the
+/// user is never misled into thinking static text is an AI response.
+enum AiSource { live, local }
+
 class AiTripPlan {
   final String title;
   final String summary;
@@ -5,14 +10,16 @@ class AiTripPlan {
   final String estimatedBudget;
   final List<AiTripDay> days;
   final List<String> tips;
+  AiSource source;
 
-  const AiTripPlan({
+  AiTripPlan({
     required this.title,
     required this.summary,
     required this.totalDays,
     required this.estimatedBudget,
     required this.days,
     this.tips = const [],
+    this.source = AiSource.local,
   });
 }
 

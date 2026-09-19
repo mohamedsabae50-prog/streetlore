@@ -13,13 +13,44 @@ class AiService {
   GenerativeModel? _model;
 
   GenerativeModel? _ensureModel() {
-    if (!AppConfig.geminiEnabled) return null;
+    if (!AppConfig.geminiEnabled) {
+      debugPrint('AiService: geminiEnabled=false in AppConfig');
+      return null;
+    }
+    final key = AppConfig.geminiApiKey.trim();
+    if (key.isEmpty) {
+      debugPrint('AiService: geminiApiKey is empty in AppConfig');
+      return null;
+    }
     if (_model != null) return _model;
     _model = GenerativeModel(
       model: AppConfig.geminiModel,
-      apiKey: AppConfig.geminiApiKey,
+      apiKey: key,
+    );
+    debugPrint(
+      'AiService: initialized Gemini model ${AppConfig.geminiModel} '
+      '(key len=${key.length})',
     );
     return _model;
+  }
+
+  /// True when the configured key looks obviously invalid (placeholder /
+  /// example). We only ATTEMPT the call when this is false; when true we
+  /// skip the network round-trip so we don't burn quota or surface 401s.
+  bool _looksLikeRealKey(String key) {
+    if (key.isEmpty) return false;
+    if (key.contains('YOUR_') || key.contains('REPLACE')) return false;
+    if (key.startsWith('AIza') && key.length >= 30) return true;
+    // Generous fallback: many project-specific Gemini keys don't start
+    // with AIza (e.g. Vertex-style keys). Require length and reject only
+    // obvious placeholders.
+    if (key.length < 20) return false;
+    if (RegExp(r'^[A-Za-z0-9_\-]+$').hasMatch(key) ||
+        key.contains('.') ||
+        key.contains('_')) {
+      return true;
+    }
+    return false;
   }
 
   bool _isArabic(String text) {
@@ -57,13 +88,20 @@ ALEXANDRIA — ANCHOR FACTS (always ground answers here):
     int? daysHint,
     String? budget,
   }) async {
+    final key = AppConfig.geminiApiKey.trim();
     final model = _ensureModel();
-    if (model == null) {
+    if (model == null || !_looksLikeRealKey(key)) {
+      debugPrint(
+        'AiService.generateTrip: using local plan '
+        '(enabled=${AppConfig.geminiEnabled}, '
+        'keyLooksReal=${_looksLikeRealKey(key)})',
+      );
       return _localPlan(
         prompt: prompt,
         daysHint: daysHint ?? 2,
         availablePlaces: availablePlaces,
         budget: budget ?? r'$$',
+        source: AiSource.local,
       );
     }
 
@@ -158,14 +196,17 @@ AVAILABLE PLACES (use these placeId values exactly):
           .replaceAll('```', '')
           .trim();
       final json = jsonDecode(cleaned) as Map<String, dynamic>;
-      return _parsePlan(json, availablePlaceIds);
+      final plan = _parsePlan(json, availablePlaceIds);
+      plan.source = AiSource.live;
+      return plan;
     } catch (e) {
-      debugPrint('AiService: Gemini call failed, falling back to mock: $e');
+      debugPrint('AiService: Gemini call failed, falling back to local: $e');
       return _localPlan(
         prompt: prompt,
         daysHint: daysHint ?? 2,
         availablePlaces: availablePlaces,
         budget: budget ?? r'$$',
+        source: AiSource.local,
       );
     }
   }
@@ -247,6 +288,7 @@ AVAILABLE PLACES (use these placeId values exactly):
     required int daysHint,
     required List<PlaceModel> availablePlaces,
     required String budget,
+    AiSource source = AiSource.local,
   }) {
     final isArabic = _isArabic(prompt);
     final all = availablePlaces;
@@ -261,6 +303,7 @@ AVAILABLE PLACES (use these placeId values exactly):
         totalDays: daysHint,
         estimatedBudget: budget,
         days: const [],
+        source: source,
         tips: isArabic
             ? const [
                 'اسحب لتحديث الصفحة وحاول تاني لما الأماكن تظهر.',
@@ -443,6 +486,7 @@ AVAILABLE PLACES (use these placeId values exactly):
               'Mango juice from Abo Youssef is the city\'s best cold drink.',
               'Avoid downtown at noon on Fridays — mosque crowds and traffic.',
             ],
+      source: source,
     );
   }
 

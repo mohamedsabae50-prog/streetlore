@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -38,40 +40,59 @@ class AuthProvider extends ChangeNotifier {
         final event = data.event;
         if (event == AuthChangeEvent.signedIn ||
             event == AuthChangeEvent.tokenRefreshed) {
-          _syncFromSupabase();
+          // Re-pull user info AND mirror the latest tokens to SharedPreferences
+          // so we can restore the session even if Supabase's own storage is
+          // cleared or fails to read on this device.
+          unawaited(_syncFromSupabase());
         } else if (event == AuthChangeEvent.signedOut) {
           _isLoggedIn = false;
           _isGuest = false;
           notifyListeners();
+          unawaited(_clearPersistedAuthSnapshot());
         }
       });
     }
+  }
+
+  Future<void> _clearPersistedAuthSnapshot() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('sb_access_token');
+    await prefs.remove('sb_refresh_token');
+    await prefs.remove('sb_expires_at_ms');
+    await prefs.setBool('is_logged_in', false);
+    await prefs.setBool('is_guest', false);
   }
 
   Future<void> bootstrap() => _load();
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
+    _hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+
     if (AppConfig.supabaseEnabled) {
-      // Force-load session from secure storage; refresh if access token expired.
+      // Bulletproof restore — try in order:
+      //   1) Supabase's already-restored currentSession
+      //   2) explicit refreshSession (refreshes expired tokens)
+      //   3) wait for onAuthStateChange to deliver initialSession event
+      //   4) restore from our own SharedPreferences mirror via setSession()
       Session? session = Supabase.instance.client.auth.currentSession;
+      session ??= await _tryRefresh();
+      session ??= await _waitForInitialSession();
       if (session == null) {
-        try {
-          final response = await Supabase.instance.client.auth.refreshSession();
-          session = response.session;
-        } catch (_) {
-          // refresh may fail when no stored session exists; fall through.
+        final restored = await restoreFromPrefsSnapshot();
+        if (restored) {
+          session = Supabase.instance.client.auth.currentSession;
         }
       }
       if (session?.user != null) {
-        _syncFromSupabase();
+        await _syncFromSupabase();
         _isLoading = false;
         notifyListeners();
         return;
       }
     }
+
     _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
-    _hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
     _isGuest = prefs.getBool('is_guest') ?? false;
     _userName = prefs.getString('user_name') ?? '';
     _userEmail = prefs.getString('user_email') ?? '';
@@ -80,10 +101,48 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Session?> _tryRefresh() async {
+    try {
+      final r = await Supabase.instance.client.auth.refreshSession();
+      return r.session;
+    } catch (e) {
+      debugPrint('AuthProvider._tryRefresh: $e');
+      return null;
+    }
+  }
+
+  Future<Session?> _waitForInitialSession() async {
+    final client = Supabase.instance.client.auth;
+    final completer = Completer<Session?>();
+    late StreamSubscription<AuthState> sub;
+    sub = client.onAuthStateChange.listen((state) {
+      if (state.event == AuthChangeEvent.initialSession ||
+          state.event == AuthChangeEvent.signedIn) {
+        if (!completer.isCompleted) {
+          completer.complete(state.session);
+        }
+        unawaited(sub.cancel());
+      }
+    });
+    try {
+      return await completer.future.timeout(const Duration(seconds: 5));
+    } on TimeoutException {
+      if (!completer.isCompleted) completer.complete(null);
+      await sub.cancel();
+      return null;
+    } catch (e) {
+      debugPrint('AuthProvider._waitForInitialSession: $e');
+      await sub.cancel();
+      return null;
+    }
+  }
+
   /// Pulls the latest user info from the active Supabase session into local
   /// state and persists it to SharedPreferences.
   Future<void> _syncFromSupabase() async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final client = Supabase.instance.client.auth;
+    final user = client.currentUser;
+    final session = client.currentSession;
     if (user == null) return;
     _isLoggedIn = true;
     _isGuest = false;
@@ -96,12 +155,11 @@ class AuthProvider extends ChangeNotifier {
         'Explorer';
     _userEmail = user.email ?? _userEmail;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', true);
-    await prefs.setBool('is_guest', false);
-    await prefs.setString('user_name', _userName);
-    await prefs.setString('user_email', _userEmail);
-    await prefs.setString('user_id', _userId);
+    await _persistAuthSnapshot(
+      accessToken: session?.accessToken,
+      refreshToken: session?.refreshToken,
+      expiresAtUnixSeconds: session?.expiresAt,
+    );
   }
 
   /// Exchanges the deep-link URI (from the OAuth redirect) for a Supabase
@@ -119,19 +177,19 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<String?> signIn({
-    required String name,
+    String? name,
     required String email,
     required String password,
     required bool isSignUp,
   }) async {
     final cleanEmail = email.trim().toLowerCase();
-    final cleanName = name.trim();
     final cleanPassword = password;
+    // Username is optional — derive it from the email local-part if not
+    // supplied, so the login screen only requires Email + Password.
+    final cleanName =
+        (name?.trim().isNotEmpty ?? false) ? name!.trim() : _emailLocalPart(cleanEmail);
     if (cleanEmail.isEmpty || !cleanEmail.contains('@')) {
       return 'invalid_email';
-    }
-    if (cleanName.isEmpty) {
-      return 'invalid_name';
     }
     if (isSignUp && cleanPassword.length < 6) {
       return 'password_too_short';
@@ -156,14 +214,14 @@ class AuthProvider extends ChangeNotifier {
           _userId = res.user!.id;
           _userEmail = res.user!.email ?? cleanEmail;
           final meta = res.user!.userMetadata ?? const <String, dynamic>{};
-          _userName = (meta['full_name'] as String?) ?? cleanName;
+          _userName =
+              (meta['full_name'] as String?) ?? cleanName;
+          await _persistAuthSnapshot(
+            accessToken: res.session?.accessToken,
+            refreshToken: res.session?.refreshToken,
+            expiresAtUnixSeconds: res.session?.expiresAt,
+          );
           notifyListeners();
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('is_logged_in', true);
-          await prefs.setBool('is_guest', false);
-          await prefs.setString('user_name', _userName);
-          await prefs.setString('user_email', _userEmail);
-          await prefs.setString('user_id', _userId);
           return null;
         }
         return 'auth_failed';
@@ -227,6 +285,66 @@ class AuthProvider extends ChangeNotifier {
     return null;
   }
 
+  /// Derive a friendly display name from the email local-part.
+  String _emailLocalPart(String email) {
+    final at = email.indexOf('@');
+    if (at <= 0) return 'Explorer';
+    final local = email.substring(0, at);
+    // Replace separators with spaces, capitalize each word.
+    final cleaned = local.replaceAll(RegExp(r'[._\-+]'), ' ').trim();
+    if (cleaned.isEmpty) return 'Explorer';
+    return cleaned
+        .split(RegExp(r'\s+'))
+        .where((s) => s.isNotEmpty)
+        .map((s) => s[0].toUpperCase() + s.substring(1))
+        .join(' ');
+  }
+
+  /// Persist a parallel mirror of the active session to SharedPreferences
+  /// so the user can be restored even when Supabase's own secure storage
+  /// fails (the classic "I keep getting logged out" symptom on some
+  /// Android devices). Safe to call from anywhere.
+  Future<void> _persistAuthSnapshot({
+    String? accessToken,
+    String? refreshToken,
+    int? expiresAtUnixSeconds,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (accessToken != null && accessToken.isNotEmpty) {
+      await prefs.setString('sb_access_token', accessToken);
+    }
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await prefs.setString('sb_refresh_token', refreshToken);
+    }
+    if (expiresAtUnixSeconds != null) {
+      await prefs.setInt('sb_expires_at_s', expiresAtUnixSeconds);
+    }
+    await prefs.setBool('is_logged_in', true);
+    await prefs.setBool('is_guest', false);
+    await prefs.setString('user_name', _userName);
+    await prefs.setString('user_email', _userEmail);
+    await prefs.setString('user_id', _userId);
+  }
+
+  /// Restore a Supabase session from a previously persisted snapshot.
+  /// Called from bootstrap when Supabase's own session restore fails.
+  Future<bool> restoreFromPrefsSnapshot() async {
+    if (!AppConfig.supabaseEnabled) return false;
+    final prefs = await SharedPreferences.getInstance();
+    final access = prefs.getString('sb_access_token');
+    final refresh = prefs.getString('sb_refresh_token');
+    if (access == null || refresh == null) return false;
+    try {
+      final res = await Supabase.instance.client.auth
+          .setSession(access); // refreshes if expired
+      // setSession returns AuthResponse; fall through to user check.
+      return res.session != null;
+    } catch (e) {
+      debugPrint('AuthProvider.restoreFromPrefsSnapshot: $e');
+      return false;
+    }
+  }
+
   Future<void> signInAsGuest(String name) async {
     final cleanName = name.trim();
     if (cleanName.isEmpty) return;
@@ -261,6 +379,9 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_logged_in', false);
     await prefs.setBool('is_guest', false);
+    await prefs.remove('sb_access_token');
+    await prefs.remove('sb_refresh_token');
+    await prefs.remove('sb_expires_at_ms');
   }
 
   /// Native Google Sign-In using the google_sign_in package directly.
@@ -284,6 +405,9 @@ class AuthProvider extends ChangeNotifier {
         idToken: idToken,
         accessToken: googleAuth.accessToken,
       );
+      // Mirror the fresh session tokens to SharedPreferences so the next
+      // cold start can restore even if Supabase storage is broken.
+      await _syncFromSupabase();
       return null;
     } catch (e) {
       debugPrint('Google sign-in error: $e');

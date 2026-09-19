@@ -20,6 +20,22 @@ class AITourGuideService {
   AITourGuideService._();
   static final AITourGuideService instance = AITourGuideService._();
 
+  /// Same heuristic as AiService: only ATTEMPT the call when the key looks
+  /// real. When the key is obviously invalid, skip the network round-trip
+  /// and use the local offline answer.
+  bool _looksLikeRealKey(String key) {
+    if (key.isEmpty) return false;
+    if (key.contains('YOUR_') || key.contains('REPLACE')) return false;
+    if (key.startsWith('AIza') && key.length >= 30) return true;
+    if (key.length < 20) return false;
+    if (RegExp(r'^[A-Za-z0-9_\-]+$').hasMatch(key) ||
+        key.contains('.') ||
+        key.contains('_')) {
+      return true;
+    }
+    return false;
+  }
+
   final List<ChatMessage> _messages = [];
   List<ChatMessage> get messages => List.unmodifiable(_messages);
 
@@ -113,8 +129,12 @@ safety, and accessibility.''';
       );
       return;
     }
-    final key = AppConfig.geminiApiKey;
-    if (key.isEmpty || (!key.startsWith('AIza') && !key.startsWith('AI'))) {
+    final key = AppConfig.geminiApiKey.trim();
+    if (key.isEmpty || !_looksLikeRealKey(key)) {
+      debugPrint(
+        'AITourGuideService.start: using offline welcome '
+        '(enabled=${AppConfig.geminiEnabled}, keyLen=${key.length})',
+      );
       _messages.add(
         ChatMessage(
           text: _offlineWelcome(place),
@@ -159,7 +179,7 @@ safety, and accessibility.''';
   }
 
   String _offlineWelcome(PlaceModel place) {
-    return '👋 مرحباً! أنا دليلك المحلي لـ ${place.name}.\n\n${place.description}\n\nاسألني عن: المواعيد، الأسعار، التاريخ، النصايح، أو العنوان!\n\n(ملاحظة: الوضع حالياً بدون إنترنت — الإجابات من بيانات محلية)';
+    return '👋 مرحباً! أنا دليلك المحلي لـ ${place.name}.\n\n${place.description}\n\nاسألني عن: المواعيد، الأسعار، التاريخ، النصايح، أو العنوان!\n\n(وضع محلي — Gemini API غير مفعّل في الوقت الحالي أو الـ key غير صالح. كل الإجابات هنا من بيانات محلية على الجهاز.)';
   }
 
   Future<String> send(String userText) async {
@@ -193,7 +213,14 @@ safety, and accessibility.''';
       return reply;
     } catch (e) {
       debugPrint('AITourGuideService.send error: $e');
-      final reply = _offlineAnswer(userText, _currentPlace!);
+      // Surface the API error so the user knows whether their key works.
+      // The local answer is shown AFTER, prefixed with a clear marker.
+      final isArabic = userText.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
+      final errBrief = _summarizeError(e);
+      final offline = _offlineAnswer(userText, _currentPlace!);
+      final reply = isArabic
+          ? '⚠️ Gemini API: $errBrief\n\n(إجابة محلية بدون نت)\n\n$offline'
+          : '⚠️ Gemini API: $errBrief\n\n(Local offline answer — API call failed)\n\n$offline';
       _messages.add(
         ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()),
       );
@@ -201,6 +228,29 @@ safety, and accessibility.''';
     } finally {
       _busy = false;
     }
+  }
+
+  String _summarizeError(Object e) {
+    final s = e.toString();
+    if (s.contains('API_KEY_INVALID') || s.contains('400')) {
+      return 'Invalid API key — check AppConfig.geminiApiKey.';
+    }
+    if (s.contains('SocketException') || s.contains('Failed host lookup')) {
+      return 'No internet / DNS failed.';
+    }
+    if (s.contains('TimeoutException')) {
+      return 'Request timed out.';
+    }
+    if (s.contains('429') || s.contains('RESOURCE_EXHAUSTED')) {
+      return 'Rate limited / quota exceeded.';
+    }
+    if (s.contains('403') || s.contains('PERMISSION_DENIED')) {
+      return 'Permission denied — Gemini API not enabled for this key, '
+          'or the Generative Language API is restricted.';
+    }
+    // Trim to first line to keep chat readable.
+    final firstLine = s.split('\n').first;
+    return firstLine.length > 140 ? '${firstLine.substring(0, 140)}...' : firstLine;
   }
 
   /// Wrap the raw user text with fresh context (current time, day,

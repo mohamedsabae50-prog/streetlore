@@ -30,11 +30,12 @@ Future<void> main() async {
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
     publishableKey: AppConfig.supabaseAnonKey,
+    authOptions: const FlutterAuthClientOptions(
+      // Auto-refresh tokens before expiry — default in v2 is true,
+      // made explicit here so a future SDK change can't silently turn it off.
+      autoRefreshToken: true,
+    ),
   );
-
-  // Give Supabase a moment to restore the persisted session from secure
-  // storage into the in-memory cache before the auth provider reads it.
-  await _waitForInitialSession();
 
   await OfflineStorageService.instance.init();
   await SupabaseService.instance.init();
@@ -83,33 +84,6 @@ Future<void> main() async {
       child: const StreetloreApp(),
     ),
   );
-}
-
-Future<void> _waitForInitialSession() async {
-  // currentSession may still be null immediately after Supabase.initialize()
-  // returns because the auth client restores the persisted session from
-  // secure storage asynchronously. Wait for the initialSession event so
-  // callers can read a fully hydrated session.
-  final client = Supabase.instance.client.auth;
-  if (client.currentSession != null) return;
-  final completer = Completer<void>();
-  late final StreamSubscription<AuthState> sub;
-  sub = client.onAuthStateChange.listen((state) {
-    if (state.event == AuthChangeEvent.initialSession ||
-        state.event == AuthChangeEvent.signedIn) {
-      if (!completer.isCompleted) completer.complete();
-      sub.cancel();
-    }
-  });
-  try {
-    await completer.future.timeout(const Duration(seconds: 10));
-  } on TimeoutException {
-    if (!completer.isCompleted) completer.complete();
-    await sub.cancel();
-  } catch (_) {
-    await sub.cancel();
-    rethrow;
-  }
 }
 
 Future<void> _bindAuthDeepLink(AuthProvider auth) async {

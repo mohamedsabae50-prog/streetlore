@@ -47,62 +47,62 @@ $tag = "v1.0.12"
 $apkName = "streetlore-v1.0.12-arm64.apk"
 
 $lines = @(
-    "## What's new in v1.0.12",
-    "",
-    "### Auth & session",
-    "- Email/Password sign-in is now wired to Supabase `auth.signInWithPassword`",
-    "  (and `signUp` for registration) with proper `AuthException` mapping:",
-    "  wrong password, email not confirmed, rate-limited, and account-exists",
-    "  cases now surface friendly messages instead of generic crashes.",
-    "- Local SharedPreferences fallback is preserved so the app still works",
-    "  offline for returning users.",
-    "",
-    "### Smart Trip Planner + Place chatbot",
-    "- System prompt now anchors every answer to a curated set of Alexandria",
-    "  facts (lighthouse history, climate, Corniche, Bibliotheca, Qaitbay,",
-    "  signature foods, rush hours, day-trip options).",
-    "- Local fallback plan now produces unique tips, category-aware notes,",
-    "  and time-of-day-aware replies (`is it good now?` returns a real verdict).",
-    "",
-    "### Currency Converter",
-    "- Live rates via `open.er-api.com` (no API key, CORS-enabled).",
-    "- 6-hour in-memory cache + static fallback table.",
-    "- LIVE / OFFLINE badge shows whether the current rate is live or cached.",
-    "",
-    "### Best Time to Visit + Daylight",
-    "- Sun-times clamped to [0, 24h]; daylight duration handles negative",
-    "  or wraparound windows safely (no more 99h/24h garbage).",
-    "",
-    "### Offline download",
-    "- Pack matching now supports `__all__` plus category-based filtering.",
-    "  No more `No places found` for valid packs.",
-    "",
-    "### Featured section (Home)",
-    "- Filter chips trimmed to **Open Now** + **Nearest** only — less",
-    "  clutter, faster decisions.",
-    "",
-    "### Admin Panel",
-    "- Place form reorganized: all English fields in one section, all Arabic",
-    "  fields in another, and a dedicated Identification section.",
-    "",
-    "### Removed",
-    "- Public Transport screen and localization keys removed entirely.",
-    "- Journal quick-action removed from Home (still accessible from Profile).",
-    "",
-    "## Build",
-    "- Target: arm64 only (`--split-per-abi --target-platform android-arm64`).",
-    "- Release-signed with existing `release.keystore`.",
-    "- SHA-1 (release): 70:83:CF:1D:21:86:FC:35:65:94:05:B8:C5:4A:DD:A4:E5:31:AE:7D",
+    '## What is new in v1.0.12',
+    '',
+    '### Auth and session',
+    '- Email/Password sign-in is now wired to Supabase `auth.signInWithPassword`',
+    '  (and `signUp` for registration) with proper `AuthException` mapping:',
+    '  wrong password, email not confirmed, rate-limited, and account-exists',
+    '  cases now surface friendly messages instead of generic crashes.',
+    '- Local SharedPreferences fallback is preserved so the app still works',
+    '  offline for returning users.',
+    '',
+    '### Smart Trip Planner + Place chatbot',
+    '- System prompt now anchors every answer to a curated set of Alexandria',
+    '  facts (lighthouse history, climate, Corniche, Bibliotheca, Qaitbay,',
+    '  signature foods, rush hours, day-trip options).',
+    '- Local fallback plan now produces unique tips, category-aware notes,',
+    '  and time-of-day-aware replies (`is it good now?` returns a real verdict).',
+    '',
+    '### Currency Converter',
+    '- Live rates via `open.er-api.com` (no API key, CORS-enabled).',
+    '- 6-hour in-memory cache + static fallback table.',
+    '- LIVE / OFFLINE badge shows whether the current rate is live or cached.',
+    '',
+    '### Best Time to Visit + Daylight',
+    '- Sun-times clamped to [0, 24h]; daylight duration handles negative',
+    '  or wraparound windows safely (no more 99h/24h garbage).',
+    '',
+    '### Offline download',
+    '- Pack matching now supports `__all__` plus category-based filtering.',
+    '  No more `No places found` for valid packs.',
+    '',
+    '### Featured section (Home)',
+    '- Filter chips trimmed to **Open Now** + **Nearest** only - less',
+    '  clutter, faster decisions.',
+    '',
+    '### Admin Panel',
+    '- Place form reorganized: all English fields in one section, all Arabic',
+    '  fields in another, and a dedicated Identification section.',
+    '',
+    '### Removed',
+    '- Public Transport screen and localization keys removed entirely.',
+    '- Journal quick-action removed from Home (still accessible from Profile).',
+    '',
+    '## Build',
+    '- Target: arm64 only (`--split-per-abi --target-platform android-arm64`).',
+    '- Release-signed with existing `release.keystore`.',
+    '- SHA-1 (release): 70:83:CF:1D:21:86:FC:35:65:94:05:B8:C5:4A:DD:A4:E5:31:AE:7D'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = "v1.0.12 - 8 fixes: auth, AI, currency, offline, daylight, admin UI"
+    name = 'v1.0.12 - 8 fixes: auth, AI, currency, offline, daylight, admin UI'
     body = $releaseBody
     draft = $false
     prerelease = $false
-} | ConvertTo-Json -Depth 10
+} | ConvertTo-Json -Depth 10 -Compress
 
 Write-Host "Checking existing release $tag..."
 try {
@@ -110,7 +110,10 @@ try {
     Write-Host "Found existing release id=$($release.id) url=$($release.html_url)"
 } catch {
     Write-Host "Creating new release..."
-    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/mohamedsabae50-prog/streetlore/releases" -Method Post -Headers $headers -Body $payload -ContentType "application/json"
+    $payloadPath = Join-Path $env:TEMP 'streetlore_release_payload.json'
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($payloadPath, $payload, $utf8)
+    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/mohamedsabae50-prog/streetlore/releases" -Method Post -Headers $headers -InFile $payloadPath -ContentType "application/json; charset=utf-8"
     Write-Host "Created release id=$($release.id) url=$($release.html_url)"
 }
 

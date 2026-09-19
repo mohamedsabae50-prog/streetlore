@@ -23,11 +23,9 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
-  final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final _nameFocus = FocusNode();
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
   bool _isLoading = false;
@@ -54,9 +52,6 @@ class _LoginScreenState extends State<LoginScreen>
       begin: 0.5,
       end: 1.5,
     ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.linear));
-    _nameFocus.addListener(
-      () => setState(() => _focusedField = _nameFocus.hasFocus ? 'name' : null),
-    );
     _emailFocus.addListener(
       () =>
           setState(() => _focusedField = _emailFocus.hasFocus ? 'email' : null),
@@ -70,10 +65,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   void dispose() {
-    _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
-    _nameFocus.dispose();
     _emailFocus.dispose();
     _passwordFocus.dispose();
     _animCtrl.dispose();
@@ -89,7 +82,6 @@ class _LoginScreenState extends State<LoginScreen>
     if (!mounted) return;
 
     final errorKey = await context.read<AuthProvider>().signIn(
-      name: _nameCtrl.text,
       email: _emailCtrl.text,
       password: _passwordCtrl.text,
       isSignUp: _isSignUp,
@@ -355,24 +347,6 @@ class _LoginScreenState extends State<LoginScreen>
                         children: [
                           FadeInUp(
                             delay: const Duration(milliseconds: 360),
-                            child: _InputField(
-                              controller: _nameCtrl,
-                              focusNode: _nameFocus,
-                              isFocused: _focusedField == 'name',
-                              label: context.tr('login_full_name'),
-                              hint: context.tr('login_name_hint'),
-                              icon: Icons.person_outline_rounded,
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) {
-                                  return context.tr('login_err_name');
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 440),
                             child: _InputField(
                               controller: _emailCtrl,
                               focusNode: _emailFocus,
