@@ -43,42 +43,52 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.13"
-$apkName = "streetlore-v1.0.13-arm64.apk"
+$tag = "v1.0.14"
+$apkName = "streetlore-v1.0.14-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.13',
+    '## What is new in v1.0.14',
     '',
-    '### 1. Session persistence - bulletproof restore (radical fix)',
-    '- Supabase.initialize keeps its default `SharedPreferencesLocalStorage` (already reliable on Android),',
-    '  AND we now mirror the active session to plain SharedPreferences on every',
-    '  signed-in / token-refreshed event.',
-    '- On bootstrap we try, in order: `currentSession` -> explicit',
-    '  `refreshSession()` -> wait up to 5s for `initialSession` event',
-    '  -> `setSession(accessToken)` from the SharedPreferences mirror.',
-    '- This fixes the "logged out after every restart" symptom when Supabase''s',
-    '  own storage layer fails silently on devices with broken keystores.',
+    '### 1. Sign-out now fully wipes the session',
+    '- `signOut()` now calls `Supabase.auth.signOut()` first (clears the',
+    '  server-side session + the Supabase SharedPreferences key), then',
+    '  removes every mirrored key (`sb_access_token`, `sb_refresh_token`,',
+    '  `sb_expires_at_s`, etc.), then sweeps any remaining `sb-*` keys,',
+    '  AND clears the user identity keys (`user_name`, `user_email`,',
+    '  `user_id`) so the next cold start has no path to auto-restore.',
+    '- You can now switch accounts reliably.',
     '',
-    '### 2. Sign-In form - no more username field',
-    '- Username field removed from `LoginScreen`. The form now strictly requires',
-    '  Email + Password.',
-    '- `AuthProvider.signIn()` makes `name` optional and derives a friendly',
-    '  display name from the email local-part when not provided (e.g.',
-    '  `mohamed.sabae` -> `Mohamed Sabae`).',
+    '### 2. Daylight calculation fixed (was "Sunrise 00:53, Sunset 00:53, 24h")',
+    '- Bug: `halfMinutes = h * 60` (treating degrees as hours).',
+    '- Fix: `halfMinutes = h * 4` (1 degree = 4 minutes — earth rotates',
+    '  360 degrees in 24 hours).',
+    '- Added NOAA-style altitude target (-0.833 degrees) for refraction',
+    '  + solar disc and a proper `cosH` formula.',
+    '- Solar-noon normalization handles any timezone offset.',
     '',
-    '### 3. AI chatbots - real Gemini API integration',
-    '- Removed the restrictive `key.startsWith(''AIza'')` check that was',
-    '  silently rejecting the configured Gemini key and forcing every reply',
-    '  down the static offline path.',
-    '- New `_looksLikeRealKey()` heuristic accepts AIza*, Vertex-style, and',
-    '  any sufficiently long token while still rejecting obvious placeholders',
-    '  (`YOUR_*`, empty, too-short).',
-    '- Real Gemini calls are now attempted for both Smart Trip Planner and',
-    '  Place chatbot. If the API rejects the key or the network fails, the',
-    '  chat surfaces the actual error (400/403/429/DNS/timeout) so the user',
-    '  knows the key needs updating.',
-    '- New `AiSource { live, local }` enum on `AiTripPlan` and chat replies',
-    '  marks live vs local so the UI can label local answers honestly.',
+    '### 3. Admin "Best Time to Visit" override',
+    '- Added `best_time_to_visit` text field on the Place form. The admin',
+    '  can set the exact recommendation label (e.g. "Morning", "Sunset",',
+    '  "Late Night") and the Best Time screen displays it verbatim instead',
+    '  of computing one.',
+    '- Added quick-set chips (Early Morning, Morning, Midday, Afternoon,',
+    '  Sunset, Evening, Night, Late Night) for one-tap filling.',
+    '- Wired through both Place models + JSON serialization.',
+    '',
+    '### 4. Gemini API - raw REST call with key rotation',
+    '- Replaced the `google_generative_ai` SDK with a hand-written REST',
+    '  client using `https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key=API_KEY`.',
+    '  This eliminates any SDK-side Bearer-token formatting that caused the',
+    '  "Expected OAuth 2 access token" error.',
+    '- Configured 4 Gemini keys. The client rotates through them on 4xx/',
+    '  timeout, so a single revoked or rate-limited key never breaks the',
+    '  feature.',
+    '- Keys are injected at build time via `--dart-define=GEMINI_API_KEYS=k1,k2,k3,k4`',
+    '  so the source repository stays clean of secrets (GitHub push',
+    '  protection no longer blocks uploads).',
+    '- The chat surfaces real errors: HTTP 400 (bad model/key), 401/403',
+    '  (auth denied), 404 (model not found), 429 (rate limited), timeout,',
+    '  DNS failure.',
     '',
     '## Build',
     '- Target: arm64 only (`--split-per-abi --target-platform android-arm64`).',
@@ -90,7 +100,7 @@ $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.13 - radical fixes: session persistence, no-username login, real Gemini API'
+    name = 'v1.0.14 - 4 critical fixes (sign out, daylight math, admin best time, Gemini REST)'
     body = $releaseBody
     draft = $false
     prerelease = $false
