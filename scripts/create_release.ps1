@@ -43,60 +43,39 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.15"
-$apkName = "streetlore-v1.0.15-arm64.apk"
+$tag = "v1.0.16"
+$apkName = "streetlore-v1.0.16-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.15',
+    '## What is new in v1.0.16',
     '',
-    '### 1. Admin form reorganized (Best Time moved inline)',
-    '- Removed the standalone "Best Time to Visit" _section.',
-    '- Added a single inline "Best Time" field at the bottom of the',
-    '  Identification section (next to Rating and Featured). One text',
-    '  input, simple hint text, no extra UI clutter.',
-    '- The English Content card and Arabic Content card remain',
-    '  visually separated with distinct colored borders (blue / green)',
-    '  so admins can never confuse the two again.',
+    '### 1. Gemini model upgrade: 2.0 Flash -> 3.6 Flash',
+    '- The default Gemini model in `lib/core/config/app_config.dart`',
+    '  is now `gemini-3.6-flash` (GA since July 21, 2026).',
+    '- Previous `gemini-2.0-flash` is no longer available on the',
+    '  Generative Language API and was returning `[404/NOT_FOUND]`.',
+    '- All existing Gemini features (AI Trip Planner, Place chatbot,',
+    '  AI Tour Guide) are routed through this new model automatically.',
     '',
-    '### 2. Gemini REST client - hard guarantee: NO Authorization header',
-    '- Each request now uses a freshly-created `http.Client()` with',
-    '  explicit per-request headers only (`Content-Type`, `Accept`,',
-    '  `User-Agent`). The `Authorization` and `authorization` headers',
-    '  are explicitly set to empty string so they cannot leak from',
-    '  the runtime',
-    '  interceptor layer.',
-    '- Endpoint: `POST https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key=API_KEY`.',
-    '  Only the URL parameter is used for authentication.',
-    '- 4 Gemini keys are rotated on 4xx / timeout.',
-    '',
-    '### 3. Sign-out: bulletproof wipe across every storage layer',
-    '- `AuthProvider.signOut()` now, in order:',
-    '   1) flip `_isLoggedIn=false` + `_userId=""` + `_userEmail=""` + ',
-    '     `notifyListeners()` (UI updates instantly)',
-    '   2) `await Supabase.instance.client.auth.signOut()`',
-    '   3) wipe every well-known `FlutterSecureStorage` key + a full',
-    '     `readAll()` sweep (defensive belt-and-braces even if the SDK',
-    '     is configured with SharedPreferencesLocalStorage)',
-    '   4) wipe every SharedPreferences key we ever wrote (`sb_*`, ',
-    '     `user_*`, `is_logged_in`, `has_seen_onboarding`) + the Supabase',
-    '     host-named session key + a sweep of every `sb-*` key as final',
-    '     defense.',
-    '- Profile screen then `pushAndRemoveUntil` to the LoginScreen so',
-    '  the navigation stack cannot navigate back.',
-    '- After this, on next cold start `bootstrap()` finds nothing to',
-    '  restore and the user lands on the Login screen.',
+    '### 2. Home Screen: "See all" button removed',
+    '- The duplicate "See all" affordance that sat next to the',
+    '  Featured section title is gone.',
+    '- Featured section header now shows the title only.',
+    '- The horizontal category chips below the title still allow',
+    '  filtering by category without competing with a redundant',
+    '  full-list button.',
     '',
     '## Build',
     '- Target: arm64 only (`--split-per-abi --target-platform android-arm64`).',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): 70:83:CF:1D:21:86:FC:35:65:94:05:B8:C5:4A:DD:A4:E5:31:AE:7D',
+    '- SHA-1 (release): C6C26DE99E6772B2956BE4808F777EBB24267166',
     '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.15 - definitive fixes (admin inline, Gemini no auth headers, signOut wipes all)'
+    name = 'v1.0.16 - Gemini 3.6 Flash + Home Featured clean-up'
     body = $releaseBody
     draft = $false
     prerelease = $false

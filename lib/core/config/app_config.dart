@@ -60,7 +60,9 @@ class AppConfig {
     }
   }
 
-  static const String geminiModel = 'gemini-2.0-flash';
+  /// Gemini model identifier. Updated from `gemini-2.0-flash` (deprecated)
+  /// to `gemini-3.6-flash` (GA since July 21, 2026 per Google AI changelog).
+  static const String geminiModel = 'gemini-3.6-flash';
   static const bool geminiEnabled = true;
   static const bool newFeaturesEnabled = true;
   static const int defaultGeofenceRadius = 500;

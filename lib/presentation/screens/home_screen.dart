@@ -415,41 +415,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        context.tr('featured'),
-                        style: AppTextStyles.sectionTitle.copyWith(
-                          color: context.textPri,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          if (_selectedCategory != 'All') {
-                            setState(() => _selectedCategory = 'All');
-                          }
-                          if (_scrollCtrl.hasClients) {
-                            _scrollCtrl.animateTo(
-                              0,
-                              duration: const Duration(milliseconds: 400),
-                              curve: Curves.easeOut,
-                            );
-                          }
-                        },
-                        child: Text(
-                          context.tr('see_all'),
-                          style: const TextStyle(
-                            color: AppColors.accent,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            decoration: TextDecoration.underline,
-                            decorationColor: AppColors.accent,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    context.tr('featured'),
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: context.textPri,
+                    ),
                   ),
                 ),
                 SingleChildScrollView(
