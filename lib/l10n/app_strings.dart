@@ -778,6 +778,10 @@ class AppStrings {
       'en': 'Quietest, best light',
       'ar': 'أهدأ وقت وأفضل إضاءة',
     },
+    'bt_reason_admin_set': {
+      'en': 'Set by admin',
+      'ar': 'محدد من الأدمن',
+    },
     'bt_reason_cool_photo': {
       'en': 'Cool, photogenic',
       'ar': 'مناخس، وقت التصوير',

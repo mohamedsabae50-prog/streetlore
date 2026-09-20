@@ -61,6 +61,11 @@ class PlaceModel {
   /// Per-place note shown on the Best Time screen (already localized by
   /// admin when entered).
   final String? bestTimeNote;
+  /// Admin-supplied "best time to visit" label (e.g. "Morning",
+  /// "Sunset", "Late Night"). When non-empty the Best Time screen
+  /// surfaces this label verbatim instead of computing one from the
+  /// scores.
+  final String? bestTimeToVisit;
   /// Whether the place is indoors (museum, mall, etc.) — used to refine
   /// recommendations when no explicit override is supplied.
   final bool isIndoor;
@@ -89,6 +94,7 @@ class PlaceModel {
     this.priceForeignerEgp,
     this.bestTimeOverride,
     this.bestTimeNote,
+    this.bestTimeToVisit,
     this.isIndoor = false,
   });
 
@@ -143,6 +149,7 @@ class PlaceModel {
       priceForeignerEgp: json['priceForeignerEgp'] as int?,
       bestTimeOverride: bestTimeOverride,
       bestTimeNote: json['best_time_note'] as String?,
+      bestTimeToVisit: json['best_time_to_visit'] as String?,
       isIndoor: json['is_indoor'] as bool? ?? false,
     );
   }
@@ -172,6 +179,7 @@ class PlaceModel {
       'priceForeignerEgp': priceForeignerEgp,
       'best_time_override': bestTimeOverride,
       'best_time_note': bestTimeNote,
+      'best_time_to_visit': bestTimeToVisit,
       'is_indoor': isIndoor,
     };
   }
@@ -200,6 +208,7 @@ class PlaceModel {
     int? priceForeignerEgp,
     Map<String, int>? bestTimeOverride,
     String? bestTimeNote,
+    String? bestTimeToVisit,
     bool? isIndoor,
   }) {
     return PlaceModel(
@@ -226,6 +235,7 @@ class PlaceModel {
       priceForeignerEgp: priceForeignerEgp ?? this.priceForeignerEgp,
       bestTimeOverride: bestTimeOverride ?? this.bestTimeOverride,
       bestTimeNote: bestTimeNote ?? this.bestTimeNote,
+      bestTimeToVisit: bestTimeToVisit ?? this.bestTimeToVisit,
       isIndoor: isIndoor ?? this.isIndoor,
     );
   }

@@ -1,49 +1,29 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../config/app_config.dart';
 import '../../data/models/ai_trip_plan.dart';
 import '../../data/models/place_model.dart';
+import 'gemini_rest_client.dart';
 
 class AiService {
   AiService._();
   static final AiService instance = AiService._();
 
-  GenerativeModel? _model;
-
-  GenerativeModel? _ensureModel() {
-    if (!AppConfig.geminiEnabled) {
-      debugPrint('AiService: geminiEnabled=false in AppConfig');
-      return null;
-    }
-    final key = AppConfig.geminiApiKey.trim();
-    if (key.isEmpty) {
-      debugPrint('AiService: geminiApiKey is empty in AppConfig');
-      return null;
-    }
-    if (_model != null) return _model;
-    _model = GenerativeModel(
-      model: AppConfig.geminiModel,
-      apiKey: key,
-    );
-    debugPrint(
-      'AiService: initialized Gemini model ${AppConfig.geminiModel} '
-      '(key len=${key.length})',
-    );
-    return _model;
-  }
-
   /// True when the configured key looks obviously invalid (placeholder /
   /// example). We only ATTEMPT the call when this is false; when true we
   /// skip the network round-trip so we don't burn quota or surface 401s.
+  ///
+  /// Accepts the project-specific `AQ.Ab...` token format the user
+  /// provided, in addition to standard Google AI Studio `AIzaSy...` keys.
   bool _looksLikeRealKey(String key) {
     if (key.isEmpty) return false;
     if (key.contains('YOUR_') || key.contains('REPLACE')) return false;
+    // Standard Google AI Studio key.
     if (key.startsWith('AIza') && key.length >= 30) return true;
-    // Generous fallback: many project-specific Gemini keys don't start
-    // with AIza (e.g. Vertex-style keys). Require length and reject only
-    // obvious placeholders.
+    // Project-specific AQ.* token format.
+    if (key.startsWith('AQ.') && key.length >= 30) return true;
+    // Generous fallback for Vertex-style or other accepted keys.
     if (key.length < 20) return false;
     if (RegExp(r'^[A-Za-z0-9_\-]+$').hasMatch(key) ||
         key.contains('.') ||
@@ -88,13 +68,16 @@ ALEXANDRIA — ANCHOR FACTS (always ground answers here):
     int? daysHint,
     String? budget,
   }) async {
-    final key = AppConfig.geminiApiKey.trim();
-    final model = _ensureModel();
-    if (model == null || !_looksLikeRealKey(key)) {
+    final keys = AppConfig.geminiApiKeys
+        .map((k) => k.trim())
+        .where((k) => k.isNotEmpty)
+        .toList();
+    final anyReal = keys.any(_looksLikeRealKey);
+    if (!AppConfig.geminiEnabled || !anyReal) {
       debugPrint(
         'AiService.generateTrip: using local plan '
         '(enabled=${AppConfig.geminiEnabled}, '
-        'keyLooksReal=${_looksLikeRealKey(key)})',
+        'realKeys=${keys.length})',
       );
       return _localPlan(
         prompt: prompt,
@@ -186,11 +169,28 @@ AVAILABLE PLACES (use these placeId values exactly):
         'Available places: [$placesForContext]';
 
     try {
-      final response = await model.generateContent([
-        Content.text(system),
-        Content.text(user),
-      ]);
-      final text = response.text ?? '{}';
+      final result = await GeminiRestClient.instance.generateContent(
+        apiKeys: keys,
+        model: AppConfig.geminiModel,
+        systemInstruction: system,
+        userPrompt: user,
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+      );
+      if (result == null || !result.isOk) {
+        debugPrint(
+          'AiService: Gemini call failed (status=${result?.statusCode}, '
+          'err=${result?.errorBody}), falling back to local',
+        );
+        return _localPlan(
+          prompt: prompt,
+          daysHint: daysHint ?? 2,
+          availablePlaces: availablePlaces,
+          budget: budget ?? r'$$',
+          source: AiSource.local,
+        );
+      }
+      final text = result.text ?? '{}';
       final cleaned = text
           .replaceAll('```json', '')
           .replaceAll('```', '')
@@ -200,7 +200,7 @@ AVAILABLE PLACES (use these placeId values exactly):
       plan.source = AiSource.live;
       return plan;
     } catch (e) {
-      debugPrint('AiService: Gemini call failed, falling back to local: $e');
+      debugPrint('AiService: Gemini call threw, falling back to local: $e');
       return _localPlan(
         prompt: prompt,
         daysHint: daysHint ?? 2,

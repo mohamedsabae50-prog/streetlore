@@ -100,6 +100,8 @@
   "@bt_reason_often_closing": { "description": "Translation key: bt_reason_often_closing" },
   "bt_reason_quietest": "أهدأ وقت وأفضل إضاءة",
   "@bt_reason_quietest": { "description": "Translation key: bt_reason_quietest" },
+  "bt_reason_admin_set": "محدد من الأدمن",
+  "@bt_reason_admin_set": { "description": "Translation key: bt_reason_admin_set" },
   "bt_reason_soft_light": "إضاءة هادية",
   "@bt_reason_soft_light": { "description": "Translation key: bt_reason_soft_light" },
   "bt_reason_too_early": "بدري أوي",

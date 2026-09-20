@@ -373,15 +373,55 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    // Order matters:
+    //   1) Flip local state to logged-out so UI updates immediately.
+    //   2) Tell Supabase to drop the server-side + local-storage session.
+    //   3) Wipe every SharedPreferences key that could re-hydrate the
+    //      session on next cold start (mirror + identity + Supabase's
+    //      own session key directly).
     _isLoggedIn = false;
     _isGuest = false;
+    _userId = '';
+    _userName = '';
+    _userEmail = '';
     notifyListeners();
+
+    if (AppConfig.supabaseEnabled) {
+      try {
+        await Supabase.instance.client.auth.signOut();
+      } catch (e) {
+        debugPrint('AuthProvider.signOut: Supabase signOut failed: $e');
+      }
+    }
+
     final prefs = await SharedPreferences.getInstance();
+    // Wipe EVERY key we use — defensive clear so the next cold start has
+    // no path to auto-restore.
     await prefs.setBool('is_logged_in', false);
     await prefs.setBool('is_guest', false);
+    await prefs.remove('user_name');
+    await prefs.remove('user_email');
+    await prefs.remove('user_id');
     await prefs.remove('sb_access_token');
     await prefs.remove('sb_refresh_token');
+    await prefs.remove('sb_expires_at_s');
     await prefs.remove('sb_expires_at_ms');
+    await prefs.remove('has_seen_onboarding');
+
+    // Also clear Supabase's own persisted-session SharedPreferences key
+    // directly (its name is `sb-<host>-auth-token`). The SDK's signOut
+    // should already do this, but if a network failure aborted that, the
+    // next cold start could still recover the session.
+    final hostFirstSegment =
+        Uri.parse(AppConfig.supabaseUrl).host.split('.').first;
+    await prefs.remove('sb-$hostFirstSegment-auth-token');
+    // And every `sb-*` key as a final sweep.
+    final allKeys = prefs.getKeys();
+    for (final k in allKeys) {
+      if (k.startsWith('sb-')) {
+        await prefs.remove(k);
+      }
+    }
   }
 
   /// Native Google Sign-In using the google_sign_in package directly.

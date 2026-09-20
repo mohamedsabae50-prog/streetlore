@@ -392,6 +392,12 @@ abstract class AppLocalizations {
   /// **'Quietest, best light'**
   String get bt_reason_quietest;
 
+  /// Translation key: bt_reason_admin_set
+  ///
+  /// In en, this message translates to:
+  /// **'Set by admin'**
+  String get bt_reason_admin_set;
+
   /// Translation key: bt_reason_soft_light
   ///
   /// In en, this message translates to:

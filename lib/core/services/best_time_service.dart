@@ -7,6 +7,9 @@ class BestTimeRecommendation {
   final String hintKey;
   final IconData icon;
   final Color color;
+  /// Admin-supplied literal label. When non-null, the UI shows this
+  /// exact string instead of translating [labelKey].
+  final String? customLabel;
 
   const BestTimeRecommendation({
     required this.score,
@@ -14,6 +17,7 @@ class BestTimeRecommendation {
     required this.hintKey,
     required this.icon,
     required this.color,
+    this.customLabel,
   });
 
   bool get isGoodNow => score >= 70;
@@ -27,6 +31,22 @@ class BestTimeService {
 
   BestTimeRecommendation recommend(PlaceModel place, {DateTime? now}) {
     final t = now ?? DateTime.now();
+
+    // Admin-supplied literal label (e.g. "Morning", "Sunset"). When set,
+    // we trust it as the canonical answer and skip the auto-computed
+    // scoring entirely.
+    final adminLabel = place.bestTimeToVisit?.trim();
+    if (adminLabel != null && adminLabel.isNotEmpty) {
+      return BestTimeRecommendation(
+        score: 100,
+        labelKey: 'bt_label_go_now',
+        hintKey: 'bt_reason_admin_set',
+        icon: _iconForLabel(adminLabel),
+        color: const Color(0xFF10B981),
+        customLabel: adminLabel,
+      );
+    }
+
     final hour = t.hour;
     final minute = t.minute;
     final weekday = t.weekday;
@@ -83,6 +103,24 @@ class BestTimeService {
         color: const Color(0xFFEF4444),
       );
     }
+  }
+
+  IconData _iconForLabel(String label) {
+    final l = label.toLowerCase();
+    if (l.contains('morning') && !l.contains('late') && !l.contains('early')) {
+      return Icons.wb_sunny_rounded;
+    }
+    if (l.contains('early')) return Icons.wb_twilight_rounded;
+    if (l.contains('midday') || l.contains('noon')) {
+      return Icons.wb_sunny_outlined;
+    }
+    if (l.contains('afternoon')) return Icons.wb_cloudy_rounded;
+    if (l.contains('sunset') || l.contains('evening') || l.contains('golden')) {
+      return Icons.wb_twilight_rounded;
+    }
+    if (l.contains('night')) return Icons.nightlight_round;
+    if (l.contains('late')) return Icons.bedtime_rounded;
+    return Icons.access_time_rounded;
   }
 
   String _slotFor(int hour) {

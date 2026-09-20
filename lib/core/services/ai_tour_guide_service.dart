@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import '../config/app_config.dart';
 import '../../data/models/place_model.dart';
+import 'gemini_rest_client.dart';
 
 class ChatMessage {
   final String text;
@@ -23,10 +23,17 @@ class AITourGuideService {
   /// Same heuristic as AiService: only ATTEMPT the call when the key looks
   /// real. When the key is obviously invalid, skip the network round-trip
   /// and use the local offline answer.
+  ///
+  /// Accepts the project-specific `AQ.Ab...` token format the user
+  /// provided, in addition to standard Google AI Studio `AIzaSy...` keys.
   bool _looksLikeRealKey(String key) {
     if (key.isEmpty) return false;
     if (key.contains('YOUR_') || key.contains('REPLACE')) return false;
+    // Standard Google AI Studio key.
     if (key.startsWith('AIza') && key.length >= 30) return true;
+    // Project-specific AQ.* token format.
+    if (key.startsWith('AQ.') && key.length >= 30) return true;
+    // Vertex-style or other accepted prefix.
     if (key.length < 20) return false;
     if (RegExp(r'^[A-Za-z0-9_\-]+$').hasMatch(key) ||
         key.contains('.') ||
@@ -39,8 +46,7 @@ class AITourGuideService {
   final List<ChatMessage> _messages = [];
   List<ChatMessage> get messages => List.unmodifiable(_messages);
 
-  GenerativeModel? _model;
-  ChatSession? _session;
+  _LiveSession? _session;
   PlaceModel? _currentPlace;
   bool _busy = false;
   bool get isBusy => _busy;
@@ -119,21 +125,17 @@ safety, and accessibility.''';
 
   Future<void> start(PlaceModel place) async {
     _currentPlace = place;
-    if (!AppConfig.geminiEnabled) {
-      _messages.add(
-        ChatMessage(
-          text: _offlineWelcome(place),
-          isUser: false,
-          timestamp: DateTime.now(),
-        ),
-      );
-      return;
-    }
-    final key = AppConfig.geminiApiKey.trim();
-    if (key.isEmpty || !_looksLikeRealKey(key)) {
+    _messages.clear();
+    final keys = AppConfig.geminiApiKeys
+        .map((k) => k.trim())
+        .where((k) => k.isNotEmpty)
+        .toList();
+    final bool canGoLive =
+        AppConfig.geminiEnabled && keys.any(_looksLikeRealKey);
+    if (!canGoLive) {
       debugPrint(
         'AITourGuideService.start: using offline welcome '
-        '(enabled=${AppConfig.geminiEnabled}, keyLen=${key.length})',
+        '(enabled=${AppConfig.geminiEnabled}, keys=${keys.length})',
       );
       _messages.add(
         ChatMessage(
@@ -144,38 +146,22 @@ safety, and accessibility.''';
       );
       return;
     }
-    try {
-      _messages.clear();
-      _model = GenerativeModel(model: AppConfig.geminiModel, apiKey: key);
-      _session = _model!.startChat(
-        history: [
-          Content.text(_buildSystemPrompt(place)),
-          Content.model([
-            TextPart(
-              'Marhaba! I\'m your local guide for ${place.name}. Ask me anything - history, tips, what to see nearby, or anything else. بالإنجليزي أو العربي، زي ما تحب.',
-            ),
-          ]),
-        ],
-      );
-      _messages.add(
-        ChatMessage(
-          text:
-              'Marhaba! I\'m your local guide for ${place.name}. Ask me anything — history, tips, what to see nearby, or anything else. بالإنجليزي أو العربي، زي ما تحب. 😊',
-          isUser: false,
-          timestamp: DateTime.now(),
-        ),
-      );
-    } catch (e) {
-      debugPrint('AITourGuideService.start error: $e');
-      _session = null;
-      _messages.add(
-        ChatMessage(
-          text: _offlineWelcome(place),
-          isUser: false,
-          timestamp: DateTime.now(),
-        ),
-      );
-    }
+    // Send each user message as an independent REST call via the
+    // shared Gemini REST client which rotates through [apiKeys]. This
+    // sidesteps any SDK-level token / header formatting issues.
+    _session = _LiveSession(
+      apiKeys: keys,
+      model: AppConfig.geminiModel,
+      systemPrompt: _buildSystemPrompt(place),
+    );
+    _messages.add(
+      ChatMessage(
+        text:
+            'Marhaba! I\'m your local guide for ${place.name}. Ask me anything — history, tips, what to see nearby, or anything else. بالإنجليزي أو العربي، زي ما تحب. 😊',
+        isUser: false,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   String _offlineWelcome(PlaceModel place) {
@@ -201,20 +187,16 @@ safety, and accessibility.''';
     _messages.add(
       ChatMessage(text: userText, isUser: true, timestamp: DateTime.now()),
     );
-    // Inject fresh, dynamic context with each turn so the model adapts
-    // its answers to the current time, day, and place state.
     final contextualTurn = _buildContextualUserPrompt(userText);
     try {
-      final res = await _session!.sendMessage(Content.text(contextualTurn));
-      final reply = res.text ?? '(empty reply)';
+      final res = await _session!.sendMessage(contextualTurn);
+      final reply = res.text;
       _messages.add(
         ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()),
       );
       return reply;
     } catch (e) {
       debugPrint('AITourGuideService.send error: $e');
-      // Surface the API error so the user knows whether their key works.
-      // The local answer is shown AFTER, prefixed with a clear marker.
       final isArabic = userText.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
       final errBrief = _summarizeError(e);
       final offline = _offlineAnswer(userText, _currentPlace!);
@@ -231,26 +213,43 @@ safety, and accessibility.''';
   }
 
   String _summarizeError(Object e) {
-    final s = e.toString();
-    if (s.contains('API_KEY_INVALID') || s.contains('400')) {
-      return 'Invalid API key — check AppConfig.geminiApiKey.';
+    if (e is GeminiApiException) {
+      final code = e.statusCode;
+      if (code == 0) return 'Network error: ${e.message}';
+      if (code == 400) {
+        return 'Bad request (400): ${_trim(e.message)} — likely invalid API '
+            'key or unsupported model name. Check '
+            '`AppConfig.geminiApiKey` and `geminiModel`.';
+      }
+      if (code == 401 || code == 403) {
+        return 'Auth denied ($code): ${_trim(e.message)} — API key lacks '
+            'permission. Enable the Generative Language API for your key '
+            'at https://aistudio.google.com/apikey';
+      }
+      if (code == 404) {
+        return 'Model not found (404): ${_trim(e.message)} — '
+            '`AppConfig.geminiModel` is not available for this key.';
+      }
+      if (code == 429) {
+        return 'Rate limited (429): ${_trim(e.message)}';
+      }
+      return 'HTTP $code: ${_trim(e.message)}';
     }
+    final s = e.toString();
     if (s.contains('SocketException') || s.contains('Failed host lookup')) {
       return 'No internet / DNS failed.';
     }
     if (s.contains('TimeoutException')) {
       return 'Request timed out.';
     }
-    if (s.contains('429') || s.contains('RESOURCE_EXHAUSTED')) {
-      return 'Rate limited / quota exceeded.';
-    }
-    if (s.contains('403') || s.contains('PERMISSION_DENIED')) {
-      return 'Permission denied — Gemini API not enabled for this key, '
-          'or the Generative Language API is restricted.';
-    }
-    // Trim to first line to keep chat readable.
+    return _trim(s);
+  }
+
+  String _trim(String s) {
     final firstLine = s.split('\n').first;
-    return firstLine.length > 140 ? '${firstLine.substring(0, 140)}...' : firstLine;
+    return firstLine.length > 220
+        ? '${firstLine.substring(0, 220)}...'
+        : firstLine;
   }
 
   /// Wrap the raw user text with fresh context (current time, day,
@@ -436,6 +435,59 @@ $userText''';
   void clear() {
     _messages.clear();
     _session = null;
-    _model = null;
   }
+}
+
+/// Lightweight session wrapper that forwards every `sendMessage` call to
+/// the Gemini REST endpoint with `?key=API_KEY` in the URL — the format
+/// the Gemini Developer API documents for API-key auth. Replaces the
+/// google_generative_ai SDK call so we control the auth header path.
+class _LiveSession {
+  _LiveSession({
+    required this.apiKeys,
+    required this.model,
+    required this.systemPrompt,
+  });
+
+  final List<String> apiKeys;
+  final String model;
+  final String systemPrompt;
+
+  Future<_LiveReply> sendMessage(String userText) async {
+    final result = await GeminiRestClient.instance.generateContent(
+      apiKeys: apiKeys,
+      model: model,
+      systemInstruction: systemPrompt,
+      userPrompt: userText,
+      temperature: 0.7,
+      maxOutputTokens: 1024,
+    );
+    if (result == null || !result.isOk) {
+      throw GeminiApiException(
+        statusCode: result?.statusCode ?? 0,
+        message: result?.errorBody ?? 'unknown error',
+        raw: result?.raw,
+      );
+    }
+    return _LiveReply(text: result.text ?? '');
+  }
+}
+
+class _LiveReply {
+  final String text;
+  const _LiveReply({required this.text});
+}
+
+class GeminiApiException implements Exception {
+  final int statusCode;
+  final String message;
+  final String? raw;
+  GeminiApiException({
+    required this.statusCode,
+    required this.message,
+    this.raw,
+  });
+  @override
+  String toString() =>
+      'GeminiApiException(status=$statusCode): $message';
 }

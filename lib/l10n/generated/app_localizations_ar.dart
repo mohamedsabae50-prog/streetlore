@@ -166,6 +166,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get bt_reason_quietest => 'أهدأ وقت وأفضل إضاءة';
 
   @override
+  String get bt_reason_admin_set => 'محدد من الأدمن';
+
+  @override
   String get bt_reason_soft_light => 'إضاءة هادية';
 
   @override

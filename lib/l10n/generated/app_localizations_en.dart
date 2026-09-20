@@ -166,6 +166,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bt_reason_quietest => 'Quietest, best light';
 
   @override
+  String get bt_reason_admin_set => 'Set by admin';
+
+  @override
   String get bt_reason_soft_light => 'Soft light';
 
   @override

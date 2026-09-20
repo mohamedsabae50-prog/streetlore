@@ -336,12 +336,15 @@ class _BestTimeCard extends StatelessWidget {
                         color: recommendation.color,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        context.tr(recommendation.labelKey),
-                        style: TextStyle(
-                          color: recommendation.color,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
+                      Expanded(
+                        child: Text(
+                          recommendation.customLabel ??
+                              context.tr(recommendation.labelKey),
+                          style: TextStyle(
+                            color: recommendation.color,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
