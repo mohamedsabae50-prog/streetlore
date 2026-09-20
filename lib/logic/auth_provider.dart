@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -373,12 +374,25 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    // Order matters:
-    //   1) Flip local state to logged-out so UI updates immediately.
-    //   2) Tell Supabase to drop the server-side + local-storage session.
-    //   3) Wipe every SharedPreferences key that could re-hydrate the
-    //      session on next cold start (mirror + identity + Supabase's
-    //      own session key directly).
+    // ============================================================
+    // DEFINITIVE sign-out — clears every possible storage layer so
+    // the next cold start can NOT auto-restore the session.
+    //
+    // Order:
+    //   1) Flip local state to logged-out (UI updates instantly).
+    //   2) Call Supabase.auth.signOut() — clears server-side + its
+    //      SharedPreferences key.
+    //   3) Wipe flutter_secure_storage (any future or rogue secure
+    //      storage entry that may still hold a token).
+    //   4) Sweep every SharedPreferences key we ever wrote
+    //      (sb-*, user_*, is_logged_in, etc.) AND every Supabase
+    //      host-named key.
+    //   5) Notify listeners (the UI layer reacts and replaces the
+    //      navigation stack with the Login screen).
+    // ============================================================
+
+    // 1) Flip state immediately so UI reflects logged-out before any
+    //    await network round-trip.
     _isLoggedIn = false;
     _isGuest = false;
     _userId = '';
@@ -386,6 +400,7 @@ class AuthProvider extends ChangeNotifier {
     _userEmail = '';
     notifyListeners();
 
+    // 2) Server-side + Supabase SDK local storage.
     if (AppConfig.supabaseEnabled) {
       try {
         await Supabase.instance.client.auth.signOut();
@@ -394,9 +409,50 @@ class AuthProvider extends ChangeNotifier {
       }
     }
 
+    // 3) Belt-and-braces: clear flutter_secure_storage too. Even if
+    //    the SDK is currently configured with SharedPreferencesLocalStorage,
+    //    an old build or a custom override might have used secure
+    //    storage. We don't want a leftover token to survive.
+    try {
+      const secure = FlutterSecureStorage(
+        aOptions: AndroidOptions(
+          encryptedSharedPreferences: true,
+          resetOnError: true,
+        ),
+      );
+      // Wipe every well-known key plus a final sweep.
+      const knownKeys = <String>[
+        'supabase_access_token',
+        'supabase_refresh_token',
+        'supabase_session_data',
+        'sb_access_token',
+        'sb_refresh_token',
+        'sb-tbivoxyxclwjjspwsgvc-auth-token',
+        'auth_token',
+        'access_token',
+        'refresh_token',
+        'session',
+      ];
+      for (final k in knownKeys) {
+        try {
+          await secure.delete(key: k);
+        } catch (_) {}
+      }
+      // Wipe every key in the secure storage.
+      try {
+        final all = await secure.readAll();
+        for (final entry in all.entries) {
+          try {
+            await secure.delete(key: entry.key);
+          } catch (_) {}
+        }
+      } catch (_) {}
+    } catch (e) {
+      debugPrint('AuthProvider.signOut: secure storage clear failed: $e');
+    }
+
+    // 4) Wipe SharedPreferences mirrors + Supabase's own key.
     final prefs = await SharedPreferences.getInstance();
-    // Wipe EVERY key we use — defensive clear so the next cold start has
-    // no path to auto-restore.
     await prefs.setBool('is_logged_in', false);
     await prefs.setBool('is_guest', false);
     await prefs.remove('user_name');
@@ -408,16 +464,13 @@ class AuthProvider extends ChangeNotifier {
     await prefs.remove('sb_expires_at_ms');
     await prefs.remove('has_seen_onboarding');
 
-    // Also clear Supabase's own persisted-session SharedPreferences key
-    // directly (its name is `sb-<host>-auth-token`). The SDK's signOut
-    // should already do this, but if a network failure aborted that, the
-    // next cold start could still recover the session.
+    // The Supabase SDK stores its persisted session under a key like
+    // `sb-<host>-auth-token`. Wipe it by name and sweep any other
+    // `sb-*` key as a final defensive clear.
     final hostFirstSegment =
         Uri.parse(AppConfig.supabaseUrl).host.split('.').first;
     await prefs.remove('sb-$hostFirstSegment-auth-token');
-    // And every `sb-*` key as a final sweep.
-    final allKeys = prefs.getKeys();
-    for (final k in allKeys) {
+    for (final k in prefs.getKeys()) {
       if (k.startsWith('sb-')) {
         await prefs.remove(k);
       }

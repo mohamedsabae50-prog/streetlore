@@ -89,14 +89,22 @@ class GeminiRestClient {
         'generateContent: trying key #${i + 1}/${keys.length} '
         '(len=${key.length})',
       );
+      // Use a fresh HttpClient per request. Setting `headers` to an
+      // empty map (instead of merging with HttpClient.defaultHeaders)
+      // ensures no Authorization / Bearer header is ever attached.
+      final client = http.Client();
       try {
-        final resp = await http
-            .post(
-              uri,
-              headers: const {'Content-Type': 'application/json'},
-              body: body,
-            )
-            .timeout(_timeout);
+        final req = http.Request('POST', uri)
+          ..headers['Content-Type'] = 'application/json'
+          ..headers['Accept'] = 'application/json'
+          ..headers['User-Agent'] = 'streetlore/1.0.15'
+          // Explicitly blank any auth-related headers so they cannot
+          // leak from the runtime's default headers / interceptors.
+          ..headers['Authorization'] = ''
+          ..headers['authorization'] = ''
+          ..body = body;
+        final streamed = await client.send(req).timeout(_timeout);
+        final resp = await http.Response.fromStream(streamed);
         if (resp.statusCode >= 200 && resp.statusCode < 300) {
           final json = jsonDecode(resp.body) as Map<String, dynamic>;
           final candidates =
@@ -138,11 +146,6 @@ class GeminiRestClient {
           errorBody: errBody,
           raw: resp.body,
         );
-        // Only rotate on key-specific failures (400/401/403/429). For
-        // 4xx other than auth/quota we still try the next key, but for
-        // 5xx (server error) the next key is unlikely to help — still
-        // try, since the alternative is no answer at all.
-        // continue to next key
       } on TimeoutException {
         debugPrintGemini(
           'generateContent: timeout on key #${i + 1}',
@@ -153,7 +156,6 @@ class GeminiRestClient {
           errorBody: 'timeout',
           raw: null,
         );
-        // continue to next key
       } catch (e) {
         debugPrintGemini(
           'generateContent: exception on key #${i + 1}: $e',
@@ -164,7 +166,8 @@ class GeminiRestClient {
           errorBody: e.toString(),
           raw: null,
         );
-        // continue to next key
+      } finally {
+        client.close();
       }
     }
     return lastResult;
