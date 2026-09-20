@@ -1796,6 +1796,12 @@ abstract class AppLocalizations {
   /// **'Best Time'**
   String get quick_best_time;
 
+  /// Translation key: best_time_admin_hint
+  ///
+  /// In en, this message translates to:
+  /// **'Set by the editorial team'**
+  String get best_time_admin_hint;
+
   /// Translation key: quick_chat
   ///
   /// In en, this message translates to:

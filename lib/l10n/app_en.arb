@@ -566,6 +566,8 @@
   "@quick_badges": { "description": "Translation key: quick_badges" },
   "quick_best_time": "Best Time",
   "@quick_best_time": { "description": "Translation key: quick_best_time" },
+  "best_time_admin_hint": "Set by the editorial team",
+  "@best_time_admin_hint": { "description": "Translation key: best_time_admin_hint" },
   "quick_chat": "Live Chat",
   "@quick_chat": { "description": "Translation key: quick_chat" },
   "quick_journal": "Journal",

@@ -648,6 +648,12 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _PriceBanner(place: place),
+                                if ((place.bestTimeToVisit ?? '')
+                                    .trim()
+                                    .isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  _BestTimeBanner(place: place),
+                                ],
                                 const SizedBox(height: 22),
                                 Row(
                                   children: [
@@ -1329,6 +1335,109 @@ class _PriceBanner extends StatelessWidget {
                       );
                     },
                   ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BestTimeBanner extends StatelessWidget {
+  final PlaceModel place;
+  const _BestTimeBanner({required this.place});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textPri = theme.textTheme.bodyLarge?.color ?? Colors.black;
+    final textSec = theme.textTheme.bodyMedium?.color ?? Colors.grey;
+    const accent = Color(0xFFF59E0B); // amber
+    final customLabel = (place.bestTimeToVisit ?? '').trim();
+    final bg = isDark
+        ? accent.withValues(alpha: 0.14)
+        : accent.withValues(alpha: 0.07);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accent.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.access_time_rounded,
+              color: accent,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        context.tr('quick_best_time'),
+                        style: const TextStyle(
+                          color: accent,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'CURATED',
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  customLabel,
+                  style: TextStyle(
+                    color: textPri,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  context.tr('best_time_admin_hint'),
+                  style: TextStyle(
+                    color: textSec,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),

@@ -55,6 +55,7 @@ class AppStrings {
 
     'quick_ai_trip': {'en': 'AI Trip', 'ar': 'رحلة ذكية'},
     'quick_best_time': {'en': 'Best Time', 'ar': 'أفضل وقت'},
+    'best_time_admin_hint': {'en': 'Set by the editorial team', 'ar': 'حددها فريق التحرير'},
     'quick_map': {'en': 'Map', 'ar': 'الخريطة'},
     'quick_transport': {'en': 'Transport', 'ar': 'المواصلات'},
     'quick_journal': {'en': 'Journal', 'ar': 'اليوميات'},

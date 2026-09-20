@@ -15,7 +15,6 @@ import '../../logic/auth_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/tour_provider.dart';
 import '../widgets/place_card.dart';
-import '../widgets/featured_card.dart';
 import '../widgets/weather_widget.dart';
 import '../widgets/compass_card.dart';
 import '../../l10n/app_strings.dart';
@@ -382,12 +381,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildMain(List<PlaceModel> filtered) {
-    final placeProvider = context.watch<PlaceProvider>();
-    final featured = placeProvider.places;
-    final List<PlaceModel> displayedPlaces = placeProvider.applyFilters(
-      featured,
-    );
-
     return RefreshIndicator(
       color: context.textPri,
       onRefresh: () async {
@@ -406,78 +399,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               children: [
                 RepaintBoundary(child: _buildCompassIntro()),
                 const RepaintBoundary(child: WeatherWidget()),
-              ],
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
-                  child: Text(
-                    context.tr('featured'),
-                    style: AppTextStyles.sectionTitle.copyWith(
-                      color: context.textPri,
-                    ),
-                  ),
-                ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Row(
-                    children: [
-                      // Featured filter row is intentionally limited to
-                      // just two chips per design: Open Now + Nearest.
-                      FilterChip(
-                        label: Text(context.tr('filter_open_now')),
-                        selected: placeProvider.isFilterOpenNow,
-                        onSelected: (_) => placeProvider.toggleFilterOpenNow(),
-                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                        checkmarkColor: context.textPri,
-                      ),
-                      const SizedBox(width: 8),
-                      FilterChip(
-                        label: Text(context.tr('filter_nearest')),
-                        selected: placeProvider.isFilterNearest,
-                        onSelected: (_) => placeProvider.toggleFilterNearest(),
-                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                        checkmarkColor: context.textPri,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                AnimatedBuilder(
-                  animation: _scrollCtrl,
-                  builder: (context, staticChild) {
-                    final o =
-                        _scrollCtrl.hasClients ? _scrollCtrl.offset : 0.0;
-                    return Transform.translate(
-                      offset: Offset(0, -o * 0.25),
-                      child: Opacity(
-                        opacity: (1.0 - o / 350).clamp(0.0, 1.0),
-                        child: RepaintBoundary(child: staticChild),
-                      ),
-                    );
-                  },
-                  child: RepaintBoundary(
-                    child: SizedBox(
-                      height: 240,
-                      child: ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.only(left: 20, right: 6),
-                        itemCount: displayedPlaces.length,
-                        itemBuilder: (context, i) => FeaturedCard(
-                          place: displayedPlaces[i],
-                          onTap: () => _openPlace(displayedPlaces[i]),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),

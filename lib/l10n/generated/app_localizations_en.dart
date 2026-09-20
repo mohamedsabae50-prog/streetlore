@@ -923,6 +923,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quick_best_time => 'Best Time';
 
   @override
+  String get best_time_admin_hint => 'Set by the editorial team';
+
+  @override
   String get quick_chat => 'Live Chat';
 
   @override

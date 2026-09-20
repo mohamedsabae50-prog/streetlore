@@ -43,39 +43,50 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.16"
-$apkName = "streetlore-v1.0.16-arm64.apk"
+$tag = "v1.0.17"
+$apkName = "streetlore-v1.0.17-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.16',
+    '## What is new in v1.0.17',
     '',
-    '### 1. Gemini model upgrade: 2.0 Flash -> 3.6 Flash',
-    '- The default Gemini model in `lib/core/config/app_config.dart`',
-    '  is now `gemini-3.6-flash` (GA since July 21, 2026).',
-    '- Previous `gemini-2.0-flash` is no longer available on the',
-    '  Generative Language API and was returning `[404/NOT_FOUND]`.',
-    '- All existing Gemini features (AI Trip Planner, Place chatbot,',
-    '  AI Tour Guide) are routed through this new model automatically.',
+    '### 1. Featured section removed from Home Screen',
+    '- The whole Featured section (title + Open Now / Nearest filter',
+    '  chips + horizontal featured cards carousel + parallax',
+    '  animation) is deleted from `lib/presentation/screens/home_screen.dart`.',
+    '- Dead code cleaned up: `featured_card.dart` import,',
+    '  unused `displayedPlaces` + `featured` locals, the',
+    '  `_scrollCtrl`-driven parallax AnimatedBuilder, and the unused',
+    '  `placeProvider` watch in `_buildMain`.',
+    '- `PlaceProvider.applyFilters`, `isFilterOpenNow`,',
+    '  `toggleFilterOpenNow`, `isFilterNearest`, `toggleFilterNearest`',
+    '  remain in the provider (kept for backward compatibility + admin',
+    '  presets). The Featured entry point that called them is gone.',
     '',
-    '### 2. Home Screen: "See all" button removed',
-    '- The duplicate "See all" affordance that sat next to the',
-    '  Featured section title is gone.',
-    '- Featured section header now shows the title only.',
-    '- The horizontal category chips below the title still allow',
-    '  filtering by category without competing with a redundant',
-    '  full-list button.',
+    '### 2. Best Time to Visit now shown on Place Details',
+    '- Place Details screen now displays the admin-entered',
+    '  `bestTimeToVisit` value verbatim (the manual override field).',
+    '- New `_BestTimeBanner` widget sits directly under the price',
+    '  banner with: amber clock icon, "Best Time" title, the admin-',
+    '  entered label as the headline, and a "CURATED" pill plus a',
+    '  "Set by the editorial team" hint line.',
+    '- Falls back gracefully: if `bestTimeToVisit` is null or empty',
+    '  the banner is hidden entirely so the screen keeps the same',
+    '  rhythm as before.',
+    '- New l10n keys: `best_time_admin_hint` (EN / AR) wired through',
+    '  `app_en.arb`, `app_ar.arb`, `app_strings.dart`, and the',
+    '  generated localizations.',
     '',
     '## Build',
     '- Target: arm64 only (`--split-per-abi --target-platform android-arm64`).',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): C6C26DE99E6772B2956BE4808F777EBB24267166',
+    '- SHA-1 (release): see release asset.',
     '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.16 - Gemini 3.6 Flash + Home Featured clean-up'
+    name = 'v1.0.17 - Featured removed + admin Best Time surfaced on Place Details'
     body = $releaseBody
     draft = $false
     prerelease = $false

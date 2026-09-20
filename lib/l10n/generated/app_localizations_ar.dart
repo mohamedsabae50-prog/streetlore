@@ -921,6 +921,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get quick_best_time => 'أفضل وقت';
 
   @override
+  String get best_time_admin_hint => 'حددها فريق التحرير';
+
+  @override
   String get quick_chat => 'دردشة مباشرة';
 
   @override
