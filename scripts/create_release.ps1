@@ -43,52 +43,48 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.14"
-$apkName = "streetlore-v1.0.14-arm64.apk"
+$tag = "v1.0.15"
+$apkName = "streetlore-v1.0.15-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.14',
+    '## What is new in v1.0.15',
     '',
-    '### 1. Sign-out now fully wipes the session',
-    '- `signOut()` now calls `Supabase.auth.signOut()` first (clears the',
-    '  server-side session + the Supabase SharedPreferences key), then',
-    '  removes every mirrored key (`sb_access_token`, `sb_refresh_token`,',
-    '  `sb_expires_at_s`, etc.), then sweeps any remaining `sb-*` keys,',
-    '  AND clears the user identity keys (`user_name`, `user_email`,',
-    '  `user_id`) so the next cold start has no path to auto-restore.',
-    '- You can now switch accounts reliably.',
+    '### 1. Admin form reorganized (Best Time moved inline)',
+    '- Removed the standalone "Best Time to Visit" _section.',
+    '- Added a single inline "Best Time" field at the bottom of the',
+    '  Identification section (next to Rating and Featured). One text',
+    '  input, simple hint text, no extra UI clutter.',
+    '- The English Content card and Arabic Content card remain',
+    '  visually separated with distinct colored borders (blue / green)',
+    '  so admins can never confuse the two again.',
     '',
-    '### 2. Daylight calculation fixed (was "Sunrise 00:53, Sunset 00:53, 24h")',
-    '- Bug: `halfMinutes = h * 60` (treating degrees as hours).',
-    '- Fix: `halfMinutes = h * 4` (1 degree = 4 minutes — earth rotates',
-    '  360 degrees in 24 hours).',
-    '- Added NOAA-style altitude target (-0.833 degrees) for refraction',
-    '  + solar disc and a proper `cosH` formula.',
-    '- Solar-noon normalization handles any timezone offset.',
+    '### 2. Gemini REST client - hard guarantee: NO Authorization header',
+    '- Each request now uses a freshly-created `http.Client()` with',
+    '  explicit per-request headers only (`Content-Type`, `Accept`,',
+    '  `User-Agent`). The `Authorization` and `authorization` headers',
+    '  are explicitly set to empty string so they cannot leak from',
+    '  the runtime',
+    '  interceptor layer.',
+    '- Endpoint: `POST https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key=API_KEY`.',
+    '  Only the URL parameter is used for authentication.',
+    '- 4 Gemini keys are rotated on 4xx / timeout.',
     '',
-    '### 3. Admin "Best Time to Visit" override',
-    '- Added `best_time_to_visit` text field on the Place form. The admin',
-    '  can set the exact recommendation label (e.g. "Morning", "Sunset",',
-    '  "Late Night") and the Best Time screen displays it verbatim instead',
-    '  of computing one.',
-    '- Added quick-set chips (Early Morning, Morning, Midday, Afternoon,',
-    '  Sunset, Evening, Night, Late Night) for one-tap filling.',
-    '- Wired through both Place models + JSON serialization.',
-    '',
-    '### 4. Gemini API - raw REST call with key rotation',
-    '- Replaced the `google_generative_ai` SDK with a hand-written REST',
-    '  client using `https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key=API_KEY`.',
-    '  This eliminates any SDK-side Bearer-token formatting that caused the',
-    '  "Expected OAuth 2 access token" error.',
-    '- Configured 4 Gemini keys. The client rotates through them on 4xx/',
-    '  timeout, so a single revoked or rate-limited key never breaks the',
-    '  feature.',
-    '- Keys are injected at build time via `--dart-define=GEMINI_API_KEYS=k1,k2,k3,k4`',
-    '  so the source repository stays clean of secrets (GitHub push',
-    '  protection no longer blocks uploads).',
-    '- The chat surfaces real errors: HTTP 400 (bad model/key), 401/403',
-    '  (auth denied), 404 (model not found), 429 (rate limited), timeout,',
-    '  DNS failure.',
+    '### 3. Sign-out: bulletproof wipe across every storage layer',
+    '- `AuthProvider.signOut()` now, in order:',
+    '   1) flip `_isLoggedIn=false` + `_userId=""` + `_userEmail=""` + ',
+    '     `notifyListeners()` (UI updates instantly)',
+    '   2) `await Supabase.instance.client.auth.signOut()`',
+    '   3) wipe every well-known `FlutterSecureStorage` key + a full',
+    '     `readAll()` sweep (defensive belt-and-braces even if the SDK',
+    '     is configured with SharedPreferencesLocalStorage)',
+    '   4) wipe every SharedPreferences key we ever wrote (`sb_*`, ',
+    '     `user_*`, `is_logged_in`, `has_seen_onboarding`) + the Supabase',
+    '     host-named session key + a sweep of every `sb-*` key as final',
+    '     defense.',
+    '- Profile screen then `pushAndRemoveUntil` to the LoginScreen so',
+    '  the navigation stack cannot navigate back.',
+    '- After this, on next cold start `bootstrap()` finds nothing to',
+    '  restore and the user lands on the Login screen.',
     '',
     '## Build',
     '- Target: arm64 only (`--split-per-abi --target-platform android-arm64`).',
@@ -100,7 +96,7 @@ $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.14 - 4 critical fixes (sign out, daylight math, admin best time, Gemini REST)'
+    name = 'v1.0.15 - definitive fixes (admin inline, Gemini no auth headers, signOut wipes all)'
     body = $releaseBody
     draft = $false
     prerelease = $false
