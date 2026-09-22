@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/config/app_config.dart';
 import '../core/services/offline_storage_service.dart';
 import '../data/models/offline_pack.dart';
 import '../data/models/place_model.dart';
@@ -108,6 +110,51 @@ class OfflineProvider extends ChangeNotifier {
     _cachedPlaces = _storage.getCachedPlaces();
     _instance = this;
     notifyListeners();
+  }
+
+  /// Fetch the full place list directly from Supabase, bypassing the
+  /// in-memory `PlaceProvider`. Returns an empty list when offline or
+  /// when the Supabase call fails.
+  ///
+  /// The Offline Download flow uses this when the in-memory place list
+  /// looks suspiciously small (less than 5 places), which indicates
+  /// `PlaceProvider.loadPlaces()` has not yet finished loading.
+  Future<List<PlaceModel>> pullAllPlacesFromSupabase() async {
+    if (!AppConfig.supabaseEnabled) return const [];
+    try {
+      final client = Supabase.instance.client;
+      final res = await client
+          .from('places')
+          .select()
+          .order('id')
+          .timeout(const Duration(seconds: 10));
+      return (res as List)
+          .map((row) {
+            try {
+              final m = Map<String, dynamic>.from(row as Map);
+              return PlaceModel.fromJson(m);
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<PlaceModel>()
+          .toList();
+    } catch (e) {
+      debugPrint('OfflineProvider.pullAllPlacesFromSupabase: $e');
+      return const [];
+    }
+  }
+
+  /// Look up a place by id from the Hive cache (synchronous, no async
+  /// hop). Used by the offline Place Details page when the in-memory
+  /// `PlaceProvider` doesn't have the place yet.
+  static PlaceModel? findCachedPlace(String id) {
+    final i = _instance;
+    if (i == null) return null;
+    for (final p in i._cachedPlaces) {
+      if (p.id == id) return p;
+    }
+    return null;
   }
 
   Future<DownloadResult> download(
