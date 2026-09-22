@@ -307,9 +307,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             _Stat(
                               label: context.tr('prof_tours'),
-                              numericValue:
-                                  tourP.savedTours.length +
-                                  gamification.stats.placesVisited,
+                              numericValue: tourP.savedTours.length,
                               icon: Icons.map_rounded,
                               delayMs: 440,
                             ),

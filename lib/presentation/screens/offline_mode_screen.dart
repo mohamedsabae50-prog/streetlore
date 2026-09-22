@@ -196,10 +196,26 @@ class _AvailableTileState extends State<_AvailableTile> {
     final provider = context.read<OfflineProvider>();
     final places = context.read<PlaceProvider>().places;
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 600));
       final result = await provider.download(
         widget.pack,
         availablePlaces: places,
+        onProgress: (
+          int done,
+          int total, {
+          int imageOk = 0,
+          int imageFail = 0,
+        }) {
+          if (!mounted) return;
+          messenger.showSnackBar(
+            SnackBar(
+              duration: const Duration(milliseconds: 1200),
+              content: Text(
+                'Caching $done/$total places — '
+                'images: $imageOk ok, $imageFail failed',
+              ),
+            ),
+          );
+        },
       );
       if (!mounted) return;
       switch (result) {
@@ -207,7 +223,9 @@ class _AvailableTileState extends State<_AvailableTile> {
           messenger.showSnackBar(
             SnackBar(
               content: Text(
-                context.tr('offline_downloaded_n', {'n': '${ok.cachedCount}'}),
+                'Saved ${ok.cachedCount} places • '
+                '${ok.imagesOk} images ready offline'
+                '${ok.imagesFailed > 0 ? ' • ${ok.imagesFailed} failed' : ''}',
               ),
             ),
           );

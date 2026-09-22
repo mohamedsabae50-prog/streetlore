@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/mock_data.dart' show fallbackPlaces;
 import '../data/models/place_model.dart';
+import 'offline_provider.dart';
 
 class PlaceProvider extends ChangeNotifier {
   SupabaseClient get _client => Supabase.instance.client;
@@ -62,7 +63,13 @@ class PlaceProvider extends ChangeNotifier {
       }
     } catch (e) {
       _error = 'Failed to load places: $e';
-      _places = List<PlaceModel>.from(fallbackPlaces);
+      // Prefer real cached places over mock data when offline.
+      final cached = OfflineProvider.cachedFallback;
+      if (cached.isNotEmpty) {
+        _places = cached;
+      } else {
+        _places = List<PlaceModel>.from(fallbackPlaces);
+      }
     } finally {
       _loading = false;
       notifyListeners();
@@ -88,20 +95,28 @@ class PlaceProvider extends ChangeNotifier {
     return PlaceModel(
       id: json['id'] as String,
       name: json['name'] as String,
+      nameAr: json['name_ar'] as String?,
       description: json['description'] as String,
+      descriptionAr: json['description_ar'] as String?,
       imageUrl: json['image_url'] as String,
       rating: (json['rating'] as num).toDouble(),
       category: json['category'] as String,
+      categoryAr: json['category_ar'] as String?,
       lat: (json['lat'] as num).toDouble(),
       lng: (json['lng'] as num).toDouble(),
       address: (json['address'] as String?) ?? 'Alexandria, Egypt',
+      addressAr: json['address_ar'] as String?,
       openHours: (json['open_hours'] as String?) ?? '9:00 AM - 6:00 PM',
       reviewCount: (json['review_count'] as int?) ?? 0,
       priceLevel: _priceLevelFromString(json['price_level'] as String?),
       priceNote: (json['price_note'] as String?) ?? '',
+      priceNoteAr: json['price_note_ar'] as String?,
       isHiddenGem: (json['is_hidden_gem'] as bool?) ?? false,
       priceLocalEgp: json['price_local_egp'] as int?,
       priceForeignerEgp: json['price_foreigner_egp'] as int?,
+      bestTimeNote: json['best_time_note'] as String?,
+      bestTimeToVisit: json['best_time_to_visit'] as String?,
+      isIndoor: (json['is_indoor'] as bool?) ?? false,
     );
   }
 

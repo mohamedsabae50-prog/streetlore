@@ -183,32 +183,25 @@ class _SplashScreenState extends State<SplashScreen>
                             child: Transform.scale(
                               scale: scale,
                               child: Container(
-                                width: 130,
-                                height: 130,
-                                decoration: BoxDecoration(
+                                width: 150,
+                                height: 150,
+                                foregroundDecoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  gradient: AppColors.primaryGradient,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primary.withValues(
-                                        alpha: 0.55,
-                                      ),
-                                      blurRadius: 50,
-                                      spreadRadius: 12,
+                                  border: Border.all(
+                                    color: Colors.white.withValues(
+                                      alpha: 0.12,
                                     ),
-                                  ],
+                                    width: 2,
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                          FadeTransition(
-                            opacity: _logoFade,
-                            child: Transform.scale(
-                              scale: _logoScale.value * _pulse.value,
-                              child: const Icon(
-                                Icons.explore_rounded,
-                                size: 64,
-                                color: Colors.white,
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/logo/streetlore_logo.png',
+                                    fit: BoxFit.cover,
+                                    width: 150,
+                                    height: 150,
+                                  ),
+                                ),
                               ),
                             ),
                           ),

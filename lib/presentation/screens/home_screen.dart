@@ -24,7 +24,6 @@ import 'leaderboard_screen.dart';
 import 'map_view_screen.dart';
 import 'offline_mode_screen.dart';
 import 'geofencing_settings_screen.dart';
-import 'best_time_screen.dart';
 import 'achievements_screen.dart';
 import 'walking_routes_screen.dart';
 
@@ -790,15 +789,6 @@ class _QuickAccessGrid extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const AiTripGeneratorScreen()),
-        ),
-      ),
-      _QuickItem(
-        icon: Icons.wb_twilight_rounded,
-        label: 'quick_best_time',
-        color: const Color(0xFFF59E0B),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const BestTimeScreen()),
         ),
       ),
       _QuickItem(

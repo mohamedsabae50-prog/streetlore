@@ -545,6 +545,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                             ),
                           ),
 
+                          if ((place.bestTimeToVisit ?? '').trim().isNotEmpty)
+                            Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(24, 18, 24, 0),
+                              child: _BestTimeBadge(place: place),
+                            ),
+
                           Padding(
                             padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
                             child: Material(
@@ -648,12 +655,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _PriceBanner(place: place),
-                                if ((place.bestTimeToVisit ?? '')
-                                    .trim()
-                                    .isNotEmpty) ...[
-                                  const SizedBox(height: 12),
-                                  _BestTimeBanner(place: place),
-                                ],
                                 const SizedBox(height: 22),
                                 Row(
                                   children: [
@@ -1344,44 +1345,52 @@ class _PriceBanner extends StatelessWidget {
   }
 }
 
-class _BestTimeBanner extends StatelessWidget {
+class _BestTimeBadge extends StatelessWidget {
   final PlaceModel place;
-  const _BestTimeBanner({required this.place});
+  const _BestTimeBadge({required this.place});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final textPri = theme.textTheme.bodyLarge?.color ?? Colors.black;
-    final textSec = theme.textTheme.bodyMedium?.color ?? Colors.grey;
-    const accent = Color(0xFFF59E0B); // amber
     final customLabel = (place.bestTimeToVisit ?? '').trim();
-    final bg = isDark
-        ? accent.withValues(alpha: 0.14)
-        : accent.withValues(alpha: 0.07);
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accent.withValues(alpha: 0.25)),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF59E0B), Color(0xFFEF4444)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.35),
+                width: 1.5,
+              ),
             ),
             child: const Icon(
-              Icons.access_time_rounded,
-              color: accent,
-              size: 22,
+              Icons.access_time_filled_rounded,
+              color: Colors.white,
+              size: 28,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1391,51 +1400,52 @@ class _BestTimeBanner extends StatelessWidget {
                     Expanded(
                       child: Text(
                         context.tr('quick_best_time'),
-                        style: const TextStyle(
-                          color: accent,
-                          fontSize: 15,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 12,
                           fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
                         ),
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
-                        vertical: 2,
+                        vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Text(
                         'CURATED',
                         style: TextStyle(
-                          color: accent,
+                          color: Colors.white,
                           fontSize: 9,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 1.1,
+                          letterSpacing: 1.4,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   customLabel,
                   style: TextStyle(
                     color: textPri,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    height: 1.3,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    height: 1.15,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   context.tr('best_time_admin_hint'),
                   style: TextStyle(
-                    color: textSec,
+                    color: textPri.withValues(alpha: 0.7),
                     fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],

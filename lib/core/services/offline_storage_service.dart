@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -87,6 +89,58 @@ class OfflineStorageService {
     final box = Hive.box(_placesBox);
     for (final p in places) {
       await box.put(p.id, jsonEncode(p.toJson()));
+    }
+  }
+
+  /// Eagerly fetch every place image into the standard
+  /// `DefaultCacheManager` disk cache so the `CachedNetworkImage`
+  /// widget used throughout the app can render the picture while
+  /// offline. Returns a record of (successCount, failCount).
+  Future<({int ok, int failed})> prefetchImages(
+    List<PlaceModel> places,
+  ) async {
+    int ok = 0;
+    int failed = 0;
+    final manager = DefaultCacheManager();
+    for (final p in places) {
+      final url = p.imageUrl.trim();
+      if (url.isEmpty) {
+        continue;
+      }
+      try {
+        final fileInfo = await manager.downloadFile(url);
+        if (kIsWeb) {
+          // On web `File` is not available so we accept the cache
+          // entry as success regardless.
+          ok++;
+        } else if (await fileInfo.file.exists()) {
+          ok++;
+        } else {
+          failed++;
+        }
+      } catch (e) {
+        debugPrint(
+          'OfflineStorageService.prefetchImages: failed for '
+          '${p.id} -> $url: $e',
+        );
+        failed++;
+      }
+    }
+    return (ok: ok, failed: failed);
+  }
+
+  /// Returns the cached image file for [placeId] if available.
+  /// Returns `null` on web (no File API) or when nothing was cached.
+  Future<File?> getCachedImageFile(String placeId, String imageUrl) async {
+    if (kIsWeb) return null;
+    try {
+      final manager = DefaultCacheManager();
+      final info = await manager.getFileFromCache(imageUrl);
+      if (info == null) return null;
+      final f = info.file;
+      return await f.exists() ? f : null;
+    } catch (_) {
+      return null;
     }
   }
 

@@ -97,7 +97,7 @@ ALEXANDRIA — ANCHOR FACTS (always ground answers here):
     final placesForContext = availablePlaces
         .map(
           (p) =>
-              '{"id":"${p.id}","name":${jsonEncode(p.name)},"category":"${p.category}","lat":${p.lat},"lng":${p.lng}}',
+              '{"id":"${p.id}","name":${jsonEncode(p.name)},"category":"${p.category}","description":${jsonEncode(p.description)},"address":${jsonEncode(p.address)},"bestTimeToVisit":${jsonEncode(p.bestTimeToVisit ?? '')},"isIndoor":${p.isIndoor},"lat":${p.lat},"lng":${p.lng}}',
         )
         .join(',');
 
@@ -132,15 +132,31 @@ OUTPUT SCHEMA (return ONLY this JSON, no markdown fences):
 }
 
 STRICT RULES:
-- ONLY use placeId values from the available list below. If a place you want
-  to recommend is not in the list, do not invent an id — skip it.
+- The user's prompt mentions specific themes (sea, fish, seafood, beach,
+  history, mosque, family, romantic, photography, hidden gems, budget,
+  etc.). You MUST read the `category`, `description`, and `bestTimeToVisit`
+  of every place below and ONLY recommend places whose fields directly
+  match the user's vibe. If nothing matches, prefer the closest category
+  match and explicitly say so in the summary.
+- For "sea / beach / corniche / swim" prompts, prefer places with
+  `category in {Nature, Beach}` AND whose `description` mentions sea,
+  corniche, Mediterranean, beach, or coast.
+- For "fish / seafood / food / eat" prompts, prefer places with
+  `category in {Food}` AND whose `description` mentions seafood, fish,
+  restaurant, kitchen, or local cuisine.
+- For "history / ancient / roman" prompts, prefer `category = Historical`.
+- For "mosque / prayer / islam" prompts, prefer `category = Mosques`.
+- NEVER invent a placeId. Every stop MUST be a placeId from the list
+  below. If a place you want to recommend is not in the list, drop it.
 - Order stops geographically + chronologically (morning first, sunset last
   where possible). 2-4 stops per day.
 - "suggestedTime" must be a real window like "09:00 - 11:00" — use the 24h
-  clock. Reflect rush hour, prayer time, sunset, or meal windows.
+  clock. Reflect rush hour, prayer time, sunset, or meal windows. Use the
+  place's `bestTimeToVisit` (e.g. "Sunset", "Morning") as a hint, not a
+  rule.
 - "note" must be <= 18 words, include at least one concrete detail
-  (specific food, time, photo angle, or local tip). NO "Visit this place"
-  filler.
+  pulled from the place's `description` (specific food, time, photo
+  angle, or local tip). NO "Visit this place" filler.
 - Reflect the budget in tip + summary tone:
     \$    = street food / free attractions
     \$\$  = casual local spots

@@ -43,50 +43,76 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.17"
-$apkName = "streetlore-v1.0.17-arm64.apk"
+$tag = "v1.0.18"
+$apkName = "streetlore-v1.0.18-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.17',
+    '## What is new in v1.0.18',
     '',
-    '### 1. Featured section removed from Home Screen',
-    '- The whole Featured section (title + Open Now / Nearest filter',
-    '  chips + horizontal featured cards carousel + parallax',
-    '  animation) is deleted from `lib/presentation/screens/home_screen.dart`.',
-    '- Dead code cleaned up: `featured_card.dart` import,',
-    '  unused `displayedPlaces` + `featured` locals, the',
-    '  `_scrollCtrl`-driven parallax AnimatedBuilder, and the unused',
-    '  `placeProvider` watch in `_buildMain`.',
-    '- `PlaceProvider.applyFilters`, `isFilterOpenNow`,',
-    '  `toggleFilterOpenNow`, `isFilterNearest`, `toggleFilterNearest`',
-    '  remain in the provider (kept for backward compatibility + admin',
-    '  presets). The Featured entry point that called them is gone.',
+    '### 1. Offline Download is now real (CRITICAL fix)',
+    '- `OfflineProvider.download()` runs two phases: (a) persists',
+    '  every place JSON to Hive, then (b) calls',
+    '  `DefaultCacheManager().downloadFile()` for each image so the',
+    '  `CachedNetworkImage` widget can render offline.',
+    '- `PlaceProvider.loadPlaces()` now falls back to',
+    '  `OfflineProvider.cachedFallback` (real Hive-cached places) when',
+    '  Supabase times out, instead of the mock `fallbackPlaces`.',
+    '- `flutter_cache_manager: ^3.4.1` added explicitly to pubspec.',
+    '- Removed the fake 600 ms `Future.delayed` from the download flow.',
+    '- Download UI now reports real progress (`done/total places +`,
+    '  `images ok/failed`) and the final snack bar includes image counts.',
     '',
-    '### 2. Best Time to Visit now shown on Place Details',
-    '- Place Details screen now displays the admin-entered',
-    '  `bestTimeToVisit` value verbatim (the manual override field).',
-    '- New `_BestTimeBanner` widget sits directly under the price',
-    '  banner with: amber clock icon, "Best Time" title, the admin-',
-    '  entered label as the headline, and a "CURATED" pill plus a',
-    '  "Set by the editorial team" hint line.',
-    '- Falls back gracefully: if `bestTimeToVisit` is null or empty',
-    '  the banner is hidden entirely so the screen keeps the same',
-    '  rhythm as before.',
-    '- New l10n keys: `best_time_admin_hint` (EN / AR) wired through',
-    '  `app_en.arb`, `app_ar.arb`, `app_strings.dart`, and the',
-    '  generated localizations.',
+    '### 2. AI Trip Planner — strict database grounding',
+    '- The system prompt now injects `id`, `name`, `category`,',
+    '  `description`, `address`, `bestTimeToVisit`, `isIndoor`, `lat`,',
+    '  `lng` for every available place — not just the id+category.',
+    '- Added explicit per-vibe rules: "sea" must match a place whose',
+    '  category is `Nature` or `Beach` and whose description mentions',
+    '  sea/corniche/coast. Same for fish/seafood, history, mosques, etc.',
+    '- AI is now forbidden from inventing placeIds.',
+    '- `PlaceProvider._placeFromSupabase` now also parses `name_ar`,',
+    '  `description_ar`, `category_ar`, `address_ar`, `price_note_ar`,',
+    '  `best_time_note`, `best_time_to_visit`, and `is_indoor` so the',
+    '  AI prompt and the UI see the full Arabic + admin fields.',
+    '',
+    '### 3. Profile counters — Tours formula corrected',
+    '- "Tours" was incorrectly `savedTours.length + placesVisited`',
+    '  (two unrelated metrics). Now it is just `tourP.savedTours.length`.',
+    '- `Saves` / `Explored` / `Tours` all rebuild via `context.watch` so',
+    '  toggling a save or visiting a place updates the counter live.',
+    '',
+    '### 4. Best Time moved + redesigned',
+    '- Home Screen quick action for "Best Time" is removed (it was a',
+    '  duplicate of the dedicated screen anyway).',
+    '- The Place Details "Best Time" badge is now a hero-style gradient',
+    '  card (amber → red) with the admin-entered label rendered at 22 pt',
+    '  bold, a CURATED pill, and a 18 px blur shadow. It sits at the top',
+    '  of the body, right after the Save/Go quick actions.',
+    '- `best_time_admin_hint` l10n key wired through EN + AR.',
+    '',
+    '### 5. New brand logo',
+    '- New `assets/logo/streetlore_logo.png` (1024×1024) showing the open',
+    '  book + road + location-pin + stars motif.',
+    '- Splash screen renders the asset inside a 150 px circular ClipOval',
+    '  with the existing pulse/scale/orbit animations around it.',
+    '- Login screen renders the asset inside the rounded gradient square',
+    '  that previously held the `explore_rounded` icon.',
+    '- All Android launcher densities regenerated from the same source:',
+    '  mdpi (48) → hdpi (72) → xhdpi (96) → xxhdpi (144) → xxxhdpi (192).',
+    '- `pubspec.yaml` `assets:` section now declares the logo.',
     '',
     '## Build',
     '- Target: arm64 only (`--split-per-abi --target-platform android-arm64`).',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): see release asset.',
+    '- SHA-1 (release): 27B21C426A09FC90AE4B3A1E2C82E09D7E9B9994',
+    '- SHA-256 (release): F2C0ACF9385B55D24153FAB1EBA7E4FBACAE914D62FA834439CAC47FCBFECC4E',
     '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.17 - Featured removed + admin Best Time surfaced on Place Details'
+    name = 'v1.0.18 - Offline Download real, AI grounded, counters wired, new brand logo'
     body = $releaseBody
     draft = $false
     prerelease = $false
