@@ -293,23 +293,23 @@ class _LoginScreenState extends State<LoginScreen>
                       child: PopIn(
                         duration: const Duration(milliseconds: 700),
                         child: Container(
-                          width: 86,
-                          height: 86,
+                          width: 160,
+                          height: 160,
                           decoration: BoxDecoration(
                             gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(22),
+                            borderRadius: BorderRadius.circular(36),
                             boxShadow: [
                               BoxShadow(
                                 color: AppColors.primary.withValues(alpha: 0.4),
-                                blurRadius: 24,
-                                offset: const Offset(0, 10),
+                                blurRadius: 32,
+                                offset: const Offset(0, 14),
                               ),
                             ],
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(22),
+                            borderRadius: BorderRadius.circular(36),
                             child: Padding(
-                              padding: const EdgeInsets.all(6),
+                              padding: const EdgeInsets.all(10),
                               child: Image.asset(
                                 'assets/logo/streetlore_logo.png',
                                 fit: BoxFit.contain,

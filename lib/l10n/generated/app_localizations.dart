@@ -2401,6 +2401,294 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Write Review'**
   String get write_review;
+
+  /// Translation key: ach_first_steps_name
+  ///
+  /// In en, this message translates to:
+  /// **'First Steps'**
+  String get ach_first_steps_name;
+
+  /// Translation key: ach_first_steps_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Check in at your first place'**
+  String get ach_first_steps_desc;
+
+  /// Translation key: ach_explorer_5_name
+  ///
+  /// In en, this message translates to:
+  /// **'Curious'**
+  String get ach_explorer_5_name;
+
+  /// Translation key: ach_explorer_5_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 5 different places'**
+  String get ach_explorer_5_desc;
+
+  /// Translation key: ach_explorer_10_name
+  ///
+  /// In en, this message translates to:
+  /// **'Adventurer'**
+  String get ach_explorer_10_name;
+
+  /// Translation key: ach_explorer_10_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 10 different places'**
+  String get ach_explorer_10_desc;
+
+  /// Translation key: ach_explorer_25_name
+  ///
+  /// In en, this message translates to:
+  /// **'Pathfinder'**
+  String get ach_explorer_25_name;
+
+  /// Translation key: ach_explorer_25_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 25 different places'**
+  String get ach_explorer_25_desc;
+
+  /// Translation key: ach_lorekeeper_name
+  ///
+  /// In en, this message translates to:
+  /// **'Lorekeeper'**
+  String get ach_lorekeeper_name;
+
+  /// Translation key: ach_lorekeeper_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 42 places — the answer to everything'**
+  String get ach_lorekeeper_desc;
+
+  /// Translation key: ach_culture_buff_name
+  ///
+  /// In en, this message translates to:
+  /// **'Culture Buff'**
+  String get ach_culture_buff_name;
+
+  /// Translation key: ach_culture_buff_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 5 cultural spots'**
+  String get ach_culture_buff_desc;
+
+  /// Translation key: ach_history_nerd_name
+  ///
+  /// In en, this message translates to:
+  /// **'History Nerd'**
+  String get ach_history_nerd_name;
+
+  /// Translation key: ach_history_nerd_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 10 historical spots'**
+  String get ach_history_nerd_desc;
+
+  /// Translation key: ach_foodie_name
+  ///
+  /// In en, this message translates to:
+  /// **'Foodie'**
+  String get ach_foodie_name;
+
+  /// Translation key: ach_foodie_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Check in at 3 food spots'**
+  String get ach_foodie_desc;
+
+  /// Translation key: ach_gourmet_name
+  ///
+  /// In en, this message translates to:
+  /// **'Gourmet'**
+  String get ach_gourmet_name;
+
+  /// Translation key: ach_gourmet_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Check in at 8 food spots'**
+  String get ach_gourmet_desc;
+
+  /// Translation key: ach_shopaholic_name
+  ///
+  /// In en, this message translates to:
+  /// **'Shopaholic'**
+  String get ach_shopaholic_name;
+
+  /// Translation key: ach_shopaholic_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 3 shopping spots'**
+  String get ach_shopaholic_desc;
+
+  /// Translation key: ach_spiritual_seeker_name
+  ///
+  /// In en, this message translates to:
+  /// **'Spiritual Seeker'**
+  String get ach_spiritual_seeker_name;
+
+  /// Translation key: ach_spiritual_seeker_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 2 mosques'**
+  String get ach_spiritual_seeker_desc;
+
+  /// Translation key: ach_pilgrim_name
+  ///
+  /// In en, this message translates to:
+  /// **'Pilgrim'**
+  String get ach_pilgrim_name;
+
+  /// Translation key: ach_pilgrim_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 2 churches or holy sites'**
+  String get ach_pilgrim_desc;
+
+  /// Translation key: ach_streak_3_name
+  ///
+  /// In en, this message translates to:
+  /// **'Warming Up'**
+  String get ach_streak_3_name;
+
+  /// Translation key: ach_streak_3_desc
+  ///
+  /// In en, this message translates to:
+  /// **'3-day check-in streak'**
+  String get ach_streak_3_desc;
+
+  /// Translation key: ach_streak_7_name
+  ///
+  /// In en, this message translates to:
+  /// **'On a Roll'**
+  String get ach_streak_7_name;
+
+  /// Translation key: ach_streak_7_desc
+  ///
+  /// In en, this message translates to:
+  /// **'7-day check-in streak'**
+  String get ach_streak_7_desc;
+
+  /// Translation key: ach_streak_30_name
+  ///
+  /// In en, this message translates to:
+  /// **'Devoted'**
+  String get ach_streak_30_name;
+
+  /// Translation key: ach_streak_30_desc
+  ///
+  /// In en, this message translates to:
+  /// **'30-day check-in streak'**
+  String get ach_streak_30_desc;
+
+  /// Translation key: ach_streak_100_name
+  ///
+  /// In en, this message translates to:
+  /// **'Legend'**
+  String get ach_streak_100_name;
+
+  /// Translation key: ach_streak_100_desc
+  ///
+  /// In en, this message translates to:
+  /// **'100-day check-in streak'**
+  String get ach_streak_100_desc;
+
+  /// Translation key: ach_hidden_gem_hunter_name
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden Gem Hunter'**
+  String get ach_hidden_gem_hunter_name;
+
+  /// Translation key: ach_hidden_gem_hunter_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Discover 3 hidden gems'**
+  String get ach_hidden_gem_hunter_desc;
+
+  /// Translation key: ach_reviewer_name
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewer'**
+  String get ach_reviewer_name;
+
+  /// Translation key: ach_reviewer_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Post 3 reviews'**
+  String get ach_reviewer_desc;
+
+  /// Translation key: ach_critic_name
+  ///
+  /// In en, this message translates to:
+  /// **'Critic'**
+  String get ach_critic_name;
+
+  /// Translation key: ach_critic_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Post 10 reviews'**
+  String get ach_critic_desc;
+
+  /// Translation key: ach_photographer_name
+  ///
+  /// In en, this message translates to:
+  /// **'Photographer'**
+  String get ach_photographer_name;
+
+  /// Translation key: ach_photographer_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Upload 5 photos'**
+  String get ach_photographer_desc;
+
+  /// Translation key: ach_influencer_name
+  ///
+  /// In en, this message translates to:
+  /// **'Influencer'**
+  String get ach_influencer_name;
+
+  /// Translation key: ach_influencer_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Upload 20 photos'**
+  String get ach_influencer_desc;
+
+  /// Translation key: ach_early_bird_name
+  ///
+  /// In en, this message translates to:
+  /// **'Early Bird'**
+  String get ach_early_bird_name;
+
+  /// Translation key: ach_early_bird_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Check in at 5 places before 9 AM'**
+  String get ach_early_bird_desc;
+
+  /// Translation key: ach_night_owl_name
+  ///
+  /// In en, this message translates to:
+  /// **'Night Owl'**
+  String get ach_night_owl_name;
+
+  /// Translation key: ach_night_owl_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Check in at 5 places after 9 PM'**
+  String get ach_night_owl_desc;
+
+  /// Translation key: ach_completionist_name
+  ///
+  /// In en, this message translates to:
+  /// **'Completionist'**
+  String get ach_completionist_name;
+
+  /// Translation key: ach_completionist_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock 20 different achievements'**
+  String get ach_completionist_desc;
 }
 
 class _AppLocalizationsDelegate

@@ -44,6 +44,28 @@ class GamificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Pull the latest stats row for [userId] from Supabase and merge
+  /// over the locally cached values (Supabase wins when both exist).
+  /// Call this right after sign-in / on app start.
+  Future<void> bootstrapForUser(String userId) async {
+    if (userId.isEmpty) return;
+    final remote = await SupabaseService.instance.pullStats(userId);
+    if (remote == null) {
+      debugPrint(
+        'GamificationProvider: no remote stats for $userId, keeping local',
+      );
+      return;
+    }
+    _stats = remote;
+    await _save();
+    notifyListeners();
+    debugPrint(
+      'GamificationProvider: pulled stats for $userId '
+      '(placesVisited=${remote.placesVisited}, '
+      'points=${remote.totalPoints}, level=${remote.level})',
+    );
+  }
+
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kKey, jsonEncode(_stats.toJson()));

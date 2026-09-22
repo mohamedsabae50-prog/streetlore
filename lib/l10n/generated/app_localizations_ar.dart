@@ -1251,4 +1251,148 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get write_review => 'اكتب تقييمًا';
+
+  @override
+  String get ach_first_steps_name => 'الخطوات الأولى';
+
+  @override
+  String get ach_first_steps_desc => 'سجّل دخولك في أول مكان';
+
+  @override
+  String get ach_explorer_5_name => 'فضولي';
+
+  @override
+  String get ach_explorer_5_desc => 'زُر 5 أماكن مختلفة';
+
+  @override
+  String get ach_explorer_10_name => 'مغامر';
+
+  @override
+  String get ach_explorer_10_desc => 'زُر 10 أماكن مختلفة';
+
+  @override
+  String get ach_explorer_25_name => 'مستكشف';
+
+  @override
+  String get ach_explorer_25_desc => 'زُر 25 مكانًا مختلفًا';
+
+  @override
+  String get ach_lorekeeper_name => 'حارس التراث';
+
+  @override
+  String get ach_lorekeeper_desc => 'زُر 42 مكانًا — إجابة كل شيء';
+
+  @override
+  String get ach_culture_buff_name => 'ثقافة عالية';
+
+  @override
+  String get ach_culture_buff_desc => 'زُر 5 أماكن ثقافية';
+
+  @override
+  String get ach_history_nerd_name => 'مهووس بالتاريخ';
+
+  @override
+  String get ach_history_nerd_desc => 'زُر 10 أماكن تاريخية';
+
+  @override
+  String get ach_foodie_name => 'ذوّاق';
+
+  @override
+  String get ach_foodie_desc => 'سجّل دخولك في 3 أماكن أكل';
+
+  @override
+  String get ach_gourmet_name => 'خبير أكل';
+
+  @override
+  String get ach_gourmet_desc => 'سجّل دخولك في 8 أماكن أكل';
+
+  @override
+  String get ach_shopaholic_name => 'مدمن تسوق';
+
+  @override
+  String get ach_shopaholic_desc => 'زُر 3 أماكن تسوق';
+
+  @override
+  String get ach_spiritual_seeker_name => 'باحث روحي';
+
+  @override
+  String get ach_spiritual_seeker_desc => 'زُر مسجدين';
+
+  @override
+  String get ach_pilgrim_name => 'حاج';
+
+  @override
+  String get ach_pilgrim_desc => 'زُر كنيستين أو موقعين مقدسين';
+
+  @override
+  String get ach_streak_3_name => 'بداية دافئة';
+
+  @override
+  String get ach_streak_3_desc => 'سلسلة 3 أيام من تسجيل الدخول';
+
+  @override
+  String get ach_streak_7_name => 'على مَوجة';
+
+  @override
+  String get ach_streak_7_desc => 'سلسلة 7 أيام من تسجيل الدخول';
+
+  @override
+  String get ach_streak_30_name => 'مُخلِص';
+
+  @override
+  String get ach_streak_30_desc => 'سلسلة 30 يومًا من تسجيل الدخول';
+
+  @override
+  String get ach_streak_100_name => 'أسطورة';
+
+  @override
+  String get ach_streak_100_desc => 'سلسلة 100 يوم من تسجيل الدخول';
+
+  @override
+  String get ach_hidden_gem_hunter_name => 'صيّاد الجواهر المخفية';
+
+  @override
+  String get ach_hidden_gem_hunter_desc => 'اكتشف 3 جواهر مخفية';
+
+  @override
+  String get ach_reviewer_name => 'مُراجِع';
+
+  @override
+  String get ach_reviewer_desc => 'انشر 3 تقييمات';
+
+  @override
+  String get ach_critic_name => 'ناقد';
+
+  @override
+  String get ach_critic_desc => 'انشر 10 تقييمات';
+
+  @override
+  String get ach_photographer_name => 'مُصوِّر';
+
+  @override
+  String get ach_photographer_desc => 'ارفع 5 صور';
+
+  @override
+  String get ach_influencer_name => 'مؤثر';
+
+  @override
+  String get ach_influencer_desc => 'ارفع 20 صورة';
+
+  @override
+  String get ach_early_bird_name => 'طائر الفجر';
+
+  @override
+  String get ach_early_bird_desc => 'سجّل دخولك في 5 أماكن قبل 9 صباحًا';
+
+  @override
+  String get ach_night_owl_name => 'بومة الليل';
+
+  @override
+  String get ach_night_owl_desc => 'سجّل دخولك في 5 أماكن بعد 9 مساءً';
+
+  @override
+  String get ach_completionist_name => 'مُكتمِل';
+
+  @override
+  String get ach_completionist_desc => 'افتح 20 إنجازات مختلفة';
 }

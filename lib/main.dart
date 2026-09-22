@@ -61,6 +61,37 @@ Future<void> main() async {
     streak: streak,
   );
 
+  // ============================================================
+  // Pull the user's saved places / visited stats / saved tours from
+  // Supabase when a user becomes available. Without this the profile
+  // counters stay at 0 after a fresh install until the user manually
+  // saves their first place.
+  // ============================================================
+  Future<void> bootstrapFromSupabase(String userId) async {
+    await Future.wait([
+      placeProvider.bootstrapForUser(userId),
+      tourProvider.bootstrapForUser(userId),
+      gamification.bootstrapForUser(userId),
+    ]);
+    achievements.refreshFromStats();
+  }
+
+  void authListener() {
+    final id = auth.userId;
+    if (id.isEmpty) return;
+    // Only fire on first non-empty user id (or when it changes after
+    // signOut -> signIn).
+    if (id == _lastBootstrappedUserId) return;
+    _lastBootstrappedUserId = id;
+    unawaited(bootstrapFromSupabase(id));
+  }
+
+  auth.addListener(authListener);
+  if (auth.userId.isNotEmpty) {
+    _lastBootstrappedUserId = auth.userId;
+    unawaited(bootstrapFromSupabase(auth.userId));
+  }
+
   runApp(
     MultiProvider(
       providers: [
@@ -85,6 +116,8 @@ Future<void> main() async {
     ),
   );
 }
+
+String? _lastBootstrappedUserId;
 
 Future<void> _bindAuthDeepLink(AuthProvider auth) async {
   try {

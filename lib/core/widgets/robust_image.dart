@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
 
@@ -30,7 +33,7 @@ class RobustImage extends StatefulWidget {
 
 class _RobustImageState extends State<RobustImage> {
   static final _client = _buildClient();
-  late final Future<http.Response> _future;
+  late Future<Uint8List?> _future;
 
   static http.Client _buildClient() {
     return _UserAgentClient();
@@ -50,14 +53,39 @@ class _RobustImageState extends State<RobustImage> {
     }
   }
 
-  Future<http.Response> _load() {
-    return _client.get(
-      Uri.parse(widget.imageUrl),
-      headers: const {
-        'User-Agent':
-            'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36',
-      },
-    );
+  /// Load order:
+  ///   1. Disk cache populated by the Offline Download flow
+  ///      (DefaultCacheManager via flutter_cache_manager).
+  ///   2. Live network fetch (also written through the same cache so
+  ///      the next view is offline-ready).
+  ///   3. Null → the UI shows the fallback icon.
+  Future<Uint8List?> _load() async {
+    try {
+      final cached = await OfflineImageCache.instance.read(widget.imageUrl);
+      if (cached != null) {
+        return cached;
+      }
+    } catch (_) {/* ignore and fall back to network */}
+    try {
+      final res = await _client.get(
+        Uri.parse(widget.imageUrl),
+        headers: const {
+          'User-Agent':
+              'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36',
+        },
+      );
+      if (res.statusCode == 200) {
+        // Persist to the shared cache so the same image is offline-ready
+        // for the next view. Fire-and-forget; the caller already has the
+        // bytes in memory.
+        // ignore: discarded_futures
+        OfflineImageCache.instance.write(widget.imageUrl, res.bodyBytes);
+        return res.bodyBytes;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -65,7 +93,7 @@ class _RobustImageState extends State<RobustImage> {
     final radius = widget.borderRadius ?? BorderRadius.zero;
     return ClipRRect(
       borderRadius: radius,
-      child: FutureBuilder<http.Response>(
+      child: FutureBuilder<Uint8List?>(
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
@@ -76,7 +104,8 @@ class _RobustImageState extends State<RobustImage> {
               child: Container(color: const Color(0xFFE2E8F0)),
             );
           }
-          if (snapshot.hasError || snapshot.data?.statusCode != 200) {
+          final bytes = snapshot.data;
+          if (bytes == null || bytes.isEmpty) {
             return Container(
               color: const Color(0xFF1C2433),
               alignment: Alignment.center,
@@ -87,7 +116,6 @@ class _RobustImageState extends State<RobustImage> {
               ),
             );
           }
-          final bytes = snapshot.data!.bodyBytes;
           return Image.memory(
             bytes,
             fit: widget.fit,
@@ -107,6 +135,43 @@ class _RobustImageState extends State<RobustImage> {
         },
       ),
     );
+  }
+}
+
+/// Thin wrapper around [DefaultCacheManager] from `flutter_cache_manager`
+/// that gives the rest of the app a synchronous-read-style interface for
+/// cached network images. The Offline Download flow already populates
+/// this same manager, so an image that was prefetched will be served
+/// from disk on the next render — even with airplane mode on.
+class OfflineImageCache {
+  OfflineImageCache._();
+  static final OfflineImageCache instance = OfflineImageCache._();
+
+  final CacheManager _manager = DefaultCacheManager();
+
+  Future<Uint8List?> read(String url) async {
+    if (url.trim().isEmpty) return null;
+    try {
+      final info = await _manager.getFileFromCache(url);
+      if (info == null) return null;
+      final file = info.file;
+      if (!await file.exists()) return null;
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty) return null;
+      return bytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Write raw image bytes to the same disk cache used by
+  /// `CachedNetworkImage` and by `RobustImage`. Fire-and-forget.
+  Future<void> write(String url, Uint8List bytes) async {
+    try {
+      await _manager.putFile(url, bytes);
+    } catch (_) {
+      // best-effort write; never block the render path on it
+    }
   }
 }
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/services/supabase_service.dart';
 import '../data/mock_data.dart' show fallbackPlaces;
 import '../data/models/place_model.dart';
 import 'offline_provider.dart';
@@ -42,6 +43,16 @@ class PlaceProvider extends ChangeNotifier {
   Future<void> loadPlaces({bool force = false}) async {
     if (_loading) return;
     if (!force && _places.isNotEmpty) return;
+
+    // 0) Offline-first seed: if we have a Hive cache from a previous
+    //    download, hydrate `_places` immediately so the UI never has
+    //    to wait for a (potentially timing-out) Supabase round-trip.
+    final cachedSeed = OfflineProvider.cachedFallback;
+    if (cachedSeed.isNotEmpty && _places.isEmpty) {
+      _places = cachedSeed;
+      notifyListeners();
+    }
+
     _loading = true;
     _error = null;
     notifyListeners();
@@ -55,7 +66,13 @@ class PlaceProvider extends ChangeNotifier {
           .map((e) => _placeFromSupabase(e as Map<String, dynamic>))
           .toList();
       if (list.isEmpty) {
-        _places = List<PlaceModel>.from(fallbackPlaces);
+        // Supabase answered but empty (rate-limited / no rows). Keep
+        // the Hive seed if we already had one, otherwise fall back.
+        _places = _places.isNotEmpty
+            ? _places
+            : (OfflineProvider.cachedFallback.isNotEmpty
+                ? OfflineProvider.cachedFallback
+                : List<PlaceModel>.from(fallbackPlaces));
         _error = null;
       } else {
         _places = list;
@@ -63,13 +80,13 @@ class PlaceProvider extends ChangeNotifier {
       }
     } catch (e) {
       _error = 'Failed to load places: $e';
-      // Prefer real cached places over mock data when offline.
       final cached = OfflineProvider.cachedFallback;
       if (cached.isNotEmpty) {
         _places = cached;
-      } else {
+      } else if (_places.isEmpty) {
         _places = List<PlaceModel>.from(fallbackPlaces);
       }
+      // else: keep the existing _places as-is (offline first seed wins)
     } finally {
       _loading = false;
       notifyListeners();
@@ -88,8 +105,19 @@ class PlaceProvider extends ChangeNotifier {
     for (final p in _places) {
       if (p.id == id) return p;
     }
+    // Fallback to the offline Hive cache so a place page opened while
+    // offline can still render (the user explicitly downloaded that pack).
+    final cached = OfflineProvider.cachedFallback;
+    for (final p in cached) {
+      if (p.id == id) return p;
+    }
     return null;
   }
+
+  /// True when the provider has any places loaded (either from Supabase
+  /// or the Hive fallback). The Offline Download UI uses this to avoid
+  /// running a download while the place list is still empty.
+  bool get hasPlaces => _places.isNotEmpty;
 
   PlaceModel _placeFromSupabase(Map<String, dynamic> json) {
     return PlaceModel(
@@ -140,6 +168,34 @@ class PlaceProvider extends ChangeNotifier {
         .map((jsonStr) => PlaceModel.fromJson(jsonDecode(jsonStr)))
         .toList();
     notifyListeners();
+  }
+
+  /// Pull the user's saved places from Supabase and merge them into
+  /// the local cache. Returns true if the merge produced any change.
+  /// Call this right after sign-in or on app start.
+  Future<bool> bootstrapForUser(String userId) async {
+    if (userId.isEmpty) return false;
+    final remote = await SupabaseService.instance.pullSavedPlaces(userId);
+    if (remote.isEmpty) {
+      debugPrint(
+        'PlaceProvider: no remote saved places for $userId, keeping local',
+      );
+      return false;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final remoteIds = remote.map((p) => p.id).toSet();
+    final localOnly =
+        _savedPlaces.where((p) => !remoteIds.contains(p.id)).toList();
+    final merged = [...remote, ...localOnly];
+    final encoded = merged.map((p) => jsonEncode(p.toJson())).toList();
+    await prefs.setStringList('saved_places_data', encoded);
+    _savedPlaces = merged;
+    notifyListeners();
+    debugPrint(
+      'PlaceProvider: pulled ${remote.length} saved places for $userId '
+      '(total now ${merged.length})',
+    );
+    return true;
   }
 
   bool isSaved(String id) {

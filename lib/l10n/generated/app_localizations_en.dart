@@ -1255,4 +1255,149 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get write_review => 'Write Review';
+
+  @override
+  String get ach_first_steps_name => 'First Steps';
+
+  @override
+  String get ach_first_steps_desc => 'Check in at your first place';
+
+  @override
+  String get ach_explorer_5_name => 'Curious';
+
+  @override
+  String get ach_explorer_5_desc => 'Visit 5 different places';
+
+  @override
+  String get ach_explorer_10_name => 'Adventurer';
+
+  @override
+  String get ach_explorer_10_desc => 'Visit 10 different places';
+
+  @override
+  String get ach_explorer_25_name => 'Pathfinder';
+
+  @override
+  String get ach_explorer_25_desc => 'Visit 25 different places';
+
+  @override
+  String get ach_lorekeeper_name => 'Lorekeeper';
+
+  @override
+  String get ach_lorekeeper_desc =>
+      'Visit 42 places — the answer to everything';
+
+  @override
+  String get ach_culture_buff_name => 'Culture Buff';
+
+  @override
+  String get ach_culture_buff_desc => 'Visit 5 cultural spots';
+
+  @override
+  String get ach_history_nerd_name => 'History Nerd';
+
+  @override
+  String get ach_history_nerd_desc => 'Visit 10 historical spots';
+
+  @override
+  String get ach_foodie_name => 'Foodie';
+
+  @override
+  String get ach_foodie_desc => 'Check in at 3 food spots';
+
+  @override
+  String get ach_gourmet_name => 'Gourmet';
+
+  @override
+  String get ach_gourmet_desc => 'Check in at 8 food spots';
+
+  @override
+  String get ach_shopaholic_name => 'Shopaholic';
+
+  @override
+  String get ach_shopaholic_desc => 'Visit 3 shopping spots';
+
+  @override
+  String get ach_spiritual_seeker_name => 'Spiritual Seeker';
+
+  @override
+  String get ach_spiritual_seeker_desc => 'Visit 2 mosques';
+
+  @override
+  String get ach_pilgrim_name => 'Pilgrim';
+
+  @override
+  String get ach_pilgrim_desc => 'Visit 2 churches or holy sites';
+
+  @override
+  String get ach_streak_3_name => 'Warming Up';
+
+  @override
+  String get ach_streak_3_desc => '3-day check-in streak';
+
+  @override
+  String get ach_streak_7_name => 'On a Roll';
+
+  @override
+  String get ach_streak_7_desc => '7-day check-in streak';
+
+  @override
+  String get ach_streak_30_name => 'Devoted';
+
+  @override
+  String get ach_streak_30_desc => '30-day check-in streak';
+
+  @override
+  String get ach_streak_100_name => 'Legend';
+
+  @override
+  String get ach_streak_100_desc => '100-day check-in streak';
+
+  @override
+  String get ach_hidden_gem_hunter_name => 'Hidden Gem Hunter';
+
+  @override
+  String get ach_hidden_gem_hunter_desc => 'Discover 3 hidden gems';
+
+  @override
+  String get ach_reviewer_name => 'Reviewer';
+
+  @override
+  String get ach_reviewer_desc => 'Post 3 reviews';
+
+  @override
+  String get ach_critic_name => 'Critic';
+
+  @override
+  String get ach_critic_desc => 'Post 10 reviews';
+
+  @override
+  String get ach_photographer_name => 'Photographer';
+
+  @override
+  String get ach_photographer_desc => 'Upload 5 photos';
+
+  @override
+  String get ach_influencer_name => 'Influencer';
+
+  @override
+  String get ach_influencer_desc => 'Upload 20 photos';
+
+  @override
+  String get ach_early_bird_name => 'Early Bird';
+
+  @override
+  String get ach_early_bird_desc => 'Check in at 5 places before 9 AM';
+
+  @override
+  String get ach_night_owl_name => 'Night Owl';
+
+  @override
+  String get ach_night_owl_desc => 'Check in at 5 places after 9 PM';
+
+  @override
+  String get ach_completionist_name => 'Completionist';
+
+  @override
+  String get ach_completionist_desc => 'Unlock 20 different achievements';
 }

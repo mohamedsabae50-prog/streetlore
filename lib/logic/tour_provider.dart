@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/services/supabase_service.dart';
 import '../data/models/itinerary_model.dart';
 import '../data/models/place_model.dart';
 import '../data/mock_data.dart' show fallbackTours;
@@ -144,6 +145,37 @@ class TourProvider extends ChangeNotifier {
       _savedTours.map((t) => t.toJson()).toList(),
     );
     await prefs.setString('saved_tours_data', encodedList);
+  }
+
+  /// Pull saved tours from Supabase and merge with the local cache.
+  /// Call this right after sign-in / on app start.
+  Future<bool> bootstrapForUser(String userId) async {
+    if (userId.isEmpty) return false;
+    final remoteMaps = await SupabaseService.instance.pullSavedTours(userId);
+    if (remoteMaps.isEmpty) {
+      debugPrint(
+        'TourProvider: no remote saved tours for $userId, keeping local',
+      );
+      return false;
+    }
+    final remote = <ItineraryModel>[];
+    for (final m in remoteMaps) {
+      try {
+        remote.add(ItineraryModel.fromJson(m));
+      } catch (_) {/* skip bad rows */}
+    }
+    final remoteIds = remote.map((t) => t.id).toSet();
+    final localOnly =
+        _savedTours.where((t) => !remoteIds.contains(t.id)).toList();
+    final merged = [...remote, ...localOnly];
+    _savedTours = merged;
+    await _saveToursToStorage();
+    notifyListeners();
+    debugPrint(
+      'TourProvider: pulled ${remote.length} saved tours for $userId '
+      '(total now ${merged.length})',
+    );
+    return true;
   }
 
   void toggleTourSaved(ItineraryModel tour) {

@@ -19,7 +19,6 @@ import '../widgets/weather_widget.dart';
 import '../widgets/compass_card.dart';
 import '../../l10n/app_strings.dart';
 import 'place_details_screen.dart';
-import 'ai_trip_generator_screen.dart';
 import 'leaderboard_screen.dart';
 import 'map_view_screen.dart';
 import 'offline_mode_screen.dart';
@@ -782,15 +781,6 @@ class _QuickAccessGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = <_QuickItem>[
-      _QuickItem(
-        icon: Icons.auto_awesome,
-        label: 'quick_ai_trip',
-        color: const Color(0xFF6366F1),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AiTripGeneratorScreen()),
-        ),
-      ),
       _QuickItem(
         icon: Icons.map_rounded,
         label: 'quick_map',

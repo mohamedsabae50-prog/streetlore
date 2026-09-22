@@ -194,38 +194,46 @@ class _AvailableTileState extends State<_AvailableTile> {
     setState(() => _downloading = true);
     final messenger = ScaffoldMessenger.of(context);
     final provider = context.read<OfflineProvider>();
-    final places = context.read<PlaceProvider>().places;
+    final placeProvider = context.read<PlaceProvider>();
     try {
+      // 1) Make sure PlaceProvider has finished loading so the
+      //    "available places" list is complete.
+      if (placeProvider.loading) {
+        await placeProvider.ensureLoaded();
+      }
+
+      // 2) Use the in-memory list, but if it looks suspiciously
+      //    empty (< 5 places) pull a fresh copy from Supabase so the
+      //    download doesn't miss the rest of the catalogue.
+      var places = placeProvider.places;
+      if (places.length < 5) {
+        final fresh = await provider.pullAllPlacesFromSupabase();
+        if (fresh.isNotEmpty) {
+          places = fresh;
+        }
+      }
+
+      // 3) Run the actual download (JSON persistence + image prefetch).
+      //    The progress callback only updates the in-row progress bar
+      //    — no per-place snackbar spam.
       final result = await provider.download(
         widget.pack,
         availablePlaces: places,
-        onProgress: (
-          int done,
-          int total, {
-          int imageOk = 0,
-          int imageFail = 0,
-        }) {
-          if (!mounted) return;
-          messenger.showSnackBar(
-            SnackBar(
-              duration: const Duration(milliseconds: 1200),
-              content: Text(
-                'Caching $done/$total places — '
-                'images: $imageOk ok, $imageFail failed',
-              ),
-            ),
-          );
-        },
       );
+
       if (!mounted) return;
       switch (result) {
         case DownloadOk ok:
           messenger.showSnackBar(
             SnackBar(
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 4),
               content: Text(
-                'Saved ${ok.cachedCount} places • '
-                '${ok.imagesOk} images ready offline'
-                '${ok.imagesFailed > 0 ? ' • ${ok.imagesFailed} failed' : ''}',
+                ok.cachedCount == 1
+                    ? 'Saved 1 place • ${ok.imagesOk} images cached offline'
+                    : 'Saved ${ok.cachedCount} places • '
+                        '${ok.imagesOk} images cached offline'
+                        '${ok.imagesFailed > 0 ? ' • ${ok.imagesFailed} failed' : ''}',
               ),
             ),
           );
@@ -237,6 +245,14 @@ class _AvailableTileState extends State<_AvailableTile> {
             ),
           );
       }
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Download failed: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _downloading = false);
     }
