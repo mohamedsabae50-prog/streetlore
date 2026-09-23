@@ -451,9 +451,10 @@ $userText''';
 STRICT RULES:
 1. ONLY answer questions related to travel, places, history, culture, food, or tourism in Alexandria, Egypt.
 2. If the user asks about coding, mathematics, general chat, politics, news, medical advice, or any non-tourism topic, politely decline and state your specific role (e.g. "I'm your Alexandria tourism guide — I can only help with travel, places, history, and culture here.").
-3. Keep answers concise (3-6 sentences) unless the user asks for more depth.
-4. Use specific Alexandria details when possible (neighborhoods, neighborhoods like Anfushi, Mansheya, Stanley, Moharam Bek, Attarin; landmarks like Bibliotheca Alexandrina, Qaitbay Citadel, Pompey's Pillar, Catacombs of Kom El Shoqafa, Montaza).
-5. Never invent places that don't exist. If unsure, say so and suggest the user open the app map.''';
+3. Be concise but COMPLETE. Never cut a sentence mid-thought. If you would run out of tokens, wrap the answer cleanly with a final full sentence.
+4. Use specific Alexandria details when possible (neighborhoods like Anfushi, Mansheya, Stanley, Moharam Bek, Attarin; landmarks like Bibliotheca Alexandrina, Qaitbay Citadel, Pompey's Pillar, Catacombs of Kom El Shoqafa, Montaza).
+5. Never invent places that don't exist. If unsure, say so and suggest the user open the app map.
+6. Speak directly to the user ("you") — friendly, opinionated, like a local friend showing them around.''';
     final keys = AppConfig.geminiApiKeys
         .map((k) => k.trim())
         .where((k) => k.isNotEmpty)
@@ -469,8 +470,8 @@ STRICT RULES:
       model: AppConfig.geminiModel,
       systemInstruction: system,
       userPrompt: userText,
-      temperature: 0.6,
-      maxOutputTokens: 512,
+      temperature: 0.7,
+      maxOutputTokens: 800,
     );
     if (result == null || !result.isOk) {
       throw GeminiApiException(

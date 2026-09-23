@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/services/supabase_service.dart';
 import '../data/mock_data.dart' show fallbackPlaces;
+import '../data/models/map_seed.dart';
 import '../data/models/place_model.dart';
 import 'offline_provider.dart';
 
@@ -89,6 +90,9 @@ class PlaceProvider extends ChangeNotifier {
       // else: keep the existing _places as-is (offline first seed wins)
     } finally {
       _loading = false;
+      // Inject the seed hotels so they appear as full places in the
+      // Home list and Place Details flow.
+      mergeSeedHotels();
       notifyListeners();
     }
   }
@@ -118,6 +122,31 @@ class PlaceProvider extends ChangeNotifier {
   /// or the Hive fallback). The Offline Download UI uses this to avoid
   /// running a download while the place list is still empty.
   bool get hasPlaces => _places.isNotEmpty;
+
+  /// Static seed hotels are treated as real places (Places list,
+  /// save/check-in, Place Details) - merged into `_places` at load.
+  /// Use [mergeSeedHotels] after [loadPlaces] to register them.
+  void mergeSeedHotels() {
+    if (_places.isEmpty) return;
+    final hotelSeeds = getSeedHotelPlaces();
+    final existingIds = _places.map((p) => p.id).toSet();
+    final additions = hotelSeeds
+        .where((h) => !existingIds.contains(h.id))
+        .toList(growable: false);
+    if (additions.isEmpty) return;
+    final merged = [..._places, ...additions]
+      ..sort((a, b) {
+        final byCat = a.category.compareTo(b.category);
+        if (byCat != 0) return byCat;
+        return a.name.compareTo(b.name);
+      });
+    _places = List<PlaceModel>.unmodifiable(merged);
+    notifyListeners();
+    debugPrint(
+      'PlaceProvider: merged ${additions.length} seed hotels into _places '
+      '(total now ${_places.length})',
+    );
+  }
 
   PlaceModel _placeFromSupabase(Map<String, dynamic> json) =>
       placeModelFromSupabaseRow(json);

@@ -4,10 +4,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../data/models/map_poi.dart';
 import '../../data/models/map_seed.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
+import '_atm_sheet.dart';
 import 'place_details_screen.dart';
 
 String _catLabel(BuildContext context, String cat) {
@@ -48,7 +50,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
   PlaceModel? _selectedPlace;
   LatLng? _userLocation;
   bool _initialCentered = false;
-  // ATM markers are opt-in - never rendered until the user toggles
+  // ATM marers are opt-in - never rendered until the user toggles
   // the ATM filter on (UI clutter avoidance, per design).
   bool _showAtms = false;
   // Filter chips for the new opt-in layers. Hotels is also opt-in.
@@ -78,6 +80,19 @@ class _MapViewScreenState extends State<MapViewScreen> {
         _mapController.move(here, 13.5);
       }
     } catch (_) {}
+  }
+
+  /// Open the ATM info bottom sheet for a tapped ATM marer.
+  void _showAtmSheet(BuildContext context, MapPoi atm) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: context.cardColor,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) => AtmSheet(atm: atm),
+    );
   }
 
   IconData _iconForCategory(String category) {
@@ -221,7 +236,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         width: 40,
                         height: 40,
                         child: GestureDetector(
-                          onTap: () => setState(() => _selectedPlace = null),
+                          onTap: () {
+                            setState(() => _selectedPlace = null);
+                            _showAtmSheet(context, atm);
+                          },
                           child: Container(
                             decoration: BoxDecoration(
                               color: atm.color,
@@ -586,14 +604,14 @@ class _CategoryFilter extends StatelessWidget {
     );
 
     // "Hotels" extra-layer chip
-    const hotelsKey = 'Hotels';
-    final isHotels = activeLayers.contains(hotelsKey);
+    const hotelsey = 'Hotels';
+    final isHotels = activeLayers.contains(hotelsey);
     children.add(
       Padding(
         padding: const EdgeInsets.only(right: 8),
         child: FilterChip(
           selected: isHotels,
-          onSelected: (_) => onToggleExtraLayer(hotelsKey),
+          onSelected: (_) => onToggleExtraLayer(hotelsey),
           avatar: Icon(
             Icons.hotel_rounded,
             size: 16,

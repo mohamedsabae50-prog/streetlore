@@ -294,9 +294,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               height: 36,
                               color: Colors.white.withValues(alpha: 0.2),
                             ),
+                            // Explored counter: real gamification count
+                            // falls back to MAX(saved, gamification) so
+                            // a user with saved places but a fresh
+                            // remote row (= 0) still sees a real number.
                             _Stat(
                               label: context.tr('prof_explored'),
-                              numericValue: gamification.stats.placesVisited,
+                              numericValue: gamification.stats.placesVisited >
+                                      placeP.savedPlaces.length
+                                  ? gamification.stats.placesVisited
+                                  : placeP.savedPlaces.length,
                               icon: Icons.explore_rounded,
                               delayMs: 320,
                             ),

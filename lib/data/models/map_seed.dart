@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/place_model.dart';
 import 'map_poi.dart';
 
 /// Static seed of well-known Alexandria ATMs and hotels. Used by the
@@ -16,6 +17,12 @@ import 'map_poi.dart';
 List<MapPoi> getSeedAtms() => _atms;
 
 List<MapPoi> getSeedHotels() => _hotels;
+
+/// Returns the hotels as full [PlaceModel] instances so they show up
+/// in the Home list, support save/check-in, and open the standard
+/// Place Details screen when tapped. Hotels are *real places* with
+/// category `Hotels` (mirrors the historical-tourist place flow).
+List<PlaceModel> getSeedHotelPlaces() => _hotelPlaces;
 
 const Map<String, Color> _bankColors = {
   'CIB': Color(0xFFED1C24),
@@ -312,6 +319,49 @@ List<MapPoi> _hotels = const [
     color: Color(0xFF3F51B5),
   ),
 ];
+
+// Hotels promoted to full PlaceModel so they appear in Home + Search,
+// support save/check-in, and open the standard Place Details screen.
+const String _hotelHeroImage =
+    'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=70';
+
+List<PlaceModel> _hotelPlaces = _hotels
+    .map(
+      (poi) => PlaceModel(
+        id: poi.id,
+        name: poi.name,
+        nameAr: null,
+        description:
+            '${poi.brand ?? "Hotel"} is one of Alexandria\'s well-known '
+            'stays, located at ${poi.address}. ${poi.stars != null ? "${poi.stars}-star rating. " : ""}'
+            'Tap Save to bookmark, or tap Check-in when you arrive.',
+        descriptionAr: null,
+        imageUrl: _hotelHeroImage,
+        rating: (poi.stars ?? 3).toDouble(),
+        category: 'Hotels',
+        categoryAr: 'فنادق',
+        lat: poi.lat,
+        lng: poi.lng,
+        address: poi.address,
+        addressAr: null,
+        openHours: '24 hours',
+        reviewCount: 0,
+        priceLevel: poi.stars != null && poi.stars! >= 4
+            ? PriceLevel.expensive
+            : PriceLevel.moderate,
+        priceNote: poi.stars != null && poi.stars! >= 4
+            ? 'EGP ${3000 + (poi.stars ?? 3) * 1500}+ / night'
+            : 'EGP ${800 + (poi.stars ?? 3) * 500}+ / night',
+        priceNoteAr: null,
+        priceLocalEgp: 1500,
+        priceForeignerEgp: 4500,
+        isHiddenGem: false,
+        bestTimeNote: null,
+        bestTimeToVisit: null,
+        isIndoor: true,
+      ),
+    )
+    .toList(growable: false);
 
 // Kept for future use if banks table is added to Supabase.
 Map<String, Color> get bankColors => _bankColors;
