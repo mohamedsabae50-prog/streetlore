@@ -119,47 +119,8 @@ class PlaceProvider extends ChangeNotifier {
   /// running a download while the place list is still empty.
   bool get hasPlaces => _places.isNotEmpty;
 
-  PlaceModel _placeFromSupabase(Map<String, dynamic> json) {
-    return PlaceModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      nameAr: json['name_ar'] as String?,
-      description: json['description'] as String,
-      descriptionAr: json['description_ar'] as String?,
-      imageUrl: json['image_url'] as String,
-      rating: (json['rating'] as num).toDouble(),
-      category: json['category'] as String,
-      categoryAr: json['category_ar'] as String?,
-      lat: (json['lat'] as num).toDouble(),
-      lng: (json['lng'] as num).toDouble(),
-      address: (json['address'] as String?) ?? 'Alexandria, Egypt',
-      addressAr: json['address_ar'] as String?,
-      openHours: (json['open_hours'] as String?) ?? '9:00 AM - 6:00 PM',
-      reviewCount: (json['review_count'] as int?) ?? 0,
-      priceLevel: _priceLevelFromString(json['price_level'] as String?),
-      priceNote: (json['price_note'] as String?) ?? '',
-      priceNoteAr: json['price_note_ar'] as String?,
-      isHiddenGem: (json['is_hidden_gem'] as bool?) ?? false,
-      priceLocalEgp: json['price_local_egp'] as int?,
-      priceForeignerEgp: json['price_foreigner_egp'] as int?,
-      bestTimeNote: json['best_time_note'] as String?,
-      bestTimeToVisit: json['best_time_to_visit'] as String?,
-      isIndoor: (json['is_indoor'] as bool?) ?? false,
-    );
-  }
-
-  PriceLevel _priceLevelFromString(String? s) {
-    switch (s) {
-      case 'cheap':
-        return PriceLevel.cheap;
-      case 'moderate':
-        return PriceLevel.moderate;
-      case 'expensive':
-        return PriceLevel.expensive;
-      default:
-        return PriceLevel.free;
-    }
-  }
+  PlaceModel _placeFromSupabase(Map<String, dynamic> json) =>
+      placeModelFromSupabaseRow(json);
 
   Future<void> _loadSavedPlaces() async {
     final prefs = await SharedPreferences.getInstance();
@@ -330,5 +291,55 @@ class PlaceProvider extends ChangeNotifier {
     if (isPm && hour < 12) hour += 12;
     if (isAm && hour == 12) hour = 0;
     return hour * 60 + m;
+  }
+}
+
+/// Top-level helper: build a [PlaceModel] from a Supabase `places` row.
+/// Snugly tolerant of missing/extra columns and accepts both snake_case
+/// and camelCase keys so any caller (PlaceProvider, OfflineProvider,
+/// admin import scripts) sees the same result.
+///
+/// This was extracted from `PlaceProvider._placeFromSupabase` after the
+/// offline download bug where [PlaceModel.fromJson] was being used
+/// instead, throwing on every row because Supabase returns snake_case.
+PlaceModel placeModelFromSupabaseRow(Map<String, dynamic> json) {
+  return PlaceModel(
+    id: (json['id'] ?? '').toString(),
+    name: (json['name'] ?? '').toString(),
+    nameAr: json['name_ar']?.toString(),
+    description: (json['description'] ?? '').toString(),
+    descriptionAr: json['description_ar']?.toString(),
+    imageUrl: (json['image_url'] ?? '').toString(),
+    rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+    category: (json['category'] ?? 'General').toString(),
+    categoryAr: json['category_ar']?.toString(),
+    lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
+    lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
+    address: (json['address'] ?? 'Alexandria, Egypt').toString(),
+    addressAr: json['address_ar']?.toString(),
+    openHours: (json['open_hours'] ?? '9:00 AM - 6:00 PM').toString(),
+    reviewCount: (json['review_count'] as int?) ?? 0,
+    priceLevel: _priceLevelFromStringShared(json['price_level']?.toString()),
+    priceNote: (json['price_note'] ?? '').toString(),
+    priceNoteAr: json['price_note_ar']?.toString(),
+    isHiddenGem: (json['is_hidden_gem'] as bool?) ?? false,
+    priceLocalEgp: json['price_local_egp'] as int?,
+    priceForeignerEgp: json['price_foreigner_egp'] as int?,
+    bestTimeNote: json['best_time_note']?.toString(),
+    bestTimeToVisit: json['best_time_to_visit']?.toString(),
+    isIndoor: (json['is_indoor'] as bool?) ?? false,
+  );
+}
+
+PriceLevel _priceLevelFromStringShared(String? s) {
+  switch (s) {
+    case 'cheap':
+      return PriceLevel.cheap;
+    case 'moderate':
+      return PriceLevel.moderate;
+    case 'expensive':
+      return PriceLevel.expensive;
+    default:
+      return PriceLevel.free;
   }
 }

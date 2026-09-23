@@ -436,6 +436,52 @@ $userText''';
     _messages.clear();
     _session = null;
   }
+
+  /// Single-shot "general" Alexandria expert call. Used by the
+  /// General AI Tour Guide screen on the Home page for free-form
+  /// questions that are NOT tied to a specific place.
+  ///
+  /// The system prompt is the only thing the model sees, so we keep it
+  /// tight to save tokens and stay on-topic: ONLY Alexandria tourism,
+  /// no coding / math / general chat. Polite decline for everything
+  /// else.
+  static Future<String> askAlexandria(String userText) async {
+    final system = '''You are the street-level Alexandria tourism expert inside the "Streetlore" app. You answer questions about travel, places, food, history, and culture in Alexandria, Egypt.
+
+STRICT RULES:
+1. ONLY answer questions related to travel, places, history, culture, food, or tourism in Alexandria, Egypt.
+2. If the user asks about coding, mathematics, general chat, politics, news, medical advice, or any non-tourism topic, politely decline and state your specific role (e.g. "I'm your Alexandria tourism guide — I can only help with travel, places, history, and culture here.").
+3. Keep answers concise (3-6 sentences) unless the user asks for more depth.
+4. Use specific Alexandria details when possible (neighborhoods, neighborhoods like Anfushi, Mansheya, Stanley, Moharam Bek, Attarin; landmarks like Bibliotheca Alexandrina, Qaitbay Citadel, Pompey's Pillar, Catacombs of Kom El Shoqafa, Montaza).
+5. Never invent places that don't exist. If unsure, say so and suggest the user open the app map.''';
+    final keys = AppConfig.geminiApiKeys
+        .map((k) => k.trim())
+        .where((k) => k.isNotEmpty)
+        .toList();
+    if (keys.isEmpty || !AppConfig.geminiEnabled) {
+      throw GeminiApiException(
+        statusCode: 0,
+        message: 'AI not configured',
+      );
+    }
+    final result = await GeminiRestClient.instance.generateContent(
+      apiKeys: keys,
+      model: AppConfig.geminiModel,
+      systemInstruction: system,
+      userPrompt: userText,
+      temperature: 0.6,
+      maxOutputTokens: 512,
+    );
+    if (result == null || !result.isOk) {
+      throw GeminiApiException(
+        statusCode: result?.statusCode ?? 0,
+        message: result?.errorBody ?? 'unknown error',
+        raw: result?.raw,
+      );
+    }
+    final text = (result.text ?? '').trim();
+    return text.isEmpty ? '...' : text;
+  }
 }
 
 /// Lightweight session wrapper that forwards every `sendMessage` call to

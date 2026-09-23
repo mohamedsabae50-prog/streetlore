@@ -25,6 +25,7 @@ import 'offline_mode_screen.dart';
 import 'geofencing_settings_screen.dart';
 import 'achievements_screen.dart';
 import 'walking_routes_screen.dart';
+import 'general_ai_tour_guide_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -191,6 +192,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     return Scaffold(
       backgroundColor: context.bgColor,
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.travel_explore_rounded),
+        label: const Text(
+          'AI Tour Guide',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const GeneralAITourGuideScreen(),
+            ),
+          );
+        },
+      ),
       body: SafeArea(
         child: Column(
           children: [

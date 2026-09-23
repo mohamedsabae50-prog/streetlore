@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../data/models/map_seed.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
@@ -47,8 +48,14 @@ class _MapViewScreenState extends State<MapViewScreen> {
   PlaceModel? _selectedPlace;
   LatLng? _userLocation;
   bool _initialCentered = false;
+  // ATM markers are opt-in - never rendered until the user toggles
+  // the ATM filter on (UI clutter avoidance, per design).
+  bool _showAtms = false;
+  // Filter chips for the new opt-in layers. Hotels is also opt-in.
+  final Set<String> _extraLayers = <String>{};
 
   static const _alexCenter = LatLng(31.2001, 29.9187);
+  static const _hotelsCategory = 'Hotels';
 
   Future<void> _locateUser({bool move = false}) async {
     try {
@@ -123,6 +130,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
     if (_selectedCategory == null) return all;
     return all.where((p) => p.category == _selectedCategory).toList();
   }
+
+  bool get _showHotels => _extraLayers.contains(_hotelsCategory);
 
   @override
   Widget build(BuildContext context) {
@@ -205,6 +214,68 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         ),
                       ),
                     ),
+                  if (_showAtms)
+                    for (final atm in getSeedAtms())
+                      Marker(
+                        point: LatLng(atm.lat, atm.lng),
+                        width: 40,
+                        height: 40,
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedPlace = null),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: atm.color,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: atm.color.withValues(alpha: 0.5),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2.5,
+                              ),
+                            ),
+                            child: Icon(
+                              atm.icon,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                  if (_showHotels)
+                    for (final hotel in getSeedHotels())
+                      Marker(
+                        point: LatLng(hotel.lat, hotel.lng),
+                        width: 44,
+                        height: 44,
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedPlace = null),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: hotel.color,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: hotel.color.withValues(alpha: 0.5),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 3,
+                              ),
+                            ),
+                            child: Icon(
+                              hotel.icon,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
                 ],
               ),
             ],
@@ -299,6 +370,21 @@ class _MapViewScreenState extends State<MapViewScreen> {
               onSelect: (cat) => setState(() => _selectedCategory = cat),
               colorOf: _colorForCategory,
               iconOf: _iconForCategory,
+              extraLayers: const {'Hotels'},
+              activeLayers: _extraLayers,
+              onToggleExtraLayer: (layer) {
+                setState(() {
+                  if (_extraLayers.contains(layer)) {
+                    _extraLayers.remove(layer);
+                  } else {
+                    _extraLayers.add(layer);
+                    if (layer == _hotelsCategory) _selectedCategory = layer;
+                  }
+                });
+              },
+              showAtms: _showAtms,
+              onToggleAtms: () =>
+                  setState(() => _showAtms = !_showAtms),
             ),
           ),
         ],
@@ -418,16 +504,28 @@ class _CategoryFilter extends StatelessWidget {
   final ValueChanged<String?> onSelect;
   final Color Function(String) colorOf;
   final IconData Function(String) iconOf;
+  // Opt-in layers (off by default).
+  final Set<String> extraLayers;
+  final Set<String> activeLayers;
+  final ValueChanged<String> onToggleExtraLayer;
+  final bool showAtms;
+  final VoidCallback onToggleAtms;
 
   const _CategoryFilter({
     required this.selected,
     required this.onSelect,
     required this.colorOf,
     required this.iconOf,
+    required this.extraLayers,
+    required this.activeLayers,
+    required this.onToggleExtraLayer,
+    required this.showAtms,
+    required this.onToggleAtms,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Order matters: categories first, then opt-in layers (Hotels, ATMs).
     const cats = [
       'All',
       'Historical',
@@ -437,50 +535,139 @@ class _CategoryFilter extends StatelessWidget {
       'Mosques',
       'Churches',
     ];
+    final children = <Widget>[];
+
+    for (final cat in cats) {
+      final isAll = cat == 'All';
+      final isSel = (isAll && selected == null) || cat == selected;
+      final color = isAll ? AppColors.primary : colorOf(cat);
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: FilterChip(
+            selected: isSel,
+            onSelected: (_) => onSelect(isAll ? null : cat),
+            avatar: Icon(
+              isAll ? Icons.apps_rounded : iconOf(cat),
+              size: 16,
+              color: isSel ? Colors.white : color,
+            ),
+            label: Text(
+              _catLabel(context, cat),
+              style: TextStyle(
+                color: isSel ? Colors.white : context.textPri,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
+            ),
+            backgroundColor: context.cardColor,
+            selectedColor: color,
+            checkmarkColor: Colors.white,
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
+                color: isSel ? color : context.cardColor,
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Optional layers separator
+    children.add(
+      Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: 1,
+        color: context.hintColor.withValues(alpha: 0.3),
+      ),
+    );
+
+    // "Hotels" extra-layer chip
+    const hotelsKey = 'Hotels';
+    final isHotels = activeLayers.contains(hotelsKey);
+    children.add(
+      Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: FilterChip(
+          selected: isHotels,
+          onSelected: (_) => onToggleExtraLayer(hotelsKey),
+          avatar: Icon(
+            Icons.hotel_rounded,
+            size: 16,
+            color: isHotels ? Colors.white : const Color(0xFF6A1B9A),
+          ),
+          label: Text(
+            'Hotels',
+            style: TextStyle(
+              color: isHotels ? Colors.white : context.textPri,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
+          ),
+          backgroundColor: context.cardColor,
+          selectedColor: const Color(0xFF6A1B9A),
+          checkmarkColor: Colors.white,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: isHotels
+                  ? const Color(0xFF6A1B9A)
+                  : context.cardColor,
+              width: 1.5,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // "ATMs" extra-layer chip (always opt-in)
+    children.add(
+      Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: FilterChip(
+          selected: showAtms,
+          onSelected: (_) => onToggleAtms(),
+          avatar: Icon(
+            Icons.atm_rounded,
+            size: 16,
+            color: showAtms ? Colors.white : const Color(0xFF10B981),
+          ),
+          label: Text(
+            'ATMs',
+            style: TextStyle(
+              color: showAtms ? Colors.white : context.textPri,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
+          ),
+          backgroundColor: context.cardColor,
+          selectedColor: const Color(0xFF10B981),
+          checkmarkColor: Colors.white,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: showAtms
+                  ? const Color(0xFF10B981)
+                  : context.cardColor,
+              width: 1.5,
+            ),
+          ),
+        ),
+      ),
+    );
+
     return SizedBox(
       height: 44,
-      child: ListView.builder(
+      child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         physics: const BouncingScrollPhysics(),
-        itemCount: cats.length,
-        itemBuilder: (context, i) {
-          final cat = cats[i];
-          final isAll = cat == 'All';
-          final isSel = (isAll && selected == null) || cat == selected;
-          final color = isAll ? AppColors.primary : colorOf(cat);
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              selected: isSel,
-              onSelected: (_) => onSelect(isAll ? null : cat),
-              avatar: Icon(
-                isAll ? Icons.apps_rounded : iconOf(cat),
-                size: 16,
-                color: isSel ? Colors.white : color,
-              ),
-              label: Text(
-                _catLabel(context, cat),
-                style: TextStyle(
-                  color: isSel ? Colors.white : context.textPri,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                ),
-              ),
-              backgroundColor: context.cardColor,
-              selectedColor: color,
-              checkmarkColor: Colors.white,
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: isSel ? color : context.cardColor,
-                  width: 1.5,
-                ),
-              ),
-            ),
-          );
-        },
+        children: children,
       ),
     );
   }

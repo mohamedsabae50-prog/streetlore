@@ -44,8 +44,11 @@ class GamificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Pull the latest stats row for [userId] from Supabase and merge
-  /// over the locally cached values (Supabase wins when both exist).
+  /// Pull the latest stats row for [userId] from Supabase and MERGE
+  /// with the locally cached values. Counters and points take the
+  /// MAX of (local, remote) so a local increment done while the
+  /// Supabase push hadn't synced yet is not lost. Badges are unioned.
+  ///
   /// Call this right after sign-in / on app start.
   Future<void> bootstrapForUser(String userId) async {
     if (userId.isEmpty) return;
@@ -56,13 +59,40 @@ class GamificationProvider extends ChangeNotifier {
       );
       return;
     }
-    _stats = remote;
+    final local = _stats;
+    // Counter fields take the MAX so a local increment doesn't get
+    // overwritten by stale remote data.
+    final mergedPoints = remote.totalPoints > local.totalPoints
+        ? remote.totalPoints
+        : local.totalPoints;
+    final mergedVisited = remote.placesVisited > local.placesVisited
+        ? remote.placesVisited
+        : local.placesVisited;
+    final mergedReviews = remote.reviewsPosted > local.reviewsPosted
+        ? remote.reviewsPosted
+        : local.reviewsPosted;
+    final mergedPhotos = remote.photosUploaded > local.photosUploaded
+        ? remote.photosUploaded
+        : local.photosUploaded;
+    final mergedLevel = GamificationStats.levelForPoints(mergedPoints);
+    final badgeIds = local.badges.map((b) => b.id).toSet();
+    final mergedBadges = <Badge>[
+      ...local.badges,
+      ...remote.badges.where((b) => !badgeIds.contains(b.id)),
+    ];
+    _stats = local.copyWith(
+      totalPoints: mergedPoints,
+      placesVisited: mergedVisited,
+      reviewsPosted: mergedReviews,
+      photosUploaded: mergedPhotos,
+      level: mergedLevel,
+      badges: mergedBadges,
+    );
     await _save();
     notifyListeners();
     debugPrint(
-      'GamificationProvider: pulled stats for $userId '
-      '(placesVisited=${remote.placesVisited}, '
-      'points=${remote.totalPoints}, level=${remote.level})',
+      'GamificationProvider: merged stats for $userId '
+      '(placesVisited=$mergedVisited, points=$mergedPoints, level=$mergedLevel)',
     );
   }
 

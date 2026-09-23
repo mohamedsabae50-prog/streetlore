@@ -450,6 +450,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get free_banner_title => 'Everything is free';
 
   @override
+  String get passion_banner_title => 'A non-profit passion project';
+
+  @override
+  String get passion_banner_sub =>
+      'Built out of love for Alexandria — and for you. Free, ad-free, and made for fun. Every recommendation is hand-curated by someone who actually lives here.';
+
+  @override
   String get free_entry => 'Free entry';
 
   @override
@@ -509,7 +516,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get help_contact =>
-      'For support, contact us at:\\nsupport@streetlore.com\\n\\nWe reply within 24 hours.';
+      'For support, contact us at:\\nmohamedsabe50@gmail.com\\n\\nWe reply within 24 hours.';
 
   @override
   String get journal_add_first => 'Add first memory';

@@ -5,6 +5,7 @@ import '../core/config/app_config.dart';
 import '../core/services/offline_storage_service.dart';
 import '../data/models/offline_pack.dart';
 import '../data/models/place_model.dart';
+import 'place_provider.dart' show placeModelFromSupabaseRow;
 
 sealed class DownloadResult {
   const DownloadResult();
@@ -120,7 +121,12 @@ class OfflineProvider extends ChangeNotifier {
   /// looks suspiciously small (less than 5 places), which indicates
   /// `PlaceProvider.loadPlaces()` has not yet finished loading.
   Future<List<PlaceModel>> pullAllPlacesFromSupabase() async {
-    if (!AppConfig.supabaseEnabled) return const [];
+    if (!AppConfig.supabaseEnabled) {
+      debugPrint(
+        'OfflineProvider.pullAllPlacesFromSupabase: Supabase disabled in config',
+      );
+      return const [];
+    }
     try {
       final client = Supabase.instance.client;
       final res = await client
@@ -128,19 +134,30 @@ class OfflineProvider extends ChangeNotifier {
           .select()
           .order('id')
           .timeout(const Duration(seconds: 10));
-      return (res as List)
+      final list = (res as List<dynamic>)
           .map((row) {
             try {
               final m = Map<String, dynamic>.from(row as Map);
-              return PlaceModel.fromJson(m);
-            } catch (_) {
+              // Use the snake_case-tolerant parser (NOT PlaceModel.fromJson,
+              // which expects camelCase and threw on every Supabase row).
+              return placeModelFromSupabaseRow(m);
+            } catch (e) {
+              debugPrint(
+                'OfflineProvider.pullAllPlacesFromSupabase: row parse failed: $e',
+              );
               return null;
             }
           })
           .whereType<PlaceModel>()
           .toList();
-    } catch (e) {
-      debugPrint('OfflineProvider.pullAllPlacesFromSupabase: $e');
+      debugPrint(
+        'OfflineProvider.pullAllPlacesFromSupabase: fetched ${list.length} places',
+      );
+      return list;
+    } catch (e, st) {
+      debugPrint(
+        'OfflineProvider.pullAllPlacesFromSupabase: failed: $e\n$st',
+      );
       return const [];
     }
   }

@@ -449,6 +449,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get free_banner_title => 'كل حاجة مجانية';
 
   @override
+  String get passion_banner_title => 'مشروع شغف غير ربحي';
+
+  @override
+  String get passion_banner_sub =>
+      'مبني بحب الإسكندرية — ولأجلك. ببلاش، بدون إعلانات، ومتعة بحتة. كل توصية مجمّعة يدويًا من حد فعلاً عايش هنا.';
+
+  @override
   String get free_entry => 'دخول مجاني';
 
   @override
@@ -508,7 +515,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get help_contact =>
-      'للدعم، تواصل معنا على:\\nsupport@streetlore.com\\n\\nنرد خلال 24 ساعة.';
+      'للدعم، تواصل معنا على:\\nmohamedsabe50@gmail.com\\n\\nنرد خلال 24 ساعة.';
 
   @override
   String get journal_add_first => 'أضف أول ذكرى';

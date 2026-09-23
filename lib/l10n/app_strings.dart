@@ -200,9 +200,9 @@ class AppStrings {
     },
     'help_contact': {
       'en':
-          'For support, contact us at:\nsupport@streetlore.com\n\nWe reply within 24 hours.',
+          'For support, contact us at:\nmohamedsabe50@gmail.com\n\nWe reply within 24 hours.',
       'ar':
-          'للدعم، تواصل معنا على:\nsupport@streetlore.com\n\nنرد خلال 24 ساعة.',
+          'للدعم، تواصل معنا على:\nmohamedsabe50@gmail.com\n\nنرد خلال 24 ساعة.',
     },
     'got_it': {'en': 'Got it', 'ar': 'فهمت'},
     'sign_out': {'en': 'Sign Out', 'ar': 'تسجيل الخروج'},

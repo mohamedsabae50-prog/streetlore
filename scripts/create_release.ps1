@@ -6,18 +6,12 @@ using System.Runtime.InteropServices;
 public class CredMan {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct CREDENTIAL {
-        public UInt32 Flags;
-        public UInt32 Type;
-        public IntPtr TargetName;
-        public IntPtr Comment;
+        public UInt32 Flags; public UInt32 Type;
+        public IntPtr TargetName; public IntPtr Comment;
         public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;
-        public UInt32 CredentialBlobSize;
-        public IntPtr CredentialBlob;
-        public UInt32 Persist;
-        public UInt32 AttributeCount;
-        public IntPtr Attributes;
-        public IntPtr TargetAlias;
-        public IntPtr UserName;
+        public UInt32 CredentialBlobSize; public IntPtr CredentialBlob;
+        public UInt32 Persist; public UInt32 AttributeCount;
+        public IntPtr Attributes; public IntPtr TargetAlias; public IntPtr UserName;
     }
     [DllImport("advapi32.dll", EntryPoint="CredReadW", CharSet=CharSet.Unicode, SetLastError=true)]
     public static extern bool CredRead(string target, UInt32 type, UInt32 reservedFlag, out IntPtr credentialPtr);
@@ -43,55 +37,62 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.19"
-$apkName = "streetlore-v1.0.19-arm64.apk"
+$tag = "v1.0.20"
+$apkName = "streetlore-v1.0.20-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.19',
+    '## What is new in v1.0.20',
     '',
-    '### 1. Profile counters now reflect real data (CRITICAL fix)',
-    '- PlaceProvider / GamificationProvider / TourProvider now expose a `bootstrapForUser(userId)` method that pulls the latest rows from Supabase on sign-in.',
-    '- `PlaceProvider.loadPlaces()` now seeds itself from the Hive offline cache immediately so the home list is never empty while Supabase is still loading.',
-    '- `findById()` falls back to `OfflineProvider.cachedFallback` when the in-memory list does not have the place, so opening a place offline works even before the network round-trip completes.',
-    '- A `bootstrapFromSupabase(userId)` hook in `main.dart` listens to `AuthProvider` and triggers every provider as soon as the user id is available.',
+    '### 1. Launcher icon - adaptive, properly sized',
+    '- Added `mipmap-anydpi-v26/ic_launcher.xml` adaptive icon definition.',
+    '- Background drawable is a brand-matched gradient (amber -> red -> indigo).',
+    '- Foreground is the 1024x1024 logo - no excessive empty margins.',
+    '- Legacy mipmap PNGs kept for pre-O launchers.',
     '',
-    '### 2. Achievement localization keys (CRITICAL fix)',
-    '- All 23 `ach_*_name` and `ach_*_desc` keys are now defined in `app_en.arb`, `app_ar.arb`, `app_strings.dart`, and the generated `app_localizations*.dart` files.',
-    '- The badge name on the Profile / Achievements screen now resolves to a real translated string instead of leaking the raw key.',
+    '### 2. Offline Download - real fix for 0 Places',
+    '- Root cause: `OfflineProvider.pullAllPlacesFromSupabase()` was parsing rows with `PlaceModel.fromJson` (camelCase) but Supabase returns snake_case. Every row threw and the list came back empty.',
+    '- Extracted a top-level `placeModelFromSupabaseRow()` helper that accepts both snake_case and camelCase and uses safe defaults. `PlaceProvider._placeFromSupabase` and `OfflineProvider.pullAllPlacesFromSupabase` both delegate to it.',
+    '- Added detailed error logging so a future regression is visible in `adb logcat`.',
     '',
-    '### 3. Logo size doubled',
-    '- Splash screen logo: 150 px -> 220 px.',
-    '- Login screen logo: 86 px -> 160 px (with a 32 px blur shadow and a 36 px rounded corner).',
+    '### 3. Authentication - Google only',
+    '- Removed the "Continue as Guest" link and its helper `_continueAsGuest` / `_askGuestName` from `login_screen.dart`.',
+    '- Login is now strictly via Google (Gmail).',
     '',
-    '### 4. AI Trip Planner removed',
-    '- `presentation/screens/ai_trip_generator_screen.dart` deleted.',
-    '- The "AI Trip" quick action and its import are removed from `home_screen.dart`.',
-    '- The place-specific AI Tour Guide chatbot and the AI Tour Guide screen are kept untouched.',
+    '### 4. Home FAB - General AI Tour Guide',
+    '- New `FloatingActionButton.extended` "AI Tour Guide" pinned to the bottom-right of the Home screen.',
+    '- Opens `GeneralAITourGuideScreen`: a free-form Alexandria-only chat with a tight system prompt that politely declines any non-tourism topic (coding / math / general chat) to save tokens.',
+    '- Uses the same 4-key Gemini 3.6 Flash rotation as the rest of the app.',
     '',
-    '### 5. Offline Download rewritten (CRITICAL fix)',
-    '- `OfflineModeScreen._onDownload` waits for `PlaceProvider.ensureLoaded()` before triggering the download.',
-    '- If `PlaceProvider.places` looks suspiciously small (< 5), it now pulls the full list directly from Supabase via the new `OfflineProvider.pullAllPlacesFromSupabase()` method.',
-    '- Per-place snackbar spam removed — only the final success / failure toast is shown.',
-    '- Final toast: green background, 4-second duration, "Saved N places • M images cached offline".',
-    '- `PlaceProvider` falls back to the Hive offline cache when Supabase times out instead of mock data; the seed is applied before the network call so the home list is ready immediately.',
-    '- `RobustImage` now reads from `DefaultCacheManager` first and falls back to a live network fetch only when no disk cache entry exists. The Offline Download flow prefetches the same cache, so images render offline.',
+    '### 5. Map - opt-in ATM layer',
+    '- New `ATMs` filter chip (green). OFF by default to keep the map uncluttered.',
+    '- 12 hand-curated ATMs across CIB / NBE / Banque Misr / QNB / Alex Bank / HSBC / Cairo Bank / Faisal / Arab Bank / AAIB.',
+    '- Each marker uses its bank brand color + the ATM icon.',
     '',
-    '### 6. Admin Panel deployed to GitHub Pages',
-    '- `streetlore_admin` builds with `flutter build web --release --no-source-maps --base-href /streetlore-admin/` and is force-pushed to the `gh-pages` branch.',
-    '- Live URL: https://mohamedsabae50-prog.github.io/streetlore-admin/',
-    '- Place form already has the EN card (blue border) + AR card (green border) and an inline "Best Time to Visit" text field in the Identification section.',
+    '### 6. Map - Hotels as POI',
+    '- New `Hotels` filter chip (purple). OFF by default.',
+    '- 12 well-known Alexandria hotels (Four Seasons, Sofitel Cecil, Steigenberger, Tolip, Paradise Inn, Romance, Cherry Maryski, Plaza, King Mariout, San Stefano, Downtown, Borg El Arab).',
+    '- 4/5 star icons for the upscale entries, plain hotel icon for the 3-star properties.',
+    '',
+    '### 7. Profile - counters fixed + banner rewritten',
+    '- `GamificationProvider.bootstrapForUser` now MERGES instead of REPLACING: counters and points take MAX(local, remote), badges are unioned. A local increment made before Supabase sync no longer gets wiped on next sign-in.',
+    '- Level is recomputed from merged points via `GamificationStats.levelForPoints`.',
+    '- The "Everything is free" banner was moved from the top (right under counters) down below the streak and achievements sections, and its copy changed to "A non-profit passion project" / "Built out of love for Alexandria" so the screen tells the real story.',
+    '',
+    '### 8. Help Center - new support email',
+    '- `help_contact` now reads `mohamedsabe50@gmail.com` in both EN and AR. Verified in `app_strings.dart`, `app_en.arb`, `app_ar.arb`, and the generated `app_localizations*.dart` files.',
     '',
     '## Build',
     '- Target: arm64 only.',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): 92829BA6A116DF621BEBDDF330D8830DC04B19EC',
+    '- SHA-1 (release): 7FFC06A1A3D5006B5B471BF977F8507923498790',
+    '- SHA-256 (release): 816344E917F358A8684A59172A0B70925D3E6326BBE680D228707229AC4A93BB',
     '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.19 - Offline download real, profile counters from Supabase, achievement i18n fixed'
+    name = 'v1.0.20 - offline real fix, AI FAB, ATMs/Hotels map, profile counters + new banner'
     body = $releaseBody
     draft = $false
     prerelease = $false

@@ -926,6 +926,18 @@ abstract class AppLocalizations {
   /// **'Everything is free'**
   String get free_banner_title;
 
+  /// Translation key: passion_banner_title
+  ///
+  /// In en, this message translates to:
+  /// **'A non-profit passion project'**
+  String get passion_banner_title;
+
+  /// Translation key: passion_banner_sub
+  ///
+  /// In en, this message translates to:
+  /// **'Built out of love for Alexandria — and for you. Free, ad-free, and made for fun. Every recommendation is hand-curated by someone who actually lives here.'**
+  String get passion_banner_sub;
+
   /// Translation key: free_entry
   ///
   /// In en, this message translates to:
@@ -1037,7 +1049,7 @@ abstract class AppLocalizations {
   /// Translation key: help_contact
   ///
   /// In en, this message translates to:
-  /// **'For support, contact us at:\\nsupport@streetlore.com\\n\\nWe reply within 24 hours.'**
+  /// **'For support, contact us at:\\nmohamedsabe50@gmail.com\\n\\nWe reply within 24 hours.'**
   String get help_contact;
 
   /// Translation key: journal_add_first
