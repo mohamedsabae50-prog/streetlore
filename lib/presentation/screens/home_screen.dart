@@ -21,7 +21,6 @@ import '../../l10n/app_strings.dart';
 import 'place_details_screen.dart';
 import 'leaderboard_screen.dart';
 import 'map_view_screen.dart';
-import 'offline_mode_screen.dart';
 import 'geofencing_settings_screen.dart';
 import 'achievements_screen.dart';
 import 'walking_routes_screen.dart';
@@ -823,15 +822,6 @@ class _QuickAccessGrid extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
-        ),
-      ),
-      _QuickItem(
-        icon: Icons.cloud_off_rounded,
-        label: 'quick_offline',
-        color: const Color(0xFF7C3AED),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const OfflineModeScreen()),
         ),
       ),
       _QuickItem(

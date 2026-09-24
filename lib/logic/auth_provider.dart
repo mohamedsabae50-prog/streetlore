@@ -482,7 +482,11 @@ class AuthProvider extends ChangeNotifier {
   Future<String?> signInWithGoogleNative() async {
     if (!AppConfig.supabaseEnabled) return 'supabase_disabled';
     try {
-      final googleSignIn = GoogleSignIn(scopes: const ['email', 'profile']);
+      final googleSignIn = GoogleSignIn(
+        serverClientId:
+            '504340157609-pj8oox9662299u613glititqn4dqa7ij.apps.googleusercontent.com',
+        scopes: const ['email', 'profile'],
+      );
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         return 'cancelled';

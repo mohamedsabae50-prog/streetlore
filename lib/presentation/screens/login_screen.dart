@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -411,7 +411,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     final GoogleSignIn
                                     googleSignIn = GoogleSignIn(
                                       serverClientId:
-                                          '504340157609-pj8ook9662299u613glititqn4dqa1jp.apps.googleusercontent.com',
+                                          '504340157609-pj8oox9662299u613glititqn4dqa7ij.apps.googleusercontent.com',
                                     );
 
                                     final googleUser = await googleSignIn

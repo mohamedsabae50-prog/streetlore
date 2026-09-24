@@ -48,7 +48,7 @@ class SupabaseService {
           .map((j) => ChatMessage.fromJson(j as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      debugPrint('Supabase.fetchMessages error: $e');
+      _logError('fetchMessages', e);
       return const [];
     }
   }
@@ -56,9 +56,11 @@ class SupabaseService {
   Future<void> postMessage(ChatMessage message) async {
     if (_client == null) return;
     try {
-      await _client!.from('place_chat').insert(message.toJson());
+      // .select() forces a return so RLS denials throw instead of being
+      // silently swallowed.
+      await _client!.from('place_chat').insert(message.toJson()).select();
     } catch (e) {
-      debugPrint('Supabase.postMessage error: $e');
+      _logError('postMessage', e);
     }
   }
 
@@ -76,7 +78,7 @@ class SupabaseService {
                 .toList(),
           );
     } catch (e) {
-      debugPrint('Supabase.streamMessages error: $e');
+      _logError('streamMessages', e);
       return null;
     }
   }
@@ -93,7 +95,7 @@ class SupabaseService {
           .map((j) => GamificationStats.fromJson(j as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      debugPrint('Supabase.fetchLeaderboard error: $e');
+      _logError('fetchLeaderboard', e);
       return const [];
     }
   }
@@ -101,9 +103,11 @@ class SupabaseService {
   Future<void> pushStats(GamificationStats stats) async {
     if (_client == null) return;
     try {
-      await _client!.from('leaderboard').upsert(stats.toJson());
+      // .select() ensures the upsert actually succeeded; an RLS denial
+      // will throw a PostgrestException instead of returning silently.
+      await _client!.from('leaderboard').upsert(stats.toJson()).select();
     } catch (e) {
-      debugPrint('Supabase.pushStats error: $e');
+      _logError('pushStats', e);
     }
   }
 
@@ -123,7 +127,7 @@ class SupabaseService {
         Map<String, dynamic>.from(res as Map),
       );
     } catch (e) {
-      debugPrint('Supabase.pullStats error: $e');
+      _logError('pullStats($userId)', e);
       return null;
     }
   }
@@ -141,10 +145,10 @@ class SupabaseService {
         'place_id': place.id,
         'place_data': jsonEncode(place.toJson()),
         'saved_at': DateTime.now().toUtc().toIso8601String(),
-      }, onConflict: 'user_id,place_id');
+      }, onConflict: 'user_id,place_id').select();
       return true;
     } catch (e) {
-      debugPrint('Supabase.pushSavedPlace($userId, ${place.id}) error: $e');
+      _logError('pushSavedPlace($userId, ${place.id})', e);
       return false;
     }
   }
@@ -160,7 +164,7 @@ class SupabaseService {
           .eq('place_id', placeId);
       return true;
     } catch (e) {
-      debugPrint('Supabase.deleteSavedPlace($userId, $placeId) error: $e');
+      _logError('deleteSavedPlace($userId, $placeId)', e);
       return false;
     }
   }
@@ -170,16 +174,15 @@ class SupabaseService {
   Future<bool> registerCheckin(String userId, String placeId) async {
     if (_client == null || userId.isEmpty) return false;
     try {
+      // .select() surfaces RLS denials as a PostgrestException.
       await _client!.from('place_checkins').insert({
         'user_id': userId,
         'place_id': placeId,
         'checked_in_at': DateTime.now().toUtc().toIso8601String(),
-      });
+      }).select();
       return true;
     } catch (e) {
-      debugPrint(
-        'Supabase.registerCheckin($userId, $placeId) error: $e',
-      );
+      _logError('registerCheckin($userId, $placeId)', e);
       return false;
     }
   }
@@ -218,7 +221,7 @@ class SupabaseService {
           .toList();
       return list;
     } catch (e) {
-      debugPrint('Supabase.pullSavedPlaces error: $e');
+      _logError('pullSavedPlaces', e);
       return const [];
     }
   }
@@ -249,8 +252,21 @@ class SupabaseService {
           .whereType<Map<String, dynamic>>()
           .toList();
     } catch (e) {
-      debugPrint('Supabase.pullSavedTours error: $e');
+      _logError('pullSavedTours', e);
       return const [];
+    }
+  }
+
+  /// Centralized error logger. Surfaces PostgrestException code and
+  /// message so RLS denials are clearly visible in debug output.
+  void _logError(String method, Object e) {
+    if (e is PostgrestException) {
+      debugPrint(
+        'SupabaseService.$method: PostgrestException '
+        '[code=${e.code}, details=${e.details}]: ${e.message}',
+      );
+    } else {
+      debugPrint('SupabaseService.$method error: $e');
     }
   }
 }

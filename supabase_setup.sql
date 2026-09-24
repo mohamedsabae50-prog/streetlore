@@ -114,7 +114,103 @@ from public.tours t;
 alter table public.places drop constraint if exists places_category_check;
 alter table public.places
   add constraint places_category_check
-  check (category in ('Historical','Culture','Nature','Food','Shopping','Mosques','Churches','Streets'));
+  check (category in ('Historical','Culture','Nature','Food','Shopping','Mosques','Churches','Streets','Hotels'));
 
 alter table public.places add column if not exists price_local_egp integer;
 alter table public.places add column if not exists price_foreigner_egp integer;
+
+-- ============================================================
+-- Tables required by supabase_service.dart (were missing)
+-- ============================================================
+
+-- 1. Community Chat
+create table if not exists public.place_chat (
+  id         bigint generated always as identity primary key,
+  place_id   text not null references public.places(id) on delete cascade,
+  user_id    uuid not null,
+  user_name  text not null default 'Explorer',
+  message    text not null,
+  sent_at    timestamptz default now()
+);
+create index if not exists place_chat_place_idx on public.place_chat (place_id, sent_at);
+
+alter table public.place_chat enable row level security;
+create policy "public read place_chat" on public.place_chat for select using (true);
+create policy "auth insert place_chat" on public.place_chat for insert
+  with check (auth.uid() = user_id);
+create policy "auth delete own place_chat" on public.place_chat for delete
+  using (auth.uid() = user_id);
+
+-- Enable Realtime for place_chat
+alter publication supabase_realtime add table public.place_chat;
+
+-- 2. Leaderboard (gamification stats)
+create table if not exists public.leaderboard (
+  user_id         uuid primary key,
+  user_name       text not null default 'Explorer',
+  avatar_color_hex text default '0xFF3B82F6',
+  total_points    integer default 0,
+  places_visited  integer default 0,
+  reviews_posted  integer default 0,
+  photos_uploaded integer default 0,
+  level           text default 'Explorer',
+  badges          jsonb default '[]'::jsonb,
+  updated_at      timestamptz default now()
+);
+
+alter table public.leaderboard enable row level security;
+create policy "public read leaderboard" on public.leaderboard for select using (true);
+create policy "auth upsert own leaderboard" on public.leaderboard for insert
+  with check (auth.uid() = user_id);
+create policy "auth update own leaderboard" on public.leaderboard for update
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- 3. Saved Places (per-user bookmarks synced to cloud)
+create table if not exists public.saved_places (
+  user_id    uuid not null,
+  place_id   text not null,
+  place_data jsonb not null,
+  saved_at   timestamptz default now(),
+  primary key (user_id, place_id)
+);
+
+alter table public.saved_places enable row level security;
+create policy "auth read own saved_places" on public.saved_places for select
+  using (auth.uid() = user_id);
+create policy "auth upsert own saved_places" on public.saved_places for insert
+  with check (auth.uid() = user_id);
+create policy "auth update own saved_places" on public.saved_places for update
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "auth delete own saved_places" on public.saved_places for delete
+  using (auth.uid() = user_id);
+
+-- 4. Place Check-ins (gamification events)
+create table if not exists public.place_checkins (
+  id            bigint generated always as identity primary key,
+  user_id       uuid not null,
+  place_id      text not null,
+  checked_in_at timestamptz default now()
+);
+create index if not exists checkins_user_idx on public.place_checkins (user_id, checked_in_at);
+
+alter table public.place_checkins enable row level security;
+create policy "auth read own checkins" on public.place_checkins for select
+  using (auth.uid() = user_id);
+create policy "auth insert own checkins" on public.place_checkins for insert
+  with check (auth.uid() = user_id);
+
+-- 5. Saved Tours (per-user tour bookmarks)
+create table if not exists public.saved_tours (
+  id         bigint generated always as identity primary key,
+  user_id    uuid not null,
+  tour_data  jsonb not null,
+  saved_at   timestamptz default now()
+);
+
+alter table public.saved_tours enable row level security;
+create policy "auth read own saved_tours" on public.saved_tours for select
+  using (auth.uid() = user_id);
+create policy "auth insert own saved_tours" on public.saved_tours for insert
+  with check (auth.uid() = user_id);
+create policy "auth delete own saved_tours" on public.saved_tours for delete
+  using (auth.uid() = user_id);
