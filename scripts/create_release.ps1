@@ -37,42 +37,47 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.24"
-$apkName = "streetlore-v1.0.24-arm64.apk"
+$tag = "v1.0.25"
+$apkName = "streetlore-v1.0.25-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.24 - PHASE 1 (logic + state only)',
+    '## What is new in v1.0.25 - PHASE 1 (logic + state + API hardening)',
     '',
-    'Phase 1 keeps the Home Screen UI, Map UI, and Offline UI untouched. Only backend / state / API plumbing was hardened.',
+    'No UI changes in this release - Home Screen, Map Screen, and Offline UI are unchanged. Only backend, state management, and the API client were tightened.',
     '',
-    '### 1. AI 401 Authentication (CRITICAL) - already correct from v1.0.22',
-    '- `gemini_rest_client.dart` uses the standard Google AI Studio REST endpoint `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key=API_KEY`.',
-    '- No `Authorization` / Bearer header is ever sent - the empty header that triggered the 401 was removed.',
+    '### 1. Gemini API (CRITICAL) - exact endpoint + visible URL',
+    '- `gemini_rest_client.dart` calls `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=API_KEY`.',
+    '- The key travels ONLY in the URL query string - no `Authorization` / Bearer header is ever sent.',
+    '- For triaging the 401 error: every request now logs `API URL: <full URL>` to logcat via `debugPrintGemini(''API URL: $uri'')` before the HTTP send, so the exact endpoint can be verified in `adb logcat`.',
     '',
-    '### 2. State management - Check-ins & Profile counters (already correct from v1.0.22, verified in v1.0.24)',
-    '- `SupabaseService.pushSavedPlace` / `deleteSavedPlace` / `registerCheckin` are called from `PlaceProvider.toggleSave` and `GamificationProvider.applyAction(''check_in'', placeId: ...)` respectively, so saves and check-ins hit the database permanently.',
-    '- `bootstrapForUser(userId)` in `PlaceProvider` and `GamificationProvider` is invoked from `main.dart` on every auth state change. It MERGES local with remote and hydrates the Profile counters on cold start, so Saved / Explored / Tours are real numbers, not zeros.',
+    '### 2. Supabase silent failure - root cause + fix',
+    '**Root cause**: `PlaceProvider.toggleSave` and `GamificationProvider.applyAction(''check_in'', ...)` were calling Supabase as fire-and-forget without `await`. The local UI state was updated and `notifyListeners()` fired BEFORE the network round-trip. If the insert failed (RLS, expired token, network), the failure was logged to `debugPrint` inside `SupabaseService` but no one in the call chain was listening, so the check-in/save "disappeared" after a screen exit and the next bootstrap re-pulled 0 from the database.',
     '',
-    '### 3. Geofencing & toggles (NEW hardening in v1.0.24)',
-    '- `GeofenceProvider._load()` now calls `_syncService()` after hydrating `_alerts` from SharedPreferences. The background location stream is automatically re-armed if any persisted alerts are still enabled - previously the position stream only resumed when the user manually opened the Geofencing settings screen.',
-    '- `GeofenceProvider.toggle` / `remove` / `updateRadius` already persist every change to SharedPreferences and call `_syncService()` to push the new alert set into `GeofencingService`. `setAlerts` is smart: empty list -> `stop()` (cancels position stream), non-empty list without active stream -> requests permission and starts streaming.',
-    '- `startMonitoring` / `stopMonitoring` cleanly start and stop the position subscription.',
+    '**Fix**:',
+    '- `toggleSave` now `await`s the Supabase write, wraps it in `try/catch`, prints the exact success / failure (`debugPrint(''PlaceProvider.toggleSave: Supabase write OK placeId=...'')` or `error: ...`), and fires a **second** `notifyListeners()` AFTER the DB write so the UI reflects the DB source of truth.',
+    '- `applyAction(''check_in'', placeId: ...)` got the same treatment around `registerCheckin`.',
+    '- All RLS / token errors now surface in logcat instead of being silently swallowed.',
     '',
-    '### 4. Google Sign-in flow (already correct from v1.0.22)',
-    '- `AuthProvider._syncFromSupabase` extracts the display name from the Google profile: `full_name` -> `name` -> email local-part -> `Explorer`. No manual Name input is ever requested.',
+    '### 3. Geofencing - already correct from v1.0.24',
+    '- `GeofenceProvider._load()` re-arms `GeofencingService` after hydrating alerts from SharedPreferences, so the background location stream resumes automatically after a cold start.',
+    '- `GeofenceProvider.toggle / remove / updateRadius` persist every change to SharedPreferences and re-sync the service. Empty alert list -> `stop()` cancels the position stream.',
+    '',
+    '### 4. Google Sign-in - name comes from Google profile, no manual input',
+    '- `login_screen.dart` exposes only email + password fields. No First Name / Last Name inputs.',
+    '- `AuthProvider._syncFromSupabase` reads `user.userMetadata[''full_name'']` -> `name` -> email-local-part -> `Explorer`. The Google OAuth response puts `displayName` into `full_name`, so the app maps the Google profile name directly without ever asking the user.',
     '',
     '## Build',
     '- Target: arm64 only.',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): 0405BEF3235CF5AE4744AF06510DD2CDEF3F43B3',
-    '- SHA-256 (release): 0AD6D5588C878191603A726AFCA94FEBFB0BEE07B85F94B333BD856252FF3580',
+    '- SHA-1 (release): EA4193852AEFA998DDE5B82C5AD8D2E934278DF3',
+    '- SHA-256 (release): CB241A76066C227F778E03A4F9D1F33E9BD2484876DAF391DF4499B8C370BFD0',
     '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.24 - Phase 1: harden AI 401, DB persistence, geofencing auto-resume, Google-only name (no UI changes)'
+    name = 'v1.0.25 - Phase 1: awaited Supabase writes + API URL log + Google-only name (no UI changes)'
     body = $releaseBody
     draft = $false
     prerelease = $false
