@@ -37,51 +37,42 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.23"
-$apkName = "streetlore-v1.0.23-arm64.apk"
+$tag = "v1.0.24"
+$apkName = "streetlore-v1.0.24-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.23',
+    '## What is new in v1.0.24 - PHASE 1 (logic + state only)',
     '',
-    '### Rollback + restore',
-    'Restored the global **Offline** circular button on the Home Discover grid and the **email / password** login form (Google still works as the primary entry point). All seven surgical fixes from v1.0.22 are kept intact:',
+    'Phase 1 keeps the Home Screen UI, Map UI, and Offline UI untouched. Only backend / state / API plumbing was hardened.',
     '',
-    '### 1. AI Tour Guide - 401 OAuth error fixed',
-    '- `gemini_rest_client.dart`: removed the empty `Authorization` header that the gateway parsed as a malformed Bearer token. Auth now relies purely on `?key=API_KEY` in the URL.',
+    '### 1. AI 401 Authentication (CRITICAL) - already correct from v1.0.22',
+    '- `gemini_rest_client.dart` uses the standard Google AI Studio REST endpoint `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key=API_KEY`.',
+    '- No `Authorization` / Bearer header is ever sent - the empty header that triggered the 401 was removed.',
     '',
-    '### 2. State management - DB-persisted Check-ins & Counters',
-    '- `SupabaseService` exposes `pushSavedPlace`, `deleteSavedPlace`, and `registerCheckin`. `PlaceProvider.toggleSave` mirrors every change to `saved_places` so the saved list survives logout / reinstall.',
-    '- `GamificationProvider.applyAction(''check_in'', placeId: ...)` records a `place_checkins` row AND upserts the leaderboard, so the Explored counter hydrates from the database on every cold start.',
+    '### 2. State management - Check-ins & Profile counters (already correct from v1.0.22, verified in v1.0.24)',
+    '- `SupabaseService.pushSavedPlace` / `deleteSavedPlace` / `registerCheckin` are called from `PlaceProvider.toggleSave` and `GamificationProvider.applyAction(''check_in'', placeId: ...)` respectively, so saves and check-ins hit the database permanently.',
+    '- `bootstrapForUser(userId)` in `PlaceProvider` and `GamificationProvider` is invoked from `main.dart` on every auth state change. It MERGES local with remote and hydrates the Profile counters on cold start, so Saved / Explored / Tours are real numbers, not zeros.',
     '',
-    '### 3. Map - All filter toggleable + Hotel/Bed icon',
-    '- Tapping All when it is currently active drops to a `__none__` sentinel and renders ZERO pins. Tapping again brings everything back.',
-    '- Hotels category marker now uses `Icons.bed_rounded` (purple `#6A1B9A`) instead of a generic location pin.',
-    '- The `Streets` category was removed app-wide.',
+    '### 3. Geofencing & toggles (NEW hardening in v1.0.24)',
+    '- `GeofenceProvider._load()` now calls `_syncService()` after hydrating `_alerts` from SharedPreferences. The background location stream is automatically re-armed if any persisted alerts are still enabled - previously the position stream only resumed when the user manually opened the Geofencing settings screen.',
+    '- `GeofenceProvider.toggle` / `remove` / `updateRadius` already persist every change to SharedPreferences and call `_syncService()` to push the new alert set into `GeofencingService`. `setAlerts` is smart: empty list -> `stop()` (cancels position stream), non-empty list without active stream -> requests permission and starts streaming.',
+    '- `startMonitoring` / `stopMonitoring` cleanly start and stop the position subscription.',
     '',
-    '### 4. Home - Discover above filters',
-    '- Discover grid (Map / Ranking / Offline / Badges / Routes) now sits ABOVE the horizontal category filter chips.',
-    '- The `Streets` filter chip was replaced with `Hotels` (`Icons.bed_rounded`).',
-    '',
-    '### 5. Place Details - "Download for Offline" button',
-    '- A fourth Quick Action (`cloud_download_outlined` / `cloud_done_rounded`) sits next to Save / Check-in / Go.',
-    '- `OfflineProvider.downloadSinglePlace(place)` caches the JSON blob via Hive AND prefetches the hero image into the disk cache used by `CachedNetworkImage`.',
-    '',
-    '### 6. Auth - Google primary, name auto-extracted',
-    '- Google sign-in is the primary entry point. The display name is extracted automatically from the Google profile (`full_name` -> `name` -> email-local-part) in `AuthProvider._syncFromSupabase` - no manual Name input.',
-    '- Email / password login was restored as a secondary option (v1.0.21 form, untouched).',
+    '### 4. Google Sign-in flow (already correct from v1.0.22)',
+    '- `AuthProvider._syncFromSupabase` extracts the display name from the Google profile: `full_name` -> `name` -> email local-part -> `Explorer`. No manual Name input is ever requested.',
     '',
     '## Build',
     '- Target: arm64 only.',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): 34E6BEA453610E44C88CE4CFE24AF9BC51E082AD',
-    '- SHA-256 (release): 9222F50B54A24C8CBE795DFD3353D6B1B0D327B4DBCEB16928F835974DA9F303',
+    '- SHA-1 (release): 0405BEF3235CF5AE4744AF06510DD2CDEF3F43B3',
+    '- SHA-256 (release): 0AD6D5588C878191603A726AFCA94FEBFB0BEE07B85F94B333BD856252FF3580',
     '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.23 - rollback: restore Offline + email/password; keep 7 surgical fixes (AI 401, DB persistence, map toggle, Hotels, per-place offline, Google-only name)'
+    name = 'v1.0.24 - Phase 1: harden AI 401, DB persistence, geofencing auto-resume, Google-only name (no UI changes)'
     body = $releaseBody
     draft = $false
     prerelease = $false
