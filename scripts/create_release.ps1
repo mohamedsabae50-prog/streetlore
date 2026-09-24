@@ -37,54 +37,51 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.22"
-$apkName = "streetlore-v1.0.22-arm64.apk"
+$tag = "v1.0.23"
+$apkName = "streetlore-v1.0.23-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.22',
+    '## What is new in v1.0.23',
+    '',
+    '### Rollback + restore',
+    'Restored the global **Offline** circular button on the Home Discover grid and the **email / password** login form (Google still works as the primary entry point). All seven surgical fixes from v1.0.22 are kept intact:',
     '',
     '### 1. AI Tour Guide - 401 OAuth error fixed',
-    '- `gemini_rest_client.dart`: removed the empty `Authorization` header that the gateway was parsing as a malformed Bearer token and returning `Expected OAuth 2 access token`. Auth now relies purely on the URL query parameter `?key=API_KEY`, which is the documented Google AI Studio REST format.',
+    '- `gemini_rest_client.dart`: removed the empty `Authorization` header that the gateway parsed as a malformed Bearer token. Auth now relies purely on `?key=API_KEY` in the URL.',
     '',
-    '### 2. State management - Check-ins & Counters persist to the DB',
-    '- `SupabaseService` gained three new helpers: `pushSavedPlace`, `deleteSavedPlace`, and `registerCheckin`. `PlaceProvider.toggleSave` now mirrors every save / unsave to `saved_places` so the list survives logout, reinstall, or device switch.',
-    '- `GamificationProvider.applyAction(''check_in'', placeId: ...)` now records a `place_checkins` row in addition to the leaderboard upsert, so the "Explored" counter is sourced from the database on every app start, not just SharedPreferences.',
-    '- `bootstrapForUser(userId)` in both providers is called on every auth change from `main.dart` and MERGES remote with local, so a fresh install hydrates real numbers on first launch.',
+    '### 2. State management - DB-persisted Check-ins & Counters',
+    '- `SupabaseService` exposes `pushSavedPlace`, `deleteSavedPlace`, and `registerCheckin`. `PlaceProvider.toggleSave` mirrors every change to `saved_places` so the saved list survives logout / reinstall.',
+    '- `GamificationProvider.applyAction(''check_in'', placeId: ...)` records a `place_checkins` row AND upserts the leaderboard, so the Explored counter hydrates from the database on every cold start.',
     '',
-    '### 3. Map - All filter is now toggleable',
-    '- Tapping the All chip when it is currently active drops to a `__none__` sentinel and renders ZERO pins (the map can be completely empty). Tapping again brings everything back.',
-    '- The Hotels category marker now uses `Icons.bed_rounded` (purple `#6A1B9A`) instead of the generic location pin, so hotels are clearly distinct from historical places.',
-    '- The `Streets` category was removed app-wide (it was the source of redundant keywords in the AI service).',
+    '### 3. Map - All filter toggleable + Hotel/Bed icon',
+    '- Tapping All when it is currently active drops to a `__none__` sentinel and renders ZERO pins. Tapping again brings everything back.',
+    '- Hotels category marker now uses `Icons.bed_rounded` (purple `#6A1B9A`) instead of a generic location pin.',
+    '- The `Streets` category was removed app-wide.',
     '',
-    '### 4. Home screen - Discover above filters, Offline removed',
-    '- The Discover grid (Map / Ranking / Badges / Routes) now sits ABOVE the horizontal category filter chips, so users see shortcuts first and the city listing second.',
-    '- The Offline circular button was removed from Discover. Offline is now a per-place action (see below).',
-    '- The `Streets` filter was replaced with `Hotels` (`Icons.bed_rounded`, EN/AR).',
+    '### 4. Home - Discover above filters',
+    '- Discover grid (Map / Ranking / Offline / Badges / Routes) now sits ABOVE the horizontal category filter chips.',
+    '- The `Streets` filter chip was replaced with `Hotels` (`Icons.bed_rounded`).',
     '',
     '### 5. Place Details - "Download for Offline" button',
     '- A fourth Quick Action (`cloud_download_outlined` / `cloud_done_rounded`) sits next to Save / Check-in / Go.',
     '- `OfflineProvider.downloadSinglePlace(place)` caches the JSON blob via Hive AND prefetches the hero image into the disk cache used by `CachedNetworkImage`.',
-    '- Tapping again removes the cached entry. The button reflects state (`Download for Offline` <-> `Downloaded`) via a `Consumer<OfflineProvider>`.',
     '',
-    '### 6. Geofencing & toggles',
-    '- `GeofenceProvider.toggle` already persists to SharedPreferences and re-syncs the foreground service. Toggle state survives cold starts.',
-    '',
-    '### 7. Auth - Google-only, no manual name',
-    '- `login_screen.dart` removed the email/password form, the sign-up toggle, and any manual "Name" input field. The only entry point is the Google button.',
-    '- `AuthProvider._syncFromSupabase` extracts the display name automatically from the Google profile (`full_name` -> `name` -> email local-part).',
+    '### 6. Auth - Google primary, name auto-extracted',
+    '- Google sign-in is the primary entry point. The display name is extracted automatically from the Google profile (`full_name` -> `name` -> email-local-part) in `AuthProvider._syncFromSupabase` - no manual Name input.',
+    '- Email / password login was restored as a secondary option (v1.0.21 form, untouched).',
     '',
     '## Build',
     '- Target: arm64 only.',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): 0B075C83885D37E3DCBFB80B3C08D3DBA2EE35BC',
-    '- SHA-256 (release): 4BCE3E7C3C9FFE8A2437EB1FBEE03E8310D28F3F1453AFE3CA13CC2DA972E4EB',
+    '- SHA-1 (release): 34E6BEA453610E44C88CE4CFE24AF9BC51E082AD',
+    '- SHA-256 (release): 9222F50B54A24C8CBE795DFD3353D6B1B0D327B4DBCEB16928F835974DA9F303',
     '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.22 - AI 401 fix + DB-persisted counters/check-ins + map toggle + per-place offline + Google-only auth'
+    name = 'v1.0.23 - rollback: restore Offline + email/password; keep 7 surgical fixes (AI 401, DB persistence, map toggle, Hotels, per-place offline, Google-only name)'
     body = $releaseBody
     draft = $false
     prerelease = $false
