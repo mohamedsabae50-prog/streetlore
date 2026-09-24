@@ -85,6 +85,12 @@ class GeminiRestClient {
         '$_base/models/$model:generateContent'
         '?key=$key',
       );
+      // ============================================================
+      // Per debugging spec: log the EXACT URL we are calling so the
+      // 401 / model-not-found failure can be triaged from logcat.
+      // The key travels ONLY in the query string (no Bearer header).
+      // ============================================================
+      debugPrintGemini('API URL: $uri');
       debugPrintGemini(
         'generateContent: trying key #${i + 1}/${keys.length} '
         '(len=${key.length})',

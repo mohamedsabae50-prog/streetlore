@@ -134,12 +134,43 @@ class GamificationProvider extends ChangeNotifier {
     notifyListeners();
 
     // Persist the check-in as a row in `place_checkins` so it shows up
-    // across devices / sessions. Fire-and-forget — failures only log.
+    // across devices / sessions. We AWAIT the call so any RLS / network
+    // failure is debugPrint'd instead of being silently dropped, then
+    // emit a second notifyListeners tick so any UI listening for the
+    // final state (counters, badges) reflects the DB write.
     if (action == 'check_in' && placeId != null && placeId.isNotEmpty) {
       final userId =
           SupabaseService.instance.clientOrNull?.auth.currentUser?.id ?? '';
       if (userId.isNotEmpty) {
-        SupabaseService.instance.registerCheckin(userId, placeId);
+        try {
+          final ok = await SupabaseService.instance.registerCheckin(
+            userId,
+            placeId,
+          );
+          if (!ok) {
+            debugPrint(
+              'GamificationProvider.applyAction: registerCheckin returned '
+              'false for userId=$userId placeId=$placeId',
+            );
+          } else {
+            debugPrint(
+              'GamificationProvider.applyAction: check-in saved to DB '
+              'placeId=$placeId',
+            );
+          }
+          notifyListeners();
+        } catch (e, st) {
+          debugPrint(
+            'GamificationProvider.applyAction: registerCheckin threw for '
+            'placeId=$placeId: $e\n$st',
+          );
+          notifyListeners();
+        }
+      } else {
+        debugPrint(
+          'GamificationProvider.applyAction: no signed-in user, '
+          'skipped registerCheckin',
+        );
       }
     }
 

@@ -211,16 +211,43 @@ class PlaceProvider extends ChangeNotifier {
     final savedData = _savedPlaces.map((p) => jsonEncode(p.toJson())).toList();
     await prefs.setStringList('saved_places_data', savedData);
     notifyListeners();
-    // Push the change to Supabase in the background so the saved list
-    // survives a logout / device switch / reinstall. SharedPreferences
-    // is only the local cache now.
+    // Push the change to Supabase so the saved list survives a logout /
+    // device switch / reinstall. SharedPreferences is only the local
+    // cache. We AWAIT the call so any RLS / network failure is surfaced
+    // (debugPrint'd in SupabaseService) and not silently dropped, then
+    // notify listeners AGAIN once the DB write confirms the change so
+    // UI / counters stay in sync with the source of truth.
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
     if (userId.isNotEmpty) {
-      if (wasSaved) {
-        SupabaseService.instance.deleteSavedPlace(userId, place.id);
-      } else {
-        SupabaseService.instance.pushSavedPlace(userId, place);
+      try {
+        final ok = wasSaved
+            ? await SupabaseService.instance.deleteSavedPlace(userId, place.id)
+            : await SupabaseService.instance.pushSavedPlace(userId, place);
+        if (!ok) {
+          debugPrint(
+            'PlaceProvider.toggleSave: Supabase write returned false '
+            'for userId=$userId placeId=${place.id} wasSaved=$wasSaved',
+          );
+        } else {
+          debugPrint(
+            'PlaceProvider.toggleSave: Supabase write OK '
+            'placeId=${place.id} wasSaved=$wasSaved',
+          );
+        }
+        // Re-emit so any UI listening for the second-tick (counters,
+        // saved badge) reflects the final DB state.
+        notifyListeners();
+      } catch (e, st) {
+        debugPrint(
+          'PlaceProvider.toggleSave: Supabase write threw for '
+          'placeId=${place.id}: $e\n$st',
+        );
+        notifyListeners();
       }
+    } else {
+      debugPrint(
+        'PlaceProvider.toggleSave: no signed-in user, skipped Supabase sync',
+      );
     }
   }
 
