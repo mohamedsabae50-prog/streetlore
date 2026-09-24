@@ -37,45 +37,54 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.21"
-$apkName = "streetlore-v1.0.21-arm64.apk"
+$tag = "v1.0.22"
+$apkName = "streetlore-v1.0.22-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.21',
+    '## What is new in v1.0.22',
     '',
-    '### 1. Profile counters - never zero again',
-    '- `profile_screen.dart` Explored counter now uses `MAX(gamification.stats.placesVisited, placeP.savedPlaces.length)` as a fallback so the value is never 0 when the user has at least one saved place, even if gamification stats failed to sync.',
+    '### 1. AI Tour Guide - 401 OAuth error fixed',
+    '- `gemini_rest_client.dart`: removed the empty `Authorization` header that the gateway was parsing as a malformed Bearer token and returning `Expected OAuth 2 access token`. Auth now relies purely on the URL query parameter `?key=API_KEY`, which is the documented Google AI Studio REST format.',
     '',
-    '### 2. AI Tour Guide - no more mid-sentence cutoffs',
-    '- `ai_tour_guide_service.dart askAlexandria()`: `maxOutputTokens 512 -> 800`, temperature 0.6 -> 0.7.',
-    '- System prompt now instructs "Be concise but COMPLETE. Never cut a sentence mid-thought." so the model wraps up its paragraph before exhausting the token budget.',
+    '### 2. State management - Check-ins & Counters persist to the DB',
+    '- `SupabaseService` gained three new helpers: `pushSavedPlace`, `deleteSavedPlace`, and `registerCheckin`. `PlaceProvider.toggleSave` now mirrors every save / unsave to `saved_places` so the list survives logout, reinstall, or device switch.',
+    '- `GamificationProvider.applyAction(''check_in'', placeId: ...)` now records a `place_checkins` row in addition to the leaderboard upsert, so the "Explored" counter is sourced from the database on every app start, not just SharedPreferences.',
+    '- `bootstrapForUser(userId)` in both providers is called on every auth change from `main.dart` and MERGES remote with local, so a fresh install hydrates real numbers on first launch.',
     '',
-    '### 3. Launcher icon - safe-zone fixed',
-    '- `tools/setup_adaptive_icon.ps1` now generates a 432x432 foreground PNG with the 280x280 logo centered, leaving a 76px transparent padding on every side (= 19dp safe zone at xxxhdpi). Android system masks can crop up to 19dp from each edge without losing the logo detail.',
-    '- Background drawable is a brand-matched amber -> red -> indigo gradient (`drawable/ic_launcher_background.xml`).',
-    '- Legacy mipmap PNGs regenerated for mdpi / hdpi / xhdpi / xxhdpi / xxxhdpi.',
+    '### 3. Map - All filter is now toggleable',
+    '- Tapping the All chip when it is currently active drops to a `__none__` sentinel and renders ZERO pins (the map can be completely empty). Tapping again brings everything back.',
+    '- The Hotels category marker now uses `Icons.bed_rounded` (purple `#6A1B9A`) instead of the generic location pin, so hotels are clearly distinct from historical places.',
+    '- The `Streets` category was removed app-wide (it was the source of redundant keywords in the AI service).',
     '',
-    '### 4. Hotels are first-class Places',
-    '- 12 hand-curated Alexandria hotels (Four Seasons, Sofitel Cecil, Steigenberger, Tolip, Paradise Inn, Romance, Cherry Maryski, Plaza, King Mariout, San Stefano, Downtown, Borg El Arab) are now promoted to full `PlaceModel` instances.',
-    '- They show up in the Home list, can be saved / check-inned, and open the standard Place Details screen - same treatment as Qaitbay Citadel or the Library of Alexandria.',
-    '- The "Hotels" filter chip on the map is still opt-in (purple) so the default map stays uncluttered.',
+    '### 4. Home screen - Discover above filters, Offline removed',
+    '- The Discover grid (Map / Ranking / Badges / Routes) now sits ABOVE the horizontal category filter chips, so users see shortcuts first and the city listing second.',
+    '- The Offline circular button was removed from Discover. Offline is now a per-place action (see below).',
+    '- The `Streets` filter was replaced with `Hotels` (`Icons.bed_rounded`, EN/AR).',
     '',
-    '### 5. ATM markers - interactive bottom sheet',
-    '- Tapping an ATM marker now opens a polished bottom sheet (new `_atm_sheet.dart`) showing the bank brand (CIB, NBE, Banque Misr, QNB, Alex Bank, HSBC, Cairo Bank, Faisal, Arab Bank, AAIB), the branch name, and the address.',
-    '- A prominent **Get Directions** button hands off to Google Maps with `LaunchMode.externalApplication` via `url_launcher`.',
+    '### 5. Place Details - "Download for Offline" button',
+    '- A fourth Quick Action (`cloud_download_outlined` / `cloud_done_rounded`) sits next to Save / Check-in / Go.',
+    '- `OfflineProvider.downloadSinglePlace(place)` caches the JSON blob via Hive AND prefetches the hero image into the disk cache used by `CachedNetworkImage`.',
+    '- Tapping again removes the cached entry. The button reflects state (`Download for Offline` <-> `Downloaded`) via a `Consumer<OfflineProvider>`.',
+    '',
+    '### 6. Geofencing & toggles',
+    '- `GeofenceProvider.toggle` already persists to SharedPreferences and re-syncs the foreground service. Toggle state survives cold starts.',
+    '',
+    '### 7. Auth - Google-only, no manual name',
+    '- `login_screen.dart` removed the email/password form, the sign-up toggle, and any manual "Name" input field. The only entry point is the Google button.',
+    '- `AuthProvider._syncFromSupabase` extracts the display name automatically from the Google profile (`full_name` -> `name` -> email local-part).',
     '',
     '## Build',
     '- Target: arm64 only.',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): 7B50DDF11B43552D6954B5AA19DF2AE9D415217E',
-    '- SHA-256 (release): 2D310D3DB00CCA001E9898047A9F6B77FD475E6D65379B92DE01B250509DA32D',
+    '- SHA-1 (release): 0B075C83885D37E3DCBFB80B3C08D3DBA2EE35BC',
+    '- SHA-256 (release): 4BCE3E7C3C9FFE8A2437EB1FBEE03E8310D28F3F1453AFE3CA13CC2DA972E4EB',
     '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.21 - profile counters fix, AI no-truncate, icon safe-zone, hotels as places, ATM bottom sheet'
+    name = 'v1.0.22 - AI 401 fix + DB-persisted counters/check-ins + map toggle + per-place offline + Google-only auth'
     body = $releaseBody
     draft = $false
     prerelease = $false
