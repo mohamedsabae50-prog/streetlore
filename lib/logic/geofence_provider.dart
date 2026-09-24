@@ -30,6 +30,11 @@ class GeofenceProvider extends ChangeNotifier {
         ),
       );
     notifyListeners();
+    // Re-arm the background tracking service with whatever alerts
+    // persisted from the previous session. Without this, the position
+    // stream would only resume when the user manually re-opens the
+    // Geofencing settings screen.
+    await _syncService();
   }
 
   Future<void> _save() async {
