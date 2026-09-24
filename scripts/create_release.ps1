@@ -37,62 +37,45 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.20"
-$apkName = "streetlore-v1.0.20-arm64.apk"
+$tag = "v1.0.21"
+$apkName = "streetlore-v1.0.21-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.20',
+    '## What is new in v1.0.21',
     '',
-    '### 1. Launcher icon - adaptive, properly sized',
-    '- Added `mipmap-anydpi-v26/ic_launcher.xml` adaptive icon definition.',
-    '- Background drawable is a brand-matched gradient (amber -> red -> indigo).',
-    '- Foreground is the 1024x1024 logo - no excessive empty margins.',
-    '- Legacy mipmap PNGs kept for pre-O launchers.',
+    '### 1. Profile counters - never zero again',
+    '- `profile_screen.dart` Explored counter now uses `MAX(gamification.stats.placesVisited, placeP.savedPlaces.length)` as a fallback so the value is never 0 when the user has at least one saved place, even if gamification stats failed to sync.',
     '',
-    '### 2. Offline Download - real fix for 0 Places',
-    '- Root cause: `OfflineProvider.pullAllPlacesFromSupabase()` was parsing rows with `PlaceModel.fromJson` (camelCase) but Supabase returns snake_case. Every row threw and the list came back empty.',
-    '- Extracted a top-level `placeModelFromSupabaseRow()` helper that accepts both snake_case and camelCase and uses safe defaults. `PlaceProvider._placeFromSupabase` and `OfflineProvider.pullAllPlacesFromSupabase` both delegate to it.',
-    '- Added detailed error logging so a future regression is visible in `adb logcat`.',
+    '### 2. AI Tour Guide - no more mid-sentence cutoffs',
+    '- `ai_tour_guide_service.dart askAlexandria()`: `maxOutputTokens 512 -> 800`, temperature 0.6 -> 0.7.',
+    '- System prompt now instructs "Be concise but COMPLETE. Never cut a sentence mid-thought." so the model wraps up its paragraph before exhausting the token budget.',
     '',
-    '### 3. Authentication - Google only',
-    '- Removed the "Continue as Guest" link and its helper `_continueAsGuest` / `_askGuestName` from `login_screen.dart`.',
-    '- Login is now strictly via Google (Gmail).',
+    '### 3. Launcher icon - safe-zone fixed',
+    '- `tools/setup_adaptive_icon.ps1` now generates a 432x432 foreground PNG with the 280x280 logo centered, leaving a 76px transparent padding on every side (= 19dp safe zone at xxxhdpi). Android system masks can crop up to 19dp from each edge without losing the logo detail.',
+    '- Background drawable is a brand-matched amber -> red -> indigo gradient (`drawable/ic_launcher_background.xml`).',
+    '- Legacy mipmap PNGs regenerated for mdpi / hdpi / xhdpi / xxhdpi / xxxhdpi.',
     '',
-    '### 4. Home FAB - General AI Tour Guide',
-    '- New `FloatingActionButton.extended` "AI Tour Guide" pinned to the bottom-right of the Home screen.',
-    '- Opens `GeneralAITourGuideScreen`: a free-form Alexandria-only chat with a tight system prompt that politely declines any non-tourism topic (coding / math / general chat) to save tokens.',
-    '- Uses the same 4-key Gemini 3.6 Flash rotation as the rest of the app.',
+    '### 4. Hotels are first-class Places',
+    '- 12 hand-curated Alexandria hotels (Four Seasons, Sofitel Cecil, Steigenberger, Tolip, Paradise Inn, Romance, Cherry Maryski, Plaza, King Mariout, San Stefano, Downtown, Borg El Arab) are now promoted to full `PlaceModel` instances.',
+    '- They show up in the Home list, can be saved / check-inned, and open the standard Place Details screen - same treatment as Qaitbay Citadel or the Library of Alexandria.',
+    '- The "Hotels" filter chip on the map is still opt-in (purple) so the default map stays uncluttered.',
     '',
-    '### 5. Map - opt-in ATM layer',
-    '- New `ATMs` filter chip (green). OFF by default to keep the map uncluttered.',
-    '- 12 hand-curated ATMs across CIB / NBE / Banque Misr / QNB / Alex Bank / HSBC / Cairo Bank / Faisal / Arab Bank / AAIB.',
-    '- Each marker uses its bank brand color + the ATM icon.',
-    '',
-    '### 6. Map - Hotels as POI',
-    '- New `Hotels` filter chip (purple). OFF by default.',
-    '- 12 well-known Alexandria hotels (Four Seasons, Sofitel Cecil, Steigenberger, Tolip, Paradise Inn, Romance, Cherry Maryski, Plaza, King Mariout, San Stefano, Downtown, Borg El Arab).',
-    '- 4/5 star icons for the upscale entries, plain hotel icon for the 3-star properties.',
-    '',
-    '### 7. Profile - counters fixed + banner rewritten',
-    '- `GamificationProvider.bootstrapForUser` now MERGES instead of REPLACING: counters and points take MAX(local, remote), badges are unioned. A local increment made before Supabase sync no longer gets wiped on next sign-in.',
-    '- Level is recomputed from merged points via `GamificationStats.levelForPoints`.',
-    '- The "Everything is free" banner was moved from the top (right under counters) down below the streak and achievements sections, and its copy changed to "A non-profit passion project" / "Built out of love for Alexandria" so the screen tells the real story.',
-    '',
-    '### 8. Help Center - new support email',
-    '- `help_contact` now reads `mohamedsabe50@gmail.com` in both EN and AR. Verified in `app_strings.dart`, `app_en.arb`, `app_ar.arb`, and the generated `app_localizations*.dart` files.',
+    '### 5. ATM markers - interactive bottom sheet',
+    '- Tapping an ATM marker now opens a polished bottom sheet (new `_atm_sheet.dart`) showing the bank brand (CIB, NBE, Banque Misr, QNB, Alex Bank, HSBC, Cairo Bank, Faisal, Arab Bank, AAIB), the branch name, and the address.',
+    '- A prominent **Get Directions** button hands off to Google Maps with `LaunchMode.externalApplication` via `url_launcher`.',
     '',
     '## Build',
     '- Target: arm64 only.',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): 7FFC06A1A3D5006B5B471BF977F8507923498790',
-    '- SHA-256 (release): 816344E917F358A8684A59172A0B70925D3E6326BBE680D228707229AC4A93BB',
+    '- SHA-1 (release): 7B50DDF11B43552D6954B5AA19DF2AE9D415217E',
+    '- SHA-256 (release): 2D310D3DB00CCA001E9898047A9F6B77FD475E6D65379B92DE01B250509DA32D',
     '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.20 - offline real fix, AI FAB, ATMs/Hotels map, profile counters + new banner'
+    name = 'v1.0.21 - profile counters fix, AI no-truncate, icon safe-zone, hotels as places, ATM bottom sheet'
     body = $releaseBody
     draft = $false
     prerelease = $false

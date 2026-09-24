@@ -500,6 +500,12 @@ abstract class AppLocalizations {
   /// **'Historical'**
   String get cat_historical;
 
+  /// Translation key: cat_hotels
+  ///
+  /// In en, this message translates to:
+  /// **'Hotels'**
+  String get cat_hotels;
+
   /// Translation key: cat_mosques
   ///
   /// In en, this message translates to:
@@ -517,12 +523,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shopping'**
   String get cat_shopping;
-
-  /// Translation key: cat_streets
-  ///
-  /// In en, this message translates to:
-  /// **'Streets'**
-  String get cat_streets;
 
   /// Translation key: chat_empty
   ///
@@ -2179,6 +2179,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tour removed from offline access'**
   String get tour_removed_offline;
+
+  /// Translation key: download_offline
+  ///
+  /// In en, this message translates to:
+  /// **'Download for Offline'**
+  String get download_offline;
+
+  /// Translation key: removed_offline
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from offline'**
+  String get removed_offline;
 
   /// Translation key: tour_saved_offline
   ///

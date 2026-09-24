@@ -226,6 +226,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cat_historical => 'تاريخي';
 
   @override
+  String get cat_hotels => 'الفنادق';
+
+  @override
   String get cat_mosques => 'مساجد';
 
   @override
@@ -233,9 +236,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cat_shopping => 'تسوق';
-
-  @override
-  String get cat_streets => 'شوارع';
 
   @override
   String get chat_empty => 'كن أول واحد يقول أهلًا';
@@ -1126,6 +1126,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tour_removed_offline => 'تمت إزالة الجولة من الوصول دون اتصال';
+
+  @override
+  String get download_offline => 'حمّل للوضع دون اتصال';
+
+  @override
+  String get removed_offline => 'تمت الإزالة من الوضع دون اتصال';
 
   @override
   String get tour_saved_offline => 'تم حفظ الجولة للوصول دون اتصال!';

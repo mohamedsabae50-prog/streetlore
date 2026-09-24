@@ -128,6 +128,62 @@ class SupabaseService {
     }
   }
 
+  /// Push (upsert) a single saved place for [userId] to the `saved_places`
+  /// table. The whole `PlaceModel` is JSON-encoded into the `place_data`
+  /// JSONB column alongside `user_id` and `saved_at`. This is what makes
+  /// the user's saved list survive a logout / app reinstall / device
+  /// switch — SharedPreferences alone is not enough.
+  Future<bool> pushSavedPlace(String userId, PlaceModel place) async {
+    if (_client == null || userId.isEmpty) return false;
+    try {
+      await _client!.from('saved_places').upsert({
+        'user_id': userId,
+        'place_id': place.id,
+        'place_data': jsonEncode(place.toJson()),
+        'saved_at': DateTime.now().toUtc().toIso8601String(),
+      }, onConflict: 'user_id,place_id');
+      return true;
+    } catch (e) {
+      debugPrint('Supabase.pushSavedPlace($userId, ${place.id}) error: $e');
+      return false;
+    }
+  }
+
+  /// Delete a saved place for [userId].
+  Future<bool> deleteSavedPlace(String userId, String placeId) async {
+    if (_client == null || userId.isEmpty) return false;
+    try {
+      await _client!
+          .from('saved_places')
+          .delete()
+          .eq('user_id', userId)
+          .eq('place_id', placeId);
+      return true;
+    } catch (e) {
+      debugPrint('Supabase.deleteSavedPlace($userId, $placeId) error: $e');
+      return false;
+    }
+  }
+
+  /// Record a check-in event for [userId] at [placeId]. Also increments
+  /// `places_visited` on the user row so the counter is always live.
+  Future<bool> registerCheckin(String userId, String placeId) async {
+    if (_client == null || userId.isEmpty) return false;
+    try {
+      await _client!.from('place_checkins').insert({
+        'user_id': userId,
+        'place_id': placeId,
+        'checked_in_at': DateTime.now().toUtc().toIso8601String(),
+      });
+      return true;
+    } catch (e) {
+      debugPrint(
+        'Supabase.registerCheckin($userId, $placeId) error: $e',
+      );
+      return false;
+    }
+  }
+
   /// Pull every saved place belonging to [userId] from the `saved_places`
   /// table. The shape mirrors `PlaceModel.toJson` so we can rebuild the
   /// `PlaceModel` straight from the response.

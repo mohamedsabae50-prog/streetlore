@@ -226,6 +226,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cat_historical => 'Historical';
 
   @override
+  String get cat_hotels => 'Hotels';
+
+  @override
   String get cat_mosques => 'Mosques';
 
   @override
@@ -233,9 +236,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cat_shopping => 'Shopping';
-
-  @override
-  String get cat_streets => 'Streets';
 
   @override
   String get chat_empty => 'Be the first to say hi';
@@ -1129,6 +1129,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tour_removed_offline => 'Tour removed from offline access';
+
+  @override
+  String get download_offline => 'Download for Offline';
+
+  @override
+  String get removed_offline => 'Removed from offline';
 
   @override
   String get tour_saved_offline => 'Tour saved for offline access!';

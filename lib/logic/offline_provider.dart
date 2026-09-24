@@ -174,6 +174,64 @@ class OfflineProvider extends ChangeNotifier {
     return null;
   }
 
+  /// True when [place] is already in the local offline cache.
+  bool isCached(String placeId) =>
+      _cachedPlaces.any((p) => p.id == placeId);
+
+  /// Download a SINGLE place for offline use (one-tap action from the
+  /// Place Details screen). Caches the JSON blob AND prefetches the
+  /// hero image into the disk cache used by CachedNetworkImage.
+  ///
+  /// Per the v1.0.22 spec, offline is no longer a global pack-based
+  /// action — users grab places one by one from the Place Details page.
+  /// Returns a [DownloadOk] with `cachedCount=1` on success.
+  Future<DownloadResult> downloadSinglePlace(PlaceModel place) async {
+    try {
+      // Phase 1: persist the JSON so the model survives a cold start
+      // with no network.
+      await _storage.cachePlaces([place]);
+      // Phase 2: prefetch the hero image.
+      final imgResult = await _storage.prefetchImages([place]);
+      _cachedPlaces = _storage.getCachedPlaces();
+      notifyListeners();
+      debugPrint(
+        'OfflineProvider: downloaded single place '
+        '${place.id} (imgOk=${imgResult.ok}, imgFail=${imgResult.failed})',
+      );
+      return DownloadOk(
+        cachedCount: 1,
+        imagesOk: imgResult.ok,
+        imagesFailed: imgResult.failed,
+      );
+    } catch (e) {
+      debugPrint('OfflineProvider.downloadSinglePlace error: $e');
+      return DownloadEmpty(
+        OfflinePack(
+          id: 'single_${place.id}',
+          name: place.name,
+          description: 'Single-place offline download',
+          placeIds: const [],
+          categories: const [],
+          sizeMb: 0,
+          downloadedAt: null,
+          coverEmoji: '📥',
+        ),
+      );
+    }
+  }
+
+  /// Remove a single place from the offline cache (its JSON + image
+  /// eviction is handled by Hive's TTL on the cache manager).
+  Future<void> removeCachedPlace(String placeId) async {
+    final i = _instance;
+    if (i == null) return;
+    // Hive stores each place under its own key — drop just that one.
+    final box = await (i._storage).boxForPlaces;
+    await box.delete(placeId);
+    _cachedPlaces = _storage.getCachedPlaces();
+    notifyListeners();
+  }
+
   Future<DownloadResult> download(
     OfflinePack pack, {
     required List<PlaceModel> availablePlaces,

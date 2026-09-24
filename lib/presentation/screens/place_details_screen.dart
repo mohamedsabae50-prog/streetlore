@@ -15,6 +15,7 @@ import '../../logic/place_provider.dart';
 import '../../logic/review_provider.dart';
 import '../../logic/streak_provider.dart';
 import '../../logic/locale_provider.dart';
+import '../../logic/offline_provider.dart';
 import '../../data/models/review_model.dart';
 import '../../l10n/app_strings.dart';
 import '../widgets/add_review_sheet.dart';
@@ -458,6 +459,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                             .registerVisit();
                                         await gamification.applyAction(
                                           'check_in',
+                                          placeId: place.id,
                                         );
                                         achievements.refreshFromStats();
                                         final milestoneBadge =
@@ -539,6 +541,69 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     label: context.tr('go'),
                                     color: AppColors.primary,
                                     onTap: _openMaps,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Consumer<OfflineProvider>(
+                                    builder: (context, offline, _) {
+                                      final cached = offline.isCached(
+                                        place.id,
+                                      );
+                                      return _QuickAction(
+                                        icon: cached
+                                            ? Icons.cloud_done_rounded
+                                            : Icons.cloud_download_outlined,
+                                        label: cached
+                                            ? context.tr(
+                                                'downloaded',
+                                              )
+                                            : context.tr('download_offline'),
+                                        color: cached
+                                            ? const Color(0xFF10B981)
+                                            : const Color(0xFF7C3AED),
+                                        onTap: () async {
+                                          HapticFeedback.lightImpact();
+                                          if (cached) {
+                                            await offline
+                                                .removeCachedPlace(place.id);
+                                            if (!context.mounted) return;
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      context.tr(
+                                                        'removed_offline',
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                          } else {
+                                            final result =
+                                                await offline.downloadSinglePlace(
+                                              place,
+                                            );
+                                            if (!context.mounted) return;
+                                            final ok =
+                                                result is DownloadOk;
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      ok
+                                                          ? context.tr(
+                                                              'downloaded',
+                                                            )
+                                                          : 'Offline '
+                                                                'download '
+                                                                'failed',
+                                                    ),
+                                                  ),
+                                                );
+                                          }
+                                        },
+                                      );
+                                    },
                                   ),
                                 ),
                               ],

@@ -103,7 +103,7 @@ class GamificationProvider extends ChangeNotifier {
     SupabaseService.instance.pushStats(_stats);
   }
 
-  Future<Badge?> applyAction(String action) async {
+  Future<Badge?> applyAction(String action, {String? placeId}) async {
     final pts = GamificationStats.pointsFor(action);
     if (pts == 0) return null;
 
@@ -132,6 +132,16 @@ class GamificationProvider extends ChangeNotifier {
 
     await _save();
     notifyListeners();
+
+    // Persist the check-in as a row in `place_checkins` so it shows up
+    // across devices / sessions. Fire-and-forget — failures only log.
+    if (action == 'check_in' && placeId != null && placeId.isNotEmpty) {
+      final userId =
+          SupabaseService.instance.clientOrNull?.auth.currentUser?.id ?? '';
+      if (userId.isNotEmpty) {
+        SupabaseService.instance.registerCheckin(userId, placeId);
+      }
+    }
 
     if (justEarned != null) return justEarned;
     if (newLevel != prevLevel) return _levelBadge(newLevel);

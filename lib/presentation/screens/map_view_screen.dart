@@ -30,8 +30,8 @@ String _catLabel(BuildContext context, String cat) {
       return context.tr('cat_mosques');
     case 'Churches':
       return context.tr('cat_churches');
-    case 'Streets':
-      return context.tr('cat_streets');
+    case 'Hotels':
+      return context.tr('cat_hotels');
     default:
       return cat;
   }
@@ -46,11 +46,15 @@ class MapViewScreen extends StatefulWidget {
 
 class _MapViewScreenState extends State<MapViewScreen> {
   final MapController _mapController = MapController();
+  /// `null`  → All filter is ON, show every place.
+  /// `'__none__'` sentinel → user explicitly toggled All OFF — the map
+  ///   renders zero pins no matter what places are loaded.
+  /// any other string → filter to that category.
   String? _selectedCategory;
   PlaceModel? _selectedPlace;
   LatLng? _userLocation;
   bool _initialCentered = false;
-  // ATM marers are opt-in - never rendered until the user toggles
+  // ATM markers are opt-in - never rendered until the user toggles
   // the ATM filter on (UI clutter avoidance, per design).
   bool _showAtms = false;
   // Filter chips for the new opt-in layers. Hotels is also opt-in.
@@ -58,6 +62,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
 
   static const _alexCenter = LatLng(31.2001, 29.9187);
   static const _hotelsCategory = 'Hotels';
+  static const String _allOffSentinel = '__none__';
+
+  bool get _allOff => _selectedCategory == _allOffSentinel;
 
   Future<void> _locateUser({bool move = false}) async {
     try {
@@ -111,8 +118,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
         return Icons.mosque_rounded;
       case 'Churches':
         return Icons.church_rounded;
-      case 'Streets':
-        return Icons.signpost_rounded;
+      case 'Hotels':
+        // Hotel/Bed icon to clearly differentiate hotels from generic
+        // historical pins, per design spec.
+        return Icons.bed_rounded;
       default:
         return Icons.location_on_rounded;
     }
@@ -134,14 +143,19 @@ class _MapViewScreenState extends State<MapViewScreen> {
         return const Color(0xFF14B8A6);
       case 'Churches':
         return const Color(0xFFF97316);
-      case 'Streets':
-        return const Color(0xFF6366F1);
+      case 'Hotels':
+        return const Color(0xFF6A1B9A); // purple, same as the opt-in chip
       default:
         return AppColors.primary;
     }
   }
 
+  /// Filter helper.
+  /// - `null` → All ON → return every place.
+  /// - `'__none__'` → All OFF (user-toggled) → return empty list.
+  /// - any other → filter by category.
   List<PlaceModel> _filtered(List<PlaceModel> all) {
+    if (_allOff) return const <PlaceModel>[];
     if (_selectedCategory == null) return all;
     return all.where((p) => p.category == _selectedCategory).toList();
   }
@@ -557,14 +571,35 @@ class _CategoryFilter extends StatelessWidget {
 
     for (final cat in cats) {
       final isAll = cat == 'All';
-      final isSel = (isAll && selected == null) || cat == selected;
+      // All chip is selected only when there is no filter at all — not
+      // when the sentinel has been set (which means All was toggled OFF
+      // and the map is intentionally empty).
+      final allOn = selected == null;
+      final isSel = isAll ? allOn : cat == selected;
       final color = isAll ? AppColors.primary : colorOf(cat);
       children.add(
         Padding(
           padding: const EdgeInsets.only(right: 8),
           child: FilterChip(
             selected: isSel,
-            onSelected: (_) => onSelect(isAll ? null : cat),
+            onSelected: (_) {
+              if (isAll) {
+                // Tap All when All is currently ON → drop to the
+                // `__none__` sentinel so the map renders zero pins.
+                // Tap All when All is OFF (either via the sentinel or
+                // because a category is active) → restore All ON.
+                final currentlyAll = selected == null;
+                onSelect(currentlyAll ? '__none__' : null);
+              } else {
+                // Tap a category chip: if it's the active one, drop
+                // back to All OFF (empty map); otherwise activate it.
+                if (cat == selected) {
+                  onSelect('__none__');
+                } else {
+                  onSelect(cat);
+                }
+              }
+            },
             avatar: Icon(
               isAll ? Icons.apps_rounded : iconOf(cat),
               size: 16,

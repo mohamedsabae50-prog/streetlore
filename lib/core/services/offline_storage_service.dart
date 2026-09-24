@@ -92,6 +92,15 @@ class OfflineStorageService {
     }
   }
 
+  /// Raw access to the Hive box for places — used by
+  /// [OfflineProvider.removeCachedPlace] to drop a single key.
+  Future<Box<dynamic>> get boxForPlaces async {
+    if (!_ready) {
+      await init();
+    }
+    return Hive.box(_placesBox);
+  }
+
   /// Eagerly fetch every place image into the standard
   /// `DefaultCacheManager` disk cache so the `CachedNetworkImage`
   /// widget used throughout the app can render the picture while

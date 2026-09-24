@@ -166,25 +166,33 @@ class PlaceProvider extends ChangeNotifier {
   Future<bool> bootstrapForUser(String userId) async {
     if (userId.isEmpty) return false;
     final remote = await SupabaseService.instance.pullSavedPlaces(userId);
-    if (remote.isEmpty) {
-      debugPrint(
-        'PlaceProvider: no remote saved places for $userId, keeping local',
-      );
-      return false;
-    }
-    final prefs = await SharedPreferences.getInstance();
     final remoteIds = remote.map((p) => p.id).toSet();
-    final localOnly =
+    // Keep the local entries that aren't already on the server, so a
+    // local toggle that hasn't synced yet is not silently dropped.
+    final cleanLocal =
         _savedPlaces.where((p) => !remoteIds.contains(p.id)).toList();
-    final merged = [...remote, ...localOnly];
-    final encoded = merged.map((p) => jsonEncode(p.toJson())).toList();
-    await prefs.setStringList('saved_places_data', encoded);
-    _savedPlaces = merged;
-    notifyListeners();
+    final merged = [...remote, ...cleanLocal];
+    if (merged.length != _savedPlaces.length ||
+        !_listsSameIds(_savedPlaces, merged)) {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = merged.map((p) => jsonEncode(p.toJson())).toList();
+      await prefs.setStringList('saved_places_data', encoded);
+      _savedPlaces = merged;
+      notifyListeners();
+    }
     debugPrint(
-      'PlaceProvider: pulled ${remote.length} saved places for $userId '
-      '(total now ${merged.length})',
+      'PlaceProvider: bootstrapForUser($userId) '
+      'remote=${remote.length} local+=${cleanLocal.length} total=${merged.length}',
     );
+    return true;
+  }
+
+  bool _listsSameIds(List<PlaceModel> a, List<PlaceModel> b) {
+    if (a.length != b.length) return false;
+    final ids = b.map((p) => p.id).toSet();
+    for (final p in a) {
+      if (!ids.contains(p.id)) return false;
+    }
     return true;
   }
 
@@ -194,7 +202,8 @@ class PlaceProvider extends ChangeNotifier {
 
   Future<void> toggleSave(PlaceModel place) async {
     final prefs = await SharedPreferences.getInstance();
-    if (isSaved(place.id)) {
+    final wasSaved = isSaved(place.id);
+    if (wasSaved) {
       _savedPlaces.removeWhere((p) => p.id == place.id);
     } else {
       _savedPlaces.add(place);
@@ -202,6 +211,17 @@ class PlaceProvider extends ChangeNotifier {
     final savedData = _savedPlaces.map((p) => jsonEncode(p.toJson())).toList();
     await prefs.setStringList('saved_places_data', savedData);
     notifyListeners();
+    // Push the change to Supabase in the background so the saved list
+    // survives a logout / device switch / reinstall. SharedPreferences
+    // is only the local cache now.
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+    if (userId.isNotEmpty) {
+      if (wasSaved) {
+        SupabaseService.instance.deleteSavedPlace(userId, place.id);
+      } else {
+        SupabaseService.instance.pushSavedPlace(userId, place);
+      }
+    }
   }
 
   Future<void> clearAllSaved() async {

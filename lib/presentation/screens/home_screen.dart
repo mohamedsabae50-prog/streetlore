@@ -21,7 +21,6 @@ import '../../l10n/app_strings.dart';
 import 'place_details_screen.dart';
 import 'leaderboard_screen.dart';
 import 'map_view_screen.dart';
-import 'offline_mode_screen.dart';
 import 'geofencing_settings_screen.dart';
 import 'achievements_screen.dart';
 import 'walking_routes_screen.dart';
@@ -57,7 +56,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _CategoryItem(label: 'Shopping', icon: Icons.shopping_bag_rounded),
     _CategoryItem(label: 'Mosques', icon: Icons.mosque_rounded),
     _CategoryItem(label: 'Churches', icon: Icons.church_rounded),
-    _CategoryItem(label: 'Streets', icon: Icons.signpost_rounded),
+    // 'Streets' is removed app-wide; 'Hotels' replaces it as a regular
+    // category in the home filter list (the map keeps Hotels as an
+    // opt-in purple layer for visual hierarchy).
+    _CategoryItem(label: 'Hotels', icon: Icons.bed_rounded),
   ];
   @override
   void initState() {
@@ -419,6 +421,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
+          // Discover (Map / Ranking / Badges / Routes) now sits ABOVE
+          // the horizontal category filter chips, per the v1.0.22
+          // redesign. The Offline circular button was removed from this
+          // grid; offline downloads are per-place inside Place Details.
+          SliverToBoxAdapter(
+            child: RepaintBoundary(child: _QuickAccessGrid()),
+          ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(top: 20),
@@ -528,9 +537,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
 
-          SliverToBoxAdapter(
-            child: RepaintBoundary(child: _QuickAccessGrid()),
-          ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
@@ -799,6 +805,9 @@ class _IconBtn extends StatelessWidget {
 class _QuickAccessGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Per design spec: remove the global Offline circular button from
+    // the Discover section. Offline is now a per-place action inside the
+    // Place Details screen.
     final items = <_QuickItem>[
       _QuickItem(
         icon: Icons.map_rounded,
@@ -816,15 +825,6 @@ class _QuickAccessGrid extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
-        ),
-      ),
-      _QuickItem(
-        icon: Icons.cloud_off_rounded,
-        label: 'quick_offline',
-        color: const Color(0xFF7C3AED),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const OfflineModeScreen()),
         ),
       ),
       _QuickItem(

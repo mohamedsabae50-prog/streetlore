@@ -89,19 +89,18 @@ class GeminiRestClient {
         'generateContent: trying key #${i + 1}/${keys.length} '
         '(len=${key.length})',
       );
-      // Use a fresh HttpClient per request. Setting `headers` to an
-      // empty map (instead of merging with HttpClient.defaultHeaders)
-      // ensures no Authorization / Bearer header is ever attached.
+      // Use a fresh HttpClient per request. We DO NOT touch any
+      // `Authorization` header — sending an empty value here was being
+      // parsed by the gateway as an empty Bearer token and yielded a
+      // 401 "Expected OAuth 2 access token" error. The auth for the
+      // Google AI Studio REST endpoint is the URL query string `?key=`
+      // (which is already in `uri`), nothing else.
       final client = http.Client();
       try {
         final req = http.Request('POST', uri)
           ..headers['Content-Type'] = 'application/json'
           ..headers['Accept'] = 'application/json'
-          ..headers['User-Agent'] = 'streetlore/1.0.15'
-          // Explicitly blank any auth-related headers so they cannot
-          // leak from the runtime's default headers / interceptors.
-          ..headers['Authorization'] = ''
-          ..headers['authorization'] = ''
+          ..headers['User-Agent'] = 'streetlore/1.0.22'
           ..body = body;
         final streamed = await client.send(req).timeout(_timeout);
         final resp = await http.Response.fromStream(streamed);
