@@ -22,12 +22,16 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
-  // v1.0.22: Google-only login. Email / password / sign-up mode /
-  // obscured toggle / focus nodes / form key were removed; the user's
-  // display name is pulled automatically from their Google profile by
-  // `AuthProvider._syncFromSupabase`. The Google button keeps its own
-  // loading state via the [PressScale] + auth flow (no separate flag
-  // needed here).
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  bool _isLoading = false;
+  bool _isSignUp = false;
+  bool _obscurePassword = true;
+  String? _focusedField;
+
   late final AnimationController _animCtrl;
   late final Animation<double> _bgBlob1;
   late final Animation<double> _bgBlob2;
@@ -47,17 +51,73 @@ class _LoginScreenState extends State<LoginScreen>
       begin: 0.5,
       end: 1.5,
     ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.linear));
+    _emailFocus.addListener(
+      () =>
+          setState(() => _focusedField = _emailFocus.hasFocus ? 'email' : null),
+    );
+    _passwordFocus.addListener(
+      () => setState(
+        () => _focusedField = _passwordFocus.hasFocus ? 'password' : null,
+      ),
+    );
   }
 
   @override
   void dispose() {
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     _animCtrl.dispose();
     super.dispose();
   }
 
-  // _signIn / _authErrorMessage removed in v1.0.22 along with the
-  // email/password form. The Google flow's errors are surfaced inline
-  // inside the Google button's own try/catch block.
+  Future<void> _signIn() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
+
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
+
+    final errorKey = await context.read<AuthProvider>().signIn(
+      email: _emailCtrl.text,
+      password: _passwordCtrl.text,
+      isSignUp: _isSignUp,
+    );
+
+    if (!mounted) return;
+    if (errorKey != null) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_authErrorMessage(errorKey)),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    _goToMain();
+  }
+
+  String _authErrorMessage(String key) {
+    switch (key) {
+      case 'account_exists':
+        return context.tr('login_err_account_exists');
+      case 'no_account':
+        return context.tr('login_err_no_account');
+      case 'wrong_password':
+        return context.tr('login_err_wrong_password');
+      case 'password_too_short':
+        return context.tr('login_err_password_short');
+      default:
+        return context.tr('login_err_unknown');
+    }
+  }
+
+  // Guest login removed in v1.0.20. Google sign-in is the only
+  // supported entry point.
 
   void _goToMain() {
     Navigator.of(context).pushAndRemoveUntil(
@@ -161,19 +221,145 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
                     const SizedBox(height: 36),
-                    // ============================================================
-                    // Per v1.0.22 spec: sign-in is STRICTLY Google-only. The
-                    // email/password form, sign-up toggle, and the manual
-                    // "Name" input were removed. The user's display name is
-                    // pulled automatically from their Google profile
-                    // (`full_name` -> `name` -> email-local-part) in
-                    // `AuthProvider._syncFromSupabase`. The "OR" divider
-                    // is also gone — the Google button is the only entry
-                    // point now.
-                    // ============================================================
-                    const SizedBox(height: 12),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 360),
+                            child: _InputField(
+                              controller: _emailCtrl,
+                              focusNode: _emailFocus,
+                              isFocused: _focusedField == 'email',
+                              label: context.tr('login_email'),
+                              hint: context.tr('login_email_hint'),
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return context.tr('login_err_email');
+                                }
+                                if (!v.contains('@')) {
+                                  return context.tr('login_err_email_invalid');
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 480),
+                            child: _InputField(
+                              controller: _passwordCtrl,
+                              focusNode: _passwordFocus,
+                              isFocused: _focusedField == 'password',
+                              label: context.tr('login_password'),
+                              hint: _isSignUp
+                                  ? context.tr('login_password_hint_signup')
+                                  : context.tr('login_password_hint'),
+                              icon: Icons.lock_outline_rounded,
+                              obscureText: _obscurePassword,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_rounded
+                                      : Icons.visibility_rounded,
+                                  size: 20,
+                                  color: context.textSec,
+                                ),
+                                onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
+                              ),
+                              validator: (v) {
+                                if (!_isSignUp) return null;
+                                if (v == null || v.length < 6) {
+                                  return context.tr('login_err_password_short');
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 510),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _isSignUp
+                                      ? context.tr('login_have_account')
+                                      : context.tr('login_no_account'),
+                                  style: TextStyle(
+                                    color: context.textSec,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () =>
+                                      setState(() => _isSignUp = !_isSignUp),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Text(
+                                    _isSignUp
+                                        ? context.tr('login_sign_in')
+                                        : context.tr('login_sign_up'),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 520),
+                            child: _GradientButton(
+                              isLoading: _isLoading,
+                              onTap: _signIn,
+                              label: _isSignUp
+                                  ? context.tr('login_sign_up')
+                                  : context.tr('login_sign_in'),
+                              icon: _isSignUp
+                                  ? Icons.person_add_rounded
+                                  : Icons.login_rounded,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     FadeInUp(
-                      delay: const Duration(milliseconds: 420),
+                      delay: const Duration(milliseconds: 600),
+                      child: Row(
+                        children: [
+                          Expanded(child: Divider(color: context.borderColor)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              context.tr('login_or'),
+                              style: TextStyle(
+                                color: context.textSec,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: context.borderColor)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 660),
                       child: Row(
                         children: [
                           Expanded(
@@ -201,6 +387,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   return;
                                 }
 
+                                setState(() => _isLoading = true);
                                 HapticFeedback.lightImpact();
 
                                 try {
@@ -231,6 +418,9 @@ class _LoginScreenState extends State<LoginScreen>
                                         .signIn();
 
                                     if (googleUser == null) {
+                                      if (mounted) {
+                                        setState(() => _isLoading = false);
+                                      }
                                       return;
                                     }
 
@@ -332,8 +522,9 @@ class _LoginScreenState extends State<LoginScreen>
                                     ),
                                   );
                                 } finally {
-                                  // Google flow handles its own UI state
-                                  // via the navigation transition.
+                                  if (mounted) {
+                                    setState(() => _isLoading = false);
+                                  }
                                 }
                               },
                             ),
@@ -353,7 +544,176 @@ class _LoginScreenState extends State<LoginScreen>
   }
 }
 
+class _InputField extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode? focusNode;
+  final bool isFocused;
+  final String label;
+  final String hint;
+  final IconData icon;
+  final TextInputType? keyboardType;
+  final bool obscureText;
+  final Widget? suffixIcon;
+  final String? Function(String?)? validator;
 
+  const _InputField({
+    required this.controller,
+    this.focusNode,
+    this.isFocused = false,
+    required this.label,
+    required this.hint,
+    required this.icon,
+    this.keyboardType,
+    this.obscureText = false,
+    this.suffixIcon,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: isFocused
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  spreadRadius: 1,
+                ),
+              ]
+            : [],
+      ),
+      child: TextFormField(
+        controller: controller,
+        focusNode: focusNode,
+        keyboardType: keyboardType,
+        obscureText: obscureText,
+        style: TextStyle(
+          color: context.textPri,
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+        ),
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          labelStyle: TextStyle(color: context.textSec, fontSize: 14),
+          hintStyle: TextStyle(color: context.hintColor, fontSize: 14),
+          prefixIcon: AnimatedScale(
+            scale: isFocused ? 1.1 : 1.0,
+            duration: const Duration(milliseconds: 200),
+            child: Icon(
+              icon,
+              color: isFocused ? AppColors.primary : context.textSec,
+              size: 20,
+            ),
+          ),
+          suffixIcon: suffixIcon,
+          filled: true,
+          fillColor: context.cardColor,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: context.borderColor),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: context.borderColor),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.error),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.error),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 16,
+          ),
+        ),
+        validator: validator,
+      ),
+    );
+  }
+}
+
+class _GradientButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback onTap;
+  final String label;
+  final IconData icon;
+
+  const _GradientButton({
+    required this.isLoading,
+    required this.onTap,
+    required this.label,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PressScale(
+      onTap: isLoading ? null : onTap,
+      pressedScale: 0.97,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: isLoading
+              ? const LinearGradient(
+                  colors: [Color(0xFF64748B), Color(0xFF475569)],
+                )
+              : AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isLoading
+              ? []
+              : [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+        ),
+        child: Center(
+          child: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Colors.white,
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
 
 class _SocialButton extends StatelessWidget {
   final String label;
