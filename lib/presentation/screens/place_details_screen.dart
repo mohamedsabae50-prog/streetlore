@@ -475,6 +475,22 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                             .client.auth
                                             .currentUser
                                             ?.id;
+                                        // v1.0.34: optimistic local bump.
+                                        // The Profile screen's "Explored"
+                                        // counter must grow INSTANTLY
+                                        // without waiting for the
+                                        // Supabase round-trip - if the
+                                        // remote call later succeeds, the
+                                        // fetchRemoteCounts below
+                                        // reconciles it; if the DB
+                                        // write returned null/false we
+                                        // // undo the bump before
+                                        // surfacing the error.
+                                        if (checkInResult != null &&
+                                            userId != null &&
+                                            userId.isNotEmpty) {
+                                          placeProvider.bumpLocalCheckinCount();
+                                        }
                                         if (userId != null &&
                                             userId.isNotEmpty) {
                                           await placeProvider

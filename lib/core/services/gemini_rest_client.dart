@@ -114,7 +114,7 @@ class GeminiRestClient {
       // `HttpClient()` here and wrapping it in an `IOClient` gives us a
       // completely isolated request.
       final rawHttp = HttpClient()
-        ..userAgent = 'streetlore/1.0.33'
+        ..userAgent = 'streetlore/1.0.34'
         ..idleTimeout = const Duration(seconds: 15);
       final client = IOClient(rawHttp);
       try {
@@ -125,7 +125,7 @@ class GeminiRestClient {
           // from any global default.
           ..headers['Content-Type'] = 'application/json'
           ..headers['Accept'] = 'application/json'
-          ..headers['User-Agent'] = 'streetlore/1.0.33'
+          ..headers['User-Agent'] = 'streetlore/1.0.34'
           ..body = body;
         // Belt-and-braces: explicitly clear any of the well-known
         // auth-related keys that a future Dart SDK or plugin might
@@ -185,6 +185,20 @@ class GeminiRestClient {
           errorBody: errBody,
           raw: resp.body,
         );
+        // v1.0.34: per the spec, only 401 / 403 / 429 (and 5xx
+        // transients, plus client-level timeouts / network errors) are
+        // considered "this key is bad / exhausted" - in those cases we
+        // silently fall through to the next key. Any other status (e.g.
+        // a 400 from a malformed prompt, or a 404 from the wrong model
+        // name) is OUR fault and we should NOT burn the remaining
+        // quota on it.
+        if (!_shouldRotateKey(resp.statusCode)) {
+          debugPrintGemini(
+            'generateContent: non-rotation status ${resp.statusCode} '
+            'on key #${i + 1}, surfacing without burning more keys',
+          );
+          return lastResult;
+        }
       } on TimeoutException {
         debugPrintGemini(
           'generateContent: timeout on key #${i + 1}',
@@ -210,6 +224,21 @@ class GeminiRestClient {
       }
     }
     return lastResult;
+  }
+
+  /// v1.0.34: true when an HTTP status means "this key is bad or
+  /// exhausted, try the next one". Per the user's spec: 401 (invalid /
+  /// revoked key), 403 (forbidden / wrong model), 429 (rate /
+  /// quota-limited). Any 5xx is also rotation-worthy because it's a
+  /// transient upstream / CDN failure that the next key may avoid.
+  /// 400 (bad request - our fault) and 404 (model not found - our
+  /// fault) intentionally fall through so we don't waste quota.
+  bool _shouldRotateKey(int statusCode) {
+    if (statusCode == 401 || statusCode == 403 || statusCode == 429) {
+      return true;
+    }
+    if (statusCode >= 500 && statusCode < 600) return true;
+    return false;
   }
 
   /// Keys from AppConfig, evaluated lazily so tests / build time tools

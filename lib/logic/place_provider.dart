@@ -44,12 +44,47 @@ class PlaceProvider extends ChangeNotifier {
           .eq('user_id', userId)
           .count(CountOption.exact);
       _remoteCheckinCount = checkinRes.count;
-      
+
       debugPrint('Remote counts: saved=$_remoteSavedCount, checkins=$_remoteCheckinCount');
       notifyListeners();
     } catch (e) {
       debugPrint('fetchRemoteCounts error: $e');
     }
+  }
+
+  /// Optimistic local increment of the remote check-in counter. The UI
+  /// must show the new total the INSTANT the user taps Check-in - we
+  /// cannot wait for `fetchRemoteCounts` to round-trip Supabase. The
+  /// counter will be reconciled by the follow-up `fetchRemoteCounts`
+  /// call the check-in screen fires right after this.
+  void bumpLocalCheckinCount() {
+    _remoteCheckinCount += 1;
+    notifyListeners();
+    debugPrint(
+      'PlaceProvider.bumpLocalCheckinCount -> $_remoteCheckinCount',
+    );
+  }
+
+  /// Optimistic local increment of the remote saved-places counter. The
+  /// UI updates immediately so the Profile screen never flashes 0 while
+  /// the Supabase upsert is in flight. Reconciled by the next
+  /// `fetchRemoteCounts` (the save provider always fires one).
+  void bumpLocalSavedCount() {
+    _remoteSavedCount += 1;
+    notifyListeners();
+    debugPrint(
+      'PlaceProvider.bumpLocalSavedCount -> $_remoteSavedCount',
+    );
+  }
+
+  /// Optimistic local decrement of the remote saved-places counter
+  /// (mirror of [bumpLocalSavedCount] for unsave actions).
+  void unbumpLocalSavedCount() {
+    if (_remoteSavedCount > 0) _remoteSavedCount -= 1;
+    notifyListeners();
+    debugPrint(
+      'PlaceProvider.unbumpLocalSavedCount -> $_remoteSavedCount',
+    );
   }
 
   bool _isFilterOpenNow = false;
@@ -254,6 +289,14 @@ class PlaceProvider extends ChangeNotifier {
     }
     final savedData = _savedPlaces.map((p) => jsonEncode(p.toJson())).toList();
     await prefs.setStringList('saved_places_data', savedData);
+    // v1.0.34: optimistic local bump so the Profile "Saved" counter
+    // updates instantly, before the Supabase round-trip. If the
+    // underlying write fails we undo the bump in the catch block below.
+    if (wasSaved) {
+      unbumpLocalSavedCount();
+    } else {
+      bumpLocalSavedCount();
+    }
     notifyListeners();
     // Push the change to Supabase so the saved list survives a logout /
     // device switch / reinstall. SharedPreferences is only the local
@@ -272,6 +315,13 @@ class PlaceProvider extends ChangeNotifier {
             'PlaceProvider.toggleSave: Supabase write returned false '
             'for userId=$userId placeId=${place.id} wasSaved=$wasSaved',
           );
+          // Roll back the optimistic bump so the UI matches the DB.
+          // fetchRemoteCounts will refresh from the server next.
+          if (wasSaved) {
+            bumpLocalSavedCount();
+          } else {
+            unbumpLocalSavedCount();
+          }
         } else {
           debugPrint(
             'PlaceProvider.toggleSave: Supabase write OK '
@@ -286,6 +336,12 @@ class PlaceProvider extends ChangeNotifier {
           'PlaceProvider.toggleSave: Supabase write threw for '
           'placeId=${place.id}: $e\n$st',
         );
+        // Roll back the optimistic bump so the UI matches the DB.
+        if (wasSaved) {
+          bumpLocalSavedCount();
+        } else {
+          unbumpLocalSavedCount();
+        }
         notifyListeners();
       }
     } else {
