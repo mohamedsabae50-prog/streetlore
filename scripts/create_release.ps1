@@ -37,53 +37,45 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.26"
-$apkName = "streetlore-v1.0.26-arm64.apk"
+$tag = "v1.0.27"
+$apkName = "streetlore-v1.0.27-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.26',
+    '## What is new in v1.0.27 - bug-fix pass',
     '',
-    '### 1. State Management (Counters & Check-ins) - verified',
-    '- `PlaceProvider.toggleSave` and `GamificationProvider.applyAction(''check_in'', placeId: ...)` both `await` the Supabase write and call `notifyListeners()` AFTER the DB write returns. Failures surface in logcat instead of being silently swallowed.',
-    '- `bootstrapForUser(userId)` in both providers is invoked from `main.dart` on every auth state change. It MERGES local with remote and hydrates the Profile counters on cold start so Saved / Explored / Tours reflect the real DB numbers.',
-    '- Required tables: `saved_places(user_id, place_id, place_data, saved_at)` and `place_checkins(id, user_id, place_id, checked_in_at)`. See the SQL script in the previous response.',
+    'Four concrete bugs from the v1.0.26 video recording are fixed. No unrelated code was touched.',
     '',
-    '### 2. Gemini API Fix (401 Error) - gemini-1.5-flash + ?key= only',
-    '- **Model**: `AppConfig.geminiModel = ''gemini-1.5-flash''` (the previously-used `gemini-3.6-flash` / `gemini-3.8-flash` identifiers do NOT exist on the Gemini Developer API and triggered the 401 / 404).',
-    '- **Auth**: `gemini_rest_client.dart` sends the key ONLY via `?key=API_KEY` in the URL. NO `Authorization` or Bearer header is ever attached - the empty header that triggered the OAuth parse error was removed in v1.0.22.',
-    '- **URL log**: every request logs `API URL: <full URL>` to logcat so the actual endpoint is visible for debugging.',
+    '### 1. Google Sign-in (code 10) - verbose error log',
+    '- `android/build.gradle` and `android/app/build.gradle` were NOT modified by the v1.0.22-26 series (verified by `git diff 471e879 HEAD -- android/build.gradle android/app/build.gradle` -> empty). The code 10 error is an SHA-1 mismatch between the release keystore and the OAuth client registered in Google Cloud Console.',
+    '- `AuthProvider.signInWithGoogleNative` now logs the OAuth client id + package + full stack trace on every failure via `debugPrint` so the next logcat trace will show the exact rejection reason.',
+    '- The v1.0.21 release SHA-1 was `7FFC06A1A3D5006B5B471BF977F8507923498790`; the v1.0.27 release SHA-1 is `D00ACC072251B05EB7A802BFE924F169CA0ACE07`. If you have the v1.0.21 SHA-1 added to Google Cloud Console, you need to ALSO add the v1.0.27 SHA-1 (or the SHA-1 of whichever signed APK you actually install).',
     '',
-    '### 3. Home Screen UI - Discover above filters, Streets -> Hotels, no Offline',
-    '- Discover grid (Map / Ranking / Badges / Routes) sits ABOVE the horizontal filter chips (v1.0.22 layout, preserved).',
-    '- The `Streets` filter chip was removed and replaced with `Hotels` (bed icon).',
-    '- The global `Offline` circular button was removed from Discover - offline downloads are per-place inside the Place Details screen.',
+    '### 2. Silent DB failure - explicit .count() on startup',
+    '- `SupabaseService.countUserRows(userId)` runs `select().eq(user_id).count()` against `saved_places` and `place_checkins` on every auth state change.',
+    '- `PlaceProvider.bootstrapForUser` calls `countUserRows` first and logs `DB counts for <uid> -> saved_places=N place_checkins=N` before pulling rows. If RLS or a missing table silently drops the count, you will see it in logcat.',
+    '- Every Supabase write path (`pushSavedPlace`, `deleteSavedPlace`, `registerCheckin`, `pushStats`, `postMessage`) now ends with `.select()` so RLS denials come back as a `PostgrestException` and the `_logError` helper prints the exact code + message.',
     '',
-    '### 4. Per-Place Offline Download - inside Place Details',
-    '- A fourth Quick Action (`cloud_download_outlined` / `cloud_done_rounded`) sits next to Save / Check-in / Go.',
-    '- `OfflineProvider.downloadSinglePlace(place)` caches the JSON blob via Hive AND prefetches the hero image into the disk cache used by `CachedNetworkImage`.',
-    '- Tapping again removes the cached entry via `OfflineProvider.removeCachedPlace`.',
+    '### 3. Map - Hotels chip no longer blanks the map',
+    '- Root cause: when the user tapped the Hotels extra-layer chip, the code also forced `_selectedCategory = ''Hotels''` which made `_filtered(places)` return only places whose `category` field equals ''Hotels''. The DB rarely has those rows on its own, so the user saw "0 places" and a white map. The seed-hotel markers from `getSeedHotels()` were technically rendered but overlapping and small.',
+    '- Fix: the `onToggleExtraLayer(''Hotels'')` path no longer mutates `_selectedCategory`. The main places and the hotel markers are now independent of each other, so toggling Hotels never blanks the map.',
+    '- The `Markers` list still renders user-location + main `visible` + ATMs (when toggled) + hotels (when toggled) in the correct order.',
     '',
-    '### 5. Map - All filter toggleable + Hotels + ATM bottom sheet',
-    '- Map filters: tapping All when it is currently active drops to a `__none__` sentinel and renders ZERO pins (the map can be completely empty).',
-    '- Hotels are standard `PlaceModel` entries (category `Hotels`) and use a distinct `Icons.bed_rounded` marker (purple `#6A1B9A`).',
-    '- ATM markers are still toggled via the ATM filter chip. Tapping an ATM opens a bottom sheet (`AtmSheet` in `_atm_sheet.dart`) showing the bank brand, branch name, and a `Get Directions` button that launches Google Maps via `url_launcher`.',
-    '',
-    '### 6. Auth - Google-only, no manual Name inputs',
-    '- `login_screen.dart` exposes only email + password fields. No First Name / Last Name inputs exist anywhere.',
-    '- `AuthProvider._syncFromSupabase` reads `user.userMetadata[''full_name'']` from the Google OAuth response (which carries Google''s `displayName`). The display name is mapped to the Supabase profile automatically.',
+    '### 4. UI fixes',
+    '- **Passion banner**: `passion_banner_title` and `passion_banner_sub` were present in the ARB files and the generated `app_localizations*.dart` but missing from `app_strings.dart`, which is what `context.tr()` reads at runtime. The banner was rendering the raw key. Both keys are now defined in `app_strings.dart` (en + ar).',
+    '- **Logo size on Login**: bumped the container from 160x160 to 200x200 with a 44px rounded gradient border. The actual `Image.asset(fit: BoxFit.contain)` now fills the inner area properly and the logo no longer looks cropped.',
     '',
     '## Build',
     '- Target: arm64 only.',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): C4B70FFF19DF191860BDCEA453FAE85D88BCAFFB',
-    '- SHA-256 (release): 2716AC4E655C638078293283EA58D0981CD86AC82E2929DD8178D14EF59D1C56',
+    '- SHA-1 (release): D00ACC072251B05EB7A802BFE924F169CA0ACE07',
+    '- SHA-256 (release): C46E82269FC421A91BBB9376B44D836419EE0DA6D9EF5C5BE1E91E37F24D9064',
     '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.26 - fix: revert Gemini model to gemini-1.5-flash + verify all 6 spec items intact'
+    name = 'v1.0.27 - bug fixes: map Hotels blank, passion_banner i18n, DB count, login logo, Google auth error log'
     body = $releaseBody
     draft = $false
     prerelease = $false
