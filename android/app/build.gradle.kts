@@ -38,6 +38,17 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            // Enable R8 (code shrinking + obfuscation) and Android
+            // resource shrinking. ProGuard rules for Flutter are
+            // provided by the flutter-gradle-plugin automatically;
+            // this shrinks both Kotlin/Java code and unused res/ assets
+            // for a noticeably smaller release APK.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
