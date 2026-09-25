@@ -1,40 +1,45 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 
-import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../config/app_config.dart';
 
-/// Direct REST client for the Google Gemini Developer API.
+/// Wrapper around the official `google_generative_ai` SDK with a 5-key
+/// rotation fallback. v1.0.36 replaces the manual `dart:io` REST
+/// client (which carried auth quirks and got a 404 NOT_FOUND on
+/// `gemini-1.5-flash-latest`) with the official SDK call shape:
 ///
-/// Uses the URL-parameter auth style (?key=...) which is the format
-/// documented for the Gemini Developer API. This sidesteps the SDK's
-/// `x-goog-api-key` header (which on some proxy/gateway setups has been
-/// observed to be re-formatted into an OAuth `Authorization: Bearer`
-/// header, returning the "Expected OAuth 2 access token" error).
+///   final model = GenerativeModel(model: 'gemini-1.5-flash',
+///       apiKey: currentKey);
+///   final response = await model.generateContent(
+///       [Content.text(prompt)]);
 ///
-/// Endpoint:
-///   POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={API_KEY}
+/// The SDK uses the documented `x-goog-api-key` header
+/// (NOT the URL `?key=` query form). On any failure that looks like
+/// "this key is bad / exhausted" (401 / 403 / 429 / 5xx) the wrapper
+/// transparently retries with the next key. Non-rotation status codes
+/// (400 / 404) and empty responses surface immediately so we don't
+/// burn quota on a misconfiguration.
+///
+/// Public surface (`generateContent` + `GeminiResult.isOk`) is the
+/// same as v1.0.34/35, so `ai_service.dart` and
+/// `ai_tour_guide_service.dart` need no changes.
 class GeminiRestClient {
   GeminiRestClient._();
   static final GeminiRestClient instance = GeminiRestClient._();
 
-  static const String _base = 'https://generativelanguage.googleapis.com/v1beta';
   static const Duration _timeout = Duration(seconds: 45);
 
   /// Send a `generateContent` request.
   ///
-  /// `systemInstruction` and `userPrompt` are combined into a
-  /// `contents: [{role:user, parts:[{text: ...}]}]` payload.
-  /// Returns the concatenated text of the first candidate, or null on
-  /// failure. Never throws — failures are logged and surfaced as `null`
-  /// so callers can decide on their own fallback.
+  /// Returns the concatenated text of the first candidate, or a
+  /// populated [GeminiResult] with the last error. Never throws —
+  /// failures are logged and returned so callers can decide on their
+  /// own fallback.
   ///
   /// If [apiKeys] (or [apiKey]) is null/empty, falls back to the keys
   /// defined in [AppConfig.geminiApiKeys] and rotates through them on
-  /// 4xx / network errors so a single revoked key doesn't kill the call.
+  /// 401 / 403 / 429 / 5xx / network failures.
   Future<GeminiResult?> generateContent({
     String? apiKey,
     List<String>? apiKeys,
@@ -44,8 +49,8 @@ class GeminiRestClient {
     double temperature = 0.7,
     int maxOutputTokens = 1024,
   }) async {
-    // Build the ordered key list. Prefer the explicit apiKey first if
-    // provided, then append the configured keys (deduped).
+    // Build the ordered key list. Prefer the explicit apiKey first
+    // if provided, then the configured keys (deduped).
     final keys = <String>[];
     if (apiKey != null && apiKey.trim().isNotEmpty) {
       keys.add(apiKey.trim());
@@ -56,153 +61,143 @@ class GeminiRestClient {
         if (t.isNotEmpty && !keys.contains(t)) keys.add(t);
       }
     }
-    // Always fall back to AppConfig keys if nothing else was supplied.
     for (final k in _configuredKeys) {
       if (!keys.contains(k)) keys.add(k);
     }
     if (keys.isEmpty) {
-      debugPrintGemini('generateContent: no api keys available');
+      debugPrintGemini('SDK call: no api keys available');
       return null;
     }
 
-    final body = jsonEncode({
-      'contents': [
-        {
-          'role': 'user',
-          'parts': [
-            {'text': '$systemInstruction\n\n$userPrompt'},
-          ],
-        },
-      ],
-      'generationConfig': {
-        'temperature': temperature,
-        'maxOutputTokens': maxOutputTokens,
-      },
-    });
+    final body = '$systemInstruction\n\n$userPrompt';
 
     GeminiResult? lastResult;
     for (var i = 0; i < keys.length; i++) {
       final key = keys[i];
-      final uri = Uri.parse(
-        '$_base/models/$model:generateContent'
-        '?key=$key',
-      );
-      // ============================================================
-      // Per debugging spec: log the EXACT URL we are calling so the
-      // 401 / model-not-found failure can be triaged from logcat.
-      // The key travels ONLY in the query string (no Bearer header).
-      // ============================================================
-      debugPrintGemini('API URL: $uri');
-      // Also print the parsed host + path + a redacted key (first 4 +
-      // last 4 chars only) so the URL structure is verifiable in
-      // logcat without leaking the full key.
       final keyRedacted = key.length > 8
           ? '${key.substring(0, 4)}...${key.substring(key.length - 4)}'
           : '****';
       debugPrintGemini(
-        'generateContent: host=${uri.host} path=${uri.path} '
-        'model=$model key=$keyRedacted keyLen=${key.length}',
+        'SDK call: model=$model key=$keyRedacted keyLen=${key.length} '
+        'attempt=${i + 1}/${keys.length}',
       );
-      // v1.0.33: build a brand-new vanilla HttpClient per request with
-      // only the User-Agent set on the client itself. The previous
-      // `http.Client()` was inheriting the global HttpOverrides (which
-      // on Android can include the default `User-Agent: Dart/...` plus
-      // any interceptor the rest of the app installs) - and the Google
-      // AI Studio endpoint was seeing an `Authorization: Bearer ...`
-      // header leaking from the shared client and returning 401 OAuth
-      // even though our URL had `?key=...`. Constructing a fresh
-      // `HttpClient()` here and wrapping it in an `IOClient` gives us a
-      // completely isolated request.
-      final rawHttp = HttpClient()
-        ..userAgent = 'streetlore/1.0.34'
-        ..idleTimeout = const Duration(seconds: 15);
-      final client = IOClient(rawHttp);
       try {
-        final req = http.Request('POST', uri)
-          // Build the header map from scratch with ONLY the three
-          // headers we want. The `http.Request` constructor already
-          // gives us a fresh, empty header map, so nothing leaks
-          // from any global default.
-          ..headers['Content-Type'] = 'application/json'
-          ..headers['Accept'] = 'application/json'
-          ..headers['User-Agent'] = 'streetlore/1.0.34'
-          ..body = body;
-        // Belt-and-braces: explicitly clear any of the well-known
-        // auth-related keys that a future Dart SDK or plugin might
-        // silently add. (Safe no-ops if they are not present.)
-        for (final k in const [
-          'authorization',
-          'Authorization',
-          'x-goog-api-key',
-          'X-Goog-Api-Key',
-          'x-goog-user-project',
-          'cookie',
-          'Cookie',
-        ]) {
-          req.headers.remove(k);
-        }
-
-        final streamed = await client.send(req).timeout(_timeout);
-        final resp = await http.Response.fromStream(streamed);
-        if (resp.statusCode >= 200 && resp.statusCode < 300) {
-          final json = jsonDecode(resp.body) as Map<String, dynamic>;
-          final candidates =
-              (json['candidates'] as List<dynamic>?) ?? const [];
-          if (candidates.isEmpty) {
-            debugPrintGemini(
-              'generateContent: 200 but empty candidates on key #${i + 1}',
-            );
-            return GeminiResult(
-              text: null,
-              statusCode: resp.statusCode,
-              errorBody: 'empty candidates',
-              raw: null,
-            );
-          }
-          final content =
-              (candidates.first as Map<String, dynamic>)['content'] as Map?;
-          final parts = (content?['parts'] as List<dynamic>?) ?? const [];
-          final buffer = StringBuffer();
-          for (final p in parts) {
-            final m = p as Map<String, dynamic>;
-            final t = m['text'];
-            if (t is String) buffer.write(t);
-          }
-          return GeminiResult(
-            text: buffer.toString(),
-            statusCode: resp.statusCode,
-            errorBody: null,
-            raw: resp.body,
+        final m = GenerativeModel(
+          model: model,
+          apiKey: key,
+          generationConfig: GenerationConfig(
+            temperature: temperature,
+            maxOutputTokens: maxOutputTokens,
+          ),
+        );
+        final response = await m
+            .generateContent([Content.text(body)])
+            .timeout(_timeout);
+        final text = response.text;
+        if (text == null || text.isEmpty) {
+          debugPrintGemini(
+            'SDK call: 200 but empty text on key #${i + 1}',
+          );
+          // Surface the empty result so the caller can fall back to
+          // a local response. Don't silently try another key on an
+          // empty success — that's a content issue, not a key issue.
+          return const GeminiResult(
+            text: null,
+            statusCode: 200,
+            errorBody: 'empty text',
+            raw: null,
           );
         }
-        final errBody = _summarizeErrorBody(resp.body);
+        return GeminiResult(
+          text: text,
+          statusCode: 200,
+          errorBody: null,
+          raw: null,
+        );
+      } on InvalidApiKey catch (e) {
+        // 401-class — that key is dead, try the next one.
         debugPrintGemini(
-          'generateContent: HTTP ${resp.statusCode} on key #${i + 1}: $errBody',
+          'SDK call: InvalidApiKey on key #${i + 1}: ${e.message}',
         );
         lastResult = GeminiResult(
           text: null,
-          statusCode: resp.statusCode,
-          errorBody: errBody,
-          raw: resp.body,
+          statusCode: 401,
+          errorBody: e.message,
+          raw: null,
         );
-        // v1.0.34: per the spec, only 401 / 403 / 429 (and 5xx
-        // transients, plus client-level timeouts / network errors) are
-        // considered "this key is bad / exhausted" - in those cases we
-        // silently fall through to the next key. Any other status (e.g.
-        // a 400 from a malformed prompt, or a 404 from the wrong model
-        // name) is OUR fault and we should NOT burn the remaining
-        // quota on it.
-        if (!_shouldRotateKey(resp.statusCode)) {
+      } on UnsupportedUserLocation catch (e) {
+        // 403-class (permitted? usually billing), try next key.
+        debugPrintGemini(
+          'SDK call: UnsupportedUserLocation on key #${i + 1}: '
+          '${e.message}',
+        );
+        lastResult = GeminiResult(
+          text: null,
+          statusCode: 403,
+          errorBody: e.message,
+          raw: null,
+        );
+      } on ServerException catch (e) {
+        // The SDK only attaches the status code for 5xx (via the
+        // 'Server Error [NNN]: ...' format), but for 4xx it just
+        // gives us the human message. Try to pull the status code
+        // out of the message text (`[404]`, `[429]`, etc.); otherwise
+        // inspect the message itself.
+        final status = _classifyExceptionMessage(e.message);
+        debugPrintGemini(
+          'SDK call: ServerException on key #${i + 1} '
+          '(status=$status): ${e.message}',
+        );
+        lastResult = GeminiResult(
+          text: null,
+          statusCode: status,
+          errorBody: e.message,
+          raw: null,
+        );
+        if (status > 0 && !_shouldRotateKey(status)) {
           debugPrintGemini(
-            'generateContent: non-rotation status ${resp.statusCode} '
-            'on key #${i + 1}, surfacing without burning more keys',
+            'SDK call: non-rotation status $status on key #${i + 1}, '
+            'surfacing without burning more keys',
           );
           return lastResult;
         }
-      } on TimeoutException {
+      } on GenerativeAIException catch (e) {
+        // Catch-all for the SDK's base exception type (used by the
+        // underlying makeRequest() when statusCode >= 500: the SDK
+        // throws `GenerativeAIException('Server Error [500]: ...')`).
+        final status = _parseStatusFromMessage(e.message);
         debugPrintGemini(
-          'generateContent: timeout on key #${i + 1}',
+          'SDK call: GenerativeAIException on key #${i + 1} '
+          '(status=$status): ${e.message}',
         );
+        lastResult = GeminiResult(
+          text: null,
+          statusCode: status,
+          errorBody: e.message,
+          raw: null,
+        );
+        if (status > 0 && !_shouldRotateKey(status)) {
+          return lastResult;
+        }
+      } on GenerativeAISdkException catch (e) {
+        // SDK has a stale package version / implementation bug. Treat
+        // as a hard failure so the user sees something actionable in
+        // logcat.
+        debugPrintGemini(
+          'SDK call: GenerativeAISdkException on key #${i + 1}: '
+          '$e',
+        );
+        lastResult = GeminiResult(
+          text: null,
+          statusCode: 0,
+          errorBody: e.message,
+          raw: null,
+        );
+        // Don't keep rotating on a code bug — surface it after the
+        // first failure.
+        return lastResult;
+      } on TimeoutException {
+        debugPrintGemini('SDK call: timeout on key #${i + 1}');
         lastResult = const GeminiResult(
           text: null,
           statusCode: 0,
@@ -211,7 +206,7 @@ class GeminiRestClient {
         );
       } catch (e) {
         debugPrintGemini(
-          'generateContent: exception on key #${i + 1}: $e',
+          'SDK call: unknown exception on key #${i + 1}: $e',
         );
         lastResult = GeminiResult(
           text: null,
@@ -219,25 +214,55 @@ class GeminiRestClient {
           errorBody: e.toString(),
           raw: null,
         );
-      } finally {
-        client.close();
       }
     }
     return lastResult;
   }
 
-  /// v1.0.34: true when an HTTP status means "this key is bad or
-  /// exhausted, try the next one". Per the user's spec: 401 (invalid /
-  /// revoked key), 403 (forbidden / wrong model), 429 (rate /
-  /// quota-limited). Any 5xx is also rotation-worthy because it's a
-  /// transient upstream / CDN failure that the next key may avoid.
-  /// 400 (bad request - our fault) and 404 (model not found - our
-  /// fault) intentionally fall through so we don't waste quota.
+  /// Pull the HTTP status code out of an SDK exception message.
+  /// - For 5xx the SDK formats the string as `Server Error [500]: ...`
+  ///   so the regex catches it.
+  /// - For 4xx the SDK just hands us the JSON `error.message` (often
+  ///   `models/gemini-1.5-flash is not found for API version v1beta`),
+  ///   so we inspect the text to detect the most common cases:
+  ///     "not found" -> 404, "quota" / "rate" -> 429, "API key" -> 401
+  ///   Anything else falls through as 0 (rotate-on-failure).
+  int _classifyExceptionMessage(String message) {
+    final fromBrackets = _parseStatusFromMessage(message);
+    if (fromBrackets > 0) return fromBrackets;
+    final lower = message.toLowerCase();
+    if (lower.contains('not found') ||
+        lower.contains('no longer available') ||
+        lower.contains('is not supported')) {
+      return 404;
+    }
+    if (lower.contains('quota') ||
+        lower.contains('rate') ||
+        lower.contains('too many requests') ||
+        lower.contains('resource_exhausted')) {
+      return 429;
+    }
+    if (lower.contains('api key') || lower.contains('permission')) {
+      return 401;
+    }
+    return 0;
+  }
+
+  /// Parse `[NNN]` out of a message like `Server Error [500]: ...`.
+  int _parseStatusFromMessage(String message) {
+    final m = RegExp(r'\[(\d{3})\]').firstMatch(message);
+    if (m == null) return 0;
+    return int.tryParse(m.group(1) ?? '') ?? 0;
+  }
+
+  /// v1.0.34 spec: 401 / 403 / 429 / 5xx rotate; 400 / 404 (and any
+  /// 0-status unknown) rotate-on-network-failure.
   bool _shouldRotateKey(int statusCode) {
     if (statusCode == 401 || statusCode == 403 || statusCode == 429) {
       return true;
     }
     if (statusCode >= 500 && statusCode < 600) return true;
+    if (statusCode == 0) return true; // network/timeout
     return false;
   }
 
@@ -253,21 +278,6 @@ class GeminiRestClient {
   /// Test hook: replace the key source (e.g. with an in-memory list).
   static void setConfigKeysAccessorForTest(List<String> Function()? f) {
     _configKeysAccessor = f;
-  }
-
-  String _summarizeErrorBody(String body) {
-    if (body.isEmpty) return 'empty body';
-    try {
-      final m = jsonDecode(body) as Map<String, dynamic>;
-      final err = (m['error'] as Map?)?.cast<String, dynamic>();
-      if (err != null) {
-        final code = err['code'] ?? '';
-        final status = err['status'] ?? '';
-        final message = err['message'] ?? '';
-        return '[$code/$status] $message';
-      }
-    } catch (_) {}
-    return body.length > 200 ? '${body.substring(0, 200)}...' : body;
   }
 }
 

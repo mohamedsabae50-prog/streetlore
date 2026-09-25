@@ -9,8 +9,6 @@ import '../../core/widgets/confetti_overlay.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../data/mock_data.dart';
 import '../../data/models/place_model.dart';
-import '../../logic/gamification_provider.dart';
-import '../../logic/achievement_provider.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/review_provider.dart';
@@ -445,97 +443,136 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     onTap: () async {
                                       HapticFeedback.mediumImpact();
                                       final wasVisited = _isVisited;
-                                      setState(() => _isVisited = !_isVisited);
                                       if (!wasVisited) {
+                                        // ========================================
+                                        // v1.0.36 RADICAL CHECK-IN.
+                                        //
+                                        // Bypass the complex
+                                        // GamificationProvider ->
+                                        // SupabaseService DB plumbing
+                                        // entirely. Do a direct, simple
+                                        // upsert via the Supabase client.
+                                        // The instant the call returns
+                                        // without throwing an exception,
+                                        // manually force the local UI to
+                                        // reflect the check-in (setState
+                                        // + PlaceProvider.bumpLocalCheckinCount
+                                        // -> notifyListeners). The user
+                                        // sees the badge turn green and
+                                        // the "Explored" counter on
+                                        // Profile increment on the same
+                                        // frame.
+                                        // ========================================
                                         final streak = context
                                             .read<StreakProvider>();
-                                        final gamification = context
-                                            .read<GamificationProvider>();
                                         final placeProvider = context
                                             .read<PlaceProvider>();
                                         final messenger = ScaffoldMessenger.of(
                                           context,
                                         );
-                                        final achievements = context
-                                            .read<AchievementProvider>();
-                                        final newStreak = await streak
-                                            .registerVisit();
-                                        // The badge return value (if
-                                        // any) is already reflected in
-                                        // GamificationProvider.stats via
-                                        // the notifyListeners tick inside
-                                        // applyAction; the actual
-                                        // success / failure signal we
-                                        // care about is the
-                                        // `lastCheckinError` field
-                                        // populated by registerCheckin
-                                        // (v1.0.35).
-                                        await gamification.applyAction(
-                                          'check_in',
-                                          placeId: place.id,
-                                        );
-                                        achievements.refreshFromStats();
-                                        // v1.0.33: re-fetch remote counts
-                                        // immediately so the Profile
-                                        // screen's "Explored" counter
-                                        // updates the next time the
-                                        // user opens it.
                                         final userId = Supabase.instance
                                             .client.auth
                                             .currentUser
                                             ?.id;
-                                        final checkinError =
-                                            gamification.lastCheckinError;
-                                        // v1.0.34: optimistic local bump.
-                                        // The Profile screen's "Explored"
-                                        // counter must grow INSTANTLY
-                                        // without waiting for the
-                                        // Supabase round-trip - if the
-                                        // remote call later succeeds, the
-                                        // fetchRemoteCounts below
-                                        // reconciles it.
-                                        // v1.0.35: only bump when the
-                                        // DB write did NOT fail
-                                        // (lastCheckinError == null means
-                                        // success). When it failed we
-                                        // skip the bump so the counter
-                                        // stays consistent with reality
-                                        // and then surface the actual
-                                        // PostgrestException message in
-                                        // the red SnackBar below.
-                                        if (checkinError == null &&
-                                            userId != null &&
-                                            userId.isNotEmpty) {
-                                          placeProvider.bumpLocalCheckinCount();
-                                        }
-                                        if (userId != null &&
-                                            userId.isNotEmpty) {
-                                          await placeProvider
-                                              .fetchRemoteCounts(userId);
-                                        }
-                                        // v1.0.35: drive the failure
-                                        // SnackBar off the EXACT
-                                        // PostgrestException message we
-                                        // captured, NOT off a
-                                        // `checkInResult == null` test
-                                        // (which fires on every normal
-                                        // check-in because
-                                        // applyAction returns null when
-                                        // no badge was earned). The old
-                                        // generic "Check-in not saved
-                                        // to database. Pull-to-refresh
-                                        // Profile after creating the
-                                        // place_checkins table." text
-                                        // was masking both RLS denials
-                                        // AND schema mismatches behind
-                                        // the same red banner.
-                                        if (checkinError != null) {
+                                        if (userId == null ||
+                                            userId.isEmpty) {
                                           if (!context.mounted) return;
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: const Text(
+                                                'Please sign in to '
+                                                'check in.',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        // Bump the streak BEFORE the
+                                        // network call so the UI feels
+                                        // snappy on tap.
+                                        final newStreak = await streak
+                                            .registerVisit();
+                                        setState(
+                                          () => _isVisited = true,
+                                        );
+                                        try {
+                                          // Direct upsert, exactly as
+                                          // the user spec asked for.
+                                          // `.select()` forces RLS errors
+                                          // and PostgrestException to
+                                          // throw so we can show them.
+                                          await Supabase.instance.client
+                                              .from('place_checkins')
+                                              .upsert({
+                                            'user_id': userId,
+                                            'place_id': place.id,
+                                          }).select();
+                                          // ============================================
+                                          // "IMMEDIATELY after this line
+                                          // executes without throwing,
+                                          // manually force the local UI
+                                          // counters to increment and
+                                          // call setState() or
+                                          // notifyListeners(). Do not
+                                          // wait for a remote fetch."
+                                          // (user spec, v1.0.36)
+                                          // ============================================
+                                          placeProvider
+                                              .bumpLocalCheckinCount();
+                                          // Re-fetch in the background so
+                                          // the Server-side counter
+                                          // eventually matches; do not
+                                          // block the UI on it.
+                                          // ignore: unawaited_futures
+                                          placeProvider
+                                              .fetchRemoteCounts(userId);
+                                          if (!context.mounted) return;
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons
+                                                        .local_fire_department_rounded,
+                                                    color: Colors.white,
+                                                    size: 18,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      context.tr(
+                                                        'checked_in_streak',
+                                                        {'n': '$newStreak'},
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              backgroundColor:
+                                                  AppColors.success,
+                                              duration: const Duration(
+                                                seconds: 3,
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        } on PostgrestException catch (e) {
+                                          // v1.0.35 behaviour preserved:
+                                          // show the EXACT server message
+                                          // in the red SnackBar so we
+                                          // know whether it's an RLS
+                                          // denial or a column mismatch.
+                                          if (!context.mounted) return;
+                                          setState(
+                                            () => _isVisited = false,
+                                          );
                                           messenger.showSnackBar(
                                             SnackBar(
                                               content: Text(
                                                 'Check-in failed: '
-                                                '$checkinError',
+                                                '[${e.code ?? ""}] '
+                                                '${e.message}',
                                               ),
                                               backgroundColor: Colors.red,
                                               duration: const Duration(
@@ -543,57 +580,28 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                               ),
                                             ),
                                           );
-                                          gamification.clearCheckinError();
+                                          return;
+                                        } catch (e) {
+                                          // Non-Postgrest failure: same
+                                          // treatment, different prefix.
+                                          if (!context.mounted) return;
+                                          setState(
+                                            () => _isVisited = false,
+                                          );
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Check-in failed: '
+                                                '$e',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                              duration: const Duration(
+                                                seconds: 6,
+                                              ),
+                                            ),
+                                          );
                                           return;
                                         }
-                                        gamification.clearCheckinError();
-                                        final milestoneBadge =
-                                            await gamification
-                                                .checkStreakMilestone(
-                                                  newStreak,
-                                                );
-                                        if (milestoneBadge != null) {
-                                          HapticFeedback.heavyImpact();
-                                          _confetti.play();
-                                        } else if (newStreak > 1 &&
-                                            newStreak % 3 == 0) {
-                                          _confetti.play();
-                                        }
-                                        if (!context.mounted) return;
-                                        messenger.showSnackBar(
-                                          SnackBar(
-                                            content: Row(
-                                              children: [
-                                                const Icon(
-                                                  Icons
-                                                      .local_fire_department_rounded,
-                                                  color: Colors.white,
-                                                  size: 18,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Text(
-                                                    milestoneBadge != null
-                                                        ? context.tr(
-                                                            'badge_unlocked',
-                                                            {
-                                                              'name': context.tr(
-                                                                milestoneBadge
-                                                                    .name,
-                                                              ),
-                                                            },
-                                                          )
-                                                        : context.tr(
-                                                            'checked_in_streak',
-                                                            {'n': '$newStreak'},
-                                                          ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            backgroundColor: AppColors.success,
-                                          ),
-                                        );
                                       } else {
                                         if (!context.mounted) return;
                                         ScaffoldMessenger.of(

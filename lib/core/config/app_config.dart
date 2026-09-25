@@ -60,19 +60,14 @@ class AppConfig {
     }
   }
 
-  /// Gemini model identifier. v1.0.35: switched from `gemini-1.5-flash`
-  /// to `gemini-1.5-flash-latest`. The plain `gemini-1.5-flash` alias is
-  /// being rolled off the Gemini Developer API v1beta endpoint and
-  /// started returning
-  ///   `404 NOT_FOUND: models/gemini-1.5-flash is not found for
-  ///    API version v1beta`
-  /// on real devices. `gemini-1.5-flash-latest` is a documented pointer
-  /// that always resolves to the latest stable 1.5 flash build on
-  /// v1beta. `gemini-1.5-flash` was the safe choice in v1.0.26
-  /// (the `gemini-3.6-flash` / `gemini-3.8-flash` identifiers
-  /// do NOT exist on Google AI Studio), but Google has since deprecated
-  /// the bare alias. The latest-variant is the v1.0.35 fix.
-  static const String geminiModel = 'gemini-1.5-flash-latest';
+  /// Gemini model identifier. v1.0.36 reverts to `gemini-1.5-flash`
+  /// because the user wants the OFFICIAL `google_generative_ai` SDK
+  /// (which uses `x-goog-api-key` header auth + `x-goog-api-client`
+  /// tracking). The 5-key rotation stays in `GeminiRestClient` so a
+  /// single dead key doesn't take the AI Tour Guide down.
+/// (v1.0.35 had tried `gemini-1.5-flash-latest` against the manual
+/// REST client and the user reported it was still 404'ing.)
+static const String geminiModel = 'gemini-1.5-flash';
   static const bool geminiEnabled = true;
   static const bool newFeaturesEnabled = true;
   static const int defaultGeofenceRadius = 500;
