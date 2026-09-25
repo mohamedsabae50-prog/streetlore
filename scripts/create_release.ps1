@@ -37,40 +37,36 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.30"
-$apkName = "streetlore-v1.0.30-arm64.apk"
+$tag = "v1.0.31"
+$apkName = "streetlore-v1.0.31-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.30 - Google Sign-In Code 10 fix (real root cause)',
+    '## What is new in v1.0.31 - logos + map filter polish',
     '',
-    '### Root cause',
-    'v1.0.28 / v1.0.29 both failed with `PlatformException(sign_in_failed, 10, ...)` because the `serverClientId` baked into `auth_provider.dart` (`504340157609-pj8oox9662299u613glititqn4dqa7ij`) belonged to a different Google Cloud project / OAuth client than the one the user is actually publishing. The release keystore SHA-1 mismatch the user hypothesised was a red herring - the previous keystore (`70:83:CF:1D:21:86:...`) was always fine; the real problem was that its registered SHA-1 was pointing to a different OAuth client entirely.',
+    '### 1. App logos (external launcher + internal)',
+    '- **External launcher icon**: regenerated the legacy mipmap PNGs (mdpi -> xxxhdpi) with the brand gradient background + centered logo so pre-O launchers no longer show the dark navy `#0F172A` fallback or a transparent hole. The adaptive icon (Android 8.0+) still uses the safe-zone foreground so launcher masks crop cleanly. `tools/setup_adaptive_icon.ps1` is the source of truth - run it whenever the brand logo changes.',
+    '- **Internal logo (Login + Splash)**: reduced from 260x260 to 200x200. The `ClipOval` / `ClipRRect` wrapper keeps a generous inner padding so the mark sits elegantly above the form, not dominating it.',
     '',
-    '### Fix',
-    '1. **Web Client ID in code** - updated `auth_provider.dart` to the exact Client ID the user has in their Google Cloud Console: `504340157609-pj8ook9662299u613glititqn4dqa1jp.apps.googleusercontent.com`.',
-    '2. **Release keystore** - generated a brand-new keystore `android/app/release_v2.keystore` (alias `streetlore`, password `streetlore2026`, RSA 2048, 25 years) so the APK ships with a known, fresh signing identity.',
-    '   - **NEW release certificate SHA-1 (MUST be added to your Google Cloud Console OAuth client): `AF:62:89:44:B5:F3:A0:0A:4E:CE:1E:72:34:13:26:EA:5A:E7:B4:8F`**',
-    '   - **NEW release certificate SHA-256: `68:20:2A:33:06:9B:82:F0:9B:08:AC:01:D4:B0:5A:6E:84:18:74:3E:B1:59:F1:39:04:9F:6A:62:CA:EF:FB:85`**',
-    '3. **build.gradle.kts** - `signingConfigs.release` now points at `release_v2.keystore`.',
-    '4. **R8 / ProGuard** - still `isMinifyEnabled = false`, `isShrinkResources = false` (per v1.0.29).',
-    '',
-    '### Action required from you',
-    'Register the new SHA-1 above in Google Cloud Console -> APIs & Services -> Credentials -> OAuth 2.0 Client IDs -> the Web client that matches the new `serverClientId`. (The old `70:83:CF:...` and `76:2C:07:7A:...` can be removed from that client to keep things tidy.)',
+    '### 2. Map filters - Hotels / ATMs exclusivity',
+    '- `_filtered(places)` in `map_view_screen.dart` now treats the Hotels and ATMs extra-layers as exclusive modes:',
+    '  - **ATMs chip ON** -> hide every main place, only the 12 ATM markers carry the map.',
+    '  - **Hotels chip ON** -> main places are restricted to `category == ''Hotels''`, then the seed hotel markers from `getSeedHotels()` overlay. Result: ONLY the hotel markers render, no stale historical / mosque / food pins.',
+    '  - **All chip OFF (sentinel `__none__`)** -> empty map (unchanged).',
+    '  - **No extra layer + a normal category** -> filter to that category (unchanged).',
+    '- No more "0 places / white map" when toggling the Hotels or ATMs chip on.',
     '',
     '### Working mechanics preserved (per handover rules)',
-    '- Authentication: Google OAuth + Supabase signInWithIdToken flow, unchanged except for the new Client ID.',
+    '- Authentication: Google OAuth + Supabase (v1.0.30 Web Client ID + new keystore), unchanged.',
     '- State management: check-ins, saved places, Profile counters (with `fetchRemoteCounts`), unchanged.',
-    '- Map filters: Hotels / ATMs / All toggle, unchanged.',
-    '- App Logo 260x260, unchanged.',
-    '- Localization (no raw keys rendered), unchanged.',
     '- AI Tour Guide (gemini-1.5-flash, ?key= only), unchanged.',
+    '- R8 / ProGuard still disabled (`isMinifyEnabled = false`), so all native plugin entry points are preserved.',
     '',
     '## Build',
     '- Target: arm64 only.',
-    '- Release-signed with NEW keystore `android/app/release_v2.keystore` (alias `streetlore`).',
-    '- Release certificate SHA-1: `AF:62:89:44:B5:F3:A0:0A:4E:CE:1E:72:34:13:26:EA:5A:E7:B4:8F`',
-    '- APK file SHA-1: `A24F5CDD949507909D0FDDF1F0F076794258B94D`',
-    '- APK file SHA-256: `7F38125484D7447EAC7967E93D9AF76DF97586135B10FB4CE7CACC5D19212DE0`',
+    '- Release-signed with the new keystore `android/app/release_v2.keystore`.',
+    '- Release certificate SHA-1: `AF:62:89:44:B5:F3:A0:0A:4E:CE:1E:72:34:13:26:EA:5A:E7:B4:8F` (register in Google Cloud Console).',
+    '- APK file SHA-1: `B76693A7F1423461D4A91DF116F363E078C6E35D`',
+    '- APK file SHA-256: `AE70ADCF4B5507301B119396C23896738179C1491550FB78E111AF731B1D68A4`',
     '- Size: 26.3 MB',
     '- `flutter analyze`: 0 issues.'
 )
@@ -78,7 +74,7 @@ $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.30 - Code 10 fix: brand-new keystore + corrected Web Client ID'
+    name = 'v1.0.31 - logos polished + map Hotels/ATMs exclusive filters'
     body = $releaseBody
     draft = $false
     prerelease = $false
