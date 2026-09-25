@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 
 import '../config/app_config.dart';
 
@@ -101,22 +103,45 @@ class GeminiRestClient {
         'generateContent: host=${uri.host} path=${uri.path} '
         'model=$model key=$keyRedacted keyLen=${key.length}',
       );
-      // Use a fresh HttpClient per request. We DO NOT touch any
-      // `Authorization` header — sending an empty value here was being
-      // parsed by the gateway as an empty Bearer token and yielded a
-      // 401 "Expected OAuth 2 access token" error. The auth for the
-      // Google AI Studio REST endpoint is the URL query string `?key=`
-      // (which is already in `uri`), nothing else.
-      final client = http.Client();
+      // v1.0.33: build a brand-new vanilla HttpClient per request with
+      // only the User-Agent set on the client itself. The previous
+      // `http.Client()` was inheriting the global HttpOverrides (which
+      // on Android can include the default `User-Agent: Dart/...` plus
+      // any interceptor the rest of the app installs) - and the Google
+      // AI Studio endpoint was seeing an `Authorization: Bearer ...`
+      // header leaking from the shared client and returning 401 OAuth
+      // even though our URL had `?key=...`. Constructing a fresh
+      // `HttpClient()` here and wrapping it in an `IOClient` gives us a
+      // completely isolated request.
+      final rawHttp = HttpClient()
+        ..userAgent = 'streetlore/1.0.33'
+        ..idleTimeout = const Duration(seconds: 15);
+      final client = IOClient(rawHttp);
       try {
         final req = http.Request('POST', uri)
+          // Build the header map from scratch with ONLY the three
+          // headers we want. The `http.Request` constructor already
+          // gives us a fresh, empty header map, so nothing leaks
+          // from any global default.
           ..headers['Content-Type'] = 'application/json'
           ..headers['Accept'] = 'application/json'
-          ..headers['User-Agent'] = 'streetlore/1.0.32'
-          // Make absolutely sure the Dart http library does not
-          // accidentally attach any auth header. We only ever want
-          // the API key in the URL query string (?key=...).
+          ..headers['User-Agent'] = 'streetlore/1.0.33'
           ..body = body;
+        // Belt-and-braces: explicitly clear any of the well-known
+        // auth-related keys that a future Dart SDK or plugin might
+        // silently add. (Safe no-ops if they are not present.)
+        for (final k in const [
+          'authorization',
+          'Authorization',
+          'x-goog-api-key',
+          'X-Goog-Api-Key',
+          'x-goog-user-project',
+          'cookie',
+          'Cookie',
+        ]) {
+          req.headers.remove(k);
+        }
+
         final streamed = await client.send(req).timeout(_timeout);
         final resp = await http.Response.fromStream(streamed);
         if (resp.statusCode >= 200 && resp.statusCode < 300) {

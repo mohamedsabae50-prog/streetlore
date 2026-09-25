@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/app_image.dart';
@@ -450,6 +451,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                             .read<StreakProvider>();
                                         final gamification = context
                                             .read<GamificationProvider>();
+                                        final placeProvider = context
+                                            .read<PlaceProvider>();
                                         final messenger = ScaffoldMessenger.of(
                                           context,
                                         );
@@ -457,11 +460,47 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                             .read<AchievementProvider>();
                                         final newStreak = await streak
                                             .registerVisit();
-                                        await gamification.applyAction(
+                                        final checkInResult =
+                                            await gamification.applyAction(
                                           'check_in',
                                           placeId: place.id,
                                         );
                                         achievements.refreshFromStats();
+                                        // v1.0.33: re-fetch remote counts
+                                        // immediately so the Profile
+                                        // screen's "Explored" counter
+                                        // updates the next time the
+                                        // user opens it.
+                                        final userId = Supabase.instance
+                                            .client.auth
+                                            .currentUser
+                                            ?.id;
+                                        if (userId != null &&
+                                            userId.isNotEmpty) {
+                                          await placeProvider
+                                              .fetchRemoteCounts(userId);
+                                        }
+                                        // If the Supabase write failed,
+                                        // surface the error so the user
+                                        // knows the check-in did NOT
+                                        // register on the server.
+                                        if (checkInResult == null &&
+                                            userId != null &&
+                                            userId.isNotEmpty) {
+                                          if (!context.mounted) return;
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: const Text(
+                                                'Check-in not saved to '
+                                                'database. Pull-to-refresh '
+                                                'Profile after creating the '
+                                                'place_checkins table.',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                          return;
+                                        }
                                         final milestoneBadge =
                                             await gamification
                                                 .checkStreakMilestone(

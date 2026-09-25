@@ -290,7 +290,36 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         width: 44,
                         height: 44,
                         child: GestureDetector(
-                          onTap: () => setState(() => _selectedPlace = null),
+                          // v1.0.33: find the matching PlaceModel in the
+                          // merged places list (DB hotels + seed hotels
+                          // merged by PlaceProvider.mergeSeedHotels) and
+                          // select it so the _SelectedPlaceCard pops up
+                          // with the hotel's details (name, rating,
+                          // address, "Go" button).
+                          onTap: () {
+                            final match = places.firstWhere(
+                              (p) => p.id == hotel.id,
+                              orElse: () => PlaceModel(
+                                id: hotel.id,
+                                name: hotel.name,
+                                description: hotel.address,
+                                imageUrl: '',
+                                rating: 5.0,
+                                category: 'Hotels',
+                                lat: hotel.lat,
+                                lng: hotel.lng,
+                                address: hotel.address,
+                                openHours: '',
+                              ),
+                            );
+                            setState(() {
+                              _selectedPlace = match;
+                            });
+                            _mapController.move(
+                              LatLng(hotel.lat, hotel.lng),
+                              14,
+                            );
+                          },
                           child: Container(
                             decoration: BoxDecoration(
                               color: hotel.color,
