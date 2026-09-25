@@ -37,27 +37,44 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.32"
-$apkName = "streetlore-v1.0.32-arm64.apk"
+$tag = "v1.0.33"
+$apkName = "streetlore-v1.0.33-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.32 - Profile counters + Gemini 401 defense',
+    '## What is new in v1.0.33 - Gemini 401 real fix + Hotels tap + Check-in visible feedback',
     '',
-    '### 1. Profile counters - refresh on every frame',
-    '- `_ProfileScreenState.initState` now uses `SchedulerBinding.instance.addPostFrameCallback` (v1.0.32) so `PlaceProvider.fetchRemoteCounts(auth.userId)` runs every time the Profile tab gains focus, not only on the first build. The Saved / Explored / Tours counters hydrate from Supabase (`saved_places` + `place_checkins`) the moment the user navigates back from a Save or Check-in action.',
-    '- If the user is signed out, the call is a no-op (`if (auth.userId.isNotEmpty)`) so the screen still renders with the local fallback (MAX(local, remote, gamification) for Explored).',
+    '### 1. Gemini 401 - isolated HttpClient (the real fix)',
+    '- v1.0.33 replaces the shared `http.Client()` with a brand-new `dart:io HttpClient()` per request, wrapped in an `IOClient` (from `package:http/io_client.dart`). The fresh `HttpClient` instance is constructed with `userAgent = ''streetlore/1.0.33''` and an empty header set so it cannot inherit `Authorization: Bearer ...` from a global `HttpOverrides` / shared interceptor.',
+    '- The request itself only ever sets `Content-Type: application/json`, `Accept: application/json`, `User-Agent: streetlore/1.0.33`, and the body. The code also explicitly `remove()`s the canonical auth-related keys (authorization, x-goog-api-key, x-goog-user-project, cookie) right before the request, so even a future SDK that tries to auto-attach a header will not leak through.',
+    '- The URL still carries the API key in `?key=...`. The `debugPrintGemini(''API URL: $uri'')` line prints the full endpoint on every request so a 401 can be triaged from logcat.',
     '',
-    '### 2. AI Tour Guide - Gemini 401 defense',
-    '- `gemini_rest_client.dart` already uses the Google AI Studio REST endpoint with the API key ONLY in the URL query string (`?key=...`). The build verifies no `Authorization` or `x-goog-api-key` header is ever attached: only `Content-Type`, `Accept`, and `User-Agent` are set.',
-    '- v1.0.32 hardening:',
-    '  - The full `uri` is logged to logcat via `debugPrintGemini(''API URL: $uri'')` so you can see the exact endpoint + key.',
-    '  - A redacted second log line `host=... path=... model=... key=ABC...XYZ keyLen=N` is printed for at-a-glance triage without leaking the full key in screenshots.',
-    '  - The `User-Agent` was bumped to `streetlore/1.0.32` so logcat traces from this build are obvious.',
-    '- If a 401 still shows up in your next install, the logcat trace will print the exact host / path / model / key length that the request went to. From there the fix is either: (a) the API key is revoked / wrong project, (b) the model name has changed upstream, or (c) a proxy is rewriting headers server-side.',
+    '### 2. Hotels map markers are now tappable',
+    '- The `Marker` for every seed hotel now has a real `onTap` that finds the matching `PlaceModel` in the merged `places` list (DB hotels + `PlaceProvider.mergeSeedHotels()` seed) and selects it. That triggers the same `_SelectedPlaceCard` that the regular place markers use: hotel name, address, rating, and the `Go` (Google Maps directions) button.',
+    '- If the hotel only exists in the seed (no DB row), the onTap falls back to a synthetic `PlaceModel` built from the `MapPoi` so the card still renders correctly.',
+    '- A `MapController.move(LatLng(hotel.lat, hotel.lng), 14)` is fired so the camera focuses on the tapped hotel.',
+    '',
+    '### 3. Check-ins now surface failures and re-fetch remote counts',
+    '- `place_details_screen.dart` captures the return value of `gamification.applyAction(''check_in'', placeId: place.id)`. If the underlying `registerCheckin` write to `place_checkins` fails (RLS denial, missing table, network), the user now sees a red `SnackBar` with the exact remediation hint instead of a silent failure.',
+    '- On a successful check-in, `placeProvider.fetchRemoteCounts(userId)` is awaited so the Profile screen''s "Explored" / "Saved" counters update the next time the user opens that tab (no stale zeros).',
+    '- The `registerCheckin` SQL (reproduced below) must still be created in your Supabase project. The hint SnackBar in the app tells you exactly when it is missing.',
+    '',
+    '### Required Supabase SQL (if not already applied)',
+    '```sql',
+    'create table if not exists public.place_checkins (',
+    '  id bigint generated always as identity primary key,',
+    '  user_id text not null,',
+    '  place_id text not null,',
+    '  checked_in_at timestamptz not null default now()',
+    ');',
+    'alter table public.place_checkins enable row level security;',
+    'create policy "place_checkins_read"   on public.place_checkins for select   using (auth.uid()::text = user_id);',
+    'create policy "place_checkins_insert" on public.place_checkins for insert  with check (auth.uid()::text = user_id);',
+    'create policy "place_checkins_delete" on public.place_checkins for delete  using (auth.uid()::text = user_id);',
+    '```',
     '',
     '### Working mechanics preserved (per handover rules)',
     '- Authentication: Google OAuth + Supabase (v1.0.30 Web Client ID + new keystore), unchanged.',
-    '- State management: check-ins, saved places, unchanged.',
+    '- State management: save / fetch / merge for places, unchanged.',
     '- Map filters: Hotels / ATMs exclusive behaviour, unchanged.',
     '- Logos: 200x200 internal + gradient+logo legacy mipmaps, unchanged.',
     '- R8 / ProGuard still disabled (`isMinifyEnabled = false`).',
@@ -65,9 +82,9 @@ $lines = @(
     '## Build',
     '- Target: arm64 only.',
     '- Release-signed with new keystore `android/app/release_v2.keystore` (alias `streetlore`).',
-    '- Release certificate SHA-1: `AF:62:89:44:B5:F3:A0:0A:4E:CE:1E:72:34:13:26:EA:5A:E7:B4:8F`',
-    '- APK file SHA-1: `BD08D668C401E9787B2CA04FC81AF158F9E8E07D`',
-    '- APK file SHA-256: `CBCDC04C046468AC61B469550C4FF3FFD870E9DE0212297F1A26CC0D75F73CDB`',
+    '- Release certificate SHA-1: `AF:62:89:44:B5:F3:A0:0A:4E:CE:1E:72:34:13:26:EA:5A:E7:B4:8F` (already in your Google Cloud Console).',
+    '- APK file SHA-1: `A273B517C994AD17C50B3648CFDF887870DF3E37`',
+    '- APK file SHA-256: `8703C5E77EE7642106A9F5A0BA7132B6DDFE20046512DBE12F3CE78D1A6A90D6`',
     '- Size: 26.3 MB',
     '- `flutter analyze`: 0 issues.'
 )
@@ -75,7 +92,7 @@ $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.32 - Profile counters refresh + Gemini 401 defense'
+    name = 'v1.0.33 - Gemini 401 real fix + Hotels marker tappable + Check-in errors visible'
     body = $releaseBody
     draft = $false
     prerelease = $false
