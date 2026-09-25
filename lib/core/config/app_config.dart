@@ -60,12 +60,19 @@ class AppConfig {
     }
   }
 
-  /// Gemini model identifier. Per v1.0.26 spec: use `gemini-1.5-flash`
-  /// which is the stable GA model for the Google AI Studio REST endpoint
-  /// `?key=` API. Earlier `gemini-3.6-flash` / `gemini-3.8-flash` model
-  /// identifiers do NOT exist on the Gemini Developer API and the calls
-  /// returned 404 / 401. `gemini-1.5-flash` is the safe, documented choice.
-  static const String geminiModel = 'gemini-1.5-flash';
+  /// Gemini model identifier. v1.0.35: switched from `gemini-1.5-flash`
+  /// to `gemini-1.5-flash-latest`. The plain `gemini-1.5-flash` alias is
+  /// being rolled off the Gemini Developer API v1beta endpoint and
+  /// started returning
+  ///   `404 NOT_FOUND: models/gemini-1.5-flash is not found for
+  ///    API version v1beta`
+  /// on real devices. `gemini-1.5-flash-latest` is a documented pointer
+  /// that always resolves to the latest stable 1.5 flash build on
+  /// v1beta. `gemini-1.5-flash` was the safe choice in v1.0.26
+  /// (the `gemini-3.6-flash` / `gemini-3.8-flash` identifiers
+  /// do NOT exist on Google AI Studio), but Google has since deprecated
+  /// the bare alias. The latest-variant is the v1.0.35 fix.
+  static const String geminiModel = 'gemini-1.5-flash-latest';
   static const bool geminiEnabled = true;
   static const bool newFeaturesEnabled = true;
   static const int defaultGeofenceRadius = 500;

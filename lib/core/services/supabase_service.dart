@@ -171,19 +171,48 @@ class SupabaseService {
 
   /// Record a check-in event for [userId] at [placeId]. Also increments
   /// `places_visited` on the user row so the counter is always live.
-  Future<bool> registerCheckin(String userId, String placeId) async {
-    if (_client == null || userId.isEmpty) return false;
+  ///
+  /// v1.0.35: returns `({bool ok, PostgrestException? error})` so the
+  /// caller can surface the EXACT server message (e.g. an RLS policy
+  /// "new row violates row-level security policy" or a schema mismatch
+  /// "column \"xyz\" does not exist") to the user. Previously this
+  /// returned a bare `bool` and the screen had no way to distinguish
+  /// "RLS denied" from "table missing" from "no network" - the user
+  /// saw the same red SnackBar for all three and couldn't debug.
+  Future<({bool ok, PostgrestException? error})> registerCheckin(
+    String userId,
+    String placeId,
+  ) async {
+    if (_client == null || userId.isEmpty) {
+      return (ok: false, error: null);
+    }
     try {
-      // .select() surfaces RLS denials as a PostgrestException.
+      // .select() surfaces RLS denials as a PostgrestException. Only
+      // the two documented columns (`user_id`, `place_id`) plus the
+      // timestamp are sent - no extra / typo'd keys so we cannot trip
+      // a "column does not exist" error from Supabase.
       await _client!.from('place_checkins').insert({
         'user_id': userId,
         'place_id': placeId,
         'checked_in_at': DateTime.now().toUtc().toIso8601String(),
       }).select();
-      return true;
+      return (ok: true, error: null);
+    } on PostgrestException catch (e) {
+      _logError('registerCheckin($userId, $placeId)', e);
+      return (ok: false, error: e);
     } catch (e) {
       _logError('registerCheckin($userId, $placeId)', e);
-      return false;
+      // Wrap unknown errors into a synthetic PostgrestException-like
+      // message so the caller has a single `error` field to display.
+      return (
+        ok: false,
+        error: PostgrestException(
+          message: e.toString(),
+          code: 'unknown',
+          details: null,
+          hint: null,
+        ),
+      );
     }
   }
 

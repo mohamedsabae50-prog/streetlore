@@ -14,6 +14,22 @@ class GamificationProvider extends ChangeNotifier {
   );
   GamificationStats get stats => _stats;
 
+  /// v1.0.35: the EXACT error message from the last failed
+  /// `place_checkins` insert (PostgrestException.message or, when the
+  /// exception wasn't typed, the raw `toString()`). Cleared at the
+  /// start of every `applyAction` call so a stale error doesn't leak
+  /// to the next attempt. The check-in screen reads this to show the
+  /// real reason behind the red SnackBar (RLS denial / missing column
+  /// / etc.) instead of a generic "not saved to database" string.
+  String? _lastCheckinError;
+  String? get lastCheckinError => _lastCheckinError;
+
+  void clearCheckinError() {
+    if (_lastCheckinError == null) return;
+    _lastCheckinError = null;
+    notifyListeners();
+  }
+
   static const _kKey = 'gamification_stats_v1';
 
   GamificationProvider() {
@@ -104,6 +120,12 @@ class GamificationProvider extends ChangeNotifier {
   }
 
   Future<Badge?> applyAction(String action, {String? placeId}) async {
+    // v1.0.35: clear any stale error from the previous check-in attempt
+    // so the screen never shows a leftover red SnackBar after the next
+    // tap succeeds.
+    if (action == 'check_in') {
+      _lastCheckinError = null;
+    }
     final pts = GamificationStats.pointsFor(action);
     if (pts == 0) return null;
 
@@ -142,30 +164,32 @@ class GamificationProvider extends ChangeNotifier {
       final userId =
           SupabaseService.instance.clientOrNull?.auth.currentUser?.id ?? '';
       if (userId.isNotEmpty) {
-        try {
-          final ok = await SupabaseService.instance.registerCheckin(
-            userId,
-            placeId,
-          );
-          if (!ok) {
-            debugPrint(
-              'GamificationProvider.applyAction: registerCheckin returned '
-              'false for userId=$userId placeId=$placeId',
-            );
-          } else {
-            debugPrint(
-              'GamificationProvider.applyAction: check-in saved to DB '
-              'placeId=$placeId',
-            );
-          }
-          notifyListeners();
-        } catch (e, st) {
+        // v1.0.35: registerCheckin now returns
+        // `({bool ok, PostgrestException? error})` so we can capture the
+        // EXACT server reason (RLS policy / schema mismatch / table
+        // missing / network) and expose it through `lastCheckinError`.
+        final result = await SupabaseService.instance.registerCheckin(
+          userId,
+          placeId,
+        );
+        if (!result.ok) {
+          final errMsg = result.error?.message ?? 'unknown error';
+          final errCode = result.error?.code ?? '';
+          _lastCheckinError = errCode.isNotEmpty
+              ? '[$errCode] $errMsg'
+              : errMsg;
           debugPrint(
-            'GamificationProvider.applyAction: registerCheckin threw for '
-            'placeId=$placeId: $e\n$st',
+            'GamificationProvider.applyAction: registerCheckin FAILED '
+            'for userId=$userId placeId=$placeId -> $_lastCheckinError',
           );
-          notifyListeners();
+        } else {
+          _lastCheckinError = null;
+          debugPrint(
+            'GamificationProvider.applyAction: check-in saved to DB '
+            'placeId=$placeId',
+          );
         }
+        notifyListeners();
       } else {
         debugPrint(
           'GamificationProvider.applyAction: no signed-in user, '

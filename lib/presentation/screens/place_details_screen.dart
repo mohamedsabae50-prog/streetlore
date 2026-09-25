@@ -460,8 +460,17 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                             .read<AchievementProvider>();
                                         final newStreak = await streak
                                             .registerVisit();
-                                        final checkInResult =
-                                            await gamification.applyAction(
+                                        // The badge return value (if
+                                        // any) is already reflected in
+                                        // GamificationProvider.stats via
+                                        // the notifyListeners tick inside
+                                        // applyAction; the actual
+                                        // success / failure signal we
+                                        // care about is the
+                                        // `lastCheckinError` field
+                                        // populated by registerCheckin
+                                        // (v1.0.35).
+                                        await gamification.applyAction(
                                           'check_in',
                                           placeId: place.id,
                                         );
@@ -475,6 +484,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                             .client.auth
                                             .currentUser
                                             ?.id;
+                                        final checkinError =
+                                            gamification.lastCheckinError;
                                         // v1.0.34: optimistic local bump.
                                         // The Profile screen's "Explored"
                                         // counter must grow INSTANTLY
@@ -482,11 +493,17 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                         // Supabase round-trip - if the
                                         // remote call later succeeds, the
                                         // fetchRemoteCounts below
-                                        // reconciles it; if the DB
-                                        // write returned null/false we
-                                        // // undo the bump before
-                                        // surfacing the error.
-                                        if (checkInResult != null &&
+                                        // reconciles it.
+                                        // v1.0.35: only bump when the
+                                        // DB write did NOT fail
+                                        // (lastCheckinError == null means
+                                        // success). When it failed we
+                                        // skip the bump so the counter
+                                        // stays consistent with reality
+                                        // and then surface the actual
+                                        // PostgrestException message in
+                                        // the red SnackBar below.
+                                        if (checkinError == null &&
                                             userId != null &&
                                             userId.isNotEmpty) {
                                           placeProvider.bumpLocalCheckinCount();
@@ -496,27 +513,40 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                           await placeProvider
                                               .fetchRemoteCounts(userId);
                                         }
-                                        // If the Supabase write failed,
-                                        // surface the error so the user
-                                        // knows the check-in did NOT
-                                        // register on the server.
-                                        if (checkInResult == null &&
-                                            userId != null &&
-                                            userId.isNotEmpty) {
+                                        // v1.0.35: drive the failure
+                                        // SnackBar off the EXACT
+                                        // PostgrestException message we
+                                        // captured, NOT off a
+                                        // `checkInResult == null` test
+                                        // (which fires on every normal
+                                        // check-in because
+                                        // applyAction returns null when
+                                        // no badge was earned). The old
+                                        // generic "Check-in not saved
+                                        // to database. Pull-to-refresh
+                                        // Profile after creating the
+                                        // place_checkins table." text
+                                        // was masking both RLS denials
+                                        // AND schema mismatches behind
+                                        // the same red banner.
+                                        if (checkinError != null) {
                                           if (!context.mounted) return;
                                           messenger.showSnackBar(
                                             SnackBar(
-                                              content: const Text(
-                                                'Check-in not saved to '
-                                                'database. Pull-to-refresh '
-                                                'Profile after creating the '
-                                                'place_checkins table.',
+                                              content: Text(
+                                                'Check-in failed: '
+                                                '$checkinError',
                                               ),
                                               backgroundColor: Colors.red,
+                                              duration: const Duration(
+                                                seconds: 6,
+                                              ),
                                             ),
                                           );
+                                          gamification.clearCheckinError();
                                           return;
                                         }
+                                        gamification.clearCheckinError();
                                         final milestoneBadge =
                                             await gamification
                                                 .checkStreakMilestone(
