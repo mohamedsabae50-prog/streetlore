@@ -482,16 +482,18 @@ class AuthProvider extends ChangeNotifier {
   /// This bypasses the OAuth deep link flow and works reliably on Android.
   Future<String?> signInWithGoogleNative() async {
     if (!AppConfig.supabaseEnabled) return 'supabase_disabled';
-    // v1.0.27: log the OAuth client id + the runtime Android package so
-    // any code-10 SHA-1 mismatch in the Google Cloud Console can be
-    // triaged from logcat without re-running the build.
+    // v1.0.30: updated to the Web Client ID that matches the Google
+    // Cloud Console OAuth 2.0 Web application (ends with
+    // ...dqa1jp.apps.googleusercontent.com). The old ID ended in
+    // ...dqa7ij and was tied to a different cloud project, which is
+    // what produced the Code 10 mismatch.
     debugPrint(
-      'GoogleSignIn: serverClientId=504340157609-... (com.streetlore)',
+      'GoogleSignIn: serverClientId=504340157609-pj8ook9662299u613glititqn4dqa1jp (com.streetlore)',
     );
     try {
       final googleSignIn = GoogleSignIn(
         serverClientId:
-            '504340157609-pj8oox9662299u613glititqn4dqa7ij.apps.googleusercontent.com',
+            '504340157609-pj8ook9662299u613glititqn4dqa1jp.apps.googleusercontent.com',
         scopes: const ['email', 'profile'],
       );
       final googleUser = await googleSignIn.signIn();

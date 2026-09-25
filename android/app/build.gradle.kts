@@ -28,7 +28,11 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("release.keystore")
+            // v1.0.30: switched to a brand-new release keystore. The
+            // previous one (release.keystore) was tied to a Google
+            // Cloud OAuth client that no longer matches the project,
+            // which surfaced as a Code 10 mismatch on real devices.
+            storeFile = file("release_v2.keystore")
             storePassword = "streetlore2026"
             keyAlias = "streetlore"
             keyPassword = "streetlore2026"
