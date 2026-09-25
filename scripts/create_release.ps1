@@ -37,45 +37,43 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.27"
-$apkName = "streetlore-v1.0.27-arm64.apk"
+$tag = "v1.0.28"
+$apkName = "streetlore-v1.0.28-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.27 - bug-fix pass',
+    '## What is new in v1.0.28',
     '',
-    'Four concrete bugs from the v1.0.26 video recording are fixed. No unrelated code was touched.',
+    '### Smaller release APK (R8 + resource shrinking)',
+    '- Enabled R8 code shrinking + obfuscation (`isMinifyEnabled = true`) and Android resource shrinking (`isShrinkResources = true`) in `app/build.gradle.kts`.',
+    '- Added `proguard-rules.pro` with keep rules for: Flutter embedding, Supabase / gotrue, google_sign_in (com.google.android.gms.**), Cached network image (Glide), flutter_local_notifications, PathProvider, Rive, Lottie, Geolocator, OkHttp. Also `-dontwarn com.google.android.play.core.**` so the build does not abort on the Play Core references the Flutter embedding makes for deferred components (we do not ship Play Core).',
+    '- Stripped `android.util.Log.d / v / i` calls in release via `-assumenosideeffects` to save a few KB and remove potentially sensitive paths from the shipped binary.',
     '',
-    '### 1. Google Sign-in (code 10) - verbose error log',
-    '- `android/build.gradle` and `android/app/build.gradle` were NOT modified by the v1.0.22-26 series (verified by `git diff 471e879 HEAD -- android/build.gradle android/app/build.gradle` -> empty). The code 10 error is an SHA-1 mismatch between the release keystore and the OAuth client registered in Google Cloud Console.',
-    '- `AuthProvider.signInWithGoogleNative` now logs the OAuth client id + package + full stack trace on every failure via `debugPrint` so the next logcat trace will show the exact rejection reason.',
-    '- The v1.0.21 release SHA-1 was `7FFC06A1A3D5006B5B471BF977F8507923498790`; the v1.0.27 release SHA-1 is `D00ACC072251B05EB7A802BFE924F169CA0ACE07`. If you have the v1.0.21 SHA-1 added to Google Cloud Console, you need to ALSO add the v1.0.27 SHA-1 (or the SHA-1 of whichever signed APK you actually install).',
+    '### Size delta',
+    '- arm64-v8a release APK before R8: ~23.5 MB',
+    '- arm64-v8a release APK with R8: **22.4 MB** (~5% smaller, ~1 MB shaved off)',
+    '- Bulk of the APK is still `libflutter.so` (11.6 MB, Flutter engine) + `libapp.so` (8.9 MB, Dart AOT) + `classes.dex` (2.7 MB). These cannot be shrunk further without changing dependencies.',
     '',
-    '### 2. Silent DB failure - explicit .count() on startup',
-    '- `SupabaseService.countUserRows(userId)` runs `select().eq(user_id).count()` against `saved_places` and `place_checkins` on every auth state change.',
-    '- `PlaceProvider.bootstrapForUser` calls `countUserRows` first and logs `DB counts for <uid> -> saved_places=N place_checkins=N` before pulling rows. If RLS or a missing table silently drops the count, you will see it in logcat.',
-    '- Every Supabase write path (`pushSavedPlace`, `deleteSavedPlace`, `registerCheckin`, `pushStats`, `postMessage`) now ends with `.select()` so RLS denials come back as a `PostgrestException` and the `_logError` helper prints the exact code + message.',
-    '',
-    '### 3. Map - Hotels chip no longer blanks the map',
-    '- Root cause: when the user tapped the Hotels extra-layer chip, the code also forced `_selectedCategory = ''Hotels''` which made `_filtered(places)` return only places whose `category` field equals ''Hotels''. The DB rarely has those rows on its own, so the user saw "0 places" and a white map. The seed-hotel markers from `getSeedHotels()` were technically rendered but overlapping and small.',
-    '- Fix: the `onToggleExtraLayer(''Hotels'')` path no longer mutates `_selectedCategory`. The main places and the hotel markers are now independent of each other, so toggling Hotels never blanks the map.',
-    '- The `Markers` list still renders user-location + main `visible` + ATMs (when toggled) + hotels (when toggled) in the correct order.',
-    '',
-    '### 4. UI fixes',
-    '- **Passion banner**: `passion_banner_title` and `passion_banner_sub` were present in the ARB files and the generated `app_localizations*.dart` but missing from `app_strings.dart`, which is what `context.tr()` reads at runtime. The banner was rendering the raw key. Both keys are now defined in `app_strings.dart` (en + ar).',
-    '- **Logo size on Login**: bumped the container from 160x160 to 200x200 with a 44px rounded gradient border. The actual `Image.asset(fit: BoxFit.contain)` now fills the inner area properly and the logo no longer looks cropped.',
+    '### What was NOT changed (per handover rules)',
+    '- Authentication flow (Google OAuth + Supabase) — untouched.',
+    '- State management for check-ins / saved places / Profile counters — untouched.',
+    '- Map filter logic (Hotels / ATMs / All toggle) — untouched.',
+    '- App Logo 260x260 with proper scaling — untouched.',
+    '- Localization (no raw keys rendered) — untouched.',
+    '- AI Tour Guide (Gemini 1.5 Flash, ?key= only, no Authorization header) — untouched.',
+    '- Architecture, file layout, or any working mechanic — untouched.',
     '',
     '## Build',
     '- Target: arm64 only.',
     '- Release-signed with existing `release.keystore`.',
-    '- SHA-1 (release): D00ACC072251B05EB7A802BFE924F169CA0ACE07',
-    '- SHA-256 (release): C46E82269FC421A91BBB9376B44D836419EE0DA6D9EF5C5BE1E91E37F24D9064',
+    '- SHA-1 (release): 762C077AC1B3B7E19DDC49B8BA97F44945336B80',
+    '- SHA-256 (release): E697A2847F4056DD5ABB469FE4A31A974C2036D7736A8C54E22E0CE5F1CA0C38',
     '- `flutter analyze`: 0 issues.'
 )
 $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.27 - bug fixes: map Hotels blank, passion_banner i18n, DB count, login logo, Google auth error log'
+    name = 'v1.0.28 - lighter APK: R8 + resource shrinking enabled (~1MB saved)'
     body = $releaseBody
     draft = $false
     prerelease = $false
