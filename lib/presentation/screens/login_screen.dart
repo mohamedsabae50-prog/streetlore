@@ -167,11 +167,14 @@ class _LoginScreenState extends State<LoginScreen>
                       child: PopIn(
                         duration: const Duration(milliseconds: 700),
                         child: Container(
-                          width: 260,
-                          height: 260,
+                          // v1.0.31: reduced from 260x260 -> 200x200 so the
+                          // logo sits more elegantly on the login / splash
+                          // screens without dominating the form below it.
+                          width: 200,
+                          height: 200,
                           decoration: BoxDecoration(
                             gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(44),
+                            borderRadius: BorderRadius.circular(36),
                             boxShadow: [
                               BoxShadow(
                                 color: AppColors.primary.withValues(alpha: 0.4),
@@ -181,9 +184,9 @@ class _LoginScreenState extends State<LoginScreen>
                             ],
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(44),
+                            borderRadius: BorderRadius.circular(36),
                             child: Padding(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(14),
                               child: Image.asset(
                                 'assets/logo/streetlore_logo.png',
                                 fit: BoxFit.contain,

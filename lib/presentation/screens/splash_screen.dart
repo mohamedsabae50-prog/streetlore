@@ -183,8 +183,11 @@ class _SplashScreenState extends State<SplashScreen>
                             child: Transform.scale(
                               scale: scale,
                               child: Container(
-                                width: 260,
-                                height: 260,
+                                // v1.0.31: matched to the login screen
+                                // size (200x200) so the logo sits
+                                // elegantly during the splash.
+                                width: 200,
+                                height: 200,
                                 foregroundDecoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
@@ -198,8 +201,8 @@ class _SplashScreenState extends State<SplashScreen>
                                   child: Image.asset(
                                     'assets/logo/streetlore_logo.png',
                                     fit: BoxFit.cover,
-                                    width: 260,
-                                    height: 260,
+                                    width: 200,
+                                    height: 200,
                                   ),
                                 ),
                               ),

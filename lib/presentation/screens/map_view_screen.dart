@@ -155,8 +155,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
   /// - `'__none__'` → All OFF (user-toggled) → return empty list.
   /// - any other → filter by category.
   List<PlaceModel> _filtered(List<PlaceModel> all) {
-    if (_allOff && !_showAtms && !_showHotels) return const <PlaceModel>[];
-    if (_allOff) return all; // Hotels/ATMs are ON, show all main places too
+    // v1.0.31: exclusive extra-layer modes first so the map shows
+    // ONLY the chosen layer's markers (no stale main places).
+    if (_showAtms) return const <PlaceModel>[];
+    if (_showHotels) {
+      return all.where((p) => p.category == 'Hotels').toList();
+    }
+    if (_allOff) return const <PlaceModel>[];
     if (_selectedCategory == null) return all;
     return all.where((p) => p.category == _selectedCategory).toList();
   }

@@ -84,11 +84,14 @@ Set-Content -LiteralPath (Join-Path $dir 'ic_launcher.xml') -Value $adaptive -En
 Set-Content -LiteralPath (Join-Path $dir 'ic_launcher_round.xml') -Value $adaptive -Encoding UTF8
 Write-Host "Adaptive icon XML: $dir"
 
-# 4) Regenerate the legacy mipmap PNGs from the cropped foreground
-#    so pre-O launchers see the same design (Android < 8 is < 1% of
-#    active devices but kept for completeness).
+# 4) Regenerate the legacy mipmap PNGs as a *fully filled* icon
+#    (gradient background + centered logo) so pre-O launchers do
+#    not show a transparent hole or the dark navy fallback. The
+#    adaptive icon (Android 8.0+) still uses the safe-zone
+#    foreground from step 1 so the launcher mask crops cleanly.
 Add-Type -AssemblyName System.Drawing
 $fgFile = "D:\codes\streetlore\android\app\src\main\res\drawable\ic_launcher_foreground.png"
+$srcFile = "D:\codes\streetlore\assets\logo\streetlore_logo.png"
 $sizes = @{
     'mipmap-mdpi'    = 48
     'mipmap-hdpi'    = 72
@@ -96,20 +99,49 @@ $sizes = @{
     'mipmap-xxhdpi'  = 144
     'mipmap-xxxhdpi' = 192
 }
+# Colors for the fully-filled legacy icon (matches the adaptive
+# background gradient amber -> red -> blue).
+$gradColors = @(
+    [System.Drawing.Color]::FromArgb(255, 245, 158, 11),  # F59E0B
+    [System.Drawing.Color]::FromArgb(255, 239, 68, 68),   # EF4444
+    [System.Drawing.Color]::FromArgb(255, 59, 130, 246)   # 3B82F6
+)
 foreach ($entry in $sizes.GetEnumerator()) {
     $dirName = $entry.Key
     $side = [int]$entry.Value
     $target = "D:\codes\streetlore\android\app\src\main\res\$dirName\ic_launcher.png"
-    Add-Type -AssemblyName System.Drawing
     $outBmp = New-Object System.Drawing.Bitmap $side, $side
     $og = [System.Drawing.Graphics]::FromImage($outBmp)
+    $og.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
     $og.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-    $src = [System.Drawing.Image]::FromFile($fgFile)
-    $og.DrawImage($src, 0, 0, $side, $side)
-    $src.Dispose()
+    $og.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+
+    # 4a) Paint the same diagonal gradient the adaptive icon uses.
+    $rect = New-Object System.Drawing.Rectangle 0, 0, $side, $side
+    $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+        (New-Object System.Drawing.PointF 0, 0),
+        (New-Object System.Drawing.PointF $side, $side),
+        $gradColors[0], $gradColors[2])
+    $colorBlend = New-Object System.Drawing.Drawing2D.ColorBlend
+    $colorBlend.Colors = @($gradColors[0], $gradColors[1], $gradColors[2])
+    $colorBlend.Positions = @(0.0, 0.5, 1.0)
+    $brush.InterpolationColors = $colorBlend
+    $og.FillRectangle($brush, 0, 0, $side, $side)
+    $brush.Dispose()
+
+    # 4b) Composite the brand logo centered, ~70% of the icon size,
+    #     so it leaves a small margin and matches the adaptive
+    #     icon's visual weight.
+    $logoSide = [int]($side * 0.70)
+    $logoX = [int](($side - $logoSide) / 2)
+    $logoY = [int](($side - $logoSide) / 2)
+    $logoImg = [System.Drawing.Image]::FromFile($srcFile)
+    $og.DrawImage($logoImg, $logoX, $logoY, $logoSide, $logoSide)
+    $logoImg.Dispose()
     $og.Dispose()
+
     $outBmp.Save($target, [System.Drawing.Imaging.ImageFormat]::Png)
     $outBmp.Dispose()
-    Write-Host "Legacy PNG: $target ($side px)"
+    Write-Host "Legacy PNG: $target ($side px, gradient+logo)"
 }
 Write-Host "Done."
