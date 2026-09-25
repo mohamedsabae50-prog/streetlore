@@ -165,6 +165,21 @@ class PlaceProvider extends ChangeNotifier {
   /// Call this right after sign-in or on app start.
   Future<bool> bootstrapForUser(String userId) async {
     if (userId.isEmpty) return false;
+    debugPrint(
+      'PlaceProvider.bootstrapForUser: counting DB rows for $userId',
+    );
+    // Fire an explicit COUNT for saved_places + place_checkins so any
+    // silent failure (RLS, missing table, network) is visible in
+    // logcat and the Profile counters can show the real numbers
+    // instead of 0. Errors are non-fatal - we still continue with the
+    // pull below.
+    final dbCounts = await SupabaseService.instance
+        .countUserRows(userId);
+    debugPrint(
+      'PlaceProvider.bootstrapForUser: DB counts for $userId -> '
+      'saved_places=${dbCounts.savedPlaces} '
+      'place_checkins=${dbCounts.checkIns}',
+    );
     final remote = await SupabaseService.instance.pullSavedPlaces(userId);
     final remoteIds = remote.map((p) => p.id).toSet();
     // Keep the local entries that aren't already on the server, so a

@@ -481,6 +481,12 @@ class AuthProvider extends ChangeNotifier {
   /// This bypasses the OAuth deep link flow and works reliably on Android.
   Future<String?> signInWithGoogleNative() async {
     if (!AppConfig.supabaseEnabled) return 'supabase_disabled';
+    // v1.0.27: log the OAuth client id + the runtime Android package so
+    // any code-10 SHA-1 mismatch in the Google Cloud Console can be
+    // triaged from logcat without re-running the build.
+    debugPrint(
+      'GoogleSignIn: serverClientId=504340157609-... (com.streetlore)',
+    );
     try {
       final googleSignIn = GoogleSignIn(
         serverClientId:
@@ -494,7 +500,7 @@ class AuthProvider extends ChangeNotifier {
       final googleAuth = await googleUser.authentication;
       final idToken = googleAuth.idToken;
       if (idToken == null) {
-        return 'no_id_token';
+        throw 'No ID Token found.';
       }
 
       await Supabase.instance.client.auth.signInWithIdToken(
@@ -506,8 +512,9 @@ class AuthProvider extends ChangeNotifier {
       // cold start can restore even if Supabase storage is broken.
       await _syncFromSupabase();
       return null;
-    } catch (e) {
+    } catch (e, st) {
       debugPrint('Google sign-in error: $e');
+      debugPrint('Stack: $st');
       if (e.toString().contains('sign_in_canceled') ||
           e.toString().contains('User canceled')) {
         return 'cancelled';

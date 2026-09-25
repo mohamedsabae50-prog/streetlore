@@ -187,6 +187,41 @@ class SupabaseService {
     }
   }
 
+  /// Count the user's saved places + check-ins directly from the DB.
+  /// Used by the Profile screen to show real numbers (not 0) on cold
+  /// start. Returns zeroed counts on any failure so the caller can
+  /// still render.
+  Future<({int savedPlaces, int checkIns})> countUserRows(
+    String userId,
+  ) async {
+    if (_client == null || userId.isEmpty) {
+      return (savedPlaces: 0, checkIns: 0);
+    }
+    int saved = 0;
+    int checkins = 0;
+    try {
+      final savedRes = await _client!
+          .from('saved_places')
+          .select('user_id')
+          .eq('user_id', userId)
+          .count();
+      saved = (savedRes as dynamic).count as int? ?? 0;
+    } catch (e) {
+      _logError('countUserRows(saved_places)', e);
+    }
+    try {
+      final checkRes = await _client!
+          .from('place_checkins')
+          .select('user_id')
+          .eq('user_id', userId)
+          .count();
+      checkins = (checkRes as dynamic).count as int? ?? 0;
+    } catch (e) {
+      _logError('countUserRows(place_checkins)', e);
+    }
+    return (savedPlaces: saved, checkIns: checkins);
+  }
+
   /// Pull every saved place belonging to [userId] from the `saved_places`
   /// table. The shape mirrors `PlaceModel.toJson` so we can rebuild the
   /// `PlaceModel` straight from the response.

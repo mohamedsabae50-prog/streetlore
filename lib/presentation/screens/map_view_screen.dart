@@ -408,9 +408,24 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 setState(() {
                   if (_extraLayers.contains(layer)) {
                     _extraLayers.remove(layer);
+                    // When the user turns Hotels OFF, drop the
+                    // forced category filter so the main places
+                    // become visible again.
+                    if (layer == _hotelsCategory &&
+                        _selectedCategory == _hotelsCategory) {
+                      _selectedCategory = null;
+                    }
                   } else {
                     _extraLayers.add(layer);
-                    if (layer == _hotelsCategory) _selectedCategory = layer;
+                    // v1.0.27 fix: do NOT force _selectedCategory to
+                    // 'Hotels' on toggle. Doing so silently hid every
+                    // other category from the map and produced the
+                    // "0 places / white map" symptom when the user
+                    // tapped the Hotels chip. The hotel markers are
+                    // rendered from getSeedHotels() below and from
+                    // the DB places with category='Hotels' that
+                    // PlaceProvider.mergeSeedHotels() seeds - both
+                    // are independent of _selectedCategory now.
                   }
                 });
               },

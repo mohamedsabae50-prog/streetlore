@@ -182,6 +182,19 @@ class AppStrings {
       'en': 'All tours, places & guides are unlocked for everyone.',
       'ar': 'كل الجولات والأماكن والمرشدين متاحين للجميع.',
     },
+    'passion_banner_title': {
+      'en': 'A non-profit passion project',
+      'ar': 'مشروع شغف غير ربحي',
+    },
+    'passion_banner_sub': {
+      'en':
+          'Built out of love for Alexandria — and for you. Free, ad-free, '
+              'and made for fun. Every recommendation is hand-curated by '
+              'someone who actually lives here.',
+      'ar':
+          'مبني بحب الإسكندرية — ولأجلك. ببلاش، بدون إعلانات، ومتعة بحتة. '
+              'كل توصية مجمّعة يدويًا من حد فعلاً عايش هنا.',
+    },
     'streak_start': {'en': 'Start your streak', 'ar': 'ابدأ سلسلتك'},
     'streak_days': {'en': '{n} visits streak', 'ar': 'ستريك {n} زيارة'},
     'streak_best': {
