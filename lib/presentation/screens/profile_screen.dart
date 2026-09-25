@@ -41,9 +41,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadTogglePrefs();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _maybeCelebrateStreakBadge(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = context.read<AuthProvider>();
+      if (auth.userId.isNotEmpty) {
+        context.read<PlaceProvider>().fetchRemoteCounts(auth.userId);
+      }
+      _maybeCelebrateStreakBadge();
+    });
   }
 
   Future<void> _loadTogglePrefs() async {
@@ -285,7 +289,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             _Stat(
                               label: context.tr('prof_saved'),
-                              numericValue: placeP.savedPlaces.length,
+                              numericValue: placeP.savedPlaces.length > placeP.remoteSavedCount
+                                  ? placeP.savedPlaces.length
+                                  : placeP.remoteSavedCount,
                               icon: Icons.bookmark_rounded,
                               delayMs: 200,
                             ),
@@ -300,10 +306,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             // remote row (= 0) still sees a real number.
                             _Stat(
                               label: context.tr('prof_explored'),
-                              numericValue: gamification.stats.placesVisited >
-                                      placeP.savedPlaces.length
-                                  ? gamification.stats.placesVisited
-                                  : placeP.savedPlaces.length,
+                              numericValue: () {
+                                final local = placeP.savedPlaces.length;
+                                final remoteCheckins = placeP.remoteCheckinCount;
+                                final gamVisited = gamification.stats.placesVisited;
+                                final best = [local, remoteCheckins, gamVisited].reduce((a, b) => a > b ? a : b);
+                                return best;
+                              }(),
                               icon: Icons.explore_rounded,
                               delayMs: 320,
                             ),

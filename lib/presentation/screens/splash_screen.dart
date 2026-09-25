@@ -183,8 +183,8 @@ class _SplashScreenState extends State<SplashScreen>
                             child: Transform.scale(
                               scale: scale,
                               child: Container(
-                                width: 220,
-                                height: 220,
+                                width: 260,
+                                height: 260,
                                 foregroundDecoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
@@ -198,8 +198,8 @@ class _SplashScreenState extends State<SplashScreen>
                                   child: Image.asset(
                                     'assets/logo/streetlore_logo.png',
                                     fit: BoxFit.cover,
-                                    width: 220,
-                                    height: 220,
+                                    width: 260,
+                                    height: 260,
                                   ),
                                 ),
                               ),

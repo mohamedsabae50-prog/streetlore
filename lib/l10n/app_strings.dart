@@ -718,6 +718,10 @@ class AppStrings {
       'en': 'Sign in to save your favorite places and access exclusive tours.',
       'ar': 'سجّل دخولك لحفظ أماكنك المفضلة والوصول لجولات حصرية.',
     },
+    'google_sha1_error': {'en': 'Google Sign-In setup error (Code 10). Contact developer.', 'ar': 'خطأ إعدادات تسجيل جوجل (كود 10). تواصل مع المطور.'},
+    'google_config_error': {'en': 'Google Sign-In not configured properly. Try email login.', 'ar': 'تسجيل جوجل غير مُعد بشكل صحيح. جرّب الإيميل.'},
+    'google_network_error': {'en': 'Network error. Check your connection.', 'ar': 'خطأ في الشبكة. تأكد من اتصالك بالإنترنت.'},
+    'google_general_error': {'en': 'Google Sign-In failed. Try email login instead.', 'ar': 'فشل تسجيل جوجل. جرّب الإيميل بدلاً من كده.'},
     'login_full_name': {'en': 'Full Name', 'ar': 'الاسم الكامل'},
     'login_name_hint': {'en': 'e.g. Ahmed Hassan', 'ar': 'مثال: أحمد حسن'},
     'login_err_name': {

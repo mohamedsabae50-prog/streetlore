@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -513,13 +514,46 @@ class AuthProvider extends ChangeNotifier {
       await _syncFromSupabase();
       return null;
     } catch (e, st) {
-      debugPrint('Google sign-in error: $e');
+      debugPrint('=== GOOGLE SIGN-IN FAILED ===');
+      debugPrint('Error type: ${e.runtimeType}');
+      debugPrint('Error: $e');
       debugPrint('Stack: $st');
-      if (e.toString().contains('sign_in_canceled') ||
-          e.toString().contains('User canceled')) {
+      
+      final msg = e.toString();
+      
+      if (e is PlatformException) {
+        debugPrint('PlatformException code: ${e.code}');
+        debugPrint('PlatformException message: ${e.message}');
+        debugPrint('PlatformException details: ${e.details}');
+        
+        if (e.code == 'sign_in_canceled' || e.code == '12501') {
+          return 'cancelled';
+        }
+        if (e.code == '10') {
+          debugPrint('CODE 10: SHA-1 fingerprint mismatch!');
+          debugPrint('Your applicationId: com.example.streetlore');
+          debugPrint('Check: Google Cloud Console > APIs > Credentials');
+          debugPrint('Ensure SHA-1 fingerprint matches the release keystore');
+          return 'sha1_mismatch';
+        }
+        if (e.code == '12500') {
+          debugPrint('CODE 12500: Google Sign-In config error');
+          debugPrint('Check: OAuth consent screen must be configured');
+          return 'config_error';
+        }
+        if (e.code == '7') {
+          return 'network_error';
+        }
+      }
+      
+      if (msg.contains('sign_in_canceled') || msg.contains('User canceled')) {
         return 'cancelled';
       }
-      return 'error';
+      if (msg.contains('ApiException: 10')) {
+        return 'sha1_mismatch';
+      }
+      
+      return 'google_error';
     }
   }
 

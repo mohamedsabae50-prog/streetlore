@@ -23,6 +23,35 @@ class PlaceProvider extends ChangeNotifier {
   List<PlaceModel> _savedPlaces = [];
   List<PlaceModel> get savedPlaces => _savedPlaces;
 
+  int _remoteSavedCount = 0;
+  int _remoteCheckinCount = 0;
+  int get remoteSavedCount => _remoteSavedCount;
+  int get remoteCheckinCount => _remoteCheckinCount;
+
+  Future<void> fetchRemoteCounts(String userId) async {
+    if (userId.isEmpty) return;
+    try {
+      final savedRes = await _client
+          .from('saved_places')
+          .select()
+          .eq('user_id', userId)
+          .count(CountOption.exact);
+      _remoteSavedCount = savedRes.count;
+
+      final checkinRes = await _client
+          .from('place_checkins')
+          .select()
+          .eq('user_id', userId)
+          .count(CountOption.exact);
+      _remoteCheckinCount = checkinRes.count;
+      
+      debugPrint('Remote counts: saved=$_remoteSavedCount, checkins=$_remoteCheckinCount');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('fetchRemoteCounts error: $e');
+    }
+  }
+
   bool _isFilterOpenNow = false;
   bool _isFilterCheapest = false;
   bool _isFilterNearest = false;

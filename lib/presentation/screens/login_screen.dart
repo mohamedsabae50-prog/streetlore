@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/config/app_config.dart';
@@ -168,8 +167,8 @@ class _LoginScreenState extends State<LoginScreen>
                       child: PopIn(
                         duration: const Duration(milliseconds: 700),
                         child: Container(
-                          width: 200,
-                          height: 200,
+                          width: 260,
+                          height: 260,
                           decoration: BoxDecoration(
                             gradient: AppColors.primaryGradient,
                             borderRadius: BorderRadius.circular(44),
@@ -408,38 +407,32 @@ class _LoginScreenState extends State<LoginScreen>
                                       _goToMain();
                                     }
                                   } else {
-                                    final GoogleSignIn
-                                    googleSignIn = GoogleSignIn(
-                                      serverClientId:
-                                          '504340157609-pj8oox9662299u613glititqn4dqa7ij.apps.googleusercontent.com',
-                                    );
-
-                                    final googleUser = await googleSignIn
-                                        .signIn();
-
-                                    if (googleUser == null) {
-                                      if (mounted) {
+                                    final errorKey = await auth.signInWithGoogleNative();
+                                    if (!context.mounted) return;
+                                    if (errorKey != null) {
+                                      if (errorKey == 'cancelled') {
                                         setState(() => _isLoading = false);
+                                        return;
                                       }
+                                      String errMsg;
+                                      if (errorKey == 'sha1_mismatch') {
+                                        errMsg = context.tr('google_sha1_error');
+                                      } else if (errorKey == 'config_error') {
+                                        errMsg = context.tr('google_config_error');
+                                      } else if (errorKey == 'network_error') {
+                                        errMsg = context.tr('google_network_error');
+                                      } else {
+                                        errMsg = context.tr('google_general_error');
+                                      }
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text(errMsg),
+                                          backgroundColor: AppColors.error,
+                                        ),
+                                      );
+                                      setState(() => _isLoading = false);
                                       return;
                                     }
-
-                                    final googleAuth =
-                                        await googleUser.authentication;
-                                    final accessToken = googleAuth.accessToken;
-                                    final idToken = googleAuth.idToken;
-
-                                    if (idToken == null) {
-                                      throw 'No ID Token found.';
-                                    }
-
-                                    await Supabase.instance.client.auth
-                                        .signInWithIdToken(
-                                          provider: OAuthProvider.google,
-                                          idToken: idToken,
-                                          accessToken: accessToken,
-                                        );
-
                                     if (mounted) {
                                       _goToMain();
                                     }
