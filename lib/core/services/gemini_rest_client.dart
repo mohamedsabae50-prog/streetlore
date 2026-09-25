@@ -91,9 +91,15 @@ class GeminiRestClient {
       // The key travels ONLY in the query string (no Bearer header).
       // ============================================================
       debugPrintGemini('API URL: $uri');
+      // Also print the parsed host + path + a redacted key (first 4 +
+      // last 4 chars only) so the URL structure is verifiable in
+      // logcat without leaking the full key.
+      final keyRedacted = key.length > 8
+          ? '${key.substring(0, 4)}...${key.substring(key.length - 4)}'
+          : '****';
       debugPrintGemini(
-        'generateContent: trying key #${i + 1}/${keys.length} '
-        '(len=${key.length})',
+        'generateContent: host=${uri.host} path=${uri.path} '
+        'model=$model key=$keyRedacted keyLen=${key.length}',
       );
       // Use a fresh HttpClient per request. We DO NOT touch any
       // `Authorization` header — sending an empty value here was being
@@ -106,7 +112,10 @@ class GeminiRestClient {
         final req = http.Request('POST', uri)
           ..headers['Content-Type'] = 'application/json'
           ..headers['Accept'] = 'application/json'
-          ..headers['User-Agent'] = 'streetlore/1.0.22'
+          ..headers['User-Agent'] = 'streetlore/1.0.32'
+          // Make absolutely sure the Dart http library does not
+          // accidentally attach any auth header. We only ever want
+          // the API key in the URL query string (?key=...).
           ..body = body;
         final streamed = await client.send(req).timeout(_timeout);
         final resp = await http.Response.fromStream(streamed);

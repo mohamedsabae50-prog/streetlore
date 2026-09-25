@@ -13,6 +13,7 @@ import '../../logic/tour_provider.dart';
 import '../../logic/theme_provider.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/gamification_provider.dart';
+import 'package:flutter/scheduler.dart';
 import '../../logic/achievement_provider.dart';
 import '../../logic/locale_provider.dart';
 import '../../logic/streak_provider.dart';
@@ -41,7 +42,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadTogglePrefs();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    _refreshOnNextFrame();
+  }
+
+  /// Re-fetch the remote counts every time the Profile tab gains focus
+  /// (i.e. the user navigates here from a Save / Check-in action).
+  /// `initState` only fires once, and bottom-nav tabs are kept alive
+  /// in memory, so without this hook the counters would freeze at the
+  /// value they had the first time the screen was built.
+  void _refreshOnNextFrame() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final auth = context.read<AuthProvider>();
       if (auth.userId.isNotEmpty) {
         context.read<PlaceProvider>().fetchRemoteCounts(auth.userId);
