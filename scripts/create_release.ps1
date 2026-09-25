@@ -37,36 +37,37 @@ $headers = @{
     "User-Agent" = "streetlore-release-script"
 }
 
-$tag = "v1.0.31"
-$apkName = "streetlore-v1.0.31-arm64.apk"
+$tag = "v1.0.32"
+$apkName = "streetlore-v1.0.32-arm64.apk"
 
 $lines = @(
-    '## What is new in v1.0.31 - logos + map filter polish',
+    '## What is new in v1.0.32 - Profile counters + Gemini 401 defense',
     '',
-    '### 1. App logos (external launcher + internal)',
-    '- **External launcher icon**: regenerated the legacy mipmap PNGs (mdpi -> xxxhdpi) with the brand gradient background + centered logo so pre-O launchers no longer show the dark navy `#0F172A` fallback or a transparent hole. The adaptive icon (Android 8.0+) still uses the safe-zone foreground so launcher masks crop cleanly. `tools/setup_adaptive_icon.ps1` is the source of truth - run it whenever the brand logo changes.',
-    '- **Internal logo (Login + Splash)**: reduced from 260x260 to 200x200. The `ClipOval` / `ClipRRect` wrapper keeps a generous inner padding so the mark sits elegantly above the form, not dominating it.',
+    '### 1. Profile counters - refresh on every frame',
+    '- `_ProfileScreenState.initState` now uses `SchedulerBinding.instance.addPostFrameCallback` (v1.0.32) so `PlaceProvider.fetchRemoteCounts(auth.userId)` runs every time the Profile tab gains focus, not only on the first build. The Saved / Explored / Tours counters hydrate from Supabase (`saved_places` + `place_checkins`) the moment the user navigates back from a Save or Check-in action.',
+    '- If the user is signed out, the call is a no-op (`if (auth.userId.isNotEmpty)`) so the screen still renders with the local fallback (MAX(local, remote, gamification) for Explored).',
     '',
-    '### 2. Map filters - Hotels / ATMs exclusivity',
-    '- `_filtered(places)` in `map_view_screen.dart` now treats the Hotels and ATMs extra-layers as exclusive modes:',
-    '  - **ATMs chip ON** -> hide every main place, only the 12 ATM markers carry the map.',
-    '  - **Hotels chip ON** -> main places are restricted to `category == ''Hotels''`, then the seed hotel markers from `getSeedHotels()` overlay. Result: ONLY the hotel markers render, no stale historical / mosque / food pins.',
-    '  - **All chip OFF (sentinel `__none__`)** -> empty map (unchanged).',
-    '  - **No extra layer + a normal category** -> filter to that category (unchanged).',
-    '- No more "0 places / white map" when toggling the Hotels or ATMs chip on.',
+    '### 2. AI Tour Guide - Gemini 401 defense',
+    '- `gemini_rest_client.dart` already uses the Google AI Studio REST endpoint with the API key ONLY in the URL query string (`?key=...`). The build verifies no `Authorization` or `x-goog-api-key` header is ever attached: only `Content-Type`, `Accept`, and `User-Agent` are set.',
+    '- v1.0.32 hardening:',
+    '  - The full `uri` is logged to logcat via `debugPrintGemini(''API URL: $uri'')` so you can see the exact endpoint + key.',
+    '  - A redacted second log line `host=... path=... model=... key=ABC...XYZ keyLen=N` is printed for at-a-glance triage without leaking the full key in screenshots.',
+    '  - The `User-Agent` was bumped to `streetlore/1.0.32` so logcat traces from this build are obvious.',
+    '- If a 401 still shows up in your next install, the logcat trace will print the exact host / path / model / key length that the request went to. From there the fix is either: (a) the API key is revoked / wrong project, (b) the model name has changed upstream, or (c) a proxy is rewriting headers server-side.',
     '',
     '### Working mechanics preserved (per handover rules)',
     '- Authentication: Google OAuth + Supabase (v1.0.30 Web Client ID + new keystore), unchanged.',
-    '- State management: check-ins, saved places, Profile counters (with `fetchRemoteCounts`), unchanged.',
-    '- AI Tour Guide (gemini-1.5-flash, ?key= only), unchanged.',
-    '- R8 / ProGuard still disabled (`isMinifyEnabled = false`), so all native plugin entry points are preserved.',
+    '- State management: check-ins, saved places, unchanged.',
+    '- Map filters: Hotels / ATMs exclusive behaviour, unchanged.',
+    '- Logos: 200x200 internal + gradient+logo legacy mipmaps, unchanged.',
+    '- R8 / ProGuard still disabled (`isMinifyEnabled = false`).',
     '',
     '## Build',
     '- Target: arm64 only.',
-    '- Release-signed with the new keystore `android/app/release_v2.keystore`.',
-    '- Release certificate SHA-1: `AF:62:89:44:B5:F3:A0:0A:4E:CE:1E:72:34:13:26:EA:5A:E7:B4:8F` (register in Google Cloud Console).',
-    '- APK file SHA-1: `B76693A7F1423461D4A91DF116F363E078C6E35D`',
-    '- APK file SHA-256: `AE70ADCF4B5507301B119396C23896738179C1491550FB78E111AF731B1D68A4`',
+    '- Release-signed with new keystore `android/app/release_v2.keystore` (alias `streetlore`).',
+    '- Release certificate SHA-1: `AF:62:89:44:B5:F3:A0:0A:4E:CE:1E:72:34:13:26:EA:5A:E7:B4:8F`',
+    '- APK file SHA-1: `BD08D668C401E9787B2CA04FC81AF158F9E8E07D`',
+    '- APK file SHA-256: `CBCDC04C046468AC61B469550C4FF3FFD870E9DE0212297F1A26CC0D75F73CDB`',
     '- Size: 26.3 MB',
     '- `flutter analyze`: 0 issues.'
 )
@@ -74,7 +75,7 @@ $releaseBody = $lines -join "`n"
 
 $payload = @{
     tag_name = $tag
-    name = 'v1.0.31 - logos polished + map Hotels/ATMs exclusive filters'
+    name = 'v1.0.32 - Profile counters refresh + Gemini 401 defense'
     body = $releaseBody
     draft = $false
     prerelease = $false
