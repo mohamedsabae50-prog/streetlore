@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
@@ -349,5 +350,86 @@ class SupabaseService {
     } else {
       debugPrint('SupabaseService.$method error: $e');
     }
+  }
+
+  // v1.0.73 — proxied AI + account-delete wrappers. Both functions
+  // require the user to present their Supabase access token via the
+  // `Authorization: Bearer …` header.
+
+  /// Route an AI request through the secure `ai-proxy` Edge Function
+  /// (PR #3). The real GEMINI_API_KEY lives only on the function and
+  /// is never sent to the client.
+  ///
+  /// [body] is the raw Gemini REST request body (contents + optional
+  /// generationConfig). The function picks the model from
+  /// `body['model']` (default `gemini-2.0-flash`).
+  Future<Map<String, dynamic>> aiProxyInvoke(
+    Map<String, dynamic> body, {
+    String? accessToken,
+  }) async {
+    final client = clientOrNull;
+    if (client == null) {
+      throw Exception('Supabase client not initialized');
+    }
+    final token = accessToken ??
+        client.auth.currentSession?.accessToken ??
+        '';
+    if (token.isEmpty) {
+      throw Exception('Not signed in');
+    }
+    final uri = Uri.parse('${AppConfig.supabaseUrl}/functions/v1/ai-proxy');
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+    if (response.statusCode == 429) {
+      throw Exception(
+        'AI_QUOTA_EXCEEDED: you have used all your daily AI requests.',
+      );
+    }
+    if (response.statusCode != 200) {
+      throw Exception(
+        'ai-proxy HTTP ${response.statusCode}: ${response.body}',
+      );
+    }
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    return decoded;
+  }
+
+  /// Request full account + data deletion per Apple App Store and
+  /// Google Play Store account-deletion requirements (PR #6). Calls
+  /// the `delete-account` Edge Function which uses the service_role key
+  /// to drop every user-owned row, then the auth.users entry itself.
+  Future<Map<String, dynamic>> deleteAccount({String? accessToken}) async {
+    final client = clientOrNull;
+    if (client == null) {
+      throw Exception('Supabase client not initialized');
+    }
+    final token = accessToken ??
+        client.auth.currentSession?.accessToken ??
+        '';
+    if (token.isEmpty) {
+      throw Exception('Not signed in');
+    }
+    final uri = Uri.parse(
+      '${AppConfig.supabaseUrl}/functions/v1/delete-account',
+    );
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode != 200) {
+      throw Exception(
+        'delete-account HTTP ${response.statusCode}: ${response.body}',
+      );
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
   }
 }

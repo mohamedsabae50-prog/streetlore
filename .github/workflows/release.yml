@@ -84,6 +84,13 @@ jobs:
           echo "Resolved target tag: ${TAG}"
 
       - name: Decode Keystore
+        env:
+          # v1.0.73: passwords now sourced from secrets instead of
+          # being baked into the keystore / build script. The literal
+          # password is still the fallback for local dev (kept in
+          # sync with the comment in app/build.gradle.kts).
+          STREETLORE_KEYSTORE_PASSWORD: ${{ secrets.STREETLORE_KEYSTORE_PASSWORD }}
+          STREETLORE_KEY_PASSWORD: ${{ secrets.STREETLORE_KEY_PASSWORD }}
         run: |
           set -e
           mkdir -p android/app
@@ -100,15 +107,25 @@ jobs:
           SIZE=$(wc -c < android/app/release_v2.keystore)
           echo "Wrote $SIZE bytes to android/app/release_v2.keystore"
           if [ "$SIZE" -lt 1000 ]; then
-            echo "::error::release_v2.keystore is too small ($SIZE bytes). The STREETLORE_KEYSTORE_BASE64 secret is probably unset or truncated. Add it (base64 of $ANDROID_KEYSTORE_PATH) and re-run."
+            echo "::error::release_v2.keystore is too small ($SIZE bytes). The STREETLORE_KEYSTORE_BASE64 secret is probably unset or truncated. Add it (base64 of \$ANDROID_KEYSTORE_PATH) and re-run."
             exit 1
           fi
 
       - name: Verify keystore signature
+        env:
+          STREETLORE_KEYSTORE_PASSWORD: ${{ secrets.STREETLORE_KEYSTORE_PASSWORD }}
         run: |
           set -e
-          SHA=$(keytool -list -v -keystore android/app/release_v2.keystore -storepass streetlore2026 2>&1 | grep -E '^\s*SHA1:' | head -n 1 | awk '{print $2}')
+          SHA=$(keytool -list -v -keystore android/app/release_v2.keystore -storepass "${STREETLORE_KEYSTORE_PASSWORD:-streetlore2026}" 2>&1 | grep -E '^\s*SHA1:' | head -n 1 | awk '{print $2}')
           echo "Keystore cert SHA-1: ${SHA}"
+          # v1.0.73: the expected SHA-1 below is the SHA-1 of the
+          # v1.0.30+ production keystore. To regenerate from a brand-
+          # new keystore, run:
+          #   keytool -list -v -keystore android/app/release_v2.keystore \
+          #     -storepass "$STREETLORE_KEYSTORE_PASSWORD" \
+          #     | grep -E '^\s*SHA1:'
+          # then update this check (and the Google Cloud OAuth client
+          # for Google Sign-In) to match.
           if [ "${SHA}" != "AF:62:89:44:B5:F3:A0:0A:4E:CE:1E:72:34:13:26:EA:5A:E7:B4:8F" ]; then
             echo "::error::Cert SHA-1 is ${SHA} - expected the v1.0.30+ keystore cert. Refusing to publish."
             exit 1
