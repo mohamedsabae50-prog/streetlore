@@ -76,4 +76,10 @@ extension ContextTheme on BuildContext {
       isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
   Color get shimmerHighlight =>
       isDark ? const Color(0xFF4A5568) : const Color(0xFFF8FAFC);
+
+  /// v1.0.71 — selected bottom-nav icon color. Was hardcoded to
+  /// [AppColors.primary] (dark navy) which disappears against the
+  /// dark-mode card background. Light blue in dark, navy in light.
+  Color get navSelected =>
+      isDark ? const Color(0xFF60A5FA) : const Color(0xFF0F172A);
 }

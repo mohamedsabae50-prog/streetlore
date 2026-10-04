@@ -8,18 +8,41 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
+import '../../core/constants/app_colors.dart';
 import '../../l10n/app_strings.dart';
+
+/// One-waypoint mode — pass `destinationLat` + `destinationLng` for the
+/// classic "Go to place" navigation.
+///
+/// Multi-waypoint mode — pass `waypoints` (a list of PlaceWaypoint structs)
+/// for the Tour/Trip screen, which draws an OSRM route through every
+/// stop sequentially.
+class PlaceWaypoint {
+  final double lat;
+  final double lng;
+  final String name;
+  const PlaceWaypoint({
+    required this.lat,
+    required this.lng,
+    required this.name,
+  });
+}
 
 class MapScreen extends StatefulWidget {
   final double destinationLat;
   final double destinationLng;
   final String placeName;
 
+  /// Optional multi-waypoint tour/trip route. When non-null, takes
+  /// precedence over the single-destination fields.
+  final List<PlaceWaypoint>? waypoints;
+
   const MapScreen({
     super.key,
     required this.destinationLat,
     required this.destinationLng,
     required this.placeName,
+    this.waypoints,
   });
 
   @override
@@ -28,6 +51,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   static const double _reRouteMeters = 50.0;
+  static const int _osrmMaxWaypoints = 25;
 
   LatLng? _currentLocation;
   List<LatLng> _routePoints = [];
@@ -40,6 +64,17 @@ class _MapScreenState extends State<MapScreen> {
   // Last fetched route origin so we can decide whether the user has moved
   // far enough to justify a new OSRM request.
   LatLng? _lastRouteOrigin;
+
+  List<PlaceWaypoint> get _effectiveWaypoints =>
+      (widget.waypoints != null && widget.waypoints!.isNotEmpty)
+          ? widget.waypoints!
+          : [
+              PlaceWaypoint(
+                lat: widget.destinationLat,
+                lng: widget.destinationLng,
+                name: widget.placeName,
+              ),
+            ];
 
   @override
   void initState() {
@@ -78,7 +113,6 @@ class _MapScreenState extends State<MapScreen> {
         return;
       }
 
-      // Make sure location services are on at all.
       final serviceOn = await Geolocator.isLocationServiceEnabled();
       if (!serviceOn) {
         if (!mounted) return;
@@ -99,8 +133,6 @@ class _MapScreenState extends State<MapScreen> {
       await _getRoute();
       _centerOnUser(force: true);
 
-      // Subscribe to subsequent updates so the blue dot walks with the user
-      // and the route re-renders when they stray more than 50 m off path.
       _positionSub = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
@@ -155,20 +187,43 @@ class _MapScreenState extends State<MapScreen> {
   double _deg2rad(double d) => d * math.pi / 180.0;
 
   Future<void> _getRoute() async {
-    if (_currentLocation == null) return;
+    final waypoints = _effectiveWaypoints;
+    if (_currentLocation == null && waypoints.isEmpty) return;
 
-    final start =
-        '${_currentLocation!.longitude},${_currentLocation!.latitude}';
-    final end = '${widget.destinationLng},${widget.destinationLat}';
+    // OSRM URL: /route/v1/driving/lng,lat;lng,lat;...?geometries=geojson
+    // We need (start=user) → waypoint1 → waypoint2 → … → waypointN.
+    // Cap at _osrmMaxWaypoints waypoints (OSRM limits free tier to ~25).
+    final coords = <String>[];
+    if (_currentLocation != null) {
+      coords.add(
+        '${_currentLocation!.longitude},${_currentLocation!.latitude}',
+      );
+    }
+    for (final w in waypoints) {
+      if (coords.length >= _osrmMaxWaypoints) break;
+      coords.add('${w.lng},${w.lat}');
+    }
+    if (coords.length < 2) {
+      // No user location and only one destination — straight line.
+      if (!mounted) return;
+      setState(() {
+        _routePoints = waypoints
+            .map((w) => LatLng(w.lat, w.lng))
+            .toList(growable: false);
+        _isLoading = false;
+      });
+      return;
+    }
 
     final url = Uri.parse(
-      'https://router.project-osrm.org/route/v1/driving/$start;$end?geometries=geojson&overview=full',
+      'https://router.project-osrm.org/route/v1/driving/'
+      '${coords.join(';')}?geometries=geojson&overview=full',
     );
 
     try {
       final response = await http
           .get(url, headers: const {'User-Agent': 'com.example.streetlore/1.0'})
-          .timeout(const Duration(seconds: 12));
+          .timeout(const Duration(seconds: 15));
       if (!mounted) return;
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -180,10 +235,10 @@ class _MapScreenState extends State<MapScreen> {
           });
           return;
         }
-        final List<dynamic> coords =
+        final List<dynamic> coordsJson =
             routes[0]['geometry']['coordinates'] as List<dynamic>;
         setState(() {
-          _routePoints = coords
+          _routePoints = coordsJson
               .map((c) => LatLng(c[1] as double, c[0] as double))
               .toList();
           _isLoading = false;
@@ -205,17 +260,15 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Free public OSM tiles (no API key needed). Carto's basemaps.cartocdn.com
-    // now requires a key, so we use the OSM standard tiles for both themes.
-    // OSM attribution is rendered by FlutterMap automatically when the
-    // userAgentPackageName is set on TileLayer (see below).
     final String mapTileUrl =
         'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-
-    final destination = LatLng(widget.destinationLat, widget.destinationLng);
+    final waypoints = _effectiveWaypoints;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.placeName), centerTitle: true),
+      appBar: AppBar(
+        title: Text(widget.placeName),
+        centerTitle: true,
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage.isNotEmpty && _routePoints.isEmpty
@@ -231,12 +284,20 @@ class _MapScreenState extends State<MapScreen> {
               : FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
-                    initialCenter: _currentLocation ?? destination,
-                    initialZoom: 14.0,
+                    initialCenter: _currentLocation ??
+                        (waypoints.isNotEmpty
+                            ? LatLng(
+                                waypoints.first.lat,
+                                waypoints.first.lng,
+                              )
+                            : const LatLng(0, 0)),
+                    initialZoom: waypoints.length > 1 ? 12.0 : 14.0,
                     minZoom: 3.0,
                     maxZoom: 18.0,
                     onMapReady: () {
-                      if (_currentLocation != null) {
+                      if (waypoints.length > 1 && _routePoints.isNotEmpty) {
+                        _fitToRoute();
+                      } else if (_currentLocation != null) {
                         _centerOnUser(force: true);
                       }
                     },
@@ -259,6 +320,10 @@ class _MapScreenState extends State<MapScreen> {
                         ],
                       ),
 
+                    // Stop markers — only show as numbered pins in tour
+                    // mode so the user can see the sequence. In single-
+                    // destination mode the destination still uses the
+                    // classic red pin.
                     MarkerLayer(
                       markers: [
                         if (_currentLocation != null)
@@ -289,20 +354,105 @@ class _MapScreenState extends State<MapScreen> {
                               ),
                             ),
                           ),
-                        Marker(
-                          point: destination,
-                          width: 40,
-                          height: 40,
-                          child: const Icon(
-                            Icons.location_on,
-                            color: Colors.red,
-                            size: 40,
+                        if (waypoints.length > 1)
+                          for (var i = 0; i < waypoints.length; i++)
+                            Marker(
+                              point: LatLng(
+                                waypoints[i].lat,
+                                waypoints[i].lng,
+                              ),
+                              width: 40,
+                              height: 40,
+                              child: _NumberedPin(
+                                index: i + 1,
+                                total: waypoints.length,
+                                isLast: i == waypoints.length - 1,
+                              ),
+                            )
+                        else
+                          Marker(
+                            point: LatLng(
+                              waypoints.first.lat,
+                              waypoints.first.lng,
+                            ),
+                            width: 40,
+                            height: 40,
+                            child: const Icon(
+                              Icons.location_on,
+                              color: Colors.red,
+                              size: 40,
+                            ),
                           ),
-                        ),
                       ],
+                    ),
+
+                    // Map data attribution — required by OSM license.
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        color: Colors.white.withValues(alpha: 0.7),
+                        child: const Text(
+                          '© OpenStreetMap contributors',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.black87,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     ),
                   ],
                 ),
+    );
+  }
+
+  void _fitToRoute() {
+    if (_routePoints.isEmpty) return;
+    final bounds = LatLngBounds.fromPoints(_routePoints);
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.all(48),
+      ),
+    );
+  }
+}
+
+class _NumberedPin extends StatelessWidget {
+  final int index;
+  final int total;
+  final bool isLast;
+  const _NumberedPin({
+    required this.index,
+    required this.total,
+    required this.isLast,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isLast ? AppColors.success : AppColors.primary;
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Icon(Icons.location_on, color: color, size: 40),
+        Positioned(
+          top: 8,
+          child: Text(
+            '$index',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

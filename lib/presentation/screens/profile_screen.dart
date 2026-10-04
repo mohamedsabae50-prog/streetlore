@@ -1021,6 +1021,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
 
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
+
+              // v1.0.71 — map / photo attributions, required by the
+              // OSM and Wikimedia Commons licenses.
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: context.bgAlt,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: context.borderColor),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline_rounded,
+                              size: 16,
+                              color: context.textSec,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              context.tr('attributions_title'),
+                              style: TextStyle(
+                                color: context.textPri,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          context.tr('attribution_osm'),
+                          style: TextStyle(
+                            color: context.textSec,
+                            fontSize: 11,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          context.tr('attribution_wikimedia'),
+                          style: TextStyle(
+                            color: context.textSec,
+                            fontSize: 11,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
           Positioned.fill(child: ConfettiOverlay(controller: _confetti)),

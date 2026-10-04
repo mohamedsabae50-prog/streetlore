@@ -239,7 +239,7 @@ class _NavBarItem extends StatelessWidget {
                 child: Icon(
                   isSelected ? item.activeIcon : item.icon,
                   key: ValueKey(isSelected),
-                  color: isSelected ? AppColors.primary : context.textSec,
+                  color: isSelected ? context.navSelected : context.textSec,
                   size: 24,
                 ),
               ),
@@ -250,7 +250,7 @@ class _NavBarItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                color: isSelected ? AppColors.primary : context.textSec,
+                color: isSelected ? context.navSelected : context.textSec,
               ),
               child: Text(context.tr(item.label)),
             ),

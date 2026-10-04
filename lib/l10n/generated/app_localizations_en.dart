@@ -12,6 +12,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about_app => 'About Streetlore';
 
   @override
+  String get attributions_title => 'Attributions';
+
+  @override
+  String get attribution_osm =>
+      'Map tiles © OpenStreetMap contributors — open data under the Open Database License (ODbL).';
+
+  @override
+  String get attribution_wikimedia =>
+      "Place photos courtesy of Wikimedia Commons, used under each file's stated free-license terms.";
+
+  @override
   String get about_place => 'About this place';
 
   @override

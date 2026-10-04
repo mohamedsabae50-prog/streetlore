@@ -172,6 +172,21 @@ class AppStrings {
       'ar': 'شكرًا لدعمك! ',
     },
     'about_app': {'en': 'About Streetlore', 'ar': 'عن ستريت لور'},
+    'attributions_title': {
+      'en': 'Attributions',
+      'ar': 'حقوق الملكية',
+    },
+    'attribution_osm': {
+      'en':
+          'Map tiles © OpenStreetMap contributors — open data under the Open Database License (ODbL).',
+      'ar': 'خرائط © مساهمو OpenStreetMap — بيانات مفتوحة برخصة ODbL.',
+    },
+    'attribution_wikimedia': {
+      'en':
+          'Place photos courtesy of Wikimedia Commons, used under each file’s stated free-license terms.',
+      'ar':
+          'صور الأماكن من Wikimedia Commons، مستخدمة وفق شروط الرخصة المفتوحة لكل صورة.',
+    },
     'version': {'en': 'Version 2.0.0', 'ar': 'الإصدار 2.0.0'},
     'saved_cleared': {
       'en': 'All saved places cleared.',

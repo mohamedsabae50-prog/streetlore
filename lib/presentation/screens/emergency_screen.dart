@@ -455,7 +455,7 @@ const _emergencyNumbers = <_Emerg>[
   _Emerg('Tourist Police', '126', Color(0xFF8B5CF6), Icons.tour_rounded),
   _Emerg(
     'Coast Guard',
-    '122',
+    '1295',
     Color(0xFF0EA5E9),
     Icons.directions_boat_rounded,
   ),

@@ -12,6 +12,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get about_app => 'عن ستريت لور';
 
   @override
+  String get attributions_title => 'حقوق الملكية';
+
+  @override
+  String get attribution_osm =>
+      'خرائط © مساهمو OpenStreetMap — بيانات مفتوحة برخصة ODbL.';
+
+  @override
+  String get attribution_wikimedia =>
+      'صور الأماكن من Wikimedia Commons، مستخدمة وفق شروط الرخصة المفتوحة لكل صورة.';
+
+  @override
   String get about_place => 'عن هذا المكان';
 
   @override

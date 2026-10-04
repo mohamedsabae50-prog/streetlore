@@ -104,6 +104,24 @@ abstract class AppLocalizations {
   /// **'About Streetlore'**
   String get about_app;
 
+  /// Translation key: attributions_title
+  ///
+  /// In en, this message translates to:
+  /// **'Attributions'**
+  String get attributions_title;
+
+  /// Translation key: attribution_osm
+  ///
+  /// In en, this message translates to:
+  /// **'Map tiles © OpenStreetMap contributors — open data under the Open Database License (ODbL).'**
+  String get attribution_osm;
+
+  /// Translation key: attribution_wikimedia
+  ///
+  /// In en, this message translates to:
+  /// **'Place photos courtesy of Wikimedia Commons, used under each file's stated free-license terms.'**
+  String get attribution_wikimedia;
+
   /// Translation key: about_place
   ///
   /// In en, this message translates to:

@@ -62,7 +62,11 @@ class AuthProvider extends ChangeNotifier {
       ownerId == null ||
       ownerId.isEmpty ||
       ownerId == 'me' ||
-      ownerId == currentUserId;
+      ownerId == currentUserId ||
+      // v1.0.71 — admins can moderate (delete) any user-uploaded photo
+      // even when they aren't the owner. Combined with the matching
+      // RLS policy in 2026_10_04_security_hardening.sql this is safe.
+      isAdmin;
 
   AuthProvider() {
     if (AppConfig.supabaseEnabled) {
