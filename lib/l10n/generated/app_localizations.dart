@@ -1760,6 +1760,42 @@ abstract class AppLocalizations {
   /// **'Visited'**
   String get trip_visited_badge;
 
+  /// Translation key: trip_tab_saved
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get trip_tab_saved;
+
+  /// Translation key: trip_tab_visited
+  ///
+  /// In en, this message translates to:
+  /// **'Visited'**
+  String get trip_tab_visited;
+
+  /// Translation key: trip_tab_saved_empty_title
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing saved yet'**
+  String get trip_tab_saved_empty_title;
+
+  /// Translation key: trip_tab_saved_empty_body
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the bookmark on any place to save it here for later.'**
+  String get trip_tab_saved_empty_body;
+
+  /// Translation key: trip_tab_visited_empty_title
+  ///
+  /// In en, this message translates to:
+  /// **'No visits yet'**
+  String get trip_tab_visited_empty_title;
+
+  /// Translation key: trip_tab_visited_empty_body
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the flag on any place to check in — your visits show up here.'**
+  String get trip_tab_visited_empty_body;
+
   /// Translation key: no_badges
   ///
   /// In en, this message translates to:

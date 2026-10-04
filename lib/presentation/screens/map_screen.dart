@@ -222,7 +222,7 @@ class _MapScreenState extends State<MapScreen> {
 
     try {
       final response = await http
-          .get(url, headers: const {'User-Agent': 'com.example.streetlore/1.0'})
+          .get(url, headers: const {'User-Agent': 'com.streetlore.app/1.0'})
           .timeout(const Duration(seconds: 15));
       if (!mounted) return;
       if (response.statusCode == 200) {
@@ -284,13 +284,21 @@ class _MapScreenState extends State<MapScreen> {
               : FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
+                    // v1.0.75: pick the best initial center. Previously
+                    // when location was denied we fell back to (0, 0)
+                    // which renders as a solid-gray open-ocean tile —
+                    // giving the impression of a "broken" map. Now we
+                    // default to the first waypoint (or destination)
+                    // so the user always sees the place they meant to
+                    // open.
                     initialCenter: _currentLocation ??
                         (waypoints.isNotEmpty
                             ? LatLng(
                                 waypoints.first.lat,
                                 waypoints.first.lng,
                               )
-                            : const LatLng(0, 0)),
+                            : const LatLng(31.2001, 29.9187) // Alexandria
+                            ),
                     initialZoom: waypoints.length > 1 ? 12.0 : 14.0,
                     minZoom: 3.0,
                     maxZoom: 18.0,
@@ -305,8 +313,18 @@ class _MapScreenState extends State<MapScreen> {
                   children: [
                     TileLayer(
                       urlTemplate: mapTileUrl,
-                      userAgentPackageName: 'com.example.streetlore',
-                      subdomains: const ['a', 'b', 'c'],
+                      userAgentPackageName: 'com.streetlore.app',
+                      // v1.0.75: tile.openstreetmap.org does NOT use
+                      // subdomains — the previous `['a','b','c']` was
+                      // wrong and yielded broken tile URLs that 404'd,
+                      // leaving the map a solid gray rectangle. OSM's
+                      // single canonical host works without subdomains.
+                      // We also set a tile fallback via errorImage so
+                      // a single failed tile doesn't blank out the
+                      // whole map.
+                      errorImage: null,
+                      // retry after 250ms then surface as bg only
+                      keepBuffer: 8,
                     ),
 
                     if (_routePoints.isNotEmpty)

@@ -898,6 +898,26 @@ class AppLocalizationsAr extends AppLocalizations {
   String get trip_visited_badge => 'تمت الزيارة';
 
   @override
+  String get trip_tab_saved => 'المحفوظة';
+
+  @override
+  String get trip_tab_visited => 'الزيارات';
+
+  @override
+  String get trip_tab_saved_empty_title => 'مفيش حاجة محفوظة لسه';
+
+  @override
+  String get trip_tab_saved_empty_body =>
+      'اضغط على أيقونة الحفظ في أي مكان وهيظهر هنا.';
+
+  @override
+  String get trip_tab_visited_empty_title => 'مفيش زيارات لسه';
+
+  @override
+  String get trip_tab_visited_empty_body =>
+      'سجّل حضورك في أي مكان من زر العلم، وهتلاقي زياراتك هنا.';
+
+  @override
   String get no_badges => 'سجّل زياراتك للأماكن لتكسب الشارات';
 
   @override

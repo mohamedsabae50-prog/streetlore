@@ -906,6 +906,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trip_visited_badge => 'Visited';
 
   @override
+  String get trip_tab_saved => 'Saved';
+
+  @override
+  String get trip_tab_visited => 'Visited';
+
+  @override
+  String get trip_tab_saved_empty_title => 'Nothing saved yet';
+
+  @override
+  String get trip_tab_saved_empty_body =>
+      'Tap the bookmark on any place to save it here for later.';
+
+  @override
+  String get trip_tab_visited_empty_title => 'No visits yet';
+
+  @override
+  String get trip_tab_visited_empty_body =>
+      'Tap the flag on any place to check in — your visits show up here.';
+
+  @override
   String get no_badges => 'Check in at places to earn badges';
 
   @override

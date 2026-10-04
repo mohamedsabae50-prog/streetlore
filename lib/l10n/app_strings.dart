@@ -401,6 +401,26 @@ class AppStrings {
     'trip_visited': {'en': 'Visited', 'ar': 'تمت زيارتها'},
     'trip_planned': {'en': 'Planned', 'ar': 'في الرحلة'},
     'trip_visited_badge': {'en': 'Visited', 'ar': 'تمت الزيارة'},
+    'trip_tab_saved': {'en': 'Saved', 'ar': 'المحفوظة'},
+    'trip_tab_visited': {'en': 'Visited', 'ar': 'الزيارات'},
+    'trip_tab_saved_empty_title': {
+      'en': 'Nothing saved yet',
+      'ar': 'مفيش حاجة محفوظة لسه',
+    },
+    'trip_tab_saved_empty_body': {
+      'en':
+          'Tap the bookmark on any place to save it here for later.',
+      'ar': 'اضغط على أيقونة الحفظ في أي مكان وهيظهر هنا.',
+    },
+    'trip_tab_visited_empty_title': {
+      'en': 'No visits yet',
+      'ar': 'مفيش زيارات لسه',
+    },
+    'trip_tab_visited_empty_body': {
+      'en':
+          'Tap the flag on any place to check in — your visits show up here.',
+      'ar': 'سجّل حضورك في أي مكان من زر العلم، وهتلاقي زياراتك هنا.',
+    },
     'share_app': {'en': 'Share Streetlore', 'ar': 'شارك ستريت لور'},
     'copy_link': {'en': 'Copy Link', 'ar': 'نسخ الرابط'},
     'message': {'en': 'Message', 'ar': 'رسالة'},

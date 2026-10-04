@@ -493,9 +493,15 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                         label: saved
                                             ? context.tr('saved')
                                             : context.tr('save'),
+                                        // v1.0.75 — was hardcoded to
+                                        // AppColors.primary (navy) which
+                                        // disappeared in dark mode.
                                         color: saved
-                                            ? AppColors.ratingGold
-                                            : AppColors.primary,
+                                            ? context.quickActionGold
+                                            : context.quickActionPrimary,
+                                        backgroundColor: saved
+                                            ? context.quickActionGoldBg
+                                            : context.quickActionPrimaryBg,
                                         onTap: () {
                                           HapticFeedback.lightImpact();
                                           pp.toggleSave(place);
@@ -513,7 +519,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     label: _isVisited
                                         ? context.tr('visited')
                                         : context.tr('checkin'),
-                                    color: AppColors.success,
+                                    // v1.0.75 — theme-adaptive green so the
+                                    // visited/check-in button reads in dark.
+                                    color: context.quickActionSuccess,
+                                    backgroundColor:
+                                        context.quickActionSuccessBg,
                                     onTap: () async {
                                       HapticFeedback.mediumImpact();
                                       final wasVisited = _isVisited;
@@ -784,7 +794,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                   child: _QuickAction(
                                     icon: Icons.directions_rounded,
                                     label: context.tr('go'),
-                                    color: AppColors.primary,
+                                    // v1.0.75 — adaptive Go color (navy
+                                    // in light, light blue in dark).
+                                    color: context.quickActionPrimary,
+                                    backgroundColor:
+                                        context.quickActionPrimaryBg,
                                     onTap: _openMaps,
                                   ),
                                 ),
@@ -805,8 +819,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                               )
                                             : context.tr('download_offline'),
                                         color: cached
-                                            ? const Color(0xFF10B981)
-                                            : const Color(0xFF7C3AED),
+                                            // v1.0.75 — adaptive green/purple
+                                            // for the offline-download chip.
+                                            ? context.quickActionSuccess
+                                            : context.quickActionPurple,
+                                        backgroundColor: cached
+                                            ? context.quickActionSuccessBg
+                                            : context.quickActionPurpleBg,
                                         onTap: () async {
                                           HapticFeedback.lightImpact();
                                           if (cached) {
@@ -1060,16 +1079,22 @@ class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
+  final Color? backgroundColor;
   final VoidCallback onTap;
   const _QuickAction({
     required this.icon,
     required this.label,
     required this.color,
+    this.backgroundColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    // v1.0.75 — explicit backgroundColor parameter so callers can pick
+    // a theme-appropriate tint. Falls back to a 12% overlay of the
+    // icon color (works on light backgrounds but is too dark in dark).
+    final bg = backgroundColor ?? color.withValues(alpha: 0.12);
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -1078,7 +1103,7 @@ class _QuickAction extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: bg,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 24),
@@ -1086,7 +1111,12 @@ class _QuickAction extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              // v1.0.75 — readable text color in both themes.
+              color: context.textPri,
+            ),
           ),
         ],
       ),
