@@ -56,3 +56,10 @@ strip_comments.ps1
 
 # Locally downloaded APK artifacts (release artefacts come from CI, not commits)
 streetlore-*.apk
+
+# Local keytool output (the production keystore itself lives in
+# GitHub Actions secrets, not in the repo)
+keystore.b64
+*.jks
+*.keystore
+release_v2.keystore
