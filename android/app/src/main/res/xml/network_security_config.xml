@@ -19,8 +19,5 @@
         <domain includeSubdomains="true">router.project-osrm.org</domain>
         <domain includeSubdomains="true">tbivoxyxclwjjspwsgvc.supabase.co</domain>
         <domain includeSubdomains="true">generativelanguage.googleapis.com</domain>
-        <pin-set expiration="2030-01-01">
-            <!-- System default trust anchors only — no custom pin. -->
-        </pin-set>
     </domain-config>
 </network-security-config>
