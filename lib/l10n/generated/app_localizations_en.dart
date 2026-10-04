@@ -20,7 +20,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get attribution_wikimedia =>
-      "Place photos courtesy of Wikimedia Commons, used under each file's stated free-license terms.";
+      'Place photos courtesy of Wikimedia Commons, used under each file\'s stated free-license terms.';
 
   @override
   String get about_place => 'About this place';
@@ -547,9 +547,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passion_banner_sub =>
-      'Your guide to the deepest stories behind every city. Free, ad-free, '
-      'and made with care. Every recommendation here is written by someone '
-      'who knows the place up close.';
+      'Your guide to the deepest stories behind every city. Free, ad-free, and made with care. Every recommendation here is written by someone who knows the place up close.';
 
   @override
   String get free_entry => 'Free entry';

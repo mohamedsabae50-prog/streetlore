@@ -47,15 +47,33 @@ class PlacePhoto {
     'likedBy': likedBy.toList(),
   };
 
+  /// v1.0.72 — snake_case payload for Supabase. Required because the
+  /// `place_photos.user_id` column is snake_case (not camelCase like the
+  /// mobile local cache key).
+  Map<String, dynamic> toSupabaseInsert() => {
+    'id': id,
+    'place_id': placeId,
+    'user_id': userId,
+    'user_name': userName,
+    'image_url': imageUrl,
+    'caption': caption,
+    'likes': likes,
+    'created_at': date.toIso8601String(),
+  };
+
   factory PlacePhoto.fromMap(Map<String, dynamic> map) => PlacePhoto(
     id: map['id'] as String,
-    placeId: map['placeId'] as String,
-    userId: map['userId'] as String,
-    userName: map['userName'] as String,
-    imageUrl: map['imageUrl'] as String,
+    placeId: (map['placeId'] ?? map['place_id']) as String,
+    // v1.0.72 — accept both camelCase (local cache) and snake_case
+    // (Supabase) for userId/user_id so the same model works for both.
+    userId: ((map['userId'] ?? map['user_id']) as String?) ?? '',
+    userName: (map['userName'] ?? map['user_name']) as String,
+    imageUrl: (map['imageUrl'] ?? map['image_url']) as String,
     caption: (map['caption'] as String?) ?? '',
     likes: (map['likes'] as int?) ?? 0,
-    date: DateTime.parse(map['date'] as String),
+    date: DateTime.parse(
+      (map['date'] ?? map['created_at']) as String,
+    ),
     likedBy: ((map['likedBy'] as List<dynamic>?) ?? const [])
         .cast<String>()
         .toSet(),

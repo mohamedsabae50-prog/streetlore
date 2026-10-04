@@ -119,7 +119,7 @@ abstract class AppLocalizations {
   /// Translation key: attribution_wikimedia
   ///
   /// In en, this message translates to:
-  /// **'Place photos courtesy of Wikimedia Commons, used under each file's stated free-license terms.'**
+  /// **'Place photos courtesy of Wikimedia Commons, used under each file\'s stated free-license terms.'**
   String get attribution_wikimedia;
 
   /// Translation key: about_place
@@ -1097,13 +1097,13 @@ abstract class AppLocalizations {
   /// Translation key: passion_banner_title
   ///
   /// In en, this message translates to:
-  /// **'A non-profit passion project'**
+  /// **'A compass for every story worth telling'**
   String get passion_banner_title;
 
   /// Translation key: passion_banner_sub
   ///
   /// In en, this message translates to:
-  /// **'Built out of love for Alexandria — and for you. Free, ad-free, and made for fun. Every recommendation is hand-curated by someone who actually lives here.'**
+  /// **'Your guide to the deepest stories behind every city. Free, ad-free, and made with care. Every recommendation here is written by someone who knows the place up close.'**
   String get passion_banner_sub;
 
   /// Translation key: free_entry

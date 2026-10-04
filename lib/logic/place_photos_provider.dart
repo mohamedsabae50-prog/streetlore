@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import '../core/services/supabase_service.dart';
 import '../data/models/place_photo.dart';
 
 class PlacePhotosProvider extends ChangeNotifier {
@@ -54,6 +55,11 @@ class PlacePhotosProvider extends ChangeNotifier {
     await prefs.setString(_kKey, jsonEncode(all));
   }
 
+  /// v1.0.72 — also push the photo to Supabase so the moderation view
+  /// in the Admin Panel (and the in-app gallery across devices) can see
+  /// it. We do this best-effort: local cache is the source of truth for
+  /// the device, and the remote row carries the `user_id` so RLS can
+  /// enforce owner-scoped policies.
   Future<PlacePhoto> addPhoto({
     required String placeId,
     required String userName,
@@ -61,10 +67,11 @@ class PlacePhotosProvider extends ChangeNotifier {
     String? userId,
     String caption = '',
   }) async {
+    final effectiveUserId = (userId ?? _currentUserId).trim();
     final photo = PlacePhoto(
       id: _uuid.v4(),
       placeId: placeId,
-      userId: userId ?? _currentUserId,
+      userId: effectiveUserId,
       userName: userName,
       imageUrl: imageUrl,
       caption: caption,
@@ -73,6 +80,23 @@ class PlacePhotosProvider extends ChangeNotifier {
     _byPlace.putIfAbsent(placeId, () => []).insert(0, photo);
     await _save();
     notifyListeners();
+
+    if (effectiveUserId.isNotEmpty) {
+      try {
+        final svc = SupabaseService.instance;
+        if (svc.clientOrNull != null) {
+          await svc.clientOrNull!
+              .from('place_photos')
+              .insert(photo.toSupabaseInsert());
+        }
+      } catch (e) {
+        debugPrint(
+          'PlacePhotosProvider.addPhoto: remote push failed for photo '
+          '${photo.id}: $e (local cache still saved)',
+        );
+      }
+    }
+
     return photo;
   }
 
