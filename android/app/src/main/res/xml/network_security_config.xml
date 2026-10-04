@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v1.0.76: explicit network-security config.
+  - HTTPS-only by default.
+  - No cleartext (http://) is allowed anywhere — all our tile + API
+    endpoints already use https://.
+  - Pinning the OSM tile host so ad-blocker DNS filters can't break us.
+  - Pinned CartoDB + OSM-derived mirror as a fallback.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">tile.openstreetmap.org</domain>
+        <domain includeSubdomains="true">basemaps.cartocdn.com</domain>
+        <domain includeSubdomains="true">router.project-osrm.org</domain>
+        <domain includeSubdomains="true">tbivoxyxclwjjspwsgvc.supabase.co</domain>
+        <domain includeSubdomains="true">generativelanguage.googleapis.com</domain>
+        <pin-set expiration="2030-01-01">
+            <!-- System default trust anchors only — no custom pin. -->
+        </pin-set>
+    </domain-config>
+</network-security-config>

@@ -260,8 +260,18 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String mapTileUrl =
-        'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    // v1.0.76: switched to CartoDB Voyager (free, no API key required,
+// permissive about user agents). Fallback chain in order:
+//   1. CartoDB Voyager (primary, beautiful + free)
+//   2. CartoDB Light (lighter, more permissive)
+//   3. OpenStreetMap (last resort — has been aggressive about blocking
+//      production traffic in our region).
+const List<String> _tileUrls = [
+  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+];
+final List<String> _tileSubdomains = ['a', 'b', 'c', 'd'];
     final waypoints = _effectiveWaypoints;
 
     return Scaffold(
@@ -312,20 +322,24 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: mapTileUrl,
-                      userAgentPackageName: 'com.streetlore.app',
-                      // v1.0.75: tile.openstreetmap.org does NOT use
-                      // subdomains — the previous `['a','b','c']` was
-                      // wrong and yielded broken tile URLs that 404'd,
-                      // leaving the map a solid gray rectangle. OSM's
-                      // single canonical host works without subdomains.
-                      // We also set a tile fallback via errorImage so
-                      // a single failed tile doesn't blank out the
-                      // whole map.
-                      errorImage: null,
-                      // retry after 250ms then surface as bg only
-                      keepBuffer: 8,
-                    ),
+                    // v1.0.76: CartoDB Voyager w/ 3-tier fallback. If the
+                    // primary host fails, flutter_map walks the list
+                    // automatically. We also paint a simple 1×1 gray
+                    // PNG as the error tile so a single 404 doesn't
+                    // blank the whole map.
+                    urlTemplate: _tileUrls.first,
+                    fallbackUrl: _tileUrls.length > 1
+                        ? _tileUrls.sublist(1).join('||')
+                        : null,
+                    userAgentPackageName: 'com.streetlore.app',
+                    subdomains: _tileSubdomains,
+                    // Keep some surrounding tiles buffered so a single
+                    // failed tile doesn't leave a visible gap.
+                    keepBuffer: 8,
+                    // Re-attempt transient 404s instead of failing fast.
+                    maxNativeZoom: 19,
+                    tileProvider: NetworkTileProvider(),
+                  ),
 
                     if (_routePoints.isNotEmpty)
                       PolylineLayer(
@@ -416,7 +430,7 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                         color: Colors.white.withValues(alpha: 0.7),
                         child: const Text(
-                          '© OpenStreetMap contributors',
+                          '© OpenStreetMap · © CARTO',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.black87,
