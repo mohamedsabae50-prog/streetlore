@@ -259,7 +259,7 @@ AVAILABLE PLACES (use these placeId values exactly):
       );
     }
     return AiTripPlan(
-      title: (json['title'] as String?) ?? 'Your Alexandria Adventure',
+      title: (json['title'] as String?) ?? 'Your Local Adventure',
       summary: (json['summary'] as String?) ?? '',
       totalDays: (json['totalDays'] as num?)?.toInt() ?? days.length,
       estimatedBudget: (json['estimatedBudget'] as String?) ?? r'$$',

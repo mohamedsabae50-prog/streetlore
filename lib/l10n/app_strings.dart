@@ -116,8 +116,8 @@ class AppStrings {
       'ar': 'مخطط الرحلات الذكي',
     },
     'ai_planner_sub': {
-      'en': "Describe your ideal Alexandria trip and we'll plan it.",
-      'ar': 'صف رحلتك المثالية في إسكندرية وهنخططها لك.',
+      'en': "Describe your ideal trip and we'll plan it.",
+      'ar': 'صف رحلتك المثالية وهنخططها لك.',
     },
 
     'lb_subtitle': {
@@ -627,8 +627,8 @@ class AppStrings {
     'journal_update_memory': {'en': 'Update memory', 'ar': 'حدّث الذكرى'},
 
     'ai_sugg_1': {
-      'en': 'Two days in Alexandria, mid-budget, love history and seafood',
-      'ar': 'يومين في إسكندرية، ميزانية متوسطة، بحب التاريخ والسي فود',
+      'en': 'Two days, mid-budget, love history and seafood',
+      'ar': 'يومين، ميزانية متوسطة، بحب التاريخ والسي فود',
     },
     'ai_sugg_2': {
       'en': 'One relaxed day focused on cafés and the corniche',
@@ -655,8 +655,8 @@ class AppStrings {
       'ar': 'قولنا عن رحلتك',
     },
     'ai_prompt_hint': {
-      'en': 'e.g. two days in Alexandria, mid-budget, love history',
-      'ar': 'مثال: يومين في إسكندرية، ميزانية متوسطة، بحب التاريخ',
+      'en': 'e.g. two days, mid-budget, love history',
+      'ar': 'مثال: يومين، ميزانية متوسطة، بحب التاريخ',
     },
     'ai_generating': {'en': 'Generating...', 'ar': 'جارٍ التخطيط...'},
     'ai_generate': {'en': 'Generate Itinerary', 'ar': 'خطّط رحلتي'},
