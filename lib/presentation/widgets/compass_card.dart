@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -42,7 +41,7 @@ class _CompassCardState extends State<CompassCard>
   late final AnimationController _iconCtrl;
   late final Animation<double> _iconRotation;
 
-  double _headingDeg = 0;
+  double _headingDeg = 0.0;
   double _qiblaBearingDeg = _kDefaultQiblaBearingDeg;
   bool _qiblaAvailable = false;
   bool _lastWorking = false;
@@ -101,7 +100,11 @@ class _CompassCardState extends State<CompassCard>
     _compassSub = CompassService.instance.headingStream.listen((deg) {
       if (!mounted) return;
       final working = CompassService.instance.isActuallyWorking;
-      _headingDeg = deg;
+      // v1.0.82 — NaN/infinity guard. Some Android compass sensors
+      // emit NaN during the first ~200ms of calibration, which used
+      // to crash the TweenAnimationBuilder (sin/cos of NaN).
+      final safeDeg = deg.isFinite ? deg : 0.0;
+      _headingDeg = safeDeg;
       final prevWorking = _lastWorking;
       _lastWorking = working;
       if (prevWorking != working) {
@@ -117,8 +120,9 @@ class _CompassCardState extends State<CompassCard>
 
     _qiblaSub = QiblaService.instance.bearingStream.listen((bearing) {
       if (!mounted) return;
+      final safeBearing = bearing.isFinite ? bearing : _kDefaultQiblaBearingDeg;
       setState(() {
-        _qiblaBearingDeg = bearing;
+        _qiblaBearingDeg = safeBearing;
         _qiblaAvailable = true;
       });
     });
@@ -127,7 +131,9 @@ class _CompassCardState extends State<CompassCard>
       if (!mounted) return;
       setState(() {
         _qiblaAvailable = QiblaService.instance.hasBearing;
-        _qiblaBearingDeg = QiblaService.instance.lastBearingDeg;
+        _qiblaBearingDeg = QiblaService.instance.lastBearingDeg.isFinite
+            ? QiblaService.instance.lastBearingDeg
+            : _kDefaultQiblaBearingDeg;
       });
     });
   }
@@ -183,18 +189,110 @@ class _CompassCardState extends State<CompassCard>
               ),
               child: Row(
                 children: [
-                  _CompassDisc(
-                    pulseCtrl: _pulseCtrl,
-                    pulse: _pulse,
-                    headingArrow: _CompassArrow(
-                      working: hasCompass,
-                      headingDeg: _headingDeg,
-                      iconCtrl: _iconCtrl,
-                      iconRotation: _iconRotation,
-                    ),
-                    qiblaMarker: _QiblaMarker(
-                      bearingDeg: qiblaBearingForArrow,
-                      headingDeg: _headingDeg,
+                  SizedBox(
+                    width: 84,
+                    height: 84,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // v1.0.82 — static gradient disc with the
+                        // N label baked in. Outlined because the
+                        // pulse glow sits in a SEPARATE layer on top
+                        // so only the glow rebuilds on pulse ticks
+                        // (the previous version wrapped the whole
+                        // card in Listenable.merge which rebuilt
+                        // everything at 60fps).
+                        Container(
+                          width: 84,
+                          height: 84,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFF4F46E5),
+                                Color(0xFF22C55E),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Stack(
+                            children: [
+                              Positioned(
+                                top: 4,
+                                left: 0,
+                                right: 0,
+                                child: Center(
+                                  child: Text(
+                                    'N',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // v1.0.82 — Pulse glow isolated to its own
+                        // AnimatedBuilder over BoxShadow only. The
+                        // gradient disc above is NEVER rebuilt for
+                        // pulse ticks anymore.
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: AnimatedBuilder(
+                              animation: _pulseCtrl,
+                              builder: (context, _) {
+                                final p = _pulse.value;
+                                return DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    borderRadius:
+                                        BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color.fromARGB(
+                                          (p * 32).clamp(0, 32).toInt(),
+                                          79,
+                                          70,
+                                          229,
+                                        ),
+                                        blurRadius: 16 + p * 8,
+                                        spreadRadius: p * 2,
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        // v1.0.82 — Heading arrow. Smoothly interpolates
+                        // between successive compass sensor readings via
+                        // TweenAnimationBuilder. Only this 30px Icon is
+                        // rebuilt during the 80ms tween settle; the
+                        // outer disc and N label are untouched.
+                        _HeadingArrow(
+                          working: hasCompass,
+                          headingDeg: _headingDeg,
+                          iconCtrl: _iconCtrl,
+                          iconRotation: _iconRotation,
+                        ),
+                        // v1.0.82 — Qibla box. Uses the same safe
+                        // layout as before (SizedBox 84x84 +
+                        // Transform.rotate + Align(topCenter) +
+                        // Padding). The SizedBox keeps the rotated
+                        // child bounded, so the box traces the rim
+                        // of the disc without escaping the 84x84
+                        // bounds. TweenAnimationBuilder gives the
+                        // same smooth interpolation as the heading
+                        // arrow.
+                        _QiblaArrow(
+                          bearingDeg: qiblaBearingForArrow,
+                          headingDeg: _headingDeg,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -283,106 +381,18 @@ class _CompassCardState extends State<CompassCard>
   }
 }
 
-/// Static outer disc. The disc itself never rotates. Only the inner
-/// arrow icon and Qibla marker rotate. The pulse glow is animated
-/// here (isolated) so the rest of the card doesn't rebuild on every
-/// pulse tick.
-class _CompassDisc extends StatelessWidget {
-  final AnimationController pulseCtrl;
-  final Animation<double> pulse;
-  final Widget headingArrow;
-  final Widget qiblaMarker;
-
-  const _CompassDisc({
-    required this.pulseCtrl,
-    required this.pulse,
-    required this.headingArrow,
-    required this.qiblaMarker,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 84,
-      height: 84,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 84,
-            height: 84,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4F46E5), Color(0xFF22C55E)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                const Positioned(
-                  top: 4,
-                  child: Text(
-                    'N',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                headingArrow,
-              ],
-            ),
-          ),
-          // Pulse glow: only the boxShadow widget rebuilds on every
-          // pulse tick. The rest of the disc is unaffected.
-          Positioned.fill(
-            child: IgnorePointer(
-              child: AnimatedBuilder(
-                animation: pulseCtrl,
-                builder: (context, _) {
-                  final p = pulse.value;
-                  return DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color.fromARGB(
-                              (p * 32).clamp(0, 32).toInt(), 79, 70, 229),
-                          blurRadius: 16 + p * 8,
-                          spreadRadius: p * 2,
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          // Qibla marker sits above the disc with a clip so it never
-          // escapes the 84x84 bounds even at extreme bearings.
-          Positioned.fill(child: ClipRect(child: qiblaMarker)),
-        ],
-      ),
-    );
-  }
-}
-
 /// Heading arrow. Smoothly interpolates between successive compass
 /// sensor readings via TweenAnimationBuilder — when a new heading
 /// arrives, the previous tween's end becomes the new tween's begin
 /// and the arrow glides to the new value over _kHeadingTweenDuration.
-/// Only this widget rebuilds on a heading change.
-class _CompassArrow extends StatelessWidget {
+/// Only this widget rebuilds during a heading change.
+class _HeadingArrow extends StatelessWidget {
   final bool working;
   final double headingDeg;
   final AnimationController iconCtrl;
   final Animation<double> iconRotation;
 
-  const _CompassArrow({
+  const _HeadingArrow({
     required this.working,
     required this.headingDeg,
     required this.iconCtrl,
@@ -412,23 +422,21 @@ class _CompassArrow extends StatelessWidget {
   }
 }
 
-/// Qibla direction marker. Stays clipped to the disc's 84x84 square
-/// (the parent wraps us in ClipRect) and smoothly interpolates as the
-/// heading changes. Position is computed from cos/sin so the marker
-/// traces the rim of the disc as the phone rotates.
-class _QiblaMarker extends StatelessWidget {
+/// Qibla direction marker. Same safe layout as v1.0.80:
+/// SizedBox(84x84) bounds the rotated child so the yellow box
+/// traces the rim of the disc without escaping the 84x84 square.
+/// The marker rotates via Transform.rotate by the relative bearing
+/// (bearingDeg - headingDeg), so it always points toward Mecca
+/// relative to the phone's current heading. TweenAnimationBuilder
+/// smooths the rotation as the heading stream emits new values.
+class _QiblaArrow extends StatelessWidget {
   final double bearingDeg;
   final double headingDeg;
 
-  const _QiblaMarker({
+  const _QiblaArrow({
     required this.bearingDeg,
     required this.headingDeg,
   });
-
-  static const double _discCenter = 42.0;
-  static const double _markerRadius = 30.0;
-  static const double _markerW = 18.0;
-  static const double _markerH = 22.0;
 
   @override
   Widget build(BuildContext context) {
@@ -438,22 +446,18 @@ class _QiblaMarker extends StatelessWidget {
       duration: _kHeadingTweenDuration,
       curve: Curves.linear,
       builder: (context, value, _) {
-        final rad = value * (pi / 180.0);
-        final dx = math.sin(rad);
-        final dy = -math.cos(rad);
-        final left = _discCenter + dx * _markerRadius - _markerW / 2;
-        final top = _discCenter + dy * _markerRadius - _markerH / 2;
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned(
-              left: left,
-              top: top,
-              width: _markerW,
-              height: _markerH,
-              child: Transform.rotate(
-                angle: rad,
+        return Transform.rotate(
+          angle: value * (pi / 180.0),
+          child: SizedBox(
+            width: 84,
+            height: 84,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 2),
                 child: Container(
+                  width: 18,
+                  height: 22,
                   decoration: BoxDecoration(
                     color: const Color(0xFFEAB308),
                     borderRadius: BorderRadius.circular(4),
@@ -476,7 +480,7 @@ class _QiblaMarker extends StatelessWidget {
                 ),
               ),
             ),
-          ],
+          ),
         );
       },
     );

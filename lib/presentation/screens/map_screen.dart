@@ -97,18 +97,27 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeMap();
-    // Watchdog: if the init pipeline doesn't clear loading within 20s,
-    // force-clear it so the user at least sees the error message instead
-    // of an infinite spinner. Belt-and-suspenders alongside the
-    // per-call timeouts inside _initializeMap.
-    Future.delayed(const Duration(seconds: 20), () {
+    // v1.0.82 — top-level safety net. Any exception that escapes
+    // _initializeMap's internal try-catch chain (a sync exception
+    // before the first await, a PlatformException, etc.) is caught
+    // here and surfaced as a user-visible error rather than
+    // crashing the isolate.
+    _initializeMap().catchError((Object e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = context.tr('map_err_location');
+      });
+    });
+    // v1.0.82 — watchdog. If the spinner hasn't cleared within 15s
+    // (e.g., Geolocator never resolved), force-clear it so the user
+    // at least sees the error message instead of a frozen spinner.
+    Future.delayed(const Duration(seconds: 15), () {
       if (!mounted || !_isLoading) return;
       setState(() {
         _isLoading = false;
         if (_errorMessage.isEmpty) {
-          _errorMessage =
-              'Map initialization is taking too long. Please retry.';
+          _errorMessage = 'Map initialization is taking too long. Please retry.';
         }
       });
     });
@@ -123,11 +132,9 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _initializeMap() async {
     try {
-      LocationPermission permission =
-          await Geolocator.checkPermission().timeout(const Duration(seconds: 5));
+      LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission()
-            .timeout(const Duration(seconds: 30));
+        permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           if (!mounted) return;
           setState(() {
@@ -147,8 +154,7 @@ class _MapScreenState extends State<MapScreen> {
         return;
       }
 
-      final serviceOn =
-          await Geolocator.isLocationServiceEnabled().timeout(const Duration(seconds: 3));
+      final serviceOn = await Geolocator.isLocationServiceEnabled();
       if (!serviceOn) {
         if (!mounted) return;
         setState(() {
@@ -158,10 +164,14 @@ class _MapScreenState extends State<MapScreen> {
         return;
       }
 
+      // v1.0.82 — timeLimit on getCurrentPosition so a hung GPS
+      // (indoors, no fix, etc.) surfaces as TimeoutException instead
+      // of pending forever. The watchdog timer in initState is the
+      // backup if even timeLimit somehow doesn't fire.
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
-      ).timeout(const Duration(seconds: 12));
+        timeLimit: const Duration(seconds: 12),
+      );
       if (!mounted) return;
       _currentLocation = LatLng(position.latitude, position.longitude);
       _lastRouteOrigin = _currentLocation;
@@ -175,13 +185,14 @@ class _MapScreenState extends State<MapScreen> {
           distanceFilter: 10,
         ),
       ).listen(_onPositionUpdate);
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Location initialization timed out (${e.message ?? e.toString()}).';
+        _errorMessage =
+            'Could not determine your location. Please make sure GPS is enabled and try again.';
       });
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -351,14 +362,26 @@ const List<String> tileSubdomains = ['a', 'b', 'c'];
                     // default to the first waypoint (or destination)
                     // so the user always sees the place they meant to
                     // open.
-                    initialCenter: _currentLocation ??
-                        (waypoints.isNotEmpty
-                            ? LatLng(
-                                waypoints.first.lat,
-                                waypoints.first.lng,
-                              )
-                            : const LatLng(31.2001, 29.9187) // Alexandria
-                            ),
+                    // v1.0.82 — isFinite guards. NaN/Infinity on a
+                    // waypoint or _currentLocation would crash the
+                    // tile projection math.
+                    initialCenter: () {
+                      final loc = _currentLocation;
+                      if (loc != null &&
+                          loc.latitude.isFinite &&
+                          loc.longitude.isFinite) {
+                        return loc;
+                      }
+                      if (waypoints.isNotEmpty &&
+                          waypoints.first.lat.isFinite &&
+                          waypoints.first.lng.isFinite) {
+                        return LatLng(
+                          waypoints.first.lat,
+                          waypoints.first.lng,
+                        );
+                      }
+                      return const LatLng(31.2001, 29.9187); // Alexandria
+                    }(),
                     initialZoom: waypoints.length > 1 ? 12.0 : 14.0,
                     minZoom: 3.0,
                     maxZoom: 18.0,
