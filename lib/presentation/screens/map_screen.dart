@@ -10,7 +10,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/constants/app_colors.dart';
-import '../../l10n/app_strings.dart';
 
 /// v1.0.80 — VISIBLE error tile (semi-opaque magenta). A failed
 /// tile now shows as a small magenta square instead of invisibly
@@ -72,9 +71,7 @@ class _MapScreenState extends State<MapScreen> {
 
   LatLng? _currentLocation;
   List<LatLng> _routePoints = [];
-  bool _isLoading = true;
   String _firstTileError = '';
-  String _errorMessage = '';
 
   StreamSubscription<Position>? _positionSub;
   final MapController _mapController = MapController();
@@ -97,30 +94,12 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    // v1.0.82 — top-level safety net. Any exception that escapes
-    // _initializeMap's internal try-catch chain (a sync exception
-    // before the first await, a PlatformException, etc.) is caught
-    // here and surfaced as a user-visible error rather than
-    // crashing the isolate.
-    _initializeMap().catchError((Object e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage = context.tr('map_err_location');
-      });
-    });
-    // v1.0.82 — watchdog. If the spinner hasn't cleared within 15s
-    // (e.g., Geolocator never resolved), force-clear it so the user
-    // at least sees the error message instead of a frozen spinner.
-    Future.delayed(const Duration(seconds: 15), () {
-      if (!mounted || !_isLoading) return;
-      setState(() {
-        _isLoading = false;
-        if (_errorMessage.isEmpty) {
-          _errorMessage = 'Map initialization is taking too long. Please retry.';
-        }
-      });
-    });
+    // v1.0.84 — render the map IMMEDIATELY. GPS fetch happens in the
+    // background. When/if it succeeds, setState updates the user
+    // marker and centers the map. If GPS fails (timeout, denied, no
+    // service), it doesn't matter because the map is already visible
+    // and interactive.
+    _initLocationInBackground();
   }
 
   @override
@@ -130,44 +109,19 @@ class _MapScreenState extends State<MapScreen> {
     super.dispose();
   }
 
-  Future<void> _initializeMap() async {
+  Future<void> _initLocationInBackground() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (!mounted) return;
-          setState(() {
-            _isLoading = false;
-            _errorMessage = context.tr('map_err_location_denied');
-          });
-          return;
-        }
       }
-
-      if (permission == LocationPermission.deniedForever) {
-        if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-          _errorMessage = context.tr('map_err_location_denied_forever');
-        });
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
         return;
       }
-
-      final serviceOn = await Geolocator.isLocationServiceEnabled();
-      if (!serviceOn) {
-        if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-          _errorMessage = context.tr('map_err_location');
-        });
+      if (!await Geolocator.isLocationServiceEnabled()) {
         return;
       }
-
-      // v1.0.82 — timeLimit on getCurrentPosition so a hung GPS
-      // (indoors, no fix, etc.) surfaces as TimeoutException instead
-      // of pending forever. The watchdog timer in initState is the
-      // backup if even timeLimit somehow doesn't fire.
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 12),
@@ -175,29 +129,20 @@ class _MapScreenState extends State<MapScreen> {
       if (!mounted) return;
       _currentLocation = LatLng(position.latitude, position.longitude);
       _lastRouteOrigin = _currentLocation;
-
-      await _getRoute();
+      setState(() {});
+      // Fire-and-forget the route + center updates.
+      unawaited(_getRoute());
       _centerOnUser(force: true);
-
       _positionSub = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
           distanceFilter: 10,
         ),
       ).listen(_onPositionUpdate);
-    } on TimeoutException {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage =
-            'Could not determine your location. Please make sure GPS is enabled and try again.';
-      });
     } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage = context.tr('map_err_location');
-      });
+      // Silently fail — the map is already rendered with fallback
+      // center. Don't surface anything as an error since the user can
+      // still see and interact with the map.
     }
   }
 
@@ -263,7 +208,6 @@ class _MapScreenState extends State<MapScreen> {
         _routePoints = waypoints
             .map((w) => LatLng(w.lat, w.lng))
             .toList(growable: false);
-        _isLoading = false;
       });
       return;
     }
@@ -282,10 +226,6 @@ class _MapScreenState extends State<MapScreen> {
         final data = json.decode(response.body);
         final routes = data['routes'] as List?;
         if (routes == null || routes.isEmpty) {
-          setState(() {
-            _isLoading = false;
-            _errorMessage = context.tr('map_err_route');
-          });
           return;
         }
         final List<dynamic> coordsJson =
@@ -294,20 +234,11 @@ class _MapScreenState extends State<MapScreen> {
           _routePoints = coordsJson
               .map((c) => LatLng(c[1] as double, c[0] as double))
               .toList();
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = context.tr('map_err_route');
         });
       }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage = context.tr('map_err_offline');
-      });
+    } catch (_) {
+      // Silently ignore route failures — destination pin still
+      // shows on the map, user can re-tap the Go button if needed.
     }
   }
 
@@ -340,19 +271,7 @@ const List<String> tileSubdomains = ['a', 'b', 'c'];
         title: Text(widget.placeName),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty && _routePoints.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      _errorMessage,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                )
-              : FlutterMap(
+      body: FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
                     // v1.0.75: pick the best initial center. Previously
