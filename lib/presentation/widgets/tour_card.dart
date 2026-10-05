@@ -111,7 +111,9 @@ class TourCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      tour.duration,
+                      tour.localizedDuration(
+                        Localizations.localeOf(context).languageCode,
+                      ),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -214,7 +216,9 @@ class TourCard extends StatelessWidget {
                 child: _buildTag(
                   context,
                   icon: Icons.timer_outlined,
-                  label: tour.duration,
+                  label: tour.localizedDuration(
+                    Localizations.localeOf(context).languageCode,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),

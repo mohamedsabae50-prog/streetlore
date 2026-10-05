@@ -25,7 +25,8 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
   }
 
   Future<void> _bootstrap() async {
-    await AITourGuideService.instance.start(widget.place);
+    final locale = Localizations.localeOf(context).languageCode;
+    await AITourGuideService.instance.start(widget.place, locale: locale);
     if (mounted) setState(() => _started = true);
   }
 

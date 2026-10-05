@@ -182,56 +182,55 @@ class _CompassCardState extends State<CompassCard>
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Outer rotating disc
-                            Transform.rotate(
-                              angle: hasCompass
-                                  ? discRotation
-                                  : _iconRotation.value,
-                              child: Container(
-                                width: 84,
-                                height: 84,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF4F46E5),
-                                      Color(0xFF22C55E)
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
+                            // Static outer disc (gradient + N label stay still)
+                            Container(
+                              width: 84,
+                              height: 84,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF4F46E5),
+                                    Color(0xFF22C55E)
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color.fromARGB(
+                                        glowAlpha, 79, 70, 229),
+                                    blurRadius: 16 + pulseValue * 8,
+                                    spreadRadius: pulseValue * 2,
                                   ),
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Color.fromARGB(
-                                          glowAlpha, 79, 70, 229),
-                                      blurRadius: 16 + pulseValue * 8,
-                                      spreadRadius: pulseValue * 2,
-                                    ),
-                                  ],
-                                ),
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    const Positioned(
-                                      top: 4,
-                                      child: Text(
-                                        'N',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w900,
-                                        ),
-                                      ),
-                                    ),
-                                    const Center(
-                                      child: Icon(
-                                        Icons.navigation_rounded,
+                                ],
+                              ),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  const Positioned(
+                                    top: 4,
+                                    child: Text(
+                                      'N',
+                                      style: TextStyle(
                                         color: Colors.white,
-                                        size: 30,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
                                       ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  // Only the arrow icon inside rotates
+                                  Transform.rotate(
+                                    angle: hasCompass
+                                        ? discRotation
+                                        : _iconRotation.value,
+                                    child: const Icon(
+                                      Icons.navigation_rounded,
+                                      color: Colors.white,
+                                      size: 30,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             // Qibla arrow indicator (NOT rotated with disc;

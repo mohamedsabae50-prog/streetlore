@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/ai_tour_guide_service.dart';
-
+import '../../l10n/app_strings.dart';
 
 
 
@@ -20,15 +20,16 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   final ScrollController _scroll = ScrollController();
   final FocusNode _focus = FocusNode();
 
-  final List<_Msg> _messages = [
-    _Msg(
-      role: _Role.bot,
-      text:
-          "Hi! I'm your Alexandria tourism expert. Ask me anything about "
-          'places to visit, food, history, hidden gems, or tips for getting '
-          'around the city.',
-    ),
-  ];
+  late final String _welcomeText = context.tr('ai_guide_welcome_en');
+
+  final List<_Msg> _messages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _messages.add(_Msg(role: _Role.bot, text: _welcomeText));
+  }
+
   bool _busy = false;
 
   @override
@@ -49,7 +50,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
     _input.clear();
     _scrollToBottom();
     try {
-      final reply = await AITourGuideService.askAlexandria(text);
+      final reply = await AITourGuideService.askLocalGuide(text);
       if (!mounted) return;
       setState(() {
         _messages.add(_Msg(role: _Role.bot, text: reply));
@@ -96,12 +97,12 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.travel_explore_rounded, color: Colors.white),
             SizedBox(width: 10),
             Text(
-              'Alexandria AI Guide',
+              context.tr('ai_guide_general_title'),
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -135,7 +136,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Thinking about Alexandria...',
+                    context.tr('ai_guide_thinking'),
                     style: TextStyle(
                       color: context.textSec,
                       fontSize: 12,
@@ -270,8 +271,7 @@ class _Composer extends StatelessWidget {
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => onSend(),
               decoration: InputDecoration(
-                hintText:
-                    'Ask about Alexandria — places, food, history...',
+                hintText: context.tr('ai_guide_hint'),
                 filled: true,
                 fillColor: context.bgColor,
                 border: OutlineInputBorder(

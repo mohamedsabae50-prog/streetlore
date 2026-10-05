@@ -68,7 +68,27 @@ class AppStrings {
     'quick_prayer': {'en': 'Prayer', 'ar': 'الصلاة'},
     'quick_badges': {'en': 'Badges', 'ar': 'إنجازات'},
     'quick_routes': {'en': 'Routes', 'ar': 'مسارات'},
-    'ai_tour_guide': {'en': 'AI Tour Guide', 'ar': 'دليل سياحي ذكي'},
+    'ai_tour_guide': {'en': 'Streetlore AI Guide', 'ar': 'دليل ستريت لور الذكي'},
+    'ai_guide_general_title': {
+      'en': 'Streetlore AI Guide',
+      'ar': 'دليل ستريت لور الذكي',
+    },
+    'ai_guide_welcome_en': {
+      'en':
+          "Hi! I'm your Streetlore AI Guide. Ask me anything about places to "
+          'visit, food, history, hidden gems, or tips for getting around the city.',
+      'ar':
+          "أهلاً! أنا دليل ستريت لور الذكي. اسألني عن أي حاجة — أماكن للزيارة، "
+          'أكل، تاريخ، جواهر مخفية، أو نصايح للتنقل في المدينة.',
+    },
+    'ai_guide_thinking': {
+      'en': 'Thinking…',
+      'ar': 'بفكر…',
+    },
+    'ai_guide_hint': {
+      'en': 'Ask about places, food, history…',
+      'ar': 'اسأل عن أماكن، أكل، تاريخ…',
+    },
     'max_route_places': {
       'en': 'Max 5 places per route',
       'ar': 'أقصى عدد 5 أماكن في المسار',

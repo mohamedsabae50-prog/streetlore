@@ -40,27 +40,25 @@ class AiService {
   
   
   
-  static const String _alexandriaKnowledge = '''
-ALEXANDRIA — ANCHOR FACTS (always ground answers here):
-- Founded 331 BC by Alexander the Great. Ptolemaic capital. Once the
-  largest city in the ancient world and home to the Lighthouse of
-  Pharos (one of the Seven Wonders).
-- Climate: Mediterranean. Hot dry summers (26-32°C, May-Sep) and mild
-  wet winters (12-18°C, Nov-Feb). Sea breeze moderates heat.
-- Corniche stretches ~30 km along the harbour — best sunset walks.
-- Local currency: Egyptian Pound (EGP). Mid-2024 rate ~50 EGP/USD.
-- Best walking districts: Downtown (Mansheya) for cafes and the
-  Cecil Hotel legacy, Anfushi for seafood and bay views.
-- Famous landmarks: Bibliotheca Alexandrina, Qaitbay Citadel
-  (1480), Pompey's Pillar, Catacombs of Kom El Shoqafa, Montaza
-  Palace gardens, Stanley Bridge, Abu Qir Bay.
-- Signature foods: seafood (sea bass, calamari, shrimp), ful & ta'amiya,
-  alexandrian liver (kibda alexandriya), roz bel laban, ice cream
-  from Azza, mango juice at Abo Youssef.
-- Day-trip options: Rosetta (Rashid) 65 km east, Abu Qir
-  (battlefields + fort) 32 km NE, Wadi El Natrun monasteries 100 km.
-- Rush hours: 8-10 AM and 4-7 PM. Friday is the weekend — expect
-  closures and crowds at mosques mid-day.''';
+  static const String _cityAgnosticKnowledge = '''
+LOCAL GUIDE — CITY-AGNOSTIC TRAVEL PLANNING FACTS:
+  - You are an expert local travel planner who helps users plan trips to
+    whichever city or area they ask about. Do not assume a single city —
+    adapt to the user's prompt and the place list provided below.
+  - Always ground your answers in the place list (id, name, category,
+    description, address, bestTimeToVisit, indoor/outdoor, coordinates)
+    plus your own knowledge of the city the user mentions.
+  - Use the place's description field as your primary source of
+    concrete details (specific food, photo angle, time, neighbourhood).
+  - Climate, currency, transit, food, prayer times and weekend behaviour
+    vary by city — if you know something specific about the city the
+    user is asking about, use it; if you don't, stay generic and offer
+    to look it up.
+  - Famous landmarks and signature foods: cite them by name only when
+    you are confident they exist in the city the user is asking about.
+    Never invent landmarks, neighbourhoods, or restaurants.
+  - Never hard-code any single city in your replies — read the user's
+    prompt to figure out which city they're asking about.''';
 
   Future<AiTripPlan> generateTrip({
     required String prompt,
@@ -94,10 +92,11 @@ ALEXANDRIA — ANCHOR FACTS (always ground answers here):
 
     final bool isArabic = _isArabic(prompt);
 
+    final locale = _isArabic(prompt) ? 'ar' : 'en';
     final placesForContext = availablePlaces
         .map(
           (p) =>
-              '{"id":"${p.id}","name":${jsonEncode(p.nameEn)},"category":"${p.category}","description":${jsonEncode(p.descriptionEn)},"address":${jsonEncode(p.address)},"bestTimeToVisit":${jsonEncode(p.bestTimeToVisit ?? '')},"isIndoor":${p.isIndoor},"lat":${p.lat},"lng":${p.lng}}',
+              '{"id":"${p.id}","name":${jsonEncode(p.localizedName(locale))},"category":"${p.localizedCategory(locale)}","description":${jsonEncode(p.localizedDescription(locale))},"address":${jsonEncode(p.localizedAddress(locale))},"bestTimeToVisit":${jsonEncode(p.bestTimeToVisit ?? '')},"isIndoor":${p.isIndoor},"lat":${p.lat},"lng":${p.lng}}',
         )
         .join(',');
 
@@ -105,12 +104,12 @@ ALEXANDRIA — ANCHOR FACTS (always ground answers here):
 
     final system =
         """
-You are an expert local travel planner who actually lives in Alexandria, Egypt.
+You are an expert local travel planner. You help users plan trips to whichever city or area they're asking about. Adapt to the user's prompt and the available place list.
 Your tone: warm, specific, opinionated — like a friend showing a visitor around.
 NEVER give generic filler. Every note, theme, and tip must mention a real
 detail (time of day, what to eat, which side to photograph from, etc.).
 
-$_alexandriaKnowledge
+$_cityAgnosticKnowledge
 
 USER REQUEST:
 - Prompt: ${jsonEncode(prompt)}
@@ -166,8 +165,8 @@ STRICT RULES:
   photography, budget trip, day trip, etc. Recommendations and notes MUST
   mirror that vibe.
 - "tips" must be 3-5 unique local secrets — not generic ("wear sunscreen").
-  Mention a real Alexandria detail (e.g. "the rooftop of the Sofitel faces
-  the sunset — order a fresh lemon mint at golden hour").
+  Mention a real, concrete local detail from the place's description or
+  from your knowledge of the city — never invent landmarks or venues.
 - Language: respond in the SAME language as the user's prompt
   (${isArabic ? 'Arabic — keep proper nouns in Arabic where natural' : 'English'}).
 - All title / summary / theme / note / tips text must be unique — no repeats.
@@ -478,10 +477,10 @@ AVAILABLE PLACES (use these placeId values exactly):
     return AiTripPlan(
       title: isArabic
           ? 'خطتك لـ $daysHint يوم في الإسكندرية'
-          : 'Your $daysHint-Day Alexandria Plan',
+          : 'Your $daysHint-Day Local Plan',
       summary: isArabic
           ? 'خطة مخصصة لإسكندرية بناءً على طلبك: أماكن مختارة ورتبتها جغرافياً ووقت الذروة علشان كل يوم يكون مشي واحد سلس من الصبح للّهِلة.'
-          : 'A local-style $daysHint-day Alexandria plan built from your '
+          : 'A local-style $daysHint-day plan built from your '
                 'request: hand-picked places, geo-sorted so each day is one '
                 'walkable route from morning to sunset.',
       totalDays: daysHint,
@@ -604,7 +603,7 @@ AVAILABLE PLACES (use these placeId values exactly):
       case 'Streets':
         return isArabic
             ? 'امشي ببطء — أحلى تجارب إسكندرية في تفاصيل الشوارع.'
-            : 'Walk slowly — Alexandrian magic hides in street-level detail.';
+            : 'Walk slowly — local magic hides in street-level detail.';
       default:
         return isArabic
             ? 'وجهة ${p.category} مميزة ومُقيَّمة بعلامة عالية.'

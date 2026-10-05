@@ -213,9 +213,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.travel_explore_rounded),
-        label: const Text(
-          'AI Tour Guide',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        label: Text(
+          context.tr('ai_tour_guide'),
+          style: const TextStyle(fontWeight: FontWeight.w800),
         ),
         onPressed: () {
           HapticFeedback.lightImpact();

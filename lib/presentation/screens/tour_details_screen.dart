@@ -64,21 +64,20 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
     }
     final firstPlace = tour.places.first;
     if (!mounted) return;
+    final locale = Localizations.localeOf(context).languageCode;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => MapScreen(
           destinationLat: firstPlace.lat,
           destinationLng: firstPlace.lng,
-          placeName: tour.title,
+          placeName: tour.localizedTitle(locale),
           waypoints: tour.places
               .map(
                 (p) => PlaceWaypoint(
                   lat: p.lat,
                   lng: p.lng,
-                  name: p.localizedName(
-                    Localizations.localeOf(context).languageCode,
-                  ),
+                  name: p.localizedName(locale),
                 ),
               )
               .toList(growable: false),
@@ -263,7 +262,10 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    tour.duration,
+                                    tour.localizedDuration(
+                                      Localizations.localeOf(context)
+                                          .languageCode,
+                                    ),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
@@ -296,7 +298,9 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                           child: Material(
                             type: MaterialType.transparency,
                             child: Text(
-                              tour.title,
+                              tour.localizedTitle(
+                                Localizations.localeOf(context).languageCode,
+                              ),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 26,
@@ -358,7 +362,10 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                               child: _StatCard(
                                 icon: Icons.access_time_rounded,
                                 label: context.tr('tour_duration'),
-                                value: tour.duration,
+                                value: tour.localizedDuration(
+                                  Localizations.localeOf(context)
+                                      .languageCode,
+                                ),
                                 color: AppColors.primary,
                               ),
                             ),
@@ -397,7 +404,9 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              tour.description,
+                              tour.localizedDescription(
+                                Localizations.localeOf(context).languageCode,
+                              ),
                               style: AppTextStyles.bodyMedium,
                             ),
                           ],
