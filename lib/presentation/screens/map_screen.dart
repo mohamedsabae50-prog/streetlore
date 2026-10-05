@@ -98,6 +98,20 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _initializeMap();
+    // Watchdog: if the init pipeline doesn't clear loading within 20s,
+    // force-clear it so the user at least sees the error message instead
+    // of an infinite spinner. Belt-and-suspenders alongside the
+    // per-call timeouts inside _initializeMap.
+    Future.delayed(const Duration(seconds: 20), () {
+      if (!mounted || !_isLoading) return;
+      setState(() {
+        _isLoading = false;
+        if (_errorMessage.isEmpty) {
+          _errorMessage =
+              'Map initialization is taking too long. Please retry.';
+        }
+      });
+    });
   }
 
   @override
@@ -109,9 +123,11 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _initializeMap() async {
     try {
-      LocationPermission permission = await Geolocator.checkPermission();
+      LocationPermission permission =
+          await Geolocator.checkPermission().timeout(const Duration(seconds: 5));
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        permission = await Geolocator.requestPermission()
+            .timeout(const Duration(seconds: 30));
         if (permission == LocationPermission.denied) {
           if (!mounted) return;
           setState(() {
@@ -131,7 +147,8 @@ class _MapScreenState extends State<MapScreen> {
         return;
       }
 
-      final serviceOn = await Geolocator.isLocationServiceEnabled();
+      final serviceOn =
+          await Geolocator.isLocationServiceEnabled().timeout(const Duration(seconds: 3));
       if (!serviceOn) {
         if (!mounted) return;
         setState(() {
@@ -143,7 +160,8 @@ class _MapScreenState extends State<MapScreen> {
 
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-      );
+        timeLimit: const Duration(seconds: 10),
+      ).timeout(const Duration(seconds: 12));
       if (!mounted) return;
       _currentLocation = LatLng(position.latitude, position.longitude);
       _lastRouteOrigin = _currentLocation;
@@ -157,6 +175,12 @@ class _MapScreenState extends State<MapScreen> {
           distanceFilter: 10,
         ),
       ).listen(_onPositionUpdate);
+    } on TimeoutException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Location initialization timed out (${e.message ?? e.toString()}).';
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
