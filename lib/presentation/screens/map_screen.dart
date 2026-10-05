@@ -12,19 +12,20 @@ import 'package:http/http.dart' as http;
 import '../../core/constants/app_colors.dart';
 import '../../l10n/app_strings.dart';
 
-/// v1.0.78 — 1×1 fully-transparent PNG bytes. Used as the
-/// errorImage fallback so a single failed tile doesn't blank the
-/// whole map with a solid gray block.
-final Uint8List _kTransparentPng = Uint8List.fromList(<int>[
-  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
-  0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR length+tag
-  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // 1x1
-  0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, // 8-bit RGBA
-  0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41, // IDAT length+tag
-  0x54, 0x78, 0x9C, 0x62, 0x00, 0x01, 0x00, 0x00, // zlib stream
-  0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, // (deflate)
-  0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, // IEND
-  0x42, 0x60, 0x82,                                     // CRC
+/// v1.0.80 — VISIBLE error tile (semi-opaque magenta). A failed
+/// tile now shows as a small magenta square instead of invisibly
+/// vanishing. The bytes below are a hand-built minimal 1×1 PNG
+/// (8-bit RGBA, magenta, deflate via zlib).
+final Uint8List _kDebugErrorPng = Uint8List.fromList(<int>[
+  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+  0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+  0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+  0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,
+  0x54, 0x08, 0x99, 0x63, 0xF8, 0xCF, 0xC0, 0xF0,
+  0x9F, 0x01, 0x00, 0x07, 0x82, 0x02, 0x7E, 0xA6,
+  0xDC, 0xD2, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
+  0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
 ]);
 
 /// One-waypoint mode — pass `destinationLat` + `destinationLng` for the
@@ -72,6 +73,7 @@ class _MapScreenState extends State<MapScreen> {
   LatLng? _currentLocation;
   List<LatLng> _routePoints = [];
   bool _isLoading = true;
+  String _firstTileError = '';
   String _errorMessage = '';
 
   StreamSubscription<Position>? _positionSub;
@@ -280,12 +282,22 @@ class _MapScreenState extends State<MapScreen> {
 // user-agent block). Note ESRI uses {z}/{y}/{x} order (not {x}/{y}),
 // and the server is a single canonical host with no subdomains. We
 // keep CartoDB and OSM as fallbacks in case ESRI is ever down.
+// v1.0.80 — CartoDB Voyager primary (no rate-limit, works in Egypt),
+// OSM + ESRI as 2-tier fallbacks. NOTE: the empty subdomain '' that
+// v1.0.78 used to "support" ESRI (which has no {s} placeholder) broke
+// CartoDB and OSM — their {s}.basemaps.cartocdn.com fallback URLs got
+// rewritten to "https://.basemaps.cartocdn.com/..." which is an invalid
+// host. With no valid fallback, when ESRI was blocked we fell back to
+// a fully-broken URL set and the user saw a solid gray map. We now
+// keep subdomains = ['a','b','c'] (CartoDB + OSM only) and rely on
+// the tile ordering to pick ESRI when neither CartoDB nor OSM
+// responds.
 const List<String> _tileUrls = [
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
   'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
 ];
-const List<String> _tileSubdomains = ['', 'a', 'b', 'c', 'd'];
+const List<String> _tileSubdomains = ['a', 'b', 'c'];
     final waypoints = _effectiveWaypoints;
 
     return Scaffold(
@@ -356,10 +368,18 @@ const List<String> _tileSubdomains = ['', 'a', 'b', 'c', 'd'];
                     // (TileImage, Object, StackTrace?) — no coords —
                     // so we just log the error itself.
                     errorTileCallback: (tile, error, stackTrace) {
-                      debugPrint('MapScreen tile ERROR: $error');
+                      final msg = 'tile failed: $error';
+                      debugPrint('MapScreen $msg');
+                      if (mounted && _firstTileError.isEmpty) {
+                        _firstTileError = msg;
+                        setState(() {});
+                      }
                     },
-                    // 1×1 transparent PNG (avoids shipping a binary asset).
-                    errorImage: MemoryImage(_kTransparentPng),
+                    // v1.0.80 — visible magenta 1x1 PNG so a fully-broken
+                    // map reads as a magenta checkerboard instead of
+                    // an invisible gray. (Previously: a transparent PNG
+                    // silently hid every tile failure.)
+                    errorImage: MemoryImage(_kDebugErrorPng),
                   ),
 
                     if (_routePoints.isNotEmpty)
@@ -438,6 +458,49 @@ const List<String> _tileSubdomains = ['', 'a', 'b', 'c', 'd'];
                           ),
                       ],
                     ),
+
+                    // v1.0.80 — visible error banner so a half-elsewhere gray map is
+                    // immediately debuggable. Shows the first tile-failure
+                    // message. Dismissable.
+                    if (_firstTileError.isNotEmpty)
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        right: 12,
+                        child: Material(
+                          color: const Color(0xCC7F1D1D),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.error_outline_rounded,
+                                    color: Colors.white, size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Map tiles failed: $_firstTileError',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.close_rounded,
+                                      color: Colors.white, size: 18),
+                                  onPressed: () => setState(() {
+                                    _firstTileError = '';
+                                  }),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
 
                     // Map data attribution — required by OSM license.
                     Positioned(

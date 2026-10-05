@@ -5,6 +5,14 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/compass_service.dart';
 import '../../core/services/qibla_service.dart';
 
+/// v1.0.80 — Default Qibla bearing for users who haven't granted
+/// location permission. Computed from Alexandria city center
+/// (31.2001 N, 29.9187 E) to Mecca (21.4225 N, 39.8262 E) via the
+/// great-circle initial-bearing formula; rounds to ~135°. The Qibla
+/// arrow stays visible (and roughly accurate) before GPS is ready,
+/// with an "(approx)" tag in the subtitle.
+const double _kDefaultQiblaBearingDeg = 135.0;
+
 class CompassCard extends StatefulWidget {
   const CompassCard({super.key});
 
@@ -26,8 +34,14 @@ class _CompassCardState extends State<CompassCard>
   late final Animation<double> _iconRotation;
 
   double _headingDeg = 0;
-  double _qiblaBearingDeg = 0;
+  // v1.0.80 — heading is a ValueNotifier so the compass stream can
+  // drive the inner arrow's Transform.rotate without triggering a
+  // rebuild of the whole card. The text labels and Qibla indicator
+  // only rebuild when those values actually change.
+  final ValueNotifier<double> _headingNotifier = ValueNotifier<double>(0);
+  double _qiblaBearingDeg = _kDefaultQiblaBearingDeg;
   bool _qiblaAvailable = false;
+  bool _lastWorking = false;
 
   StreamSubscription<double>? _compassSub;
   StreamSubscription<double>? _qiblaSub;
@@ -81,17 +95,28 @@ class _CompassCardState extends State<CompassCard>
     _compassSub = CompassService.instance.headingStream.listen((deg) {
       if (!mounted) return;
       final working = CompassService.instance.isActuallyWorking;
+      // Push the new heading into the notifier. This rebuilds ONLY
+      // the inner icon (via ValueListenableBuilder below), not the
+      // whole compass card.
+      _headingNotifier.value = deg;
+      // Keep _headingDeg in sync for the "Heading · °°" text label.
+      // setState is gated to working-state transitions only — so the
+      // whole card doesn't rebuild on every compass tick.
+      final prevWorking = _lastWorking;
+      _lastWorking = working;
+      _headingDeg = deg;
+      if (prevWorking != working) {
+        setState(() {});
+      }
+      // Manage the intro-loop animation only on transitions.
       final iconShouldSpin = !working && !_iconCtrl.isAnimating;
       final iconShouldStop = working && _iconCtrl.isAnimating;
-      setState(() {
-        _headingDeg = deg;
-        if (iconShouldSpin) {
-          _iconCtrl.repeat();
-        } else if (iconShouldStop) {
-          _iconCtrl.stop();
-          _iconCtrl.value = 0;
-        }
-      });
+      if (iconShouldSpin) {
+        _iconCtrl.repeat();
+      } else if (iconShouldStop) {
+        _iconCtrl.stop();
+        _iconCtrl.value = 0;
+      }
     });
 
     _qiblaSub = QiblaService.instance.bearingStream.listen((bearing) {
@@ -119,6 +144,7 @@ class _CompassCardState extends State<CompassCard>
     _introCtrl.dispose();
     _pulseCtrl.dispose();
     _iconCtrl.dispose();
+    _headingNotifier.dispose();
     super.dispose();
   }
 
@@ -139,16 +165,14 @@ class _CompassCardState extends State<CompassCard>
           final pulseScale = 1.0 + pulseValue * 0.03;
           final glowAlpha = (pulseValue * 32).clamp(0, 32).toInt();
           final hasCompass = CompassService.instance.isActuallyWorking;
-          final angle = _headingDeg * (pi / 180.0);
           final dir = _dirLabel(_headingDeg);
-          // Rotation of the disc = -current heading (so North stays up
-          // when the phone is pointing north).
-          final discRotation = -angle;
-          // Where the Qibla arrow points INSIDE the disc.
-          // qiblaRel = qiblaBearing - headingDeg  (negative = to the left)
-          final qiblaRelDeg = _qiblaAvailable
-              ? (_qiblaBearingDeg - _headingDeg)
-              : 0;
+          // v1.0.80 — Qibla arrow uses a city-center fallback so the
+          // indicator is visible even before location permission is
+          // granted.
+          final qiblaBearingForArrow = _qiblaAvailable
+              ? _qiblaBearingDeg
+              : _kDefaultQiblaBearingDeg;
+          final qiblaRelDeg = qiblaBearingForArrow - _headingDeg;
           return Transform.translate(
             offset: Offset(0, _introOffset.value),
             child: Transform.rotate(
@@ -182,7 +206,9 @@ class _CompassCardState extends State<CompassCard>
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Static outer disc (gradient + N label stay still)
+                            // v1.0.80 — Static outer disc (gradient +
+                            // N label + boxShadow stay still). Only
+                            // the inner arrow icon rotates.
                             Container(
                               width: 84,
                               height: 84,
@@ -219,58 +245,69 @@ class _CompassCardState extends State<CompassCard>
                                       ),
                                     ),
                                   ),
-                                  // Only the arrow icon inside rotates
-                                  Transform.rotate(
-                                    angle: hasCompass
-                                        ? discRotation
-                                        : _iconRotation.value,
-                                    child: const Icon(
-                                      Icons.navigation_rounded,
-                                      color: Colors.white,
-                                      size: 30,
-                                    ),
+                                  // Only the arrow icon inside
+                                  // rotates. v1.0.80 — this
+                                  // ValueListenableBuilder means a
+                                  // heading change rebuilds just
+                                  // this 30-px Icon, not the whole
+                                  // compass row.
+                                  ValueListenableBuilder<double>(
+                                    valueListenable: _headingNotifier,
+                                    builder: (context, hdg, _) {
+                                      final angle = hasCompass
+                                          ? -hdg * (pi / 180.0)
+                                          : _iconRotation.value;
+                                      return Transform.rotate(
+                                        angle: angle,
+                                        child: const Icon(
+                                          Icons.navigation_rounded,
+                                          color: Colors.white,
+                                          size: 30,
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
                             ),
-                            // Qibla arrow indicator (NOT rotated with disc;
-                            // its rotation = qiblaRelDeg)
-                            if (_qiblaAvailable)
-                              Transform.rotate(
-                                angle: qiblaRelDeg * (pi / 180.0),
-                                child: Container(
-                                  width: 84,
-                                  height: 84,
-                                  alignment: Alignment.topCenter,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(top: 1),
-                                    child: Container(
-                                      width: 14,
-                                      height: 18,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFEAB308),
-                                        borderRadius:
-                                            BorderRadius.circular(3),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(0xFFEAB308)
-                                                .withValues(alpha: 0.8),
-                                            blurRadius: 6,
-                                            spreadRadius: 1,
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Center(
-                                        child: Icon(
-                                          Icons.mosque_rounded,
-                                          color: Colors.white,
-                                          size: 11,
+                            // v1.0.80 — Qibla arrow is now always
+                            // shown (falls back to city-center
+                            // bearing if GPS isn't ready yet).
+                            Transform.rotate(
+                              angle: qiblaRelDeg * (pi / 180.0),
+                              child: Container(
+                                width: 84,
+                                height: 84,
+                                alignment: Alignment.topCenter,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 1),
+                                  child: Container(
+                                    width: 14,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEAB308),
+                                      borderRadius:
+                                          BorderRadius.circular(3),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFFEAB308)
+                                              .withValues(alpha: 0.8),
+                                          blurRadius: 6,
+                                          spreadRadius: 1,
                                         ),
+                                      ],
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.mosque_rounded,
+                                        color: Colors.white,
+                                        size: 11,
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
+                            ),
                           ],
                         ),
                       ),
@@ -325,28 +362,29 @@ class _CompassCardState extends State<CompassCard>
                                 height: 1.4,
                               ),
                             ),
-                            if (_qiblaAvailable) ...[
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.mosque_rounded,
-                                    color: Color(0xFFEAB308),
-                                    size: 13,
+                            const SizedBox(height: 4),
+                            // v1.0.80 — always show Qibla row.
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.mosque_rounded,
+                                  color: Color(0xFFEAB308),
+                                  size: 13,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  !_qiblaAvailable
+                                      ? 'Qibla ${_kDefaultQiblaBearingDeg.round()}° (approx)'
+                                      : 'Qibla ${_qiblaBearingDeg.round()}°',
+                                  style: TextStyle(
+                                    color: context.textSec,
+                                    fontSize: 11,
+                                    height: 1.3,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    'Qibla ${_qiblaBearingDeg.round()}°',
-                                    style: TextStyle(
-                                      color: context.textSec,
-                                      fontSize: 11,
-                                      height: 1.3,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
