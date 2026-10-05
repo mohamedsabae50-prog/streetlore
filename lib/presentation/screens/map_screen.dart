@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -10,6 +11,21 @@ import 'package:http/http.dart' as http;
 
 import '../../core/constants/app_colors.dart';
 import '../../l10n/app_strings.dart';
+
+/// v1.0.78 — 1×1 fully-transparent PNG bytes. Used as the
+/// errorImage fallback so a single failed tile doesn't blank the
+/// whole map with a solid gray block.
+final Uint8List _kTransparentPng = Uint8List.fromList(<int>[
+  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
+  0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR length+tag
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // 1x1
+  0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, // 8-bit RGBA
+  0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41, // IDAT length+tag
+  0x54, 0x78, 0x9C, 0x62, 0x00, 0x01, 0x00, 0x00, // zlib stream
+  0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, // (deflate)
+  0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, // IEND
+  0x42, 0x60, 0x82,                                     // CRC
+]);
 
 /// One-waypoint mode — pass `destinationLat` + `destinationLng` for the
 /// classic "Go to place" navigation.
@@ -260,18 +276,16 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // v1.0.76: switched to CartoDB Voyager (free, no API key required,
-// permissive about user agents). Fallback chain in order:
-//   1. CartoDB Voyager (primary, beautiful + free)
-//   2. CartoDB Light (lighter, more permissive)
-//   3. OpenStreetMap (last resort — has been aggressive about blocking
-//      production traffic in our region).
+    // v1.0.78: bulletproof ESRI World Street Map (no rate limit, no
+// user-agent block). Note ESRI uses {z}/{y}/{x} order (not {x}/{y}),
+// and the server is a single canonical host with no subdomains. We
+// keep CartoDB and OSM as fallbacks in case ESRI is ever down.
 const List<String> _tileUrls = [
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
   'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
   'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
 ];
-final List<String> _tileSubdomains = ['a', 'b', 'c', 'd'];
+const List<String> _tileSubdomains = ['', 'a', 'b', 'c', 'd'];
     final waypoints = _effectiveWaypoints;
 
     return Scaffold(
@@ -322,23 +336,30 @@ final List<String> _tileSubdomains = ['a', 'b', 'c', 'd'];
                   ),
                   children: [
                     TileLayer(
-                    // v1.0.76: CartoDB Voyager w/ 3-tier fallback. If the
-                    // primary host fails, flutter_map walks the list
-                    // automatically. We also paint a simple 1×1 gray
+                    // v1.0.78: ESRI + 2-tier fallback. If the primary
+                    // host fails, flutter_map walks the list
+                    // automatically. We also paint a tiny transparent
                     // PNG as the error tile so a single 404 doesn't
-                    // blank the whole map.
+                    // blank the whole map with a solid gray block.
                     urlTemplate: _tileUrls.first,
                     fallbackUrl: _tileUrls.length > 1
                         ? _tileUrls.sublist(1).join('||')
                         : null,
                     userAgentPackageName: 'com.streetlore.app',
                     subdomains: _tileSubdomains,
-                    // Keep some surrounding tiles buffered so a single
-                    // failed tile doesn't leave a visible gap.
                     keepBuffer: 8,
-                    // Re-attempt transient 404s instead of failing fast.
                     maxNativeZoom: 19,
                     tileProvider: NetworkTileProvider(),
+                    // v1.0.78: surface every failed tile in the console
+                    // so a "gray map" is debuggable instead of silent.
+                    // The current flutter_map signature is
+                    // (TileImage, Object, StackTrace?) — no coords —
+                    // so we just log the error itself.
+                    errorTileCallback: (tile, error, stackTrace) {
+                      debugPrint('MapScreen tile ERROR: $error');
+                    },
+                    // 1×1 transparent PNG (avoids shipping a binary asset).
+                    errorImage: MemoryImage(_kTransparentPng),
                   ),
 
                     if (_routePoints.isNotEmpty)

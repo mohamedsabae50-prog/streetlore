@@ -110,19 +110,41 @@ class OfflineStorageService {
   ) async {
     int ok = 0;
     int failed = 0;
+    if (kIsWeb) {
+      return (ok: places.length, failed: 0);
+    }
+    Directory? docs;
+    try {
+      docs = await getApplicationDocumentsDirectory();
+    } catch (e) {
+      debugPrint(
+        'OfflineStorageService.prefetchImages: docs dir failed: $e',
+      );
+    }
+    if (docs == null) {
+      return (ok: 0, failed: places.length);
+    }
     final manager = DefaultCacheManager();
     for (final p in places) {
       final url = p.imageUrl.trim();
-      if (url.isEmpty) {
-        continue;
-      }
+      if (url.isEmpty) continue;
       try {
-        final fileInfo = await manager.downloadFile(url);
-        if (kIsWeb) {
-          
-          
-          ok++;
-        } else if (await fileInfo.file.exists()) {
+        final dir = Directory(
+          '${docs.path}/offline_images/${_safeSegment(p.id)}',
+        );
+        if (!await dir.exists()) {
+          await dir.create(recursive: true);
+        }
+        final ext = _extForUrl(url);
+        final target = File('${dir.path}/image$ext');
+        // v1.0.78 — DefaultCacheManager (used just for the actual
+        // download + ETag handling) is copied into our PERMANENT
+        // directory so the file survives the OS cache wipe and
+        // app reinstalls that preserve the ApplicationDocumentsDirectory.
+        final info = await manager.downloadFile(url);
+        if (await info.file.exists()) {
+          final bytes = await info.file.readAsBytes();
+          await target.writeAsBytes(bytes, flush: true);
           ok++;
         } else {
           failed++;
@@ -138,19 +160,41 @@ class OfflineStorageService {
     return (ok: ok, failed: failed);
   }
 
-  
-  
+  /// v1.0.78 — look up the permanent copy of an image that
+  /// [prefetchImages] wrote. Returns `null` if the file isn't there
+  /// yet. Survives app restarts and OS cache wipes.
   Future<File?> getCachedImageFile(String placeId, String imageUrl) async {
     if (kIsWeb) return null;
     try {
-      final manager = DefaultCacheManager();
-      final info = await manager.getFileFromCache(imageUrl);
-      if (info == null) return null;
-      final f = info.file;
+      final docs = await getApplicationDocumentsDirectory();
+      final dir = Directory(
+        '${docs.path}/offline_images/${_safeSegment(placeId)}',
+      );
+      if (!await dir.exists()) return null;
+      final ext = _extForUrl(imageUrl);
+      final f = File('${dir.path}/image$ext');
       return await f.exists() ? f : null;
     } catch (_) {
       return null;
     }
+  }
+
+  /// v1.0.78 — strip characters that would break a filesystem path.
+  /// Hive keys are often plain integers like "10" / "11" but defensively
+  /// normalize anything that could be hostile.
+  String _safeSegment(String raw) {
+    final cleaned = raw.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    return cleaned.isEmpty ? 'unknown' : cleaned;
+  }
+
+  /// v1.0.78 — file extension for a remote URL. Defaults to `.jpg`.
+  String _extForUrl(String url) {
+    final lower = url.toLowerCase().split('?').first;
+    if (lower.endsWith('.png')) return '.png';
+    if (lower.endsWith('.webp')) return '.webp';
+    if (lower.endsWith('.gif')) return '.gif';
+    if (lower.endsWith('.webm')) return '.webm';
+    return '.jpg';
   }
 
   List<PlaceModel> getCachedPlaces() {
