@@ -68,9 +68,17 @@ class AuthProvider extends ChangeNotifier {
       // RLS policy in 2026_10_04_security_hardening.sql this is safe.
       isAdmin;
 
+  StreamSubscription<AuthState>? _authSub;
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
+
   AuthProvider() {
     if (AppConfig.supabaseEnabled) {
-      Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
         final event = data.event;
         if (event == AuthChangeEvent.signedIn ||
             event == AuthChangeEvent.tokenRefreshed) {
