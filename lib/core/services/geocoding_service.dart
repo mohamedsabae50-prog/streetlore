@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 
@@ -122,6 +123,6 @@ class GeocodingService {
 }
 
 void debugPrintGeocoding(String msg) {
-  
-  print('[GeocodingService] $msg');
+
+  debugPrint('[GeocodingService] $msg');
 }

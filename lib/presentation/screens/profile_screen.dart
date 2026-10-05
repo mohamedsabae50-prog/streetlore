@@ -174,7 +174,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final themeP = context.watch<ThemeProvider>();
     final placeP = context.watch<PlaceProvider>();
     final tourP = context.watch<TourProvider>();
-    final gamification = context.watch<GamificationProvider>();
 
     return Scaffold(
       backgroundColor: context.bgColor,

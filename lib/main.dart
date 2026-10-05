@@ -302,7 +302,7 @@ class _LocaleScope extends StatelessWidget {
       context: context,
       locale: locale,
       child: KeyedSubtree(
-        key: ValueKey<String>('locale_' + locale.languageCode),
+        key: ValueKey<String>('locale_${locale.languageCode}'),
         child: child,
       ),
     );

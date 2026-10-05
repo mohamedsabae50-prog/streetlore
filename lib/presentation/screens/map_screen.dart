@@ -292,12 +292,12 @@ class _MapScreenState extends State<MapScreen> {
 // keep subdomains = ['a','b','c'] (CartoDB + OSM only) and rely on
 // the tile ordering to pick ESRI when neither CartoDB nor OSM
 // responds.
-const List<String> _tileUrls = [
+const List<String> tileUrls = [
   'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
 ];
-const List<String> _tileSubdomains = ['a', 'b', 'c'];
+const List<String> tileSubdomains = ['a', 'b', 'c'];
     final waypoints = _effectiveWaypoints;
 
     return Scaffold(
@@ -353,12 +353,12 @@ const List<String> _tileSubdomains = ['a', 'b', 'c'];
                     // automatically. We also paint a tiny transparent
                     // PNG as the error tile so a single 404 doesn't
                     // blank the whole map with a solid gray block.
-                    urlTemplate: _tileUrls.first,
-                    fallbackUrl: _tileUrls.length > 1
-                        ? _tileUrls.sublist(1).join('||')
+                    urlTemplate: tileUrls.first,
+                    fallbackUrl: tileUrls.length > 1
+                        ? tileUrls.sublist(1).join('||')
                         : null,
                     userAgentPackageName: 'com.streetlore.app',
-                    subdomains: _tileSubdomains,
+                    subdomains: tileSubdomains,
                     keepBuffer: 8,
                     maxNativeZoom: 19,
                     tileProvider: NetworkTileProvider(),

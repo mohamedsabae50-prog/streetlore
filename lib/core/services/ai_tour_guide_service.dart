@@ -82,7 +82,7 @@ LOCAL GUIDE — GENERAL ANCHOR FACTS (use as truth anchors and adapt to whicheve
   place's address, category and description guide the answer.
 
 CURRENT CONTEXT (use this to tailor every answer):
-- Local time: ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} on weekday #${todayWeekday} (weekend: ${isWeekend ? 'yes' : 'no'})
+- Local time: ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} on weekday #$todayWeekday (weekend: ${isWeekend ? 'yes' : 'no'})
 - Rush hour: ${isRushHour ? 'YES — mention traffic' : 'no'}
 - Lunch hour: ${isLunchHour ? 'YES — recommend nearby food' : 'no'}
 - Late night: ${isLateNight ? 'YES — most places are closed' : 'no'}

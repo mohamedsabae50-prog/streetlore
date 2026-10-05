@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../config/app_config.dart';
@@ -299,5 +300,5 @@ class GeminiResult {
 }
 
 void debugPrintGemini(String msg) {
-  print('[GeminiRestClient] $msg');
+  debugPrint('[GeminiRestClient] $msg');
 }
