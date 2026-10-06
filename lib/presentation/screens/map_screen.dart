@@ -68,16 +68,19 @@ class _MapScreenState extends State<MapScreen> {
 
   LatLng? _lastRouteOrigin;
 
-  List<PlaceWaypoint> get _effectiveWaypoints =>
-      (widget.waypoints != null && widget.waypoints!.isNotEmpty)
-          ? widget.waypoints!
-          : [
-              PlaceWaypoint(
-                lat: widget.destinationLat,
-                lng: widget.destinationLng,
-                name: widget.placeName,
-              ),
-            ];
+  List<PlaceWaypoint> get _effectiveWaypoints {
+    final w = widget.waypoints;
+    if (w != null && w.isNotEmpty) {
+      return w;
+    }
+    return [
+      PlaceWaypoint(
+        lat: widget.destinationLat,
+        lng: widget.destinationLng,
+        name: widget.placeName,
+      ),
+    ];
+  }
 
   @override
   void initState() {
@@ -105,7 +108,7 @@ class _MapScreenState extends State<MapScreen> {
         if (serviceOn) {
           final position = await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.high,
-            timeLimit: const Duration(seconds: 5), // Prevent infinite hang
+            timeLimit: const Duration(seconds: 5),
           );
           if (mounted) {
             _currentLocation = LatLng(position.latitude, position.longitude);
@@ -130,7 +133,6 @@ class _MapScreenState extends State<MapScreen> {
 
     if (!mounted) return;
     
-    // Even if location failed, try to get route (will just draw points) and show map
     await _getRoute();
     
     if (mounted) {
@@ -160,9 +162,7 @@ class _MapScreenState extends State<MapScreen> {
     if (_currentLocation == null) return;
     try {
       _mapController.move(_currentLocation!, _mapController.camera.zoom);
-    } catch (_) {
-      // camera not ready yet — ignore
-    }
+    } catch (_) {}
   }
 
   double _distanceMeters(LatLng a, LatLng b) {
@@ -180,25 +180,28 @@ class _MapScreenState extends State<MapScreen> {
   double _deg2rad(double d) => d * math.pi / 180.0;
 
   Future<void> _getRoute() async {
-    final waypoints = _effectiveWaypoints;
+    final List<PlaceWaypoint> waypoints = _effectiveWaypoints;
     if (_currentLocation == null && waypoints.isEmpty) return;
 
     final coords = <String>[];
     if (_currentLocation != null) {
-      coords.add(
-        '${_currentLocation!.longitude},${_currentLocation!.latitude}',
-      );
+      coords.add('${_currentLocation!.longitude},${_currentLocation!.latitude}');
     }
-    for (final w in waypoints) {
+    
+    for (var i = 0; i < waypoints.length; i++) {
+      final w = waypoints[i];
       if (coords.length >= _osrmMaxWaypoints) break;
       coords.add('${w.lng},${w.lat}');
     }
+
     if (coords.length < 2) {
       if (!mounted) return;
       setState(() {
-        _routePoints = waypoints
-            .map((w) => LatLng(w.lat, w.lng))
-            .toList(growable: false);
+        final List<LatLng> fallbackRoute = [];
+        for (var i = 0; i < waypoints.length; i++) {
+          fallbackRoute.add(LatLng(waypoints[i].lat, waypoints[i].lng));
+        }
+        _routePoints = fallbackRoute;
       });
       return;
     }
@@ -213,55 +216,170 @@ class _MapScreenState extends State<MapScreen> {
           .get(url, headers: const {'User-Agent': 'com.streetlore.app/1.0'})
           .timeout(const Duration(seconds: 15));
       if (!mounted) return;
+      
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final routes = data['routes'] as List?;
-        if (routes == null || routes.isEmpty) {
-          setState(() {
-            _errorMessage = context.tr('map_err_route');
-            _routePoints = waypoints
-                .map((w) => LatLng(w.lat, w.lng))
-                .toList(growable: false);
-          });
-          return;
+        final dynamic decoded = json.decode(response.body);
+        if (decoded != null && decoded is Map) {
+          final dynamic routesList = decoded['routes'];
+          if (routesList != null && routesList is List && routesList.isNotEmpty) {
+            final dynamic firstRoute = routesList[0];
+            if (firstRoute != null && firstRoute is Map) {
+              final dynamic geometry = firstRoute['geometry'];
+              if (geometry != null && geometry is Map) {
+                final dynamic coordinates = geometry['coordinates'];
+                if (coordinates != null && coordinates is List) {
+                  final List<LatLng> newRoutePoints = [];
+                  for (var i = 0; i < coordinates.length; i++) {
+                    final dynamic c = coordinates[i];
+                    if (c != null && c is List && c.length >= 2) {
+                      final dynamic lng = c[0];
+                      final dynamic lat = c[1];
+                      if (lng is num && lat is num) {
+                        newRoutePoints.add(LatLng(lat.toDouble(), lng.toDouble()));
+                      }
+                    }
+                  }
+                  setState(() {
+                    _routePoints = newRoutePoints;
+                  });
+                  return; // Success, exit method
+                }
+              }
+            }
+          }
         }
-        final geometry = routes[0]['geometry'];
-        if (geometry != null && geometry['coordinates'] != null) {
-          final List<dynamic> coordsJson = geometry['coordinates'] as List<dynamic>;
-          setState(() {
-            _routePoints = coordsJson
-                .map((c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()))
-                .toList();
-          });
-        }
+        // If we reach here, JSON was malformed
+        throw Exception('Malformed OSRM response');
       } else {
-        setState(() {
-          _errorMessage = context.tr('map_err_route');
-          _routePoints = waypoints
-              .map((w) => LatLng(w.lat, w.lng))
-              .toList(growable: false);
-        });
+        throw Exception('API status ${response.statusCode}');
       }
     } catch (e) {
+      debugPrint('OSRM Error: $e');
       if (!mounted) return;
       setState(() {
-        _errorMessage = context.tr('map_err_offline');
-        _routePoints = waypoints
-            .map((w) => LatLng(w.lat, w.lng))
-            .toList(growable: false);
+        _errorMessage = context.tr('map_err_route');
+        final List<LatLng> fallbackRoute = [];
+        for (var i = 0; i < waypoints.length; i++) {
+          fallbackRoute.add(LatLng(waypoints[i].lat, waypoints[i].lng));
+        }
+        _routePoints = fallbackRoute;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    const List<String> tileUrls = [
+    final List<String> tileUrls = [
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
       'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     ];
-    const List<String> tileSubdomains = ['', 'a', 'b', 'c', 'd'];
-    final waypoints = _effectiveWaypoints;
+    final List<String> tileSubdomains = ['', 'a', 'b', 'c', 'd'];
+    final List<PlaceWaypoint> waypoints = _effectiveWaypoints;
+
+    // Explicitly build marker list without spread operators or inline loops
+    final List<Marker> markerList = [];
+    if (_currentLocation != null) {
+      markerList.add(
+        Marker(
+          point: _currentLocation!,
+          width: 32,
+          height: 32,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.blueAccent,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.navigation, color: Colors.white, size: 14),
+          ),
+        ),
+      );
+    }
+    
+    if (waypoints.length > 1) {
+      for (var i = 0; i < waypoints.length; i++) {
+        markerList.add(
+          Marker(
+            point: LatLng(waypoints[i].lat, waypoints[i].lng),
+            width: 40,
+            height: 40,
+            child: _NumberedPin(
+              index: i + 1,
+              total: waypoints.length,
+              isLast: i == waypoints.length - 1,
+            ),
+          ),
+        );
+      }
+    } else if (waypoints.isNotEmpty) {
+      markerList.add(
+        Marker(
+          point: LatLng(waypoints[0].lat, waypoints[0].lng),
+          width: 40,
+          height: 40,
+          child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+        ),
+      );
+    }
+
+    // Explicitly build children list without spread operators or inline ifs
+    final List<Widget> mapChildren = [];
+    mapChildren.add(
+      TileLayer(
+        urlTemplate: tileUrls[0],
+        fallbackUrl: tileUrls.length > 1 ? tileUrls.sublist(1).join('||') : null,
+        userAgentPackageName: 'com.streetlore.app',
+        subdomains: tileSubdomains,
+        keepBuffer: 8,
+        maxNativeZoom: 19,
+        tileProvider: NetworkTileProvider(),
+        errorTileCallback: (tile, error, stackTrace) {
+          debugPrint('MapScreen tile ERROR: $error');
+        },
+        errorImage: MemoryImage(_kTransparentPng),
+      ),
+    );
+
+    if (_routePoints.isNotEmpty && _routePoints.length > 1) {
+      mapChildren.add(
+        PolylineLayer(
+          polylines: [
+            Polyline(
+              points: _routePoints,
+              color: Colors.blueAccent,
+              strokeWidth: 5.0,
+            ),
+          ],
+        ),
+      );
+    }
+
+    mapChildren.add(MarkerLayer(markers: markerList));
+    
+    mapChildren.add(
+      Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          color: Colors.white.withValues(alpha: 0.7),
+          child: const Text(
+            '© OpenStreetMap · © CARTO',
+            style: TextStyle(fontSize: 11, color: Colors.black87),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -272,136 +390,29 @@ class _MapScreenState extends State<MapScreen> {
           ? const Center(child: CircularProgressIndicator())
           : SizedBox.expand(
               child: FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: _currentLocation ??
-                    (waypoints.isNotEmpty
-                        ? LatLng(waypoints.first.lat, waypoints.first.lng)
-                        : const LatLng(31.2001, 29.9187)),
-                initialZoom: waypoints.length > 1 ? 12.0 : 14.0,
-                minZoom: 3.0,
-                maxZoom: 18.0,
-                onMapReady: () {
-                  if (waypoints.length > 1 && _routePoints.length > 1) {
-                    _fitToRoute();
-                  } else if (_currentLocation != null) {
-                    _centerOnUser(force: true);
-                  } else if (waypoints.isNotEmpty) {
-                    try {
-                      _mapController.move(LatLng(waypoints.first.lat, waypoints.first.lng), 14.0);
-                    } catch (_) {}
-                  }
-                },
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: tileUrls.first,
-                  fallbackUrl: tileUrls.length > 1
-                      ? tileUrls.sublist(1).join('||')
-                      : null,
-                  userAgentPackageName: 'com.streetlore.app',
-                  subdomains: tileSubdomains,
-                  keepBuffer: 8,
-                  maxNativeZoom: 19,
-                  tileProvider: NetworkTileProvider(),
-                  errorTileCallback: (tile, error, stackTrace) {
-                    debugPrint('MapScreen tile ERROR: $error');
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _currentLocation ??
+                      (waypoints.isNotEmpty
+                          ? LatLng(waypoints[0].lat, waypoints[0].lng)
+                          : const LatLng(31.2001, 29.9187)),
+                  initialZoom: waypoints.length > 1 ? 12.0 : 14.0,
+                  minZoom: 3.0,
+                  maxZoom: 18.0,
+                  onMapReady: () {
+                    if (waypoints.length > 1 && _routePoints.length > 1) {
+                      _fitToRoute();
+                    } else if (_currentLocation != null) {
+                      _centerOnUser(force: true);
+                    } else if (waypoints.isNotEmpty) {
+                      try {
+                        _mapController.move(LatLng(waypoints[0].lat, waypoints[0].lng), 14.0);
+                      } catch (_) {}
+                    }
                   },
-                  errorImage: MemoryImage(_kTransparentPng),
                 ),
-                if (_routePoints.isNotEmpty && _routePoints.length > 1)
-                  PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: _routePoints,
-                        color: Colors.blueAccent,
-                        strokeWidth: 5.0,
-                      ),
-                    ],
-                  ),
-                MarkerLayer(
-                  markers: [
-                    if (_currentLocation != null)
-                      Marker(
-                        point: _currentLocation!,
-                        width: 32,
-                        height: 32,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.blueAccent,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 3,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.navigation,
-                            color: Colors.white,
-                            size: 14,
-                          ),
-                        ),
-                      ),
-                    if (waypoints.length > 1)
-                      for (var i = 0; i < waypoints.length; i++)
-                        Marker(
-                          point: LatLng(
-                            waypoints[i].lat,
-                            waypoints[i].lng,
-                          ),
-                          width: 40,
-                          height: 40,
-                          child: _NumberedPin(
-                            index: i + 1,
-                            total: waypoints.length,
-                            isLast: i == waypoints.length - 1,
-                          ),
-                        )
-                    else if (waypoints.isNotEmpty)
-                      Marker(
-                        point: LatLng(
-                          waypoints.first.lat,
-                          waypoints.first.lng,
-                        ),
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Icons.location_on,
-                          color: Colors.red,
-                          size: 40,
-                        ),
-                      ),
-                  ],
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    color: Colors.white.withValues(alpha: 0.7),
-                    child: const Text(
-                      '© OpenStreetMap · © CARTO',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.black87,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+                children: mapChildren,
+              ),
             ),
     );
   }
