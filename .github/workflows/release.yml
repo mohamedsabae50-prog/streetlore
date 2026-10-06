@@ -275,3 +275,21 @@ jobs:
           path: build/app/outputs/bundle/release/streetlore-${{ steps.resolve_tag.outputs.tag }}-arm64.aab
           if-no-files-found: error
           retention-days: 14
+
+      - name: Build Flutter Web bundle
+        run: |
+          set -e
+          flutter build web --release \
+            --base-href=/ \
+            --dart-define-from-file=/tmp/dart_defines.json
+
+      - name: Deploy Web bundle to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: 'streetlore-mavis'
+          user_email: 'streetlore-mavis@users.noreply.github.com'
+          commit_message: 'deploy: web bundle from ${{ steps.resolve_tag.outputs.tag }}'
