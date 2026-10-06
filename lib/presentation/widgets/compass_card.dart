@@ -15,12 +15,6 @@ import '../../core/services/qibla_service.dart';
 /// before GPS is ready, with an "(approx)" tag in the subtitle.
 const double _kDefaultQiblaBearingDeg = 135.0;
 
-/// Smooth-interpolation duration between successive heading samples.
-/// 80ms is short enough to feel instant on a phone compass (~50-60Hz
-/// sensor events) and long enough that the previous frame's Transform
-/// has time to settle before the next tween kicks in.
-const Duration _kHeadingTweenDuration = Duration(milliseconds: 80);
-
 class CompassCard extends StatefulWidget {
   const CompassCard({super.key});
 
@@ -32,11 +26,13 @@ class _CompassCardState extends State<CompassCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _spinCtrl;
 
+  /// Latest heading from the compass sensor. Fed directly into the
+  /// Transform.rotate with NO interpolation — the device sensor is
+  /// already 60Hz, and any tweening fights the stream and drops frames.
   double _headingDeg = 0.0;
   double _qiblaBearingDeg = _kDefaultQiblaBearingDeg;
   bool _qiblaAvailable = false;
-  bool _hasFirstHeading = false;
-  bool _isWorking = false;
+  bool _compassWorking = false;
 
   StreamSubscription<double>? _compassSub;
   StreamSubscription<double>? _qiblaSub;
@@ -47,25 +43,23 @@ class _CompassCardState extends State<CompassCard>
     _spinCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3000),
-    );
+    )..repeat();
 
     CompassService.instance.start();
     _compassSub = CompassService.instance.headingStream.listen((deg) {
       if (!mounted) return;
-      final working = CompassService.instance.isActuallyWorking;
-      // NaN guard — Android compass sensors occasionally emit NaN
-      // during the first ~200ms of calibration.
+      // v1.0.85 — NaN guard. Android compass sensors occasionally
+      // emit NaN during the first ~200ms of calibration.
       final safeDeg = deg.isFinite ? deg : 0.0;
       setState(() {
-        _isWorking = working;
         _headingDeg = safeDeg;
-        _hasFirstHeading = true;
+        _compassWorking = CompassService.instance.isActuallyWorking;
       });
-      if (!working && !_spinCtrl.isAnimating) {
-        _spinCtrl.repeat();
-      } else if (working && _spinCtrl.isAnimating) {
+      if (_compassWorking && _spinCtrl.isAnimating) {
         _spinCtrl.stop();
         _spinCtrl.value = 0;
+      } else if (!_compassWorking && !_spinCtrl.isAnimating) {
+        _spinCtrl.repeat();
       }
     });
 
@@ -125,10 +119,6 @@ class _CompassCardState extends State<CompassCard>
         ),
         child: Row(
           children: [
-            // v1.0.84 — 100% STATIC compass disc. No Transform wrappers,
-            // no intro animation, no pulse glow. Just a plain gradient
-            // square with the N label baked in, the Qibla marker at
-            // the bottom, and only the inner arrow icon rotates.
             SizedBox(
               width: 84,
               height: 84,
@@ -157,26 +147,36 @@ class _CompassCardState extends State<CompassCard>
                       ),
                     ),
                   ),
-                  // Static Qibla marker — pinned to the bottom of the
-                  // disc, NEVER rotates. The user learns to turn
-                  // until the arrow points at this marker (= facing
-                  // Mecca).
                   const Positioned(
                     bottom: 4,
                     left: 0,
                     right: 0,
                     child: Center(child: _QiblaBox()),
                   ),
-                  // ONLY the inner white arrow rotates. TweenAnimation
-                  // Builder smooths between successive sensor readings;
-                  // when compass isn't ready, an AnimationController
-                  // spins the arrow continuously so the user can see
-                  // the disc is alive.
-                  _HeadingArrow(
-                    working: _isWorking && _hasFirstHeading,
-                    headingDeg: _headingDeg,
-                    spinCtrl: _spinCtrl,
-                  ),
+                  // v1.0.85 — ONLY the inner arrow rotates. The
+                  // heading value comes straight from the device
+                  // sensor (60Hz) with NO TweenAnimationBuilder — the
+                  // previous 80ms tween added input lag.
+                  _compassWorking
+                          ? Transform.rotate(
+                              angle: -_headingDeg * (pi / 180.0),
+                              child: const Icon(
+                                Icons.navigation_rounded,
+                                color: Colors.white,
+                                size: 30,
+                              ),
+                            )
+                          : AnimatedBuilder(
+                              animation: _spinCtrl,
+                              builder: (context, _) => Transform.rotate(
+                                angle: _spinCtrl.value * 2 * pi,
+                                child: const Icon(
+                                  Icons.navigation_rounded,
+                                  color: Colors.white,
+                                  size: 30,
+                                ),
+                              ),
+                            ),
                 ],
               ),
             ),
@@ -195,7 +195,7 @@ class _CompassCardState extends State<CompassCard>
                           fontSize: 15,
                         ),
                       ),
-                      if (_isWorking) ...[
+                      if (_compassWorking) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -203,7 +203,8 @@ class _CompassCardState extends State<CompassCard>
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF22C55E).withValues(alpha: 0.18),
+                            color: const Color(0xFF22C55E)
+                                .withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -220,7 +221,7 @@ class _CompassCardState extends State<CompassCard>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    (_isWorking && _hasFirstHeading)
+                    _compassWorking
                         ? '${_headingDeg.round()}° · Heading'
                         : 'Calibrating…',
                     style: TextStyle(
@@ -261,61 +262,6 @@ class _CompassCardState extends State<CompassCard>
   }
 }
 
-/// v1.0.84 — Inner arrow icon. The ONLY rotating widget in the
-/// compass. When the compass sensor is working, TweenAnimationBuilder
-/// smooths between successive heading readings (60fps target). When
-/// the sensor isn't ready (e.g. indoors, no magnetometer), the arrow
-/// spins continuously via AnimationController so the disc looks
-/// alive and the user knows the compass is calibrating.
-class _HeadingArrow extends StatelessWidget {
-  final bool working;
-  final double headingDeg;
-  final AnimationController spinCtrl;
-
-  const _HeadingArrow({
-    required this.working,
-    required this.headingDeg,
-    required this.spinCtrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (working) {
-      return TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: headingDeg, end: headingDeg),
-        duration: _kHeadingTweenDuration,
-        curve: Curves.linear,
-        builder: (context, value, _) {
-          return Transform.rotate(
-            angle: -value * (pi / 180.0),
-            child: const Icon(
-              Icons.navigation_rounded,
-              color: Colors.white,
-              size: 30,
-            ),
-          );
-        },
-      );
-    }
-    return AnimatedBuilder(
-      animation: spinCtrl,
-      builder: (context, _) {
-        return Transform.rotate(
-          angle: spinCtrl.value * 2 * pi,
-          child: const Icon(
-            Icons.navigation_rounded,
-            color: Colors.white,
-            size: 30,
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// v1.0.84 — Static yellow Qibla marker pinned to the bottom of the
-/// compass disc. Does NOT rotate. The user aligns the rotating
-/// arrow with this marker to face Mecca.
 class _QiblaBox extends StatelessWidget {
   const _QiblaBox();
 

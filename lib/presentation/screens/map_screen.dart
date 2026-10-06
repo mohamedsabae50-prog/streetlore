@@ -81,7 +81,7 @@ class _MapScreenState extends State<MapScreen> {
   LatLng? _lastRouteOrigin;
 
   List<PlaceWaypoint> get _effectiveWaypoints =>
-      (widget.waypoints != null && widget.waypoints!.isNotEmpty)
+      (widget.waypoints?.isNotEmpty ?? false)
           ? widget.waypoints!
           : [
               PlaceWaypoint(
@@ -151,9 +151,10 @@ class _MapScreenState extends State<MapScreen> {
     final newLoc = LatLng(position.latitude, position.longitude);
     setState(() => _currentLocation = newLoc);
 
-    final driftedMeters = _lastRouteOrigin == null
+    final lastOrigin = _lastRouteOrigin;
+    final driftedMeters = lastOrigin == null
         ? double.infinity
-        : _distanceMeters(_lastRouteOrigin!, newLoc);
+        : _distanceMeters(lastOrigin, newLoc);
     if (driftedMeters >= _reRouteMeters) {
       _lastRouteOrigin = newLoc;
       _getRoute();
@@ -162,9 +163,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _centerOnUser({bool force = false}) {
-    if (_currentLocation == null) return;
+    final loc = _currentLocation;
+    if (loc == null) return;
     try {
-      _mapController.move(_currentLocation!, _mapController.camera.zoom);
+      _mapController.move(loc, _mapController.camera.zoom);
     } catch (_) {
       // camera not ready yet — ignore
     }
@@ -192,10 +194,9 @@ class _MapScreenState extends State<MapScreen> {
     // We need (start=user) → waypoint1 → waypoint2 → … → waypointN.
     // Cap at _osrmMaxWaypoints waypoints (OSRM limits free tier to ~25).
     final coords = <String>[];
-    if (_currentLocation != null) {
-      coords.add(
-        '${_currentLocation!.longitude},${_currentLocation!.latitude}',
-      );
+    final loc = _currentLocation;
+    if (loc != null) {
+      coords.add('${loc.longitude},${loc.latitude}');
     }
     for (final w in waypoints) {
       if (coords.length >= _osrmMaxWaypoints) break;
@@ -367,7 +368,7 @@ const List<String> tileSubdomains = ['a', 'b', 'c'];
                       markers: [
                         if (_currentLocation != null)
                           Marker(
-                            point: _currentLocation!,
+                            point: _currentLocation as LatLng,
                             width: 32,
                             height: 32,
                             child: Container(
