@@ -279,8 +279,16 @@ jobs:
       - name: Build Flutter Web bundle
         run: |
           set -e
+          # GitHub Pages serves this app at
+          # https://mohamedsabae50-prog.github.io/streetlore/ (project
+          # page, NOT user page). The browser resolves relative URLs
+          # like 'flutter_bootstrap.js' and 'manifest.json' from the
+          # document's <base href> value, so the bundle MUST be built
+          # with --base-href=/streetlore/ — otherwise the browser tries
+          # to load assets from /flutter_bootstrap.js (root domain) and
+          # gets 404, producing a blank white screen.
           flutter build web --release \
-            --base-href=/ \
+            --base-href=/streetlore/ \
             --dart-define-from-file=/tmp/dart_defines.json
 
       - name: Deploy Web bundle to gh-pages
