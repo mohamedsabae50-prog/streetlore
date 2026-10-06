@@ -305,7 +305,13 @@ const List<String> _tileSubdomains = ['', 'a', 'b', 'c', 'd'];
                     ),
                   ),
                 )
-              : FlutterMap(
+              : SizedBox.expand(
+                  // v1.0.89 — SizedBox.expand gives FlutterMap explicit
+                  // bounded constraints. Without it, FlutterMap inside a
+                  // Scaffold body on Flutter Web can report unbounded
+                  // height to its children, which throws layout errors
+                  // every frame.
+                  child: FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
                     // v1.0.75: pick the best initial center. Previously
@@ -461,6 +467,7 @@ const List<String> _tileSubdomains = ['', 'a', 'b', 'c', 'd'];
                       ),
                     ),
                   ],
+                ),
                 ),
     );
   }

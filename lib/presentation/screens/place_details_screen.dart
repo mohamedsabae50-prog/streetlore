@@ -346,10 +346,22 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     BuildContext fromHeroContext,
                                     BuildContext toHeroContext,
                                   ) {
+                                    // v1.0.89 — guard the 'as Hero' cast.
+                                    // On Flutter Web, when the Hero source
+                                    // is absent (e.g. first navigation or
+                                    // in-flight widget tree swap), the
+                                    // flight shuttle can be invoked with a
+                                    // context whose widget is not a Hero,
+                                    // and the cast throws a TypeError that
+                                    // recurses through FlutterError.onError
+                                    // every frame.
+                                    final destWidget = toHeroContext.widget;
+                                    if (destWidget is! Hero) {
+                                      return const SizedBox.shrink();
+                                    }
                                     return Material(
                                       type: MaterialType.transparency,
-                                      child:
-                                          (toHeroContext.widget as Hero).child,
+                                      child: destWidget.child,
                                     );
                                   },
                               child: Material(

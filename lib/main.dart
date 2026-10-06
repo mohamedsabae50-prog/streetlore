@@ -31,8 +31,32 @@ Future<void> main() async {
   // visible red panel instead of a silent gray screen in release.
   // The default Flutter behavior in release is to render a flat gray
   // rectangle, which made the locale-switch crash un-debuggable.
+  // v1.0.89 — wrap the builder in try/catch. If _ErrorScreen itself
+  // throws (e.g. on Flutter Web where certain plugins may misbehave),
+  // Flutter would otherwise call this builder again with the new error,
+  // producing an infinite "Another exception was thrown: jI<void>" loop
+  // and a permanently black screen.
   ErrorWidget.builder = (FlutterErrorDetails details) {
-    return _ErrorScreen(details: details);
+    try {
+      return _ErrorScreen(details: details);
+    } catch (_) {
+      return Directionality(
+        textDirection: TextDirection.ltr,
+        child: ColoredBox(
+          color: const Color(0xFF1A0B1F),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'A widget failed to render. Pull to refresh or restart.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   };
 
   await Supabase.initialize(
