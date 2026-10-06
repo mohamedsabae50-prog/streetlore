@@ -215,7 +215,7 @@ abstract class AppLocalizations {
   /// Translation key: ai_prompt_hint
   ///
   /// In en, this message translates to:
-  /// **'e.g. two days in Alexandria, mid-budget, love history'**
+  /// **'e.g. two days, mid-budget, love history'**
   String get ai_prompt_hint;
 
   /// Translation key: ai_prompt_title
@@ -227,7 +227,7 @@ abstract class AppLocalizations {
   /// Translation key: ai_sugg_1
   ///
   /// In en, this message translates to:
-  /// **'Two days in Alexandria, mid-budget, love history and seafood'**
+  /// **'Two days, mid-budget, love history and seafood'**
   String get ai_sugg_1;
 
   /// Translation key: ai_sugg_2

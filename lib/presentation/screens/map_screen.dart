@@ -27,6 +27,12 @@ final Uint8List _kDebugErrorPng = Uint8List.fromList(<int>[
   0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
 ]);
 
+/// v1.0.86 — Alexandria fallback used for every map computation when
+/// Geolocator has not resolved a fix yet. NO nullable variable should
+/// ever reach `MapOptions` or any drawing method; we always substitute
+/// this concrete LatLng before anything touches the flutter_map API.
+const LatLng _kFallbackLoc = LatLng(31.2001, 29.9187); // Alexandria
+
 /// One-waypoint mode — pass `destinationLat` + `destinationLng` for the
 /// classic "Go to place" navigation.
 ///
@@ -80,16 +86,17 @@ class _MapScreenState extends State<MapScreen> {
   // far enough to justify a new OSRM request.
   LatLng? _lastRouteOrigin;
 
-  List<PlaceWaypoint> get _effectiveWaypoints =>
-      (widget.waypoints?.isNotEmpty ?? false)
-          ? widget.waypoints!
-          : [
-              PlaceWaypoint(
-                lat: widget.destinationLat,
-                lng: widget.destinationLng,
-                name: widget.placeName,
-              ),
-            ];
+  List<PlaceWaypoint> get _effectiveWaypoints {
+    final wp = widget.waypoints;
+    if (wp != null && wp.isNotEmpty) return wp;
+    return [
+      PlaceWaypoint(
+        lat: widget.destinationLat,
+        lng: widget.destinationLng,
+        name: widget.placeName,
+      ),
+    ];
+  }
 
   @override
   void initState() {
@@ -265,6 +272,13 @@ const List<String> tileUrls = [
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
 ];
 const List<String> tileSubdomains = ['a', 'b', 'c'];
+
+    // v1.0.86 — hard-loc `userLoc` (with Alexandria fallback) so nothing
+    // nullable ever reaches MapOptions or any drawing method. `hasUserLoc`
+    // gates the user-marker rendering (we don't draw a fake blue dot when
+    // GPS hasn't resolved yet — only show the destination pin).
+    final LatLng userLoc = _currentLocation ?? _kFallbackLoc;
+    final bool hasUserLoc = _currentLocation != null;
     final waypoints = _effectiveWaypoints;
 
     return Scaffold(
@@ -286,11 +300,9 @@ const List<String> tileSubdomains = ['a', 'b', 'c'];
                     // waypoint or _currentLocation would crash the
                     // tile projection math.
                     initialCenter: () {
-                      final loc = _currentLocation;
-                      if (loc != null &&
-                          loc.latitude.isFinite &&
-                          loc.longitude.isFinite) {
-                        return loc;
+                      if (userLoc.latitude.isFinite &&
+                          userLoc.longitude.isFinite) {
+                        return userLoc;
                       }
                       if (waypoints.isNotEmpty &&
                           waypoints.first.lat.isFinite &&
@@ -300,7 +312,7 @@ const List<String> tileSubdomains = ['a', 'b', 'c'];
                           waypoints.first.lng,
                         );
                       }
-                      return const LatLng(31.2001, 29.9187); // Alexandria
+                      return _kFallbackLoc;
                     }(),
                     initialZoom: waypoints.length > 1 ? 12.0 : 14.0,
                     minZoom: 3.0,
@@ -308,7 +320,7 @@ const List<String> tileSubdomains = ['a', 'b', 'c'];
                     onMapReady: () {
                       if (waypoints.length > 1 && _routePoints.isNotEmpty) {
                         _fitToRoute();
-                      } else if (_currentLocation != null) {
+                      } else if (hasUserLoc) {
                         _centerOnUser(force: true);
                       }
                     },
@@ -366,9 +378,9 @@ const List<String> tileSubdomains = ['a', 'b', 'c'];
                     // classic red pin.
                     MarkerLayer(
                       markers: [
-                        if (_currentLocation != null)
+                        if (hasUserLoc)
                           Marker(
-                            point: _currentLocation as LatLng,
+                            point: userLoc,
                             width: 32,
                             height: 32,
                             child: Container(
@@ -496,7 +508,7 @@ const List<String> tileSubdomains = ['a', 'b', 'c'];
   }
 
   void _fitToRoute() {
-    if (_routePoints.isEmpty) return;
+    if (_routePoints.length < 2) return;
     final bounds = LatLngBounds.fromPoints(_routePoints);
     _mapController.fitCamera(
       CameraFit.bounds(

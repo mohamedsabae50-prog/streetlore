@@ -15,6 +15,9 @@ import '../../core/services/qibla_service.dart';
 /// before GPS is ready, with an "(approx)" tag in the subtitle.
 const double _kDefaultQiblaBearingDeg = 135.0;
 
+/// v1.0.86 — Top-level card. Holds NO compass heading state — the
+/// compass subscription lives entirely inside [_CompassArrow], so
+/// this widget only rebuilds when the Qibla service flips state.
 class CompassCard extends StatefulWidget {
   const CompassCard({super.key});
 
@@ -22,50 +25,20 @@ class CompassCard extends StatefulWidget {
   State<CompassCard> createState() => _CompassCardState();
 }
 
-class _CompassCardState extends State<CompassCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _spinCtrl;
-
-  /// Latest heading from the compass sensor. Fed directly into the
-  /// Transform.rotate with NO interpolation — the device sensor is
-  /// already 60Hz, and any tweening fights the stream and drops frames.
-  double _headingDeg = 0.0;
+class _CompassCardState extends State<CompassCard> {
   double _qiblaBearingDeg = _kDefaultQiblaBearingDeg;
   bool _qiblaAvailable = false;
-  bool _compassWorking = false;
-
-  StreamSubscription<double>? _compassSub;
   StreamSubscription<double>? _qiblaSub;
 
   @override
   void initState() {
     super.initState();
-    _spinCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3000),
-    )..repeat();
-
     CompassService.instance.start();
-    _compassSub = CompassService.instance.headingStream.listen((deg) {
-      if (!mounted) return;
-      // v1.0.85 — NaN guard. Android compass sensors occasionally
-      // emit NaN during the first ~200ms of calibration.
-      final safeDeg = deg.isFinite ? deg : 0.0;
-      setState(() {
-        _headingDeg = safeDeg;
-        _compassWorking = CompassService.instance.isActuallyWorking;
-      });
-      if (_compassWorking && _spinCtrl.isAnimating) {
-        _spinCtrl.stop();
-        _spinCtrl.value = 0;
-      } else if (!_compassWorking && !_spinCtrl.isAnimating) {
-        _spinCtrl.repeat();
-      }
-    });
 
     _qiblaSub = QiblaService.instance.bearingStream.listen((bearing) {
       if (!mounted) return;
-      final safeBearing = bearing.isFinite ? bearing : _kDefaultQiblaBearingDeg;
+      final safeBearing =
+          bearing.isFinite ? bearing : _kDefaultQiblaBearingDeg;
       setState(() {
         _qiblaBearingDeg = safeBearing;
         _qiblaAvailable = true;
@@ -85,16 +58,8 @@ class _CompassCardState extends State<CompassCard>
 
   @override
   void dispose() {
-    _compassSub?.cancel();
     _qiblaSub?.cancel();
-    _spinCtrl.dispose();
     super.dispose();
-  }
-
-  String _dirLabel(double deg) {
-    const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-    final i = ((deg % 360) / 45).round() % 8;
-    return dirs[i];
   }
 
   @override
@@ -153,30 +118,7 @@ class _CompassCardState extends State<CompassCard>
                     right: 0,
                     child: Center(child: _QiblaBox()),
                   ),
-                  // v1.0.85 — ONLY the inner arrow rotates. The
-                  // heading value comes straight from the device
-                  // sensor (60Hz) with NO TweenAnimationBuilder — the
-                  // previous 80ms tween added input lag.
-                  _compassWorking
-                          ? Transform.rotate(
-                              angle: -_headingDeg * (pi / 180.0),
-                              child: const Icon(
-                                Icons.navigation_rounded,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                            )
-                          : AnimatedBuilder(
-                              animation: _spinCtrl,
-                              builder: (context, _) => Transform.rotate(
-                                angle: _spinCtrl.value * 2 * pi,
-                                child: const Icon(
-                                  Icons.navigation_rounded,
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
-                              ),
-                            ),
+                  const _CompassArrow(),
                 ],
               ),
             ),
@@ -185,72 +127,25 @@ class _CompassCardState extends State<CompassCard>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Compass',
-                        style: TextStyle(
-                          color: context.textPri,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
-                        ),
-                      ),
-                      if (_compassWorking) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF22C55E)
-                                .withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            _dirLabel(_headingDeg),
-                            style: const TextStyle(
-                              color: Color(0xFF22C55E),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                  Text(
+                    'Compass',
+                    style: TextStyle(
+                      color: context.textPri,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _compassWorking
-                        ? '${_headingDeg.round()}° · Heading'
-                        : 'Calibrating…',
+                    !_qiblaAvailable
+                        ? 'Qibla ${_kDefaultQiblaBearingDeg.round()}° (approx)'
+                        : 'Qibla ${_qiblaBearingDeg.round()}°',
                     style: TextStyle(
                       color: context.textSec,
                       fontSize: 12,
                       height: 1.4,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.mosque_rounded,
-                        color: Color(0xFFEAB308),
-                        size: 13,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        !_qiblaAvailable
-                            ? 'Qibla ${_kDefaultQiblaBearingDeg.round()}° (approx)'
-                            : 'Qibla ${_qiblaBearingDeg.round()}°',
-                        style: TextStyle(
-                          color: context.textSec,
-                          fontSize: 11,
-                          height: 1.3,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -258,6 +153,87 @@ class _CompassCardState extends State<CompassCard>
           ],
         ),
       ),
+    );
+  }
+}
+
+/// v1.0.86 — Isolated compass arrow. Owns its own StreamBuilder that
+/// listens to [CompassService.instance.headingStream]. Only THIS
+/// subtree responds to stream emissions; the outer [_CompassCardState],
+/// the background gradient, and the Qibla box NEVER rebuild when the
+/// sensor emits.
+class _CompassArrow extends StatefulWidget {
+  const _CompassArrow();
+
+  @override
+  State<_CompassArrow> createState() => _CompassArrowState();
+}
+
+class _CompassArrowState extends State<_CompassArrow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _spinCtrl;
+  StreamSubscription<double>? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _spinCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    );
+    if (!CompassService.instance.isActuallyWorking) {
+      _spinCtrl.repeat();
+    }
+    _sub = CompassService.instance.headingStream.listen(_onHeading);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    _spinCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onHeading(double deg) {
+    if (!mounted) return;
+    final working = CompassService.instance.isActuallyWorking;
+    if (working && _spinCtrl.isAnimating) {
+      _spinCtrl.stop();
+      _spinCtrl.value = 0;
+    } else if (!working && !_spinCtrl.isAnimating) {
+      _spinCtrl.repeat();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<double>(
+      stream: CompassService.instance.headingStream,
+      builder: (context, snapshot) {
+        if (!CompassService.instance.isActuallyWorking) {
+          return AnimatedBuilder(
+            animation: _spinCtrl,
+            builder: (_, _) => Transform.rotate(
+              angle: _spinCtrl.value * 2 * pi,
+              child: const Icon(
+                Icons.navigation_rounded,
+                color: Colors.white,
+                size: 30,
+              ),
+            ),
+          );
+        }
+        final raw = snapshot.data ?? 0.0;
+        final safeDeg = raw.isFinite ? raw : 0.0;
+        return Transform.rotate(
+          angle: -safeDeg * (pi / 180.0),
+          child: const Icon(
+            Icons.navigation_rounded,
+            color: Colors.white,
+            size: 30,
+          ),
+        );
+      },
     );
   }
 }

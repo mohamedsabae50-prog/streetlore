@@ -74,15 +74,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get ai_planner_title => 'مخطط الرحلات الذكي';
 
   @override
-  String get ai_prompt_hint =>
-      'مثال: يومين في إسكندرية، ميزانية متوسطة، بحب التاريخ';
+  String get ai_prompt_hint => 'مثال: يومين، ميزانية متوسطة، بحب التاريخ';
 
   @override
   String get ai_prompt_title => 'قولنا عن رحلتك';
 
   @override
-  String get ai_sugg_1 =>
-      'يومين في إسكندرية، ميزانية متوسطة، بحب التاريخ والسي فود';
+  String get ai_sugg_1 => 'يومين، ميزانية متوسطة، بحب التاريخ والسي فود';
 
   @override
   String get ai_sugg_2 => 'يوم واحد هادي على القهاوي والكورنيش';

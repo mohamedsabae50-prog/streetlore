@@ -74,15 +74,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ai_planner_title => 'Smart Trip Planner';
 
   @override
-  String get ai_prompt_hint =>
-      'e.g. two days in Alexandria, mid-budget, love history';
+  String get ai_prompt_hint => 'e.g. two days, mid-budget, love history';
 
   @override
   String get ai_prompt_title => 'Tell us about your trip';
 
   @override
-  String get ai_sugg_1 =>
-      'Two days in Alexandria, mid-budget, love history and seafood';
+  String get ai_sugg_1 => 'Two days, mid-budget, love history and seafood';
 
   @override
   String get ai_sugg_2 => 'One relaxed day focused on cafés and the corniche';
