@@ -76,7 +76,7 @@ class _MapScreenState extends State<MapScreen> {
   static const int _osrmMaxWaypoints = 25;
 
   LatLng? _currentLocation;
-  List<LatLng> _routePoints = [];
+  List<LatLng> _routePoints = const [];
   String _firstTileError = '';
 
   StreamSubscription<Position>? _positionSub;
@@ -86,6 +86,8 @@ class _MapScreenState extends State<MapScreen> {
   // far enough to justify a new OSRM request.
   LatLng? _lastRouteOrigin;
 
+  /// v1.0.87 — Effective waypoints. Always returns at least one item.
+  /// Uses null-aware `?.` access exclusively — no `!` operators.
   List<PlaceWaypoint> get _effectiveWaypoints {
     final wp = widget.waypoints;
     if (wp != null && wp.isNotEmpty) return wp;
@@ -118,12 +120,14 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _initLocationInBackground() async {
     try {
-      LocationPermission permission = await Geolocator.checkPermission();
+      final permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
+        final requested = await Geolocator.requestPermission();
+        if (requested == LocationPermission.denied ||
+            requested == LocationPermission.deniedForever) {
+          return;
+        }
+      } else if (permission == LocationPermission.deniedForever) {
         return;
       }
       if (!await Geolocator.isLocationServiceEnabled()) {
@@ -134,8 +138,9 @@ class _MapScreenState extends State<MapScreen> {
         timeLimit: const Duration(seconds: 12),
       );
       if (!mounted) return;
-      _currentLocation = LatLng(position.latitude, position.longitude);
-      _lastRouteOrigin = _currentLocation;
+      final newLoc = LatLng(position.latitude, position.longitude);
+      _currentLocation = newLoc;
+      _lastRouteOrigin = newLoc;
       setState(() {});
       // Fire-and-forget the route + center updates.
       unawaited(_getRoute());
@@ -193,30 +198,39 @@ class _MapScreenState extends State<MapScreen> {
 
   double _deg2rad(double d) => d * math.pi / 180.0;
 
+  /// v1.0.87 — Deep-audited route fetch. Returns early and silently
+  /// if `_currentLocation` is null. Uses `as num` (NOT `as double`) for
+  /// OSRM coordinate parsing because OSRM occasionally emits integers
+  /// for whole-number values, and a strict `as double` cast would throw
+  /// a TypeError. Every nullable step in the parse chain is guarded
+  /// with null-aware access (`?.`) so a malformed OSRM response can
+  /// never escape into the UI.
   Future<void> _getRoute() async {
+    final loc = _currentLocation;
     final waypoints = _effectiveWaypoints;
-    if (_currentLocation == null && waypoints.isEmpty) return;
+
+    // v1.0.87 — per user directive: if no user location, do NOT draw
+    // a route at all (previously we drew a straight-line through the
+    // waypoints). The destination pin still shows; user can re-tap
+    // 'Go' once GPS is available.
+    if (loc == null) {
+      if (!mounted) return;
+      setState(() => _routePoints = const []);
+      return;
+    }
 
     // OSRM URL: /route/v1/driving/lng,lat;lng,lat;...?geometries=geojson
     // We need (start=user) → waypoint1 → waypoint2 → … → waypointN.
     // Cap at _osrmMaxWaypoints waypoints (OSRM limits free tier to ~25).
     final coords = <String>[];
-    final loc = _currentLocation;
-    if (loc != null) {
-      coords.add('${loc.longitude},${loc.latitude}');
-    }
+    coords.add('${loc.longitude},${loc.latitude}');
     for (final w in waypoints) {
       if (coords.length >= _osrmMaxWaypoints) break;
       coords.add('${w.lng},${w.lat}');
     }
     if (coords.length < 2) {
-      // No user location and only one destination — straight line.
       if (!mounted) return;
-      setState(() {
-        _routePoints = waypoints
-            .map((w) => LatLng(w.lat, w.lng))
-            .toList(growable: false);
-      });
+      setState(() => _routePoints = const []);
       return;
     }
 
@@ -230,48 +244,79 @@ class _MapScreenState extends State<MapScreen> {
           .get(url, headers: const {'User-Agent': 'com.streetlore.app/1.0'})
           .timeout(const Duration(seconds: 15));
       if (!mounted) return;
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final routes = data['routes'] as List?;
-        if (routes == null || routes.isEmpty) {
-          return;
-        }
-        final List<dynamic> coordsJson =
-            routes[0]['geometry']['coordinates'] as List<dynamic>;
-        setState(() {
-          _routePoints = coordsJson
-              .map((c) => LatLng(c[1] as double, c[0] as double))
-              .toList();
-        });
+      if (response.statusCode != 200) return;
+
+      final raw = json.decode(response.body);
+      if (raw is! Map) return;
+      final routes = raw['routes'];
+      if (routes is! List || routes.isEmpty) return;
+
+      final first = routes.first;
+      if (first is! Map) return;
+      final geometry = first['geometry'];
+      if (geometry is! Map) return;
+      final coordsJson = geometry['coordinates'];
+      if (coordsJson is! List) return;
+
+      final parsed = <LatLng>[];
+      for (final c in coordsJson) {
+        if (c is! List || c.length < 2) continue;
+        final lngNum = c[0];
+        final latNum = c[1];
+        if (lngNum is! num || latNum is! num) continue;
+        final lng = lngNum.toDouble();
+        final lat = latNum.toDouble();
+        if (!lat.isFinite || !lng.isFinite) continue;
+        // Bounding-box sanity check — reject anything outside a
+        // generous global range so a corrupt entry can't crash the
+        // tile projection math downstream.
+        if (lat.abs() > 90 || lng.abs() > 180) continue;
+        parsed.add(LatLng(lat, lng));
       }
+
+      if (!mounted) return;
+      setState(() => _routePoints = parsed);
     } catch (_) {
-      // Silently ignore route failures — destination pin still
-      // shows on the map, user can re-tap the Go button if needed.
+      // Silently ignore route failures — destination pin still shows
+      // on the map. Per v1.0.87 directive: never draw a partial route.
+      if (!mounted) return;
+      setState(() => _routePoints = const []);
     }
   }
+
+  /// v1.0.87 — Returns `_routePoints` filtered to finite coords only.
+  /// The map should never receive a non-finite LatLng, and a single bad
+  /// entry could crash flutter_map's projection math.
+  List<LatLng> get _safeRoutePoints => _routePoints
+      .where((p) =>
+          p.latitude.isFinite &&
+          p.longitude.isFinite &&
+          p.latitude.abs() <= 90 &&
+          p.longitude.abs() <= 180)
+      .toList(growable: false);
 
   @override
   Widget build(BuildContext context) {
     // v1.0.78: bulletproof ESRI World Street Map (no rate limit, no
-// user-agent block). Note ESRI uses {z}/{y}/{x} order (not {x}/{y}),
-// and the server is a single canonical host with no subdomains. We
-// keep CartoDB and OSM as fallbacks in case ESRI is ever down.
-// v1.0.80 — CartoDB Voyager primary (no rate-limit, works in Egypt),
-// OSM + ESRI as 2-tier fallbacks. NOTE: the empty subdomain '' that
-// v1.0.78 used to "support" ESRI (which has no {s} placeholder) broke
-// CartoDB and OSM — their {s}.basemaps.cartocdn.com fallback URLs got
-// rewritten to "https://.basemaps.cartocdn.com/..." which is an invalid
-// host. With no valid fallback, when ESRI was blocked we fell back to
-// a fully-broken URL set and the user saw a solid gray map. We now
-// keep subdomains = ['a','b','c'] (CartoDB + OSM only) and rely on
-// the tile ordering to pick ESRI when neither CartoDB nor OSM
-// responds.
-const List<String> tileUrls = [
-  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-];
-const List<String> tileSubdomains = ['a', 'b', 'c'];
+    // user-agent block). Note ESRI uses {z}/{y}/{x} order (not {x}/{y}),
+    // and the server is a single canonical host with no subdomains. We
+    // keep CartoDB and OSM as fallbacks in case ESRI is ever down.
+    // v1.0.80 — CartoDB Voyager primary (no rate-limit, works in Egypt),
+    // OSM + ESRI as 2-tier fallbacks. NOTE: the empty subdomain '' that
+    // v1.0.78 used to "support" ESRI (which has no {s} placeholder) broke
+    // CartoDB and OSM — their {s}.basemaps.cartocdn.com fallback URLs got
+    // rewritten to "https://.basemaps.cartocdn.com/..." which is an invalid
+    // host. With no valid fallback, when ESRI was blocked we fell back to
+    // a fully-broken URL set and the user saw a solid gray map. We now
+    // keep subdomains = ['a','b','c'] (CartoDB + OSM only) and rely on
+    // the tile ordering to pick ESRI when neither CartoDB nor OSM
+    // responds.
+    const List<String> tileUrls = [
+      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    ];
+    const List<String> tileSubdomains = ['a', 'b', 'c'];
 
     // v1.0.86 — hard-loc `userLoc` (with Alexandria fallback) so nothing
     // nullable ever reaches MapOptions or any drawing method. `hasUserLoc`
@@ -280,6 +325,22 @@ const List<String> tileSubdomains = ['a', 'b', 'c'];
     final LatLng userLoc = _currentLocation ?? _kFallbackLoc;
     final bool hasUserLoc = _currentLocation != null;
     final waypoints = _effectiveWaypoints;
+    final safeRoute = _safeRoutePoints;
+
+    // v1.0.87 — pick the initial center with destination as primary,
+    // user loc as secondary, Alexandria as ultimate fallback. Each
+    // candidate is checked for finiteness so a corrupt CoordinateRef
+    // can never reach MapOptions.
+    final LatLng initialCenter = (() {
+      final wp0 = waypoints.isNotEmpty ? waypoints.first : null;
+      if (wp0 != null && wp0.lat.isFinite && wp0.lng.isFinite) {
+        return LatLng(wp0.lat, wp0.lng);
+      }
+      if (userLoc.latitude.isFinite && userLoc.longitude.isFinite) {
+        return userLoc;
+      }
+      return _kFallbackLoc;
+    })();
 
     return Scaffold(
       appBar: AppBar(
@@ -287,235 +348,209 @@ const List<String> tileSubdomains = ['a', 'b', 'c'];
         centerTitle: true,
       ),
       body: FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    // v1.0.75: pick the best initial center. Previously
-                    // when location was denied we fell back to (0, 0)
-                    // which renders as a solid-gray open-ocean tile —
-                    // giving the impression of a "broken" map. Now we
-                    // default to the first waypoint (or destination)
-                    // so the user always sees the place they meant to
-                    // open.
-                    // v1.0.82 — isFinite guards. NaN/Infinity on a
-                    // waypoint or _currentLocation would crash the
-                    // tile projection math.
-                    initialCenter: () {
-                      if (userLoc.latitude.isFinite &&
-                          userLoc.longitude.isFinite) {
-                        return userLoc;
-                      }
-                      if (waypoints.isNotEmpty &&
-                          waypoints.first.lat.isFinite &&
-                          waypoints.first.lng.isFinite) {
-                        return LatLng(
-                          waypoints.first.lat,
-                          waypoints.first.lng,
-                        );
-                      }
-                      return _kFallbackLoc;
-                    }(),
-                    initialZoom: waypoints.length > 1 ? 12.0 : 14.0,
-                    minZoom: 3.0,
-                    maxZoom: 18.0,
-                    onMapReady: () {
-                      if (waypoints.length > 1 && _routePoints.isNotEmpty) {
-                        _fitToRoute();
-                      } else if (hasUserLoc) {
-                        _centerOnUser(force: true);
-                      }
-                    },
-                  ),
-                  children: [
-                    TileLayer(
-                    // v1.0.78: ESRI + 2-tier fallback. If the primary
-                    // host fails, flutter_map walks the list
-                    // automatically. We also paint a tiny transparent
-                    // PNG as the error tile so a single 404 doesn't
-                    // blank the whole map with a solid gray block.
-                    urlTemplate: tileUrls.first,
-                    fallbackUrl: tileUrls.length > 1
-                        ? tileUrls.sublist(1).join('||')
-                        : null,
-                    userAgentPackageName: 'com.streetlore.app',
-                    subdomains: tileSubdomains,
-                    keepBuffer: 8,
-                    maxNativeZoom: 19,
-                    tileProvider: NetworkTileProvider(),
-                    // v1.0.78: surface every failed tile in the console
-                    // so a "gray map" is debuggable instead of silent.
-                    // The current flutter_map signature is
-                    // (TileImage, Object, StackTrace?) — no coords —
-                    // so we just log the error itself.
-                    errorTileCallback: (tile, error, stackTrace) {
-                      final msg = 'tile failed: $error';
-                      debugPrint('MapScreen $msg');
-                      if (mounted && _firstTileError.isEmpty) {
-                        _firstTileError = msg;
-                        setState(() {});
-                      }
-                    },
-                    // v1.0.80 — visible magenta 1x1 PNG so a fully-broken
-                    // map reads as a magenta checkerboard instead of
-                    // an invisible gray. (Previously: a transparent PNG
-                    // silently hid every tile failure.)
-                    errorImage: MemoryImage(_kDebugErrorPng),
-                  ),
+        mapController: _mapController,
+        options: MapOptions(
+          initialCenter: initialCenter,
+          initialZoom: waypoints.length > 1 ? 12.0 : 14.0,
+          minZoom: 3.0,
+          maxZoom: 18.0,
+          onMapReady: () {
+            if (waypoints.length > 1 && safeRoute.length >= 2) {
+              _fitToRoute();
+            } else if (hasUserLoc) {
+              _centerOnUser(force: true);
+            }
+          },
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: tileUrls.first,
+            fallbackUrl: tileUrls.length > 1
+                ? tileUrls.sublist(1).join('||')
+                : null,
+            userAgentPackageName: 'com.streetlore.app',
+            subdomains: tileSubdomains,
+            keepBuffer: 8,
+            maxNativeZoom: 19,
+            tileProvider: NetworkTileProvider(),
+            errorTileCallback: (tile, error, stackTrace) {
+              final msg = 'tile failed: $error';
+              debugPrint('MapScreen $msg');
+              if (mounted && _firstTileError.isEmpty) {
+                _firstTileError = msg;
+                setState(() {});
+              }
+            },
+            errorImage: MemoryImage(_kDebugErrorPng),
+          ),
 
-                    if (_routePoints.isNotEmpty)
-                      PolylineLayer(
-                        polylines: [
-                          Polyline(
-                            points: _routePoints,
-                            color: Colors.blueAccent,
-                            strokeWidth: 5.0,
-                          ),
-                        ],
+          // v1.0.87 — polyline only renders if we have >= 2 finite,
+          // bounding-box-valid points. Anything shorter would crash
+          // flutter_map's projection math on a singleton line.
+          if (safeRoute.length >= 2)
+            PolylineLayer(
+              polylines: [
+                Polyline(
+                  points: safeRoute,
+                  color: Colors.blueAccent,
+                  strokeWidth: 5.0,
+                ),
+              ],
+            ),
+
+          // Stop markers — only show as numbered pins in tour mode so
+          // the user can see the sequence. In single-destination mode
+          // the destination still uses the classic red pin.
+          MarkerLayer(
+            markers: [
+              // v1.0.87 — user marker only renders when GPS resolved.
+              if (hasUserLoc)
+                Marker(
+                  point: userLoc,
+                  width: 32,
+                  height: 32,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 3,
                       ),
-
-                    // Stop markers — only show as numbered pins in tour
-                    // mode so the user can see the sequence. In single-
-                    // destination mode the destination still uses the
-                    // classic red pin.
-                    MarkerLayer(
-                      markers: [
-                        if (hasUserLoc)
-                          Marker(
-                            point: userLoc,
-                            width: 32,
-                            height: 32,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.blueAccent,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 3,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.navigation,
-                                color: Colors.white,
-                                size: 14,
-                              ),
-                            ),
-                          ),
-                        if (waypoints.length > 1)
-                          for (var i = 0; i < waypoints.length; i++)
-                            Marker(
-                              point: LatLng(
-                                waypoints[i].lat,
-                                waypoints[i].lng,
-                              ),
-                              width: 40,
-                              height: 40,
-                              child: _NumberedPin(
-                                index: i + 1,
-                                total: waypoints.length,
-                                isLast: i == waypoints.length - 1,
-                              ),
-                            )
-                        else
-                          Marker(
-                            point: LatLng(
-                              waypoints.first.lat,
-                              waypoints.first.lng,
-                            ),
-                            width: 40,
-                            height: 40,
-                            child: const Icon(
-                              Icons.location_on,
-                              color: Colors.red,
-                              size: 40,
-                            ),
-                          ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
                       ],
                     ),
-
-                    // v1.0.80 — visible error banner so a half-elsewhere gray map is
-                    // immediately debuggable. Shows the first tile-failure
-                    // message. Dismissable.
-                    if (_firstTileError.isNotEmpty)
-                      Positioned(
-                        top: 12,
-                        left: 12,
-                        right: 12,
-                        child: Material(
-                          color: const Color(0xCC7F1D1D),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.error_outline_rounded,
-                                    color: Colors.white, size: 18),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Map tiles failed: $_firstTileError',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.close_rounded,
-                                      color: Colors.white, size: 18),
-                                  onPressed: () => setState(() {
-                                    _firstTileError = '';
-                                  }),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // Map data attribution — required by OSM license.
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        color: Colors.white.withValues(alpha: 0.7),
-                        child: const Text(
-                          '© OpenStreetMap · © CARTO',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.black87,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+                    child: const Icon(
+                      Icons.navigation,
+                      color: Colors.white,
+                      size: 14,
                     ),
-                  ],
+                  ),
                 ),
+              if (waypoints.length > 1)
+                for (var i = 0; i < waypoints.length; i++)
+                  Marker(
+                    point: LatLng(
+                      waypoints[i].lat,
+                      waypoints[i].lng,
+                    ),
+                    width: 40,
+                    height: 40,
+                    child: _NumberedPin(
+                      index: i + 1,
+                      total: waypoints.length,
+                      isLast: i == waypoints.length - 1,
+                    ),
+                  )
+              else
+                Marker(
+                  point: LatLng(
+                    waypoints.first.lat,
+                    waypoints.first.lng,
+                  ),
+                  width: 40,
+                  height: 40,
+                  child: const Icon(
+                    Icons.location_on,
+                    color: Colors.red,
+                    size: 40,
+                  ),
+                ),
+            ],
+          ),
+
+          // v1.0.80 — visible error banner so a half-elsewhere gray map is
+          // immediately debuggable. Shows the first tile-failure
+          // message. Dismissable.
+          if (_firstTileError.isNotEmpty)
+            Positioned(
+              top: 12,
+              left: 12,
+              right: 12,
+              child: Material(
+                color: const Color(0xCC7F1D1D),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline_rounded,
+                          color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Map tiles failed: $_firstTileError',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded,
+                            color: Colors.white, size: 18),
+                        onPressed: () => setState(() {
+                          _firstTileError = '';
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // Map data attribution — required by OSM license.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 4,
+              ),
+              color: Colors.white.withValues(alpha: 0.7),
+              child: const Text(
+                '© OpenStreetMap · © CARTO',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   void _fitToRoute() {
     if (_routePoints.length < 2) return;
-    final bounds = LatLngBounds.fromPoints(_routePoints);
-    _mapController.fitCamera(
-      CameraFit.bounds(
-        bounds: bounds,
-        padding: const EdgeInsets.all(48),
-      ),
-    );
+    final bounds = LatLngBounds.fromPoints(_safeRoutePoints);
+    if (bounds.southWest.latitude.isNaN ||
+        bounds.northEast.latitude.isNaN) {
+      return;
+    }
+    try {
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: bounds,
+          padding: const EdgeInsets.all(48),
+        ),
+      );
+    } catch (_) {
+      // CameraFit.bounds can throw if the bounds are degenerate.
+      // Swallow silently; user can re-center manually.
+    }
   }
 }
 

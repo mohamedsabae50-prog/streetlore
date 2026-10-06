@@ -15,9 +15,14 @@ import '../../core/services/qibla_service.dart';
 /// before GPS is ready, with an "(approx)" tag in the subtitle.
 const double _kDefaultQiblaBearingDeg = 135.0;
 
-/// v1.0.86 — Top-level card. Holds NO compass heading state — the
-/// compass subscription lives entirely inside [_CompassArrow], so
-/// this widget only rebuilds when the Qibla service flips state.
+/// v1.0.86 — Top-level card. Holds NO compass heading state. The
+/// compass subscription lives entirely inside [_CompassArrow] and
+/// [_CompassHeading], so this widget only rebuilds when the Qibla
+/// service flips state.
+///
+/// v1.0.87 — Background gradient + 'N' label + Qibla box are 100%
+/// static (they are baked into the build tree with NO StreamBuilder
+/// or setState dependencies on the compass heading stream).
 class CompassCard extends StatefulWidget {
   const CompassCard({super.key});
 
@@ -90,6 +95,9 @@ class _CompassCardState extends State<CompassCard> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
+                  // v1.0.87 — Static gradient + 'N' label. This Container
+                  // is NOT inside any StreamBuilder and NOT a child of
+                  // [_CompassArrow]; it never rebuilds on heading events.
                   Container(
                     width: 84,
                     height: 84,
@@ -112,12 +120,15 @@ class _CompassCardState extends State<CompassCard> {
                       ),
                     ),
                   ),
+                  // v1.0.87 — Static Qibla box at the bottom of the disc.
                   const Positioned(
                     bottom: 4,
                     left: 0,
                     right: 0,
                     child: Center(child: _QiblaBox()),
                   ),
+                  // v1.0.87 — ONLY this subtree listens to the compass
+                  // heading stream and rebuilds on sensor emissions.
                   const _CompassArrow(),
                 ],
               ),
@@ -136,16 +147,31 @@ class _CompassCardState extends State<CompassCard> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    !_qiblaAvailable
-                        ? 'Qibla ${_kDefaultQiblaBearingDeg.round()}° (approx)'
-                        : 'Qibla ${_qiblaBearingDeg.round()}°',
-                    style: TextStyle(
-                      color: context.textSec,
-                      fontSize: 12,
-                      height: 1.4,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  // v1.0.87 — ONLY this subtree reads the live heading
+                  // value and rebuilds on sensor emissions. The static
+                  // 'Compass' title above is NOT inside a StreamBuilder.
+                  const _CompassHeading(),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.mosque_rounded,
+                        color: Color(0xFFEAB308),
+                        size: 13,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        !_qiblaAvailable
+                            ? 'Qibla ${_kDefaultQiblaBearingDeg.round()}° (approx)'
+                            : 'Qibla ${_qiblaBearingDeg.round()}°',
+                        style: TextStyle(
+                          color: context.textSec,
+                          fontSize: 11,
+                          height: 1.3,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -157,11 +183,11 @@ class _CompassCardState extends State<CompassCard> {
   }
 }
 
-/// v1.0.86 — Isolated compass arrow. Owns its own StreamBuilder that
+/// v1.0.87 — Isolated compass arrow. Owns its own StreamBuilder that
 /// listens to [CompassService.instance.headingStream]. Only THIS
 /// subtree responds to stream emissions; the outer [_CompassCardState],
-/// the background gradient, and the Qibla box NEVER rebuild when the
-/// sensor emits.
+/// the background gradient, the 'N' label, and the Qibla box NEVER
+/// rebuild when the sensor emits.
 class _CompassArrow extends StatefulWidget {
   const _CompassArrow();
 
@@ -232,6 +258,81 @@ class _CompassArrowState extends State<_CompassArrow>
             color: Colors.white,
             size: 30,
           ),
+        );
+      },
+    );
+  }
+}
+
+/// v1.0.87 — Isolated live heading text. Wraps a StreamBuilder around
+/// JUST the heading degrees Text widget. Only this subtree rebuilds
+/// when the sensor emits — the surrounding 'Compass' title and the
+/// 'Qibla XX°' row are static and do not rebuild.
+class _CompassHeading extends StatelessWidget {
+  const _CompassHeading();
+
+  static String _dirLabel(double deg) {
+    const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    final i = ((deg % 360) / 45).round() % 8;
+    return dirs[i];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<double>(
+      stream: CompassService.instance.headingStream,
+      builder: (context, snapshot) {
+        if (!CompassService.instance.isActuallyWorking) {
+          return Text(
+            'Calibrating…',
+            style: TextStyle(
+              color: context.textSec,
+              fontSize: 12,
+              height: 1.4,
+            ),
+          );
+        }
+        final raw = snapshot.data ?? 0.0;
+        final safeDeg = raw.isFinite ? raw : 0.0;
+        return Row(
+          children: [
+            Text(
+              '${safeDeg.round()}°',
+              style: TextStyle(
+                color: context.textPri,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFF22C55E).withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                _dirLabel(safeDeg),
+                style: const TextStyle(
+                  color: Color(0xFF22C55E),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '· Heading',
+              style: TextStyle(
+                color: context.textSec,
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+          ],
         );
       },
     );
