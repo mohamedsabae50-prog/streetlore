@@ -388,7 +388,16 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SizedBox.expand(
+          // v1.0.91 — force absolute MediaQuery-sized bounds instead of
+          // SizedBox.expand. On Flutter Web the Scaffold body's intrinsic
+          // sizing is sometimes unstable during the route transition into
+          // this screen; FlutterMap then reports unbounded constraints to
+          // its children, producing the infinite 'minified:jI<void>'
+          // render loop on 'Go'. Explicit MediaQuery width/height locks
+          // the layout to the screen size.
+          : SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
               child: FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
