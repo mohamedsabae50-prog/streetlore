@@ -132,14 +132,20 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     if (!mounted) return;
-    
+
     await _getRoute();
-    
+
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
-      _centerOnUser(force: true);
+      // v1.0.92 — REMOVED the pre-map _centerOnUser(force: true) call.
+      // _mapController.move() crashes if the FlutterMap isn't fully
+      // rendered yet; on Flutter Web the route transition into this
+      // screen can leave the map in a half-initialized state where
+      // camera.zoom throws a minified:jI<void> on every access, leading
+      // to an infinite render loop. The onMapReady callback already
+      // handles centering, so we let it run instead.
     }
   }
 
@@ -148,21 +154,34 @@ class _MapScreenState extends State<MapScreen> {
     final newLoc = LatLng(position.latitude, position.longitude);
     setState(() => _currentLocation = newLoc);
 
-    final driftedMeters = _lastRouteOrigin == null
+    // v1.0.92 — use null-safe access on _lastRouteOrigin (was using '!'
+    // which could throw NPE on the first update if initState hadn't
+    // populated the field yet).
+    final lastOrigin = _lastRouteOrigin;
+    final driftedMeters = lastOrigin == null
         ? double.infinity
-        : _distanceMeters(_lastRouteOrigin!, newLoc);
+        : _distanceMeters(lastOrigin, newLoc);
     if (driftedMeters >= _reRouteMeters) {
       _lastRouteOrigin = newLoc;
       _getRoute();
     }
-    _centerOnUser();
+    // _centerOnUser() now schedules its work in a post-frame callback
+    // internally, so it's safe to call from here.
   }
 
   void _centerOnUser({bool force = false}) {
     if (_currentLocation == null) return;
-    try {
-      _mapController.move(_currentLocation!, _mapController.camera.zoom);
-    } catch (_) {}
+    // v1.0.92 — never access _mapController.camera.zoom before the map
+    // is fully rendered. On Flutter Web the camera getter can throw a
+    // minified:jI<void> which recurses through FlutterError.onError every
+    // frame. Schedule the move in a post-frame callback so the FlutterMap
+    // has finished its first layout pass.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        _mapController.move(_currentLocation!, _mapController.camera.zoom);
+      } catch (_) {}
+    });
   }
 
   double _distanceMeters(LatLng a, LatLng b) {
