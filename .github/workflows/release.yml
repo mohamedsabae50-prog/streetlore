@@ -279,6 +279,14 @@ jobs:
       - name: Build Flutter Web bundle
         run: |
           set -e
+          # v1.0.93 — force the HTML renderer (--web-renderer html).
+          # CanvasKit (the default since Flutter 3.x) is notoriously
+          # unstable with flutter_map on some Flutter Web versions,
+          # producing the infinite 'minified:jI<void>' render loop when
+          # the map widget's layout emits invalid WebGL state. The HTML
+          # renderer uses plain DOM/SVG for the canvas, which is much
+          # more stable for our use case (no WebGL dependency).
+          #
           # GitHub Pages serves this app at
           # https://mohamedsabae50-prog.github.io/streetlore/ (project
           # page, NOT user page). The browser resolves relative URLs
@@ -288,6 +296,7 @@ jobs:
           # to load assets from /flutter_bootstrap.js (root domain) and
           # gets 404, producing a blank white screen.
           flutter build web --release \
+            --web-renderer html \
             --base-href=/streetlore/ \
             --dart-define-from-file=/tmp/dart_defines.json
 

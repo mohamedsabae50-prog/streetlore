@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -96,13 +97,28 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _initializeMap() async {
+    // v1.0.93 — BYPASS Geolocator entirely on Flutter Web.
+    // On Web, navigator.geolocation API permission denials /
+    // timeouts have been observed to trigger an unhandled async loop
+    // in the plugin's web shim, which recurses through
+    // FlutterError.onError and produces the infinite
+    // 'minified:jI<void>' render loop. We just skip GPS on Web and
+    // let the map center on the destination (or the Alexandria
+    // fallback) instead.
+    if (kIsWeb) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
     try {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
 
-      if (permission != LocationPermission.denied && 
+      if (permission != LocationPermission.denied &&
           permission != LocationPermission.deniedForever) {
         final serviceOn = await Geolocator.isLocationServiceEnabled();
         if (serviceOn) {
@@ -113,7 +129,7 @@ class _MapScreenState extends State<MapScreen> {
           if (mounted) {
             _currentLocation = LatLng(position.latitude, position.longitude);
             _lastRouteOrigin = _currentLocation;
-            
+
             _positionSub = Geolocator.getPositionStream(
               locationSettings: const LocationSettings(
                 accuracy: LocationAccuracy.high,
