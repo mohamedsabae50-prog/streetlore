@@ -238,13 +238,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // v1.0.94 — REMOVED the outer Hero wrapper.
-                      // PlaceImageCarousel already wraps the first
-                      // image in an inner Hero with the same tag,
-                      // which produced "A Hero widget cannot be the
-                      // descendant of another Hero widget" at runtime.
-                      // The carousel's internal Hero now provides the
-                      // tag, so we let it stand alone here.
                       PlaceImageCarousel(
                           images: place.officialImages,
                           height: double.infinity,
@@ -337,15 +330,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     BuildContext fromHeroContext,
                                     BuildContext toHeroContext,
                                   ) {
-                                    // v1.0.89 — guard the 'as Hero' cast.
-                                    // On Flutter Web, when the Hero source
-                                    // is absent (e.g. first navigation or
-                                    // in-flight widget tree swap), the
-                                    // flight shuttle can be invoked with a
-                                    // context whose widget is not a Hero,
-                                    // and the cast throws a TypeError that
-                                    // recurses through FlutterError.onError
-                                    // every frame.
+                                   
                                     final destWidget = toHeroContext.widget;
                                     if (destWidget is! Hero) {
                                       return const SizedBox.shrink();
@@ -496,9 +481,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                         label: saved
                                             ? context.tr('saved')
                                             : context.tr('save'),
-                                        // v1.0.75 — was hardcoded to
-                                        // AppColors.primary (navy) which
-                                        // disappeared in dark mode.
+                                       
                                         color: saved
                                             ? context.quickActionGold
                                             : context.quickActionPrimary,
@@ -522,8 +505,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     label: _isVisited
                                         ? context.tr('visited')
                                         : context.tr('checkin'),
-                                    // v1.0.75 — theme-adaptive green so the
-                                    // visited/check-in button reads in dark.
+                                    
                                     color: context.quickActionSuccess,
                                     backgroundColor:
                                         context.quickActionSuccessBg,
@@ -532,23 +514,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                       final wasVisited = _isVisited;
                                       if (!wasVisited) {
                                         
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
+                                      
                                         
                                         final streak = context
                                             .read<StreakProvider>();
@@ -578,18 +544,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                           return;
                                         }
 
-                                        // v1.0.56: gam.applyAction is
-                                        // the single orchestrator — it
-                                        // updates the streak, re-runs the
-                                        // catalog achievement re-eval, and
-                                        // persists the row to Supabase.
                                         await gamification.applyAction(
                                           'check_in',
                                           placeId: place.id,
                                         );
-                                        // v1.0.62: mark this place visited in
-                                        // TripProvider so the Trip Planner
-                                        // immediately shows the "Visited" badge.
+                                       
                                         if (context.mounted) {
                                           context
                                               .read<TripProvider>()
@@ -605,12 +564,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                               .fetchRemoteCounts(userId);
                                           
                                           
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
+                    
                                           
                                           placeProvider
                                               .fetchRemoteCounts(userId);
@@ -743,9 +697,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
 
                                         setState(() => _isVisited = false);
                                         try {
-                                          // v1.0.63: decrement stats, claw back points, and
-                                          // re-evaluate achievements so any badge unlocked by
-                                          // this single check-in is revoked.
+                                        
                                           await gamification.reverseAction(
                                             'check_in',
                                             placeId: place.id,
@@ -797,8 +749,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                   child: _QuickAction(
                                     icon: Icons.directions_rounded,
                                     label: context.tr('go'),
-                                    // v1.0.75 — adaptive Go color (navy
-                                    // in light, light blue in dark).
+                                    
                                     color: context.quickActionPrimary,
                                     backgroundColor:
                                         context.quickActionPrimaryBg,
@@ -822,8 +773,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                               )
                                             : context.tr('download_offline'),
                                         color: cached
-                                            // v1.0.75 — adaptive green/purple
-                                            // for the offline-download chip.
+                                        
                                             ? context.quickActionSuccess
                                             : context.quickActionPurple,
                                         backgroundColor: cached
@@ -1094,9 +1044,7 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // v1.0.75 — explicit backgroundColor parameter so callers can pick
-    // a theme-appropriate tint. Falls back to a 12% overlay of the
-    // icon color (works on light backgrounds but is too dark in dark).
+  
     final bg = backgroundColor ?? color.withValues(alpha: 0.12);
     return GestureDetector(
       onTap: onTap,
@@ -1117,7 +1065,6 @@ class _QuickAction extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              // v1.0.75 — readable text color in both themes.
               color: context.textPri,
             ),
           ),

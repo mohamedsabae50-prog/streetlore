@@ -14,15 +14,73 @@ import '../../core/constants/app_colors.dart';
 import '../../l10n/app_strings.dart';
 
 final Uint8List _kTransparentPng = Uint8List.fromList(<int>[
-  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
-  0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-  0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
-  0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41,
-  0x54, 0x78, 0x9C, 0x62, 0x00, 0x01, 0x00, 0x00,
-  0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
-  0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
-  0x42, 0x60, 0x82,
+  0x89,
+  0x50,
+  0x4E,
+  0x47,
+  0x0D,
+  0x0A,
+  0x1A,
+  0x0A,
+  0x00,
+  0x00,
+  0x00,
+  0x0D,
+  0x49,
+  0x48,
+  0x44,
+  0x52,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x08,
+  0x06,
+  0x00,
+  0x00,
+  0x00,
+  0x1F,
+  0x15,
+  0xC4,
+  0x89,
+  0x00,
+  0x00,
+  0x00,
+  0x0D,
+  0x49,
+  0x44,
+  0x41,
+  0x54,
+  0x78,
+  0x9C,
+  0x62,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x05,
+  0x00,
+  0x01,
+  0x0D,
+  0x0A,
+  0x2D,
+  0xB4,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x49,
+  0x45,
+  0x4E,
+  0x44,
+  0xAE,
+  0x42,
+  0x60,
+  0x82,
 ]);
 
 class PlaceWaypoint {
@@ -97,14 +155,6 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _initializeMap() async {
-    // v1.0.93 — BYPASS Geolocator entirely on Flutter Web.
-    // On Web, navigator.geolocation API permission denials /
-    // timeouts have been observed to trigger an unhandled async loop
-    // in the plugin's web shim, which recurses through
-    // FlutterError.onError and produces the infinite
-    // 'minified:jI<void>' render loop. We just skip GPS on Web and
-    // let the map center on the destination (or the Alexandria
-    // fallback) instead.
     if (kIsWeb) {
       if (!mounted) return;
       setState(() {
@@ -155,13 +205,6 @@ class _MapScreenState extends State<MapScreen> {
       setState(() {
         _isLoading = false;
       });
-      // v1.0.92 — REMOVED the pre-map _centerOnUser(force: true) call.
-      // _mapController.move() crashes if the FlutterMap isn't fully
-      // rendered yet; on Flutter Web the route transition into this
-      // screen can leave the map in a half-initialized state where
-      // camera.zoom throws a minified:jI<void> on every access, leading
-      // to an infinite render loop. The onMapReady callback already
-      // handles centering, so we let it run instead.
     }
   }
 
@@ -170,9 +213,6 @@ class _MapScreenState extends State<MapScreen> {
     final newLoc = LatLng(position.latitude, position.longitude);
     setState(() => _currentLocation = newLoc);
 
-    // v1.0.92 — use null-safe access on _lastRouteOrigin (was using '!'
-    // which could throw NPE on the first update if initState hadn't
-    // populated the field yet).
     final lastOrigin = _lastRouteOrigin;
     final driftedMeters = lastOrigin == null
         ? double.infinity
@@ -181,17 +221,11 @@ class _MapScreenState extends State<MapScreen> {
       _lastRouteOrigin = newLoc;
       _getRoute();
     }
-    // _centerOnUser() now schedules its work in a post-frame callback
-    // internally, so it's safe to call from here.
   }
 
   void _centerOnUser({bool force = false}) {
     if (_currentLocation == null) return;
-    // v1.0.92 — never access _mapController.camera.zoom before the map
-    // is fully rendered. On Flutter Web the camera getter can throw a
-    // minified:jI<void> which recurses through FlutterError.onError every
-    // frame. Schedule the move in a post-frame callback so the FlutterMap
-    // has finished its first layout pass.
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       try {
@@ -206,9 +240,12 @@ class _MapScreenState extends State<MapScreen> {
     final dLon = _deg2rad(b.longitude - a.longitude);
     final lat1 = _deg2rad(a.latitude);
     final lat2 = _deg2rad(b.latitude);
-    final h = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(lat1) * math.cos(lat2) *
-            math.sin(dLon / 2) * math.sin(dLon / 2);
+    final h =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1) *
+            math.cos(lat2) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
     return 2 * r * math.atan2(math.sqrt(h), math.sqrt(1 - h));
   }
 
@@ -220,9 +257,11 @@ class _MapScreenState extends State<MapScreen> {
 
     final coords = <String>[];
     if (_currentLocation != null) {
-      coords.add('${_currentLocation!.longitude},${_currentLocation!.latitude}');
+      coords.add(
+        '${_currentLocation!.longitude},${_currentLocation!.latitude}',
+      );
     }
-    
+
     for (var i = 0; i < waypoints.length; i++) {
       final w = waypoints[i];
       if (coords.length >= _osrmMaxWaypoints) break;
@@ -251,12 +290,14 @@ class _MapScreenState extends State<MapScreen> {
           .get(url, headers: const {'User-Agent': 'com.streetlore.app/1.0'})
           .timeout(const Duration(seconds: 15));
       if (!mounted) return;
-      
+
       if (response.statusCode == 200) {
         final dynamic decoded = json.decode(response.body);
         if (decoded != null && decoded is Map) {
           final dynamic routesList = decoded['routes'];
-          if (routesList != null && routesList is List && routesList.isNotEmpty) {
+          if (routesList != null &&
+              routesList is List &&
+              routesList.isNotEmpty) {
             final dynamic firstRoute = routesList[0];
             if (firstRoute != null && firstRoute is Map) {
               final dynamic geometry = firstRoute['geometry'];
@@ -270,20 +311,21 @@ class _MapScreenState extends State<MapScreen> {
                       final dynamic lng = c[0];
                       final dynamic lat = c[1];
                       if (lng is num && lat is num) {
-                        newRoutePoints.add(LatLng(lat.toDouble(), lng.toDouble()));
+                        newRoutePoints.add(
+                          LatLng(lat.toDouble(), lng.toDouble()),
+                        );
                       }
                     }
                   }
                   setState(() {
                     _routePoints = newRoutePoints;
                   });
-                  return; // Success, exit method
+                  return;
                 }
               }
             }
           }
         }
-        // If we reach here, JSON was malformed
         throw Exception('Malformed OSRM response');
       } else {
         throw Exception('API status ${response.statusCode}');
@@ -312,7 +354,6 @@ class _MapScreenState extends State<MapScreen> {
     final List<String> tileSubdomains = ['', 'a', 'b', 'c', 'd'];
     final List<PlaceWaypoint> waypoints = _effectiveWaypoints;
 
-    // Explicitly build marker list without spread operators or inline loops
     final List<Marker> markerList = [];
     if (_currentLocation != null) {
       markerList.add(
@@ -338,7 +379,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
       );
     }
-    
+
     if (waypoints.length > 1) {
       for (var i = 0; i < waypoints.length; i++) {
         markerList.add(
@@ -365,12 +406,13 @@ class _MapScreenState extends State<MapScreen> {
       );
     }
 
-    // Explicitly build children list without spread operators or inline ifs
     final List<Widget> mapChildren = [];
     mapChildren.add(
       TileLayer(
         urlTemplate: tileUrls[0],
-        fallbackUrl: tileUrls.length > 1 ? tileUrls.sublist(1).join('||') : null,
+        fallbackUrl: tileUrls.length > 1
+            ? tileUrls.sublist(1).join('||')
+            : null,
         userAgentPackageName: 'com.streetlore.app',
         subdomains: tileSubdomains,
         keepBuffer: 8,
@@ -398,65 +440,58 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     mapChildren.add(MarkerLayer(markers: markerList));
-    
-    mapChildren.add(
-      Positioned(
-        left: 0,
-        right: 0,
-        bottom: 0,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          color: Colors.white.withValues(alpha: 0.7),
-          child: const Text(
-            '© OpenStreetMap · © CARTO',
-            style: TextStyle(fontSize: 11, color: Colors.black87),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-    );
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.placeName),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text(widget.placeName), centerTitle: true),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          // v1.0.91 — force absolute MediaQuery-sized bounds instead of
-          // SizedBox.expand. On Flutter Web the Scaffold body's intrinsic
-          // sizing is sometimes unstable during the route transition into
-          // this screen; FlutterMap then reports unbounded constraints to
-          // its children, producing the infinite 'minified:jI<void>'
-          // render loop on 'Go'. Explicit MediaQuery width/height locks
-          // the layout to the screen size.
-          : SizedBox(
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
-              child: FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: _currentLocation ??
-                      (waypoints.isNotEmpty
-                          ? LatLng(waypoints[0].lat, waypoints[0].lng)
-                          : const LatLng(31.2001, 29.9187)),
-                  initialZoom: waypoints.length > 1 ? 12.0 : 14.0,
-                  minZoom: 3.0,
-                  maxZoom: 18.0,
-                  onMapReady: () {
-                    if (waypoints.length > 1 && _routePoints.length > 1) {
-                      _fitToRoute();
-                    } else if (_currentLocation != null) {
-                      _centerOnUser(force: true);
-                    } else if (waypoints.isNotEmpty) {
-                      try {
-                        _mapController.move(LatLng(waypoints[0].lat, waypoints[0].lng), 14.0);
-                      } catch (_) {}
-                    }
-                  },
+          : Stack(
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter:
+                        _currentLocation ??
+                        (waypoints.isNotEmpty
+                            ? LatLng(waypoints[0].lat, waypoints[0].lng)
+                            : const LatLng(31.2001, 29.9187)),
+                    initialZoom: waypoints.length > 1 ? 12.0 : 14.0,
+                    minZoom: 3.0,
+                    maxZoom: 18.0,
+                    onMapReady: () {
+                      if (waypoints.length > 1 && _routePoints.length > 1) {
+                        _fitToRoute();
+                      } else if (_currentLocation != null) {
+                        _centerOnUser(force: true);
+                      } else if (waypoints.isNotEmpty) {
+                        try {
+                          _mapController.move(
+                            LatLng(waypoints[0].lat, waypoints[0].lng),
+                            14.0,
+                          );
+                        } catch (_) {}
+                      }
+                    },
+                  ),
+                  children: mapChildren,
                 ),
-                children: mapChildren,
-              ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    color: Colors.white.withValues(alpha: 0.7),
+                    child: const Text(
+                      '© OpenStreetMap © CARTO',
+                      style: TextStyle(fontSize: 11, color: Colors.black87),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -466,10 +501,7 @@ class _MapScreenState extends State<MapScreen> {
     try {
       final bounds = LatLngBounds.fromPoints(_routePoints);
       _mapController.fitCamera(
-        CameraFit.bounds(
-          bounds: bounds,
-          padding: const EdgeInsets.all(48),
-        ),
+        CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(48)),
       );
     } catch (e) {
       debugPrint('Fit route error: $e');

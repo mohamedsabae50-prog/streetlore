@@ -62,11 +62,7 @@ Future<void> main() async {
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
     publishableKey: AppConfig.supabaseAnonKey,
-    authOptions: const FlutterAuthClientOptions(
-      
-      
-      autoRefreshToken: true,
-    ),
+    authOptions: const FlutterAuthClientOptions(autoRefreshToken: true),
   );
 
   await OfflineStorageService.instance.init();
@@ -99,12 +95,6 @@ Future<void> main() async {
   // automatically (the missing piece that broke badge unlocks).
   gamification.bindHelpers(streak: streak, achievements: achievements);
 
-  
-  
-  
-  
-  
-  
   Future<void> bootstrapFromSupabase(String userId) async {
     await Future.wait([
       placeProvider.bootstrapForUser(userId),
@@ -118,8 +108,7 @@ Future<void> main() async {
   void authListener() {
     final id = auth.userId;
     if (id.isEmpty) return;
-    
-    
+
     if (id == _lastBootstrappedUserId) return;
     _lastBootstrappedUserId = id;
     unawaited(bootstrapFromSupabase(id));
@@ -191,13 +180,7 @@ class StreetloreApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          // v1.0.80 — Locale changes used to glitch into a solid gray
-          // screen because some descendant widget captured the
-          // previous Localizations widget during its build and threw
-          // when the inherited scope was swapped. Wrapping the home
-          // in a Builder keyed on the active locale forces a clean
-          // subtree rebuild and isolates the rebuilt Locale-aware
-          // widgets from the rest of the tree.
+
           builder: (context, child) {
             return _LocaleScope(
               locale: localeProvider.locale,
@@ -307,8 +290,6 @@ class StreetloreApp extends StatelessWidget {
   }
 }
 
-
-
 /// v1.0.80 — wraps the MaterialApp subtree so that when the user
 /// toggles the language from Settings, only the descendants of this
 /// widget get torn down and rebuilt — not the MaterialApp or any of
@@ -356,8 +337,11 @@ class _ErrorScreen extends StatelessWidget {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.bug_report_rounded,
-                          color: Color(0xFFEF4444), size: 32),
+                      Icon(
+                        Icons.bug_report_rounded,
+                        color: Color(0xFFEF4444),
+                        size: 32,
+                      ),
                       SizedBox(width: 12),
                       Text(
                         'Something went wrong',
@@ -376,7 +360,9 @@ class _ErrorScreen extends StatelessWidget {
                       color: const Color(0xFF2B1119),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: const Color(0xFFEF4444), width: 1),
+                        color: const Color(0xFFEF4444),
+                        width: 1,
+                      ),
                     ),
                     child: Text(
                       details.exceptionAsString(),
