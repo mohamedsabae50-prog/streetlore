@@ -1,8 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 
 class CompassService {
+  static const double _headingSmoothingFactor = 0.25;
+
   CompassService._();
   static final CompassService instance = CompassService._();
 
@@ -36,10 +39,13 @@ class CompassService {
     _subscription = events.listen(
       (event) {
         final h = event.heading;
-        if (h == null) return;
+        if (h == null || !h.isFinite) return;
+        final normalizedHeading = _normalizeHeading(h);
+        _smoothedHeading = _firstEventReceived
+            ? _smoothAngle(_smoothedHeading, normalizedHeading)
+            : normalizedHeading;
+        _heading = normalizedHeading;
         _firstEventReceived = true;
-        _heading = h;
-        _smoothedHeading = _smoothAngle(_smoothedHeading, h);
         _lastUpdateAt = DateTime.now();
         if (!_controller.isClosed) {
           _controller.add(_smoothedHeading);
@@ -71,6 +77,9 @@ class CompassService {
     double diff = to - from;
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;
-    return (from + diff) % 360;
+    return _normalizeHeading(from + diff * _headingSmoothingFactor);
   }
+
+  double _normalizeHeading(double heading) =>
+      ((heading % 360) + 360) % 360;
 }
