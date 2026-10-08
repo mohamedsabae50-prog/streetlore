@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../core/services/supabase_service.dart';
 import '../data/models/place_photo.dart';
@@ -55,21 +56,35 @@ class PlacePhotosProvider extends ChangeNotifier {
     await prefs.setString(_kKey, jsonEncode(all));
   }
 
-  /// v1.0.72 — also push the photo to Supabase so the moderation view
-  /// in the Admin Panel (and the in-app gallery across devices) can see
-  /// it. We do this best-effort: local cache is the source of truth for
-  /// the device, and the remote row carries the `user_id` so RLS can
-  /// enforce owner-scoped policies.
   Future<PlacePhoto> addPhoto({
     required String placeId,
     required String userName,
-    required String imageUrl,
+    required Uint8List imageBytes,
     String? userId,
     String caption = '',
   }) async {
     final effectiveUserId = (userId ?? _currentUserId).trim();
+    final photoId = _uuid.v4();
+    final svc = SupabaseService.instance;
+    var imageUrl = 'data:image/jpeg;base64,${base64Encode(imageBytes)}';
+    String? storagePath;
+
+    if (effectiveUserId.isNotEmpty && svc.clientOrNull != null) {
+      final client = svc.clientOrNull!;
+      storagePath = 'user-photos/$placeId/$photoId.jpg';
+      await client.storage.from('place-images').uploadBinary(
+            storagePath,
+            imageBytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: false,
+            ),
+          );
+      imageUrl = client.storage.from('place-images').getPublicUrl(storagePath);
+    }
+
     final photo = PlacePhoto(
-      id: _uuid.v4(),
+      id: photoId,
       placeId: placeId,
       userId: effectiveUserId,
       userName: userName,
@@ -77,26 +92,36 @@ class PlacePhotosProvider extends ChangeNotifier {
       caption: caption,
       date: DateTime.now(),
     );
+    if (effectiveUserId.isNotEmpty && svc.clientOrNull != null) {
+      try {
+        await svc.clientOrNull!.from('place_photos').insert(
+          photo.toSupabaseInsert(),
+        );
+      } catch (e) {
+        if (storagePath != null) {
+          try {
+            await svc.clientOrNull!.storage
+                .from('place-images')
+                .remove([storagePath]);
+          } catch (cleanupError) {
+            debugPrint(
+              'PlacePhotosProvider.addPhoto: failed to clean up uploaded '
+              'object $storagePath: $cleanupError',
+            );
+          }
+        }
+        rethrow;
+      }
+    } else {
+      debugPrint(
+        'PlacePhotosProvider.addPhoto: Supabase unavailable or no user id; '
+        'photo $photoId is saved to this device only',
+      );
+    }
+
     _byPlace.putIfAbsent(placeId, () => []).insert(0, photo);
     await _save();
     notifyListeners();
-
-    if (effectiveUserId.isNotEmpty) {
-      try {
-        final svc = SupabaseService.instance;
-        if (svc.clientOrNull != null) {
-          await svc.clientOrNull!
-              .from('place_photos')
-              .insert(photo.toSupabaseInsert());
-        }
-      } catch (e) {
-        debugPrint(
-          'PlacePhotosProvider.addPhoto: remote push failed for photo '
-          '${photo.id}: $e (local cache still saved)',
-        );
-      }
-    }
-
     return photo;
   }
 

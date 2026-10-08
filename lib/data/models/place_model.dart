@@ -70,6 +70,8 @@ class PlaceModel {
 
   final bool enableGallery;
 
+  final bool enablePhotoUpload;
+
   const PlaceModel({
     required this.id,
     required this.nameEn,
@@ -100,6 +102,7 @@ class PlaceModel {
     this.isIndoor = false,
     this.enableChat = true,
     this.enableGallery = true,
+    this.enablePhotoUpload = true,
   });
 
   String _pick(String en, String? ar, String locale) {
@@ -110,7 +113,8 @@ class PlaceModel {
   String localizedName(String locale) => _pick(nameEn, nameAr, locale);
   String localizedDescription(String locale) =>
       _pick(descriptionEn, descriptionAr, locale);
-  String localizedCategory(String locale) => _pick(category, categoryAr, locale);
+  String localizedCategory(String locale) =>
+      _pick(category, categoryAr, locale);
   String localizedAddress(String locale) => _pick(address, addressAr, locale);
   String localizedPriceNote(String locale) =>
       _pick(priceNote, priceNoteAr, locale);
@@ -131,9 +135,8 @@ class PlaceModel {
     return list;
   }
 
-  String get primaryImage => officialImages.isNotEmpty
-      ? officialImages.first
-      : imageUrl;
+  String get primaryImage =>
+      officialImages.isNotEmpty ? officialImages.first : imageUrl;
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
     Map<String, int>? bestTimeOverride;
@@ -154,14 +157,14 @@ class PlaceModel {
     }
     return PlaceModel(
       id: json['id'] as String,
-      nameEn: (json['name_en'] as String?) ??
+      nameEn:
+          (json['name_en'] as String?) ??
           (json['name'] as String?) ??
           (json['nameEn'] as String?) ??
           '',
-      nameAr:
-          json['name_ar'] as String? ??
-          json['nameAr'] as String?,
-      descriptionEn: (json['description_en'] as String?) ??
+      nameAr: json['name_ar'] as String? ?? json['nameAr'] as String?,
+      descriptionEn:
+          (json['description_en'] as String?) ??
           (json['description'] as String?) ??
           (json['descriptionEn'] as String?) ??
           '',
@@ -171,7 +174,8 @@ class PlaceModel {
       imageUrls: urls,
       rating: (json['rating'] as num).toDouble(),
       category: json['category'] as String? ?? 'General',
-      categoryAr: json['category_ar'] as String? ?? json['categoryAr'] as String?,
+      categoryAr:
+          json['category_ar'] as String? ?? json['categoryAr'] as String?,
       lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
       lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
       address: json['address'] as String? ?? 'Alexandria, Egypt',
@@ -180,7 +184,8 @@ class PlaceModel {
       reviewCount: json['reviewCount'] as int? ?? 0,
       priceLevel: PriceLevel.fromName(json['priceLevel'] as String?),
       priceNote: json['priceNote'] as String? ?? '',
-      priceNoteAr: json['price_note_ar'] as String? ?? json['priceNoteAr'] as String?,
+      priceNoteAr:
+          json['price_note_ar'] as String? ?? json['priceNoteAr'] as String?,
       isHiddenGem: json['isHiddenGem'] as bool? ?? false,
       priceLocalEgp: json['priceLocalEgp'] as int?,
       priceForeignerEgp: json['priceForeignerEgp'] as int?,
@@ -189,8 +194,15 @@ class PlaceModel {
       bestTimeNote: json['best_time_note'] as String?,
       bestTimeToVisit: json['best_time_to_visit'] as String?,
       isIndoor: json['is_indoor'] as bool? ?? false,
-      enableChat: (json['enable_chat'] as bool?) ?? true,
+      enableChat:
+          (json['enable_chat'] as bool?) ??
+          (json['is_chat_enabled'] as bool?) ??
+          true,
       enableGallery: (json['enable_gallery'] as bool?) ?? true,
+      enablePhotoUpload:
+          (json['enable_photo_upload'] as bool?) ??
+          (json['is_photo_upload_enabled'] as bool?) ??
+          true,
     );
   }
 
@@ -221,6 +233,9 @@ class PlaceModel {
       'best_time_note': bestTimeNote,
       'best_time_to_visit': bestTimeToVisit,
       'is_indoor': isIndoor,
+      'enable_chat': enableChat,
+      'enable_gallery': enableGallery,
+      'enable_photo_upload': enablePhotoUpload,
     };
   }
 
@@ -252,6 +267,7 @@ class PlaceModel {
     bool? isIndoor,
     bool? enableChat,
     bool? enableGallery,
+    bool? enablePhotoUpload,
   }) {
     return PlaceModel(
       id: id ?? this.id,
@@ -281,6 +297,7 @@ class PlaceModel {
       isIndoor: isIndoor ?? this.isIndoor,
       enableChat: enableChat ?? this.enableChat,
       enableGallery: enableGallery ?? this.enableGallery,
+      enablePhotoUpload: enablePhotoUpload ?? this.enablePhotoUpload,
     );
   }
 }

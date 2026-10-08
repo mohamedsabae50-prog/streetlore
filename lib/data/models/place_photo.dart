@@ -42,6 +42,7 @@ class PlacePhoto {
     'userName': userName,
     'imageUrl': imageUrl,
     'caption': caption,
+    'caption_en': caption,
     'likes': likes,
     'date': date.toIso8601String(),
     'likedBy': likedBy.toList(),

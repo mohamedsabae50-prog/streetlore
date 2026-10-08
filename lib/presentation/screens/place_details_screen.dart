@@ -180,7 +180,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final place = widget.place;
+    final place = context.select<PlaceProvider, PlaceModel>(
+      (provider) => provider.findById(widget.place.id) ?? widget.place,
+    );
     final theme = Theme.of(context);
     final scaffoldBgColor = theme.scaffoldBackgroundColor;
     final textPri = theme.textTheme.bodyLarge?.color ?? Colors.black;

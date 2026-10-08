@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +13,7 @@ class PlaceProvider extends ChangeNotifier {
   SupabaseClient get _client => Supabase.instance.client;
 
   List<PlaceModel> _places = [];
+  RealtimeChannel? _placesChannel;
 
   /// ALWAYS sorted by (displayOrder ASC, id ASC). Single source of truth
   /// for the UI. `_places` is the raw cache (set by loadPlaces/merge/fallback);
@@ -44,6 +46,42 @@ class PlaceProvider extends ChangeNotifier {
 
   PlaceProvider() {
     _loadSavedPlaces();
+    _watchPlaceUpdates();
+  }
+
+  void _watchPlaceUpdates() {
+    _placesChannel = _client
+        .channel('mobile-place-updates')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'places',
+          callback: (payload) {
+            final row = Map<String, dynamic>.from(payload.newRecord);
+            final updated = placeModelFromSupabaseRow(row);
+            if (!_hasValidCoords(updated.lat, updated.lng)) return;
+
+            final index = _places.indexWhere((place) => place.id == updated.id);
+            if (index == -1) {
+              _places = [..._places, updated];
+            } else {
+              final places = [..._places];
+              places[index] = updated;
+              _places = places;
+            }
+            notifyListeners();
+          },
+        )
+        .subscribe();
+  }
+
+  @override
+  void dispose() {
+    final channel = _placesChannel;
+    if (channel != null) {
+      unawaited(_client.removeChannel(channel).then<void>((_) {}));
+    }
+    super.dispose();
   }
 
   Future<void> fetchRemoteCounts(String userId) async {
@@ -486,8 +524,15 @@ PlaceModel placeModelFromSupabaseRow(Map<String, dynamic> json) {
     bestTimeNote: json['best_time_note']?.toString(),
     bestTimeToVisit: json['best_time_to_visit']?.toString(),
     isIndoor: (json['is_indoor'] as bool?) ?? false,
-    enableChat: (json['enable_chat'] as bool?) ?? true,
+    enableChat:
+        (json['enable_chat'] as bool?) ??
+        (json['is_chat_enabled'] as bool?) ??
+        true,
     enableGallery: (json['enable_gallery'] as bool?) ?? true,
+    enablePhotoUpload:
+        (json['enable_photo_upload'] as bool?) ??
+        (json['is_photo_upload_enabled'] as bool?) ??
+        true,
   );
 }
 

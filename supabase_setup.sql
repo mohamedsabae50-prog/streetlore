@@ -17,6 +17,9 @@ create table if not exists public.places (
   price_foreigner_egp integer,
   is_hidden_gem boolean default false,
   is_featured  boolean default false,
+  enable_chat boolean not null default true,
+  enable_gallery boolean not null default true,
+  enable_photo_upload boolean not null default true,
   created_at   timestamptz default now(),
   updated_at   timestamptz default now()
 );
@@ -144,7 +147,29 @@ create policy "auth delete own place_chat" on public.place_chat for delete
 -- Enable Realtime for place_chat
 alter publication supabase_realtime add table public.place_chat;
 
--- 2. Leaderboard (gamification stats)
+-- 2. User-contributed place photos (metadata in Postgres, files in place-images)
+create table if not exists public.place_photos (
+  id         text primary key,
+  place_id   text not null references public.places(id) on delete cascade,
+  user_id    text,
+  user_name  text not null default 'Traveler',
+  image_url  text not null,
+  caption    text not null default '',
+  caption_en text not null default '',
+  caption_ar text not null default '',
+  likes      integer not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists place_photos_place_created_idx
+  on public.place_photos (place_id, created_at desc);
+
+alter table public.place_photos enable row level security;
+create policy "Public read place_photos" on public.place_photos for select
+  using (true);
+create policy "Owner insert place_photos" on public.place_photos for insert
+  with check (auth.uid()::text = user_id);
+
+-- 3. Leaderboard (gamification stats)
 create table if not exists public.leaderboard (
   user_id         uuid primary key,
   user_name       text not null default 'Explorer',

@@ -17,6 +17,7 @@ class PlacePhotosSection extends StatelessWidget {
   const PlacePhotosSection({super.key, required this.place});
 
   Future<void> _addPhoto(BuildContext context) async {
+    if (!place.enablePhotoUpload) return;
     final picker = ImagePicker();
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -36,12 +37,19 @@ class PlacePhotosSection extends StatelessWidget {
     final photos = context.read<PlacePhotosProvider>();
     HapticFeedback.mediumImpact();
     final bytes = await picked.readAsBytes();
-    await photos.addPhoto(
-      placeId: place.id,
-      userName: auth.userName.isEmpty ? 'Traveler' : auth.userName,
-      imageUrl: AppImage.toDataUri(bytes),
-      userId: auth.currentUserId,
-    );
+    try {
+      await photos.addPhoto(
+        placeId: place.id,
+        userName: auth.userName.isEmpty ? 'Traveler' : auth.userName,
+        imageBytes: bytes,
+        userId: auth.currentUserId,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Photo upload failed: $e')),
+      );
+    }
   }
 
   Future<void> _confirmDelete(BuildContext context, PlacePhoto photo) async {
@@ -117,9 +125,10 @@ class PlacePhotosSection extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  GestureDetector(
-                    onTap: () => _addPhoto(context),
-                    child: Container(
+                  if (place.enablePhotoUpload)
+                    GestureDetector(
+                      onTap: () => _addPhoto(context),
+                      child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
@@ -143,8 +152,8 @@ class PlacePhotosSection extends StatelessWidget {
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
