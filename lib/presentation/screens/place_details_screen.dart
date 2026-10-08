@@ -238,22 +238,14 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Hero(
-                        tag: 'place-image-${place.id}',
-                        flightShuttleBuilder:
-                            (
-                              BuildContext flightContext,
-                              Animation<double> animation,
-                              HeroFlightDirection flightDirection,
-                              BuildContext fromHeroContext,
-                              BuildContext toHeroContext,
-                            ) {
-                              return Material(
-                                color: Colors.transparent,
-                                child: (toHeroContext.widget as Hero).child,
-                              );
-                            },
-                        child: PlaceImageCarousel(
+                      // v1.0.94 — REMOVED the outer Hero wrapper.
+                      // PlaceImageCarousel already wraps the first
+                      // image in an inner Hero with the same tag,
+                      // which produced "A Hero widget cannot be the
+                      // descendant of another Hero widget" at runtime.
+                      // The carousel's internal Hero now provides the
+                      // tag, so we let it stand alone here.
+                      PlaceImageCarousel(
                           images: place.officialImages,
                           height: double.infinity,
                           fit: BoxFit.cover,
@@ -269,7 +261,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                             ),
                           ),
                         ),
-                      ),
                       Container(
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
