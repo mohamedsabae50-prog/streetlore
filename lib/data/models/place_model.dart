@@ -70,8 +70,6 @@ class PlaceModel {
 
   final bool enableGallery;
 
-  final bool enablePhotoUpload;
-
   const PlaceModel({
     required this.id,
     required this.nameEn,
@@ -102,7 +100,6 @@ class PlaceModel {
     this.isIndoor = false,
     this.enableChat = true,
     this.enableGallery = true,
-    this.enablePhotoUpload = true,
   });
 
   String _pick(String en, String? ar, String locale) {
@@ -199,10 +196,6 @@ class PlaceModel {
           (json['is_chat_enabled'] as bool?) ??
           true,
       enableGallery: (json['enable_gallery'] as bool?) ?? true,
-      enablePhotoUpload:
-          (json['enable_photo_upload'] as bool?) ??
-          (json['is_photo_upload_enabled'] as bool?) ??
-          true,
     );
   }
 
@@ -235,7 +228,6 @@ class PlaceModel {
       'is_indoor': isIndoor,
       'enable_chat': enableChat,
       'enable_gallery': enableGallery,
-      'enable_photo_upload': enablePhotoUpload,
     };
   }
 
@@ -267,7 +259,6 @@ class PlaceModel {
     bool? isIndoor,
     bool? enableChat,
     bool? enableGallery,
-    bool? enablePhotoUpload,
   }) {
     return PlaceModel(
       id: id ?? this.id,
@@ -297,7 +288,6 @@ class PlaceModel {
       isIndoor: isIndoor ?? this.isIndoor,
       enableChat: enableChat ?? this.enableChat,
       enableGallery: enableGallery ?? this.enableGallery,
-      enablePhotoUpload: enablePhotoUpload ?? this.enablePhotoUpload,
     );
   }
 }

@@ -529,10 +529,6 @@ PlaceModel placeModelFromSupabaseRow(Map<String, dynamic> json) {
         (json['is_chat_enabled'] as bool?) ??
         true,
     enableGallery: (json['enable_gallery'] as bool?) ?? true,
-    enablePhotoUpload:
-        (json['enable_photo_upload'] as bool?) ??
-        (json['is_photo_upload_enabled'] as bool?) ??
-        true,
   );
 }
 

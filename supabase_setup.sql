@@ -19,7 +19,6 @@ create table if not exists public.places (
   is_featured  boolean default false,
   enable_chat boolean not null default true,
   enable_gallery boolean not null default true,
-  enable_photo_upload boolean not null default true,
   created_at   timestamptz default now(),
   updated_at   timestamptz default now()
 );
@@ -154,7 +153,6 @@ create table if not exists public.place_photos (
   user_id    text,
   user_name  text not null default 'Traveler',
   image_url  text not null,
-  caption    text not null default '',
   caption_en text not null default '',
   caption_ar text not null default '',
   likes      integer not null default 0,

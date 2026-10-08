@@ -1,8 +1,7 @@
 -- Keep the mobile and Admin place-feature flags on the same schema.
 ALTER TABLE public.places
   ADD COLUMN IF NOT EXISTS enable_chat boolean NOT NULL DEFAULT true,
-  ADD COLUMN IF NOT EXISTS enable_gallery boolean NOT NULL DEFAULT true,
-  ADD COLUMN IF NOT EXISTS enable_photo_upload boolean NOT NULL DEFAULT true;
+  ADD COLUMN IF NOT EXISTS enable_gallery boolean NOT NULL DEFAULT true;
 
 -- User-submitted photos are rows in place_photos and image objects in the
 -- existing public place-images bucket used by the Admin panel.
@@ -12,7 +11,6 @@ CREATE TABLE IF NOT EXISTS public.place_photos (
   user_id text,
   user_name text NOT NULL DEFAULT 'Traveler',
   image_url text NOT NULL DEFAULT '',
-  caption text NOT NULL DEFAULT '',
   caption_en text NOT NULL DEFAULT '',
   caption_ar text NOT NULL DEFAULT '',
   likes integer NOT NULL DEFAULT 0,
@@ -24,7 +22,6 @@ ALTER TABLE public.place_photos
   ADD COLUMN IF NOT EXISTS user_id text,
   ADD COLUMN IF NOT EXISTS user_name text NOT NULL DEFAULT 'Traveler',
   ADD COLUMN IF NOT EXISTS image_url text NOT NULL DEFAULT '',
-  ADD COLUMN IF NOT EXISTS caption text NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS caption_en text NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS caption_ar text NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS likes integer NOT NULL DEFAULT 0,

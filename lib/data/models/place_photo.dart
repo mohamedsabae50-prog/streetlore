@@ -42,7 +42,6 @@ class PlacePhoto {
     'userName': userName,
     'imageUrl': imageUrl,
     'caption': caption,
-    'caption_en': caption,
     'likes': likes,
     'date': date.toIso8601String(),
     'likedBy': likedBy.toList(),
@@ -57,7 +56,8 @@ class PlacePhoto {
     'user_id': userId,
     'user_name': userName,
     'image_url': imageUrl,
-    'caption': caption,
+    'caption_en': caption,
+    'caption_ar': '',
     'likes': likes,
     'created_at': date.toIso8601String(),
   };
@@ -70,11 +70,13 @@ class PlacePhoto {
     userId: ((map['userId'] ?? map['user_id']) as String?) ?? '',
     userName: (map['userName'] ?? map['user_name']) as String,
     imageUrl: (map['imageUrl'] ?? map['image_url']) as String,
-    caption: (map['caption'] as String?) ?? '',
+    caption:
+        (map['caption'] as String?) ??
+        (map['caption_en'] as String?) ??
+        (map['caption_ar'] as String?) ??
+        '',
     likes: (map['likes'] as int?) ?? 0,
-    date: DateTime.parse(
-      (map['date'] ?? map['created_at']) as String,
-    ),
+    date: DateTime.parse((map['date'] ?? map['created_at']) as String),
     likedBy: ((map['likedBy'] as List<dynamic>?) ?? const [])
         .cast<String>()
         .toSet(),

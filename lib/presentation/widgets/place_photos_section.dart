@@ -17,7 +17,7 @@ class PlacePhotosSection extends StatelessWidget {
   const PlacePhotosSection({super.key, required this.place});
 
   Future<void> _addPhoto(BuildContext context) async {
-    if (!place.enablePhotoUpload) return;
+    if (!place.enableGallery) return;
     final picker = ImagePicker();
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -125,7 +125,7 @@ class PlacePhotosSection extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  if (place.enablePhotoUpload)
+                  if (place.enableGallery)
                     GestureDetector(
                       onTap: () => _addPhoto(context),
                       child: Container(
