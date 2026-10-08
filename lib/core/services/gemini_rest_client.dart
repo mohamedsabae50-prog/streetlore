@@ -131,6 +131,10 @@ class GeminiRestClient {
               'SDK call: ServerException on key #${ki + 1}, '
               'model=$tryModel (status=$status): ${e.message}',
             );
+            debugPrintGemini(
+              'HTTP $status response body (model=$tryModel): '
+              '${_serverErrorBody(e.message)}',
+            );
             lastResult = GeminiResult(
               text: null,
               statusCode: status,
@@ -236,6 +240,11 @@ class GeminiRestClient {
           'all ${keys.length} keys x ${models.length} models failed',
       raw: null,
     );
+  }
+
+  String _serverErrorBody(String message) {
+    final prefix = RegExp(r'^Server Error \[\d{3}\]: ').firstMatch(message);
+    return prefix == null ? message : message.substring(prefix.end);
   }
 
   int _classifyExceptionMessage(String message) {
