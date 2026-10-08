@@ -3,24 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/place_model.dart';
 import 'map_poi.dart';
 
-
-
-
-
-
-
-
-
-
-
-
 List<MapPoi> getSeedAtms() => _atms;
 
 List<MapPoi> getSeedHotels() => _hotels;
-
-
-
-
 
 List<PlaceModel> getSeedHotelPlaces() => _hotelPlaces;
 
@@ -38,7 +23,6 @@ const Map<String, Color> _bankColors = {
 };
 
 List<MapPoi> _atms = const [
-  
   MapPoi(
     id: 'atm-cib-qaid-bay',
     name: 'CIB ATM - Qaitbay Citadel',
@@ -320,26 +304,24 @@ List<MapPoi> _hotels = const [
   ),
 ];
 
-
-
 // Per-hotel image URL. Empty string means "use the placeholder icon" —
 // each hotel MUST NOT share an image with another hotel or any other row.
 // We have no verified unique Wikimedia Commons image for any individual
 // Alexandria hotel, so every hotel currently falls back to the placeholder
 // icon. Add a per-id entry ONLY with a verified unique Wikimedia URL.
 const Map<String, String> _hotelImageById = {
-  'hotel-four-seasons':       '',
-  'hotel-sofitel-alex':       '',
-  'hotel-steigenberger-cecil':'',
-  'hotel-tolip':              '',
-  'hotel-paradise-inn':       '',
-  'hotel-romance':            '',
-  'hotel-cherry-maryski':     '',
-  'hotel-plaza':              '',
-  'hotel-king-mariout':       '',
-  'hotel-san-stefano':        '',
-  'hotel-downtown':           '',
-  'hotel-borg-arab':          '',
+  'hotel-four-seasons': '',
+  'hotel-sofitel-alex': '',
+  'hotel-steigenberger-cecil': '',
+  'hotel-tolip': '',
+  'hotel-paradise-inn': '',
+  'hotel-romance': '',
+  'hotel-cherry-maryski': '',
+  'hotel-plaza': '',
+  'hotel-king-mariout': '',
+  'hotel-san-stefano': '',
+  'hotel-downtown': '',
+  'hotel-borg-arab': '',
 };
 
 List<PlaceModel> _hotelPlaces = _hotels
@@ -349,9 +331,7 @@ List<PlaceModel> _hotelPlaces = _hotels
         nameEn: poi.name,
         nameAr: null,
         descriptionEn:
-            '${poi.brand ?? "Hotel"} is one of Alexandria\'s well-known '
-            'stays, located at ${poi.address}. ${poi.stars != null ? "${poi.stars}-star rating. " : ""}'
-            'Tap Save to bookmark, or tap Check-in when you arrive.',
+            '${poi.brand ?? "Hotel"} is located at ${poi.address} in Alexandria.',
         descriptionAr: null,
         imageUrl: _hotelImageById[poi.id] ?? '',
         rating: (poi.stars ?? 3).toDouble(),
@@ -361,7 +341,7 @@ List<PlaceModel> _hotelPlaces = _hotels
         lng: poi.lng,
         address: poi.address,
         addressAr: null,
-        openHours: '24 hours',
+        openHours: 'Open 24 hours',
         reviewCount: 0,
         priceLevel: poi.stars != null && poi.stars! >= 4
             ? PriceLevel.expensive
@@ -379,6 +359,5 @@ List<PlaceModel> _hotelPlaces = _hotels
       ),
     )
     .toList(growable: false);
-
 
 Map<String, Color> get bankColors => _bankColors;

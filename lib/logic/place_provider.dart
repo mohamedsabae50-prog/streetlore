@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/services/supabase_service.dart';
-import '../data/mock_data.dart' show fallbackPlaces;
+import '../data/mock_data.dart' show MockData, fallbackPlaces;
 import '../data/models/map_seed.dart';
 import '../data/models/place_model.dart';
 import 'offline_provider.dart';
@@ -412,7 +412,7 @@ class PlaceProvider extends ChangeNotifier {
   List<PlaceModel> applyFilters(List<PlaceModel> initialPlaces) {
     List<PlaceModel> result = List<PlaceModel>.from(initialPlaces);
     if (_isFilterOpenNow) {
-      result = result.where((p) => _isPlaceOpenNow(p.openHours)).toList();
+      result = result.where((p) => MockData.isOpenNow(p.openHours)).toList();
     }
     if (_onlyFree) {
       result = result.where((p) => p.priceLevel == PriceLevel.free).toList();
@@ -440,39 +440,6 @@ class PlaceProvider extends ChangeNotifier {
     return result;
   }
 
-  bool _isPlaceOpenNow(String openHours) {
-    final clean = openHours.trim();
-    if (clean.toLowerCase() == 'open 24 hours') return true;
-
-    final parts = clean.split('-');
-    if (parts.length < 2) return true;
-    final open = _parseHourMin(parts[0].trim());
-    final close = _parseHourMin(parts[1].trim());
-    if (open == null || close == null) return true;
-    final now = DateTime.now();
-    final nowMins = now.hour * 60 + now.minute;
-    if (close > open) {
-      return nowMins >= open && nowMins < close;
-    } else {
-      return nowMins >= open || nowMins < close;
-    }
-  }
-
-  int? _parseHourMin(String s) {
-    final upper = s.toUpperCase();
-    final isPm = upper.contains('PM');
-    final isAm = upper.contains('AM');
-    final cleaned = upper.replaceAll('AM', '').replaceAll('PM', '').trim();
-    final colonIdx = cleaned.indexOf(':');
-    if (colonIdx < 0) return null;
-    final h = int.tryParse(cleaned.substring(0, colonIdx).trim());
-    final m = int.tryParse(cleaned.substring(colonIdx + 1).trim());
-    if (h == null || m == null) return null;
-    var hour = h;
-    if (isPm && hour < 12) hour += 12;
-    if (isAm && hour == 12) hour = 0;
-    return hour * 60 + m;
-  }
 }
 
 PlaceModel placeModelFromSupabaseRow(Map<String, dynamic> json) {

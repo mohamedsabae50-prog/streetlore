@@ -102,11 +102,41 @@ class MockData {
     return source.where((p) => p.category == category).toList();
   }
 
-  static bool isOpenNow(String openHours) {
-    if (openHours.trim() == 'Open 24 hours') return true;
-    final now = DateTime.now();
-    final hour = now.hour;
-    return hour >= 9 && hour < 18;
+  static bool isOpenNow(String openHours, {DateTime? now}) {
+    final clean = openHours.trim();
+    if (RegExp(r'^(?:open\s*)?24\s*hours?$', caseSensitive: false)
+        .hasMatch(clean)) {
+      return true;
+    }
+
+    final parts = clean.split(RegExp(r'\s*[-\u2013\u2014]\s*'));
+    if (parts.length != 2) return false;
+
+    final open = _parseHourMin(parts[0]);
+    final close = _parseHourMin(parts[1]);
+    if (open == null || close == null || open == close) return false;
+
+    final current = now ?? DateTime.now();
+    final nowMinutes = current.hour * 60 + current.minute;
+    if (close > open) {
+      return nowMinutes >= open && nowMinutes < close;
+    }
+    return nowMinutes >= open || nowMinutes < close;
+  }
+
+  static int? _parseHourMin(String value) {
+    final match = RegExp(
+      r'^(\d{1,2}):(\d{2})\s*(AM|PM)$',
+      caseSensitive: false,
+    ).firstMatch(value.trim());
+    if (match == null) return null;
+
+    final hour = int.parse(match.group(1)!);
+    final minute = int.parse(match.group(2)!);
+    if (hour < 1 || hour > 12 || minute > 59) return null;
+
+    final period = match.group(3)!.toUpperCase();
+    return (hour % 12 + (period == 'PM' ? 12 : 0)) * 60 + minute;
   }
 
   static List<PlaceModel> get places => fallbackPlaces;
