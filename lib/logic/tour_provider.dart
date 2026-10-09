@@ -80,7 +80,7 @@ class TourProvider extends ChangeNotifier {
       descriptionAr: json['description_ar'] as String?,
       duration: json['duration'] as String,
       durationAr: json['duration_ar'] as String?,
-      imageUrl: json['image_url'] as String,
+      imageUrl: (json['image_url'] as String?) ?? '',
       places: places,
     );
   }
@@ -88,11 +88,13 @@ class TourProvider extends ChangeNotifier {
   PlaceModel _placeFromSupabaseJson(Map<String, dynamic> json) {
     return PlaceModel(
       id: (json['id'] as String?) ?? '',
-      nameEn: (json['name_en'] as String?) ??
+      nameEn:
+          (json['name_en'] as String?) ??
           (json['name'] as String?) ??
           'Unknown Place',
       nameAr: json['name_ar'] as String?,
-      descriptionEn: (json['description_en'] as String?) ??
+      descriptionEn:
+          (json['description_en'] as String?) ??
           (json['description'] as String?) ??
           '',
       descriptionAr: json['description_ar'] as String?,
@@ -212,8 +214,6 @@ class TourProvider extends ChangeNotifier {
     await _persistVisitedTourIds();
   }
 
-  
-  
   Future<bool> bootstrapForUser(String userId) async {
     if (userId.isEmpty) return false;
     final remoteMaps = await SupabaseService.instance.pullSavedTours(userId);
@@ -229,8 +229,9 @@ class TourProvider extends ChangeNotifier {
         } catch (_) {}
       }
       final remoteIds = remote.map((t) => t.id).toSet();
-      final localOnly =
-          _savedTours.where((t) => !remoteIds.contains(t.id)).toList();
+      final localOnly = _savedTours
+          .where((t) => !remoteIds.contains(t.id))
+          .toList();
       final merged = [...remote, ...localOnly];
       _savedTours = merged;
       await _saveToursToStorage();
@@ -266,8 +267,9 @@ class TourProvider extends ChangeNotifier {
       bool changed = false;
       for (final tour in _tours) {
         if (tour.places.isEmpty) continue;
-        final allCheckedIn =
-            tour.places.every((p) => checkedInPlaceIds.contains(p.id));
+        final allCheckedIn = tour.places.every(
+          (p) => checkedInPlaceIds.contains(p.id),
+        );
         if (allCheckedIn && !_visitedTourIds.contains(tour.id)) {
           _visitedTourIds.add(tour.id);
           changed = true;

@@ -22,6 +22,27 @@ class ItineraryModel {
     required this.places,
   });
 
+  String? get coverImageUrl {
+    String? validUrl(String candidate) {
+      final value = candidate.trim();
+      final uri = Uri.tryParse(value);
+      return uri != null &&
+              (uri.scheme == 'https' || uri.scheme == 'http') &&
+              uri.host.isNotEmpty
+          ? value
+          : null;
+    }
+
+    final cover = validUrl(imageUrl);
+    final placeImages = places
+        .map((place) => validUrl(place.primaryImage))
+        .whereType<String>()
+        .toList(growable: false);
+    if (cover != null && placeImages.contains(cover)) return cover;
+    if (placeImages.isNotEmpty) return placeImages.first;
+    return places.isEmpty ? cover : null;
+  }
+
   
   String localizedTitle(String locale) {
     if (locale == 'ar' && titleAr != null && titleAr!.isNotEmpty) {
@@ -57,7 +78,10 @@ class ItineraryModel {
       duration: json['duration'] as String,
       durationAr:
           json['duration_ar'] as String? ?? json['durationAr'] as String?,
-      imageUrl: json['imageUrl'] as String,
+      imageUrl:
+          (json['imageUrl'] as String?) ??
+          (json['image_url'] as String?) ??
+          '',
       places:
           (json['places'] as List<dynamic>?)
               ?.map((e) => PlaceModel.fromJson(e as Map<String, dynamic>))

@@ -43,6 +43,7 @@ class TourCard extends StatelessWidget {
   }
 
   Widget _buildImageHeader(BuildContext context) {
+    final imageUrl = tour.coverImageUrl;
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: SizedBox(
@@ -66,13 +67,24 @@ class TourCard extends StatelessWidget {
                       child: (toHeroContext.widget as Hero).child,
                     );
                   },
-              child: ShimmerImage(
-                imageUrl: tour.imageUrl,
-                fit: BoxFit.cover,
-                fallbackIcon: Icons.image_not_supported_rounded,
-                fallbackColor: AppColors.textHint,
-                fallbackIconSize: 40,
-              ),
+              child: imageUrl != null
+                  ? ShimmerImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      fallbackIcon: Icons.image_not_supported_rounded,
+                      fallbackColor: AppColors.textHint,
+                      fallbackIconSize: 40,
+                    )
+                  : const ColoredBox(
+                      color: Color(0xFF1C2433),
+                      child: Center(
+                        child: Icon(
+                          Icons.image_not_supported_rounded,
+                          color: Colors.white30,
+                          size: 40,
+                        ),
+                      ),
+                    ),
             ),
 
             Container(

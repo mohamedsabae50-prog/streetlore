@@ -119,6 +119,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
   @override
   Widget build(BuildContext context) {
     final tour = widget.tour;
+    final imageUrl = tour.coverImageUrl;
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -191,31 +192,37 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                             child: (toHeroContext.widget as Hero).child,
                           );
                         },
-                    child: CachedNetworkImage(
-                      imageUrl: tour.imageUrl,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 1080,
-                      memCacheHeight: 1080,
-                      httpHeaders: const {
-                        'User-Agent':
-                            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
-                      },
-                      placeholder: (_, __) =>
-                          Container(color: AppColors.primaryLight),
-                      errorWidget: (context, url, error) => Container(
-                        color: const Color(0xFF1C2433),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
+                    child: imageUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 1080,
+                            memCacheHeight: 1080,
+                            httpHeaders: const {
+                              'User-Agent':
+                                  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+                            },
+                            placeholder: (_, __) =>
+                                Container(color: AppColors.primaryLight),
+                            errorWidget: (context, url, error) => Container(
+                              color: const Color(0xFF1C2433),
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                Icons.image_rounded,
+                                color: Colors.white30,
+                                size: 36,
+                              ),
+                            ),
+                          )
+                        : Container(
+                            color: const Color(0xFF1C2433),
+                            alignment: Alignment.center,
+                            child: const Icon(
                               Icons.image_rounded,
                               color: Colors.white30,
                               size: 36,
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
+                          ),
                   ),
                   Container(
                     decoration: const BoxDecoration(

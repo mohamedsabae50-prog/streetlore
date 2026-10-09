@@ -44,6 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Supabase CLI local state (populated by `supabase link`)
+/supabase/.temp/
+
 # Local trash / backup folder for cleanup operations
 /.trash_backup/
 
