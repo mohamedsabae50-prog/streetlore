@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/itinerary_model.dart';
@@ -44,6 +45,18 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
             curve: Curves.easeOutCubic,
           ),
         );
+    _recordTourView();
+  }
+
+  Future<void> _recordTourView() async {
+    try {
+      await Supabase.instance.client.rpc(
+        'increment_tour_view',
+        params: {'p_tour_id': widget.tour.id},
+      );
+    } catch (error, stackTrace) {
+      debugPrint('TourDetailsScreen: failed to record view: $error\n$stackTrace');
+    }
   }
 
   @override

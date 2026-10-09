@@ -42,6 +42,7 @@ class TourProvider extends ChangeNotifier {
       final res = await _client
           .from('tours_with_places')
           .select()
+          .eq('status', 'published')
           .order('id')
           .timeout(const Duration(seconds: 10));
       final loaded = (res as List<dynamic>)
@@ -81,6 +82,7 @@ class TourProvider extends ChangeNotifier {
       duration: json['duration'] as String,
       durationAr: json['duration_ar'] as String?,
       imageUrl: (json['image_url'] as String?) ?? '',
+      status: (json['status'] as String?) ?? 'published',
       places: places,
     );
   }
@@ -101,6 +103,7 @@ class TourProvider extends ChangeNotifier {
 
       imageUrl:
           (json['image_url'] as String?) ?? (json['imageUrl'] as String?) ?? '',
+      imageUrls: _imageUrlsFromJson(json['image_urls']),
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       category: (json['category'] as String?) ?? 'General',
       lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
@@ -129,6 +132,15 @@ class TourProvider extends ChangeNotifier {
           (json['price_foreigner_egp'] as int?) ??
           (json['priceForeignerEgp'] as int?),
     );
+  }
+
+  List<String> _imageUrlsFromJson(dynamic value) {
+    if (value is! List) return const <String>[];
+    return value
+        .whereType<Object>()
+        .map((url) => url.toString().trim())
+        .where((url) => url.isNotEmpty)
+        .toList(growable: false);
   }
 
   PriceLevel _priceLevelFromString(String? s) {

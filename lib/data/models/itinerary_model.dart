@@ -9,6 +9,7 @@ class ItineraryModel {
   final String duration;
   final String? durationAr;
   final String imageUrl;
+  final String status;
   final List<PlaceModel> places;
   const ItineraryModel({
     required this.id,
@@ -19,6 +20,7 @@ class ItineraryModel {
     required this.duration,
     this.durationAr,
     required this.imageUrl,
+    this.status = 'published',
     required this.places,
   });
 
@@ -82,6 +84,7 @@ class ItineraryModel {
           (json['imageUrl'] as String?) ??
           (json['image_url'] as String?) ??
           '',
+      status: (json['status'] as String?) ?? 'published',
       places:
           (json['places'] as List<dynamic>?)
               ?.map((e) => PlaceModel.fromJson(e as Map<String, dynamic>))
@@ -99,6 +102,7 @@ class ItineraryModel {
       'duration': duration,
       'durationAr': durationAr,
       'imageUrl': imageUrl,
+      'status': status,
       'places': places.map((e) => e.toJson()).toList(),
     };
   }

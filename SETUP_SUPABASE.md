@@ -21,6 +21,10 @@ In your Supabase project:
 
 You should see: `Success. No rows returned` — the tables, policies, view, and storage bucket are now created.
 
+For an existing database, apply `supabase/migrations/2026_10_10_tour_draft_status.sql` in the SQL Editor. It adds the `tours.status` column and updates `tours_with_places` to expose tour status and place image URLs.
+
+Apply `supabase/migrations/2026_10_11_admin_analytics.sql` after that migration to enable tour view counts and the protected Admin analytics RPC. AI guide usage reports the sum of current per-user 24-hour quota windows in `ai_quota`, not a lifetime total; check-ins and tour views are cumulative.
+
 ---
 
 ## 2. Create the admin user (one-time)
@@ -100,7 +104,19 @@ Open http://localhost:8081 and log in with the email/password you created in ste
 ### What you can do in the admin
 - **Dashboard** — counts of places and tours
 - **Places** — list, create, edit, delete
-- **Tours** — list, create, edit, delete (with multi-place picker + drag-to-reorder)
+- **Tours** — list, create, edit, delete (with multi-place picker, drag-to-reorder, and Draft/Published status)
+- **User Photos** — moderate user-submitted photos; official place image URLs are managed separately on each place
+- **Users** — search Auth accounts by name or email and remove inappropriate accounts
+- **Official place images** — add, reorder, and remove multiple image URLs; mobile Place Details shows them in a swipeable carousel
+
+The project does not have a public profiles table: user accounts are stored in Supabase Auth, with names in Auth user metadata. Deploy the protected admin-user-management Edge Function from the project root before using the Users screen:
+
+```bash
+supabase functions deploy admin-user-management --no-verify-jwt --project-ref tbivoxyxclwjjspwsgvc
+supabase secrets set ADMIN_EMAIL=mohamedsabae50@gmail.com --project-ref tbivoxyxclwjjspwsgvc
+```
+
+The function verifies the caller's Auth token and admin email itself before accessing the Auth Admin API. It prevents deleting the admin account and removes the user's submitted photos, uploaded photo files, chat, check-ins, saved items, leaderboard entry, and AI quota before deleting the Auth account. The existing `place_photos` RLS admin policies remain required for photo moderation.
 - **Images** — uploaded to Supabase Storage bucket `place-images`
 
 ---
