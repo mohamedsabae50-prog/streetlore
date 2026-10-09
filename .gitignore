@@ -47,6 +47,10 @@ app.*.map.json
 # Supabase CLI local state (populated by `supabase link`)
 /supabase/.temp/
 
+# Local Flutter Windows desktop scaffold (experimental, not part of the
+# Android release pipeline).
+/windows/
+
 # Local trash / backup folder for cleanup operations
 /.trash_backup/
 
