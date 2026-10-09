@@ -214,7 +214,8 @@ family-friendliness, safety, and accessibility.''';
         ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()),
       );
       return reply;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Gemini Error: $e\n$stackTrace');
       debugPrint('AITourGuideService.send error: $e');
       final isArabic = userText.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
       final errBrief = _summarizeError(e);
@@ -512,10 +513,6 @@ STRICT RULES:
     
     
     
-    if (result.statusCode == 599) {
-      return result.text ??
-          "Sorry, I am currently unavailable. Please try again in a moment.";
-    }
     if (!result.isOk) {
       throw GeminiApiException(
         statusCode: result.statusCode,

@@ -362,7 +362,7 @@ class SupabaseService {
   ///
   /// [body] is the raw Gemini REST request body (contents + optional
   /// generationConfig). The function picks the model from
-  /// `body['model']` (default `gemini-2.0-flash`).
+  /// `body['model']` (default `gemini-2.5-flash`).
   Future<Map<String, dynamic>> aiProxyInvoke(
     Map<String, dynamic> body, {
     String? accessToken,

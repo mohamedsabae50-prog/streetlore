@@ -9,7 +9,7 @@
 //   {
 //     "contents": [ { "parts": [ { "text": "..." } ] } ],
 //     "generationConfig": { ... optional ... },
-//     "model": "gemini-2.0-flash"   // optional override
+//     "model": "gemini-2.5-flash"   // optional override
 //   }
 //
 // Response: identical to the Gemini REST API response, OR
@@ -34,7 +34,7 @@ const ADMIN_EMAIL = (Deno.env.get("ADMIN_EMAIL") ?? "mohamedsabae50@gmail.com")
   .trim();
 
 const DEFAULT_DAILY_LIMIT = 60;
-const MODEL = "gemini-2.0-flash";
+const MODEL = "gemini-2.5-flash";
 const GEMINI_ENDPOINT_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
 

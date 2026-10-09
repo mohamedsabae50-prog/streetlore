@@ -12,13 +12,8 @@ class GeminiRestClient {
   static const Duration _timeout = Duration(seconds: 45);
 
   static const List<String> _modelFallbackOrder = [
-    'gemini-3.8-flash',
+    'gemini-2.5-flash-lite',
   ];
-
-  static const int _friendlyFallbackStatus = 599;
-
-  static const String _friendlyFallbackText =
-      "Sorry, I am currently unavailable. Please try again in a moment.";
 
   Future<GeminiResult?> generateContent({
     String? apiKey,
@@ -40,7 +35,10 @@ class GeminiRestClient {
       }
     }
     for (final k in _configuredKeys) {
-      if (!keys.contains(k)) keys.add(k);
+      final trimmed = k.trim();
+      if (trimmed.isNotEmpty && !keys.contains(trimmed)) {
+        keys.add(trimmed);
+      }
     }
     if (keys.isEmpty) {
       debugPrintGemini('SDK call: no api keys available');
@@ -101,7 +99,8 @@ class GeminiRestClient {
               errorBody: null,
               raw: null,
             );
-          } on InvalidApiKey catch (e) {
+          } on InvalidApiKey catch (e, stackTrace) {
+            debugPrint('Gemini Error: $e\n$stackTrace');
             debugPrintGemini(
               'SDK call: InvalidApiKey on key #${ki + 1}, '
               'model=$tryModel: ${e.message}',
@@ -113,7 +112,8 @@ class GeminiRestClient {
               raw: null,
             );
             continue keyLoop;
-          } on UnsupportedUserLocation catch (e) {
+          } on UnsupportedUserLocation catch (e, stackTrace) {
+            debugPrint('Gemini Error: $e\n$stackTrace');
             debugPrintGemini(
               'SDK call: UnsupportedUserLocation on key #${ki + 1}, '
               'model=$tryModel: ${e.message}',
@@ -125,7 +125,8 @@ class GeminiRestClient {
               raw: null,
             );
             continue keyLoop;
-          } on ServerException catch (e) {
+          } on ServerException catch (e, stackTrace) {
+            debugPrint('Gemini Error: $e\n$stackTrace');
             final status = _classifyExceptionMessage(e.message);
             debugPrintGemini(
               'SDK call: ServerException on key #${ki + 1}, '
@@ -158,7 +159,8 @@ class GeminiRestClient {
             }
 
             continue keyLoop;
-          } on GenerativeAIException catch (e) {
+          } on GenerativeAIException catch (e, stackTrace) {
+            debugPrint('Gemini Error: $e\n$stackTrace');
             final status = _parseStatusFromMessage(e.message);
             debugPrintGemini(
               'SDK call: GenerativeAIException on key #${ki + 1}, '
@@ -174,7 +176,8 @@ class GeminiRestClient {
               return lastResult;
             }
             continue keyLoop;
-          } on GenerativeAISdkException catch (e) {
+          } on GenerativeAISdkException catch (e, stackTrace) {
+            debugPrint('Gemini Error: $e\n$stackTrace');
             debugPrintGemini(
               'SDK call: GenerativeAISdkException on key #${ki + 1}, '
               'model=$tryModel: $e',
@@ -186,7 +189,8 @@ class GeminiRestClient {
               raw: null,
             );
             return lastResult;
-          } on TimeoutException {
+          } on TimeoutException catch (e, stackTrace) {
+            debugPrint('Gemini Error: $e\n$stackTrace');
             debugPrintGemini(
               'SDK call: timeout on key #${ki + 1}, '
               'model=$tryModel',
@@ -199,7 +203,8 @@ class GeminiRestClient {
             );
 
             continue keyLoop;
-          } catch (e) {
+          } catch (e, stackTrace) {
+            debugPrint('Gemini Error: $e\n$stackTrace');
             debugPrintGemini(
               'SDK call: unknown exception on key #${ki + 1}, '
               'model=$tryModel: $e',
@@ -214,8 +219,9 @@ class GeminiRestClient {
           }
         }
       }
-    } catch (e, st) {
-      debugPrintGemini('SDK call: outer catch: $e\n$st');
+    } catch (e, stackTrace) {
+      debugPrint('Gemini Error: $e\n$stackTrace');
+      debugPrintGemini('SDK call: outer catch: $e\n$stackTrace');
       lastResult ??= GeminiResult(
         text: null,
         statusCode: 0,
@@ -224,22 +230,18 @@ class GeminiRestClient {
       );
     }
 
-    final lastStatus = lastResult?.statusCode ?? 0;
-    final friendlyText = lastStatus > 0 && lastStatus != _friendlyFallbackStatus
-        ? '$_friendlyFallbackText (Error: $lastStatus)'
-        : _friendlyFallbackText;
     debugPrintGemini(
       'SDK call: ALL ${keys.length}x${models.length} attempts failed; '
-      'last status=$lastStatus, last errorBody=${lastResult?.errorBody}',
+      'last status=${lastResult?.statusCode ?? 0}, '
+      'last errorBody=${lastResult?.errorBody}',
     );
-    return GeminiResult(
-      text: friendlyText,
-      statusCode: _friendlyFallbackStatus,
-      errorBody:
-          lastResult?.errorBody ??
-          'all ${keys.length} keys x ${models.length} models failed',
-      raw: null,
-    );
+    return lastResult ??
+        GeminiResult(
+          text: null,
+          statusCode: 0,
+          errorBody: 'All Gemini API key and model attempts failed',
+          raw: null,
+        );
   }
 
   String _serverErrorBody(String message) {

@@ -4,9 +4,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/ai_tour_guide_service.dart';
 import '../../l10n/app_strings.dart';
 
-
-
-
 class GeneralAITourGuideScreen extends StatefulWidget {
   const GeneralAITourGuideScreen({super.key});
 
@@ -57,24 +54,26 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
         _busy = false;
       });
       _scrollToBottom();
-    } on GeminiApiException catch (e) {
+    } on GeminiApiException catch (e, stackTrace) {
+      debugPrint('Gemini Error: $e\n$stackTrace');
       if (!mounted) return;
       setState(() {
-        _messages.add(_Msg(
-          role: _Role.bot,
-          text: 'Could not reach the AI right now (${e.message}). Try again '
+        _messages.add(
+          _Msg(
+            role: _Role.bot,
+            text:
+                'Could not reach the AI right now (${e.message}). Try again '
                 'in a moment.',
-        ));
+          ),
+        );
         _busy = false;
       });
       _scrollToBottom();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Gemini Error: $e\n$stackTrace');
       if (!mounted) return;
       setState(() {
-        _messages.add(_Msg(
-          role: _Role.bot,
-          text: 'Something went wrong: $e',
-        ));
+        _messages.add(_Msg(role: _Role.bot, text: 'Something went wrong: $e'));
         _busy = false;
       });
       _scrollToBottom();
@@ -137,10 +136,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
                   const SizedBox(width: 10),
                   Text(
                     context.tr('ai_guide_thinking'),
-                    style: TextStyle(
-                      color: context.textSec,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: context.textSec, fontSize: 12),
                   ),
                 ],
               ),
@@ -175,8 +171,9 @@ class _Bubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUser)
@@ -196,14 +193,9 @@ class _Bubble extends StatelessWidget {
           if (!isUser) const SizedBox(width: 10),
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isUser
-                    ? AppColors.primary
-                    : Theme.of(context).cardColor,
+                color: isUser ? AppColors.primary : Theme.of(context).cardColor,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(18),
                   topRight: const Radius.circular(18),
@@ -301,8 +293,7 @@ class _Composer extends StatelessWidget {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
                   : const Icon(Icons.send_rounded, color: Colors.white),
