@@ -75,8 +75,11 @@ class TourProvider extends ChangeNotifier {
     return ItineraryModel(
       id: json['id'] as String,
       title: json['title'] as String,
+      titleAr: json['title_ar'] as String?,
       description: json['description'] as String,
+      descriptionAr: json['description_ar'] as String?,
       duration: json['duration'] as String,
+      durationAr: json['duration_ar'] as String?,
       imageUrl: json['image_url'] as String,
       places: places,
     );

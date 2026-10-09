@@ -159,6 +159,117 @@ class MockReview {
   });
 }
 
+const PlaceModel _fallbackNationalMuseum = PlaceModel(
+  id: 'fallback_national_museum',
+  nameEn: 'Alexandria National Museum',
+  nameAr: 'المتحف الوطني بالإسكندرية',
+  descriptionEn:
+      'An Italianate palace built in 1926, displaying artifacts from the Pharaonic, Greek, Roman, Coptic, and Islamic eras.',
+  descriptionAr:
+      'قصر إيطالي الطراز شُيّد عام 1926، ويضم آثاراً من العصور الفرعونية واليونانية والرومانية والقبطية والإسلامية.',
+  imageUrl:
+      'https://upload.wikimedia.org/wikipedia/commons/8/8a/EWUG_visit_to_Alexandria_National_Museum%2C_April_2025_-_005.jpg',
+  rating: 4.6,
+  category: 'Culture',
+  categoryAr: 'ثقافة',
+  lat: 31.1989,
+  lng: 29.9065,
+  address: 'Latin Quarter, Alexandria',
+  addressAr: 'الحي اللاتيني، الإسكندرية',
+  openHours: '9:00 AM - 4:30 PM',
+  reviewCount: 850,
+  priceLevel: PriceLevel.cheap,
+  priceNote: 'Adults',
+  priceNoteAr: 'للكبار',
+  priceLocalEgp: 20,
+  priceForeignerEgp: 100,
+);
+
+const PlaceModel _fallbackGraecoRomanMuseum = PlaceModel(
+  id: 'fallback_graeco_roman_museum',
+  nameEn: 'Graeco-Roman Museum',
+  nameAr: 'المتحف اليوناني الروماني',
+  descriptionEn:
+      'A recently renovated museum showcasing thousands of artifacts from Alexandria’s Ptolemaic and Roman eras.',
+  descriptionAr:
+      'متحف مُجدّد يضم آلاف القطع الأثرية من العصرين البطلمي والروماني في الإسكندرية.',
+  imageUrl:
+      'https://upload.wikimedia.org/wikipedia/commons/3/3d/Fassade_des_griechisch-r%C3%B6mischen_Museums_in_Alexandria%2C_%C3%84gypten.jpg',
+  rating: 4.7,
+  category: 'Culture',
+  categoryAr: 'ثقافة',
+  lat: 31.1982,
+  lng: 29.9027,
+  address: 'Kom El-Dikka, Alexandria',
+  addressAr: 'كوم الدكة، الإسكندرية',
+  openHours: '9:00 AM - 5:00 PM',
+  reviewCount: 620,
+  priceLevel: PriceLevel.cheap,
+  priceNote: 'Adults',
+  priceNoteAr: 'للكبار',
+  priceLocalEgp: 20,
+  priceForeignerEgp: 100,
+);
+
+const _romanAmphitheatreImageUrl =
+    'https://upload.wikimedia.org/wikipedia/commons/f/f9/Alexandria%2C_Kom_el-Dikka%2C_Theatre.JPG';
+
+const PlaceModel _fallbackRomanAmphitheatre = PlaceModel(
+  id: 'fallback_roman_amphitheatre',
+  nameEn: 'Roman Amphitheatre (Kom el-Dikka)',
+  nameAr: 'المسرح الروماني (كوم الدكة)',
+  descriptionEn:
+      'A Roman theatre with thirteen tiers of marble seating, discovered during excavations in central Alexandria.',
+  descriptionAr:
+      'مسرح روماني يضم ثلاثة عشر صفاً من المدرجات الرخامية، اكتُشف خلال أعمال التنقيب في وسط الإسكندرية.',
+  imageUrl: _romanAmphitheatreImageUrl,
+  imageUrls: [
+    'https://upload.wikimedia.org/wikipedia/commons/e/e1/Roman_theatre%2C_Alexandria%2C_Egypt_%282008%29.jpg',
+  ],
+  rating: 4.5,
+  category: 'Historical',
+  categoryAr: 'تاريخي',
+  lat: 31.1925,
+  lng: 29.9045,
+  address: 'Kom El-Dikka, Alexandria',
+  addressAr: 'كوم الدكة، الإسكندرية',
+  openHours: '9:00 AM - 5:00 PM',
+  reviewCount: 760,
+  priceLevel: PriceLevel.cheap,
+  priceNote: 'Adults',
+  priceNoteAr: 'للكبار',
+  priceLocalEgp: 20,
+  priceForeignerEgp: 80,
+);
+
+const _stanleyBridgeImageUrl =
+    'https://upload.wikimedia.org/wikipedia/commons/7/70/Stanley_Bridge%2C_Alexandria%2C_Jan._2019-1.jpg';
+
+const PlaceModel _fallbackStanleyBridge = PlaceModel(
+  id: 'fallback_stanley_bridge',
+  nameEn: 'Stanley Bridge & Corniche',
+  nameAr: 'كوبري ستانلي والكورنيش',
+  descriptionEn:
+      'Alexandria’s landmark bridge, with its white arches spanning Stanley Bay along the Mediterranean Corniche.',
+  descriptionAr:
+      'جسر الإسكندرية الشهير بأقواسه البيضاء الممتدة فوق خليج ستانلي على كورنيش البحر المتوسط.',
+  imageUrl: _stanleyBridgeImageUrl,
+  rating: 4.6,
+  category: 'Nature',
+  categoryAr: 'طبيعة',
+  lat: 31.2389,
+  lng: 29.9553,
+  address: 'Stanley, Alexandria',
+  addressAr: 'ستانلي، الإسكندرية',
+  openHours: 'Open 24 hours',
+  reviewCount: 2100,
+  priceLevel: PriceLevel.free,
+  priceNote: 'Free',
+  priceNoteAr: 'مجاني',
+  priceLocalEgp: 0,
+  priceForeignerEgp: 0,
+);
+
 const List<PlaceModel> fallbackPlaces = [
   PlaceModel(
     id: 'fallback_qaitbay',
@@ -377,6 +488,10 @@ const List<PlaceModel> fallbackPlaces = [
     priceForeignerEgp: 0,
     isHiddenGem: false,
   ),
+  _fallbackNationalMuseum,
+  _fallbackGraecoRomanMuseum,
+  _fallbackRomanAmphitheatre,
+  _fallbackStanleyBridge,
 ];
 
 const List<ItineraryModel> _seedTours = fallbackTours;
@@ -623,6 +738,88 @@ const List<ItineraryModel> fallbackTours = [
         priceLevel: PriceLevel.free,
         priceNote: 'Free',
         priceNoteAr: 'مجاني',
+        priceLocalEgp: 0,
+        priceForeignerEgp: 0,
+      ),
+    ],
+  ),
+  ItineraryModel(
+    id: 'tour_roman_alexandria',
+    title: 'Roman Alexandria',
+    titleAr: 'الإسكندرية الرومانية',
+    description:
+        'Explore the city’s Roman past through its museum collections, theatre, monumental column, and ancient underground tombs.',
+    descriptionAr:
+        'اكتشف تاريخ الإسكندرية الروماني من خلال مقتنيات المتاحف والمسرح الروماني والعمود الأثري والمقابر القديمة.',
+    duration: '4 Hours',
+    durationAr: '4 ساعات',
+    imageUrl: _romanAmphitheatreImageUrl,
+    places: [
+      _fallbackGraecoRomanMuseum,
+      _fallbackRomanAmphitheatre,
+      PlaceModel(
+        id: 'fallback_pompey',
+        nameEn: "Pompey's Pillar",
+        nameAr: 'عمود السواري',
+        descriptionEn:
+            'A monumental red-granite Roman column erected in 297 AD at the Serapeum.',
+        descriptionAr:
+            'عمود روماني ضخم من الجرانيت الأحمر أُقيم عام 297م في منطقة السيرابيوم.',
+        imageUrl:
+            'https://upload.wikimedia.org/wikipedia/commons/a/aa/Pompey%27s_Pillar_%28Archaeological_site_in_Alexandria_2017%29_%2C_photo_by_Hatem_moushir_9.jpg',
+        rating: 4.5,
+        category: 'Historical',
+        categoryAr: 'تاريخي',
+        lat: 31.1825,
+        lng: 29.8967,
+        address: 'Carmous, Alexandria',
+        addressAr: 'كرموز، الإسكندرية',
+        openHours: '9:00 AM - 5:00 PM',
+        reviewCount: 980,
+        priceLevel: PriceLevel.cheap,
+        priceNote: 'Adults',
+        priceNoteAr: 'للكبار',
+        priceLocalEgp: 20,
+        priceForeignerEgp: 80,
+      ),
+    ],
+  ),
+  ItineraryModel(
+    id: 'tour_city_highlights',
+    title: 'Alexandria City Highlights',
+    titleAr: 'أبرز معالم الإسكندرية',
+    description:
+        'Pair the city’s best-known museum and library with its historic waterfront and gardens.',
+    descriptionAr:
+        'اجمع بين أشهر متاحف المدينة ومكتبتها التاريخية وكورنيشها وحدائقها.',
+    duration: '5 Hours',
+    durationAr: '5 ساعات',
+    imageUrl: _stanleyBridgeImageUrl,
+    places: [
+      _fallbackNationalMuseum,
+      _fallbackStanleyBridge,
+      PlaceModel(
+        id: 'fallback_biblio',
+        nameEn: 'Bibliotheca Alexandrina',
+        nameAr: 'مكتبة الإسكندرية',
+        descriptionEn:
+            'A modern library and cultural center on Alexandria’s Mediterranean shore.',
+        descriptionAr:
+            'مكتبة ومركز ثقافي حديث على ساحل البحر المتوسط في الإسكندرية.',
+        imageUrl:
+            'https://upload.wikimedia.org/wikipedia/commons/3/37/Egypt%2C_Alexandria%2C_Bibliotheca_Alexandrina.jpg',
+        rating: 4.8,
+        category: 'Culture',
+        categoryAr: 'ثقافة',
+        lat: 31.2092,
+        lng: 29.9085,
+        address: 'El Shatby, Alexandria',
+        addressAr: 'الشاطبي، الإسكندرية',
+        openHours: '10:00 AM - 7:00 PM',
+        reviewCount: 2890,
+        priceLevel: PriceLevel.free,
+        priceNote: 'Free entry',
+        priceNoteAr: 'دخول مجاني',
         priceLocalEgp: 0,
         priceForeignerEgp: 0,
       ),
