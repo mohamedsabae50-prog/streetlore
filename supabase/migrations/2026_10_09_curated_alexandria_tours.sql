@@ -1,7 +1,9 @@
 ALTER TABLE public.tours
   ADD COLUMN IF NOT EXISTS title_ar text,
   ADD COLUMN IF NOT EXISTS description_ar text,
-  ADD COLUMN IF NOT EXISTS duration_ar text;
+  ADD COLUMN IF NOT EXISTS duration_ar text,
+  ADD COLUMN IF NOT EXISTS category text,
+  ADD COLUMN IF NOT EXISTS category_ar text;
 
 INSERT INTO public.tours (
   id, title, title_ar, description, description_ar,

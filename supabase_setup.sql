@@ -29,8 +29,13 @@ create index if not exists places_is_featured_idx on public.places (is_featured)
 create table if not exists public.tours (
   id          text primary key,
   title       text not null,
+  title_ar    text,
   description text not null,
+  description_ar text,
   duration    text not null,
+  duration_ar text,
+  category    text,
+  category_ar text,
   image_url   text not null,
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
@@ -95,7 +100,18 @@ create policy "auth delete place-images"   on storage.objects for delete using (
 
 create or replace view public.tours_with_places as
 select
-  t.id, t.title, t.description, t.duration, t.image_url, t.created_at, t.updated_at,
+  t.id,
+  t.title,
+  t.title_ar,
+  t.description,
+  t.description_ar,
+  t.duration,
+  t.duration_ar,
+  t.category,
+  t.category_ar,
+  t.image_url,
+  t.created_at,
+  t.updated_at,
   coalesce(
     (select json_agg(json_build_object(
        'id', p.id, 'name', p.name, 'description', p.description,
