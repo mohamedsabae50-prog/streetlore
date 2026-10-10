@@ -20,29 +20,6 @@ class AITourGuideService {
   AITourGuideService._();
   static final AITourGuideService instance = AITourGuideService._();
 
-  
-  
-  
-  
-  
-  
-  bool _looksLikeRealKey(String key) {
-    if (key.isEmpty) return false;
-    if (key.contains('YOUR_') || key.contains('REPLACE')) return false;
-    
-    if (key.startsWith('AIza') && key.length >= 30) return true;
-    
-    if (key.startsWith('AQ.') && key.length >= 30) return true;
-    
-    if (key.length < 20) return false;
-    if (RegExp(r'^[A-Za-z0-9_\-]+$').hasMatch(key) ||
-        key.contains('.') ||
-        key.contains('_')) {
-      return true;
-    }
-    return false;
-  }
-
   final List<ChatMessage> _messages = [];
   List<ChatMessage> get messages => List.unmodifiable(_messages);
 
@@ -51,12 +28,10 @@ class AITourGuideService {
   bool _busy = false;
   bool get isBusy => _busy;
 
-  
   String _buildSystemPrompt(PlaceModel place) {
     final now = DateTime.now();
     final hour = now.hour;
-    final isRushHour = (hour >= 8 && hour <= 10) ||
-        (hour >= 16 && hour <= 19);
+    final isRushHour = (hour >= 8 && hour <= 10) || (hour >= 16 && hour <= 19);
     final isLunchHour = hour >= 12 && hour <= 14;
     final isLateNight = hour >= 22 || hour < 6;
     final todayWeekday = now.weekday;
@@ -123,16 +98,11 @@ family-friendliness, safety, and accessibility.''';
   Future<void> start(PlaceModel place, {String locale = 'en'}) async {
     _currentPlace = place;
     _messages.clear();
-    final keys = AppConfig.geminiApiKeys
-        .map((k) => k.trim())
-        .where((k) => k.isNotEmpty)
-        .toList();
-    final bool canGoLive =
-        AppConfig.geminiEnabled && keys.any(_looksLikeRealKey);
+    final bool canGoLive = AppConfig.geminiEnabled;
     if (!canGoLive) {
       debugPrint(
         'AITourGuideService.start: using offline welcome '
-        '(enabled=${AppConfig.geminiEnabled}, keys=${keys.length})',
+        '(enabled=${AppConfig.geminiEnabled})',
       );
       _messages.add(
         ChatMessage(
@@ -143,11 +113,8 @@ family-friendliness, safety, and accessibility.''';
       );
       return;
     }
-    
-    
-    
+
     _session = _LiveSession(
-      apiKeys: keys,
       model: AppConfig.geminiModel,
       systemPrompt: _buildSystemPrompt(place),
     );
@@ -178,13 +145,13 @@ family-friendliness, safety, and accessibility.''';
     if (locale == 'ar') {
       return '👋 مرحباً! أنا دليلك المحلي لـ $placeName.\n\n$description\n\n'
           'اسألني عن: المواعيد، الأسعار، التاريخ، النصايح، أو العنوان!\n\n'
-          '(وضع محلي — Gemini API غير مفعّل في الوقت الحالي أو الـ key غير '
-          'صالح. كل الإجابات هنا من بيانات محلية على الجهاز.)';
+          '(وضع محلي — Gemini API غير مفعّل في الوقت الحالي. '
+          'كل الإجابات هنا من بيانات محلية على الجهاز.)';
     }
     return '👋 Hello! I am your local guide for $placeName.\n\n$description\n\n'
         'Ask me about: hours, prices, history, tips, or address!\n\n'
-        '(Offline mode — Gemini API is currently disabled or the key is '
-        'invalid. All answers here come from on-device data.)';
+        '(Offline mode — Gemini API is currently disabled. '
+        'All answers here come from on-device data.)';
   }
 
   Future<String> send(String userText) async {
@@ -235,10 +202,7 @@ family-friendliness, safety, and accessibility.''';
   String _summarizeError(Object e) {
     if (e is GeminiApiException) {
       var code = e.statusCode;
-      
-      
-      
-      
+
       if (code == 599) {
         final m = RegExp(r'\(Error:\s*(\d{3})\)').firstMatch(e.message);
         if (m != null) {
@@ -249,7 +213,7 @@ family-friendliness, safety, and accessibility.''';
       if (code == 400) {
         return 'Bad request (400): ${_trim(e.message)} — likely invalid API '
             'key or unsupported model name. Check '
-            '`AppConfig.geminiApiKey` and `geminiModel`.';
+            'the `ai-proxy` Edge Function secrets and `geminiModel`.';
       }
       if (code == 401 || code == 403) {
         return 'Auth denied ($code): ${_trim(e.message)} — API key lacks '
@@ -258,7 +222,7 @@ family-friendliness, safety, and accessibility.''';
       }
       if (code == 404) {
         return 'Model not found (404): ${_trim(e.message)} — '
-            '`AppConfig.geminiModel` is not available for this key.';
+            '`AppConfig.geminiModel` is unavailable through the AI proxy.';
       }
       if (code == 429) {
         return 'Rate limited (429): ${_trim(e.message)}';
@@ -282,9 +246,6 @@ family-friendliness, safety, and accessibility.''';
         : firstLine;
   }
 
-  
-  
-  
   String _buildContextualUserPrompt(String userText) {
     final now = DateTime.now();
     return '''
@@ -451,12 +412,14 @@ $userText''';
         : place.descriptionEn;
     final localHour = DateTime.now().hour;
     final liveHint = (localHour >= 8 && localHour <= 10)
-        ? (isArabic ? '⏰ دلوقتي ذروة — الزحمة كبيرة.' : '⏰ Rush hour right now — traffic is heavy.')
+        ? (isArabic
+              ? '⏰ دلوقتي ذروة — الزحمة كبيرة.'
+              : '⏰ Rush hour right now — traffic is heavy.')
         : (localHour >= 12 && localHour <= 14)
-            ? (isArabic ? '🍽️ وقت الغدا.' : '🍽️ Lunch hour.')
-            : (localHour >= 22 || localHour < 6)
-                ? (isArabic ? '🌙 معظم الأماكن مقفولة.' : '🌙 Most places closed now.')
-                : (isArabic ? '☀️ وقت مناسب للزيارة.' : '☀️ Good time to be out.');
+        ? (isArabic ? '🍽️ وقت الغدا.' : '🍽️ Lunch hour.')
+        : (localHour >= 22 || localHour < 6)
+        ? (isArabic ? '🌙 معظم الأماكن مقفولة.' : '🌙 Most places closed now.')
+        : (isArabic ? '☀️ وقت مناسب للزيارة.' : '☀️ Good time to be out.');
     return isArabic
         ? '🌟 $description\n\n⭐ التقييم: ${place.rating}/5 من ${place.reviewCount} زيارة\n🕐 المواعيد: ${place.openHours}\n📍 العنوان: ${place.address}\n$liveHint\n\nاسألني عن: الأسعار، المواعيد، العنوان، التاريخ، نصايح الزيارة، أو أحسن وقت للتصوير!'
         : '🌟 $description\n\n⭐ Rating: ${place.rating}/5 from ${place.reviewCount} visits\n🕐 Hours: ${place.openHours}\n📍 Address: ${place.address}\n$liveHint\n\nAsk me about: prices, opening hours, address, history, visiting tips, or the best photo times!';
@@ -467,16 +430,9 @@ $userText''';
     _session = null;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
   static Future<String> askLocalGuide(String userText) async {
-    final system = '''You are the street-level local tourism expert inside the "Streetlore" app. You answer questions about travel, places, food, history, and culture for the city or area the user is currently exploring.
+    final system =
+        '''You are the street-level local tourism expert inside the "Streetlore" app. You answer questions about travel, places, food, history, and culture for the city or area the user is currently exploring.
 
 STRICT RULES:
 1. ONLY answer questions related to travel, places, history, culture, food, or tourism in the city or area the user is exploring.
@@ -485,34 +441,16 @@ STRICT RULES:
 4. Use specific local details when possible (well-known landmarks, neighbourhoods, signature foods, transit options) for the city or area the user is in. Do NOT hard-code any single city — adapt to whichever city or area the user is asking about.
 5. Never invent places that don't exist. If unsure, say so and suggest the user open the app map.
 6. Speak directly to the user ("you") — friendly, opinionated, like a local friend showing them around.''';
-    final keys = AppConfig.geminiApiKeys
-        .map((k) => k.trim())
-        .where((k) => k.isNotEmpty)
-        .toList();
-    if (keys.isEmpty || !AppConfig.geminiEnabled) {
-      throw GeminiApiException(
-        statusCode: 0,
-        message: 'AI not configured',
-      );
+    if (!AppConfig.geminiEnabled) {
+      throw GeminiApiException(statusCode: 0, message: 'AI not configured');
     }
     final result = await GeminiRestClient.instance.generateContent(
-      apiKeys: keys,
       model: AppConfig.geminiModel,
       systemInstruction: system,
       userPrompt: userText,
       temperature: 0.7,
       maxOutputTokens: 800,
     );
-    if (result == null) {
-      throw GeminiApiException(
-        statusCode: 0,
-        message: 'AI not configured',
-      );
-    }
-    
-    
-    
-    
     if (!result.isOk) {
       throw GeminiApiException(
         statusCode: result.statusCode,
@@ -525,43 +463,20 @@ STRICT RULES:
   }
 }
 
-
-
-
-
 class _LiveSession {
-  _LiveSession({
-    required this.apiKeys,
-    required this.model,
-    required this.systemPrompt,
-  });
+  _LiveSession({required this.model, required this.systemPrompt});
 
-  final List<String> apiKeys;
   final String model;
   final String systemPrompt;
 
   Future<_LiveReply> sendMessage(String userText) async {
     final result = await GeminiRestClient.instance.generateContent(
-      apiKeys: apiKeys,
       model: model,
       systemInstruction: systemPrompt,
       userPrompt: userText,
       temperature: 0.7,
       maxOutputTokens: 1024,
     );
-    if (result == null) {
-      throw GeminiApiException(
-        statusCode: 0,
-        message: 'AI not configured (no api keys)',
-      );
-    }
-    
-    
-    
-    
-    
-    
-    
     if (!result.isOk) {
       throw GeminiApiException(
         statusCode: result.statusCode,
@@ -588,6 +503,5 @@ class GeminiApiException implements Exception {
     this.raw,
   });
   @override
-  String toString() =>
-      'GeminiApiException(status=$statusCode): $message';
+  String toString() => 'GeminiApiException(status=$statusCode): $message';
 }

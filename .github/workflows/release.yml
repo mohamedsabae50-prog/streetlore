@@ -135,68 +135,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Materialise dart-define JSON
-        env:
-          GEMINI_KEYS: ${{ secrets.GEMINI_API_KEYS }}
-        run: |
-          set -e
-          # v1.0.43 fix: previous builds used shell interpolation
-          # `--dart-define=GEMINI_API_KEYS="${GEMINI_KEYS}"` which
-          # silently broke when the secret value contained a `$`,
-          # `"`, `\` or `=` (the user confirmed the AI Tour Guide
-          # was returning "(Error: 404)" / no response at all in
-          # v1.0.42). We now write the value to a JSON file and
-          # pass it to flutter via `--dart-define-from-file`,
-          # which bypasses shell escaping entirely.
-          #
-          # v1.0.45+ obfuscation: the value is base64-encoded before
-          # being placed in the JSON map. AppConfig.base64-decodes
-          # it at runtime. This prevents GitHub Push Protection
-          # from detecting GCP API key patterns when the compiled
-          # JS bundle is pushed to streetlore-web-app (see the
-          # local build script for the symmetric encode).
-          if [ -z "${GEMINI_KEYS}" ]; then
-            echo "::error::GEMINI_API_KEYS GitHub secret is missing. Add it (5 keys, comma-separated) and re-run."
-            exit 1
-          fi
-          KEY_COUNT=$(echo "${GEMINI_KEYS}" | tr ',' '\n' | wc -l)
-          echo "GEMINI_API_KEYS loaded: ${#GEMINI_KEYS} chars, ${KEY_COUNT} comma-separated entries"
-          # Base64-encode the comma-joined key blob, then wrap it in
-          # a single-entry JSON map. We do both inside one python
-          # invocation to avoid leaking the raw keys into process
-          # listings via intermediate shell variables.
-          python3 - <<'PY' > /tmp/dart_defines.json
-          import json, sys, base64, os
-          raw = os.environ["GEMINI_KEYS"].rstrip("\n")
-          encoded = base64.b64encode(raw.encode("utf-8")).decode("ascii")
-          sys.stdout.write(json.dumps({"GEMINI_API_KEYS": encoded}))
-          PY
-          echo "Wrote $(wc -c < /tmp/dart_defines.json) bytes to /tmp/dart_defines.json"
-          # Sanity: decode the value back and confirm key count.
-          PARSED_COUNT=$(python3 -c '
-          import json, base64
-          raw = json.load(open("/tmp/dart_defines.json"))["GEMINI_API_KEYS"]
-          decoded = base64.b64decode(raw).decode("utf-8")
-          print(len([k for k in decoded.split(",") if k.strip()]))
-          ')
-          if [ "${PARSED_COUNT}" -lt 1 ]; then
-            echo "::error::Parsed GEMINI_API_KEYS has 0 entries. Check the GitHub secret value."
-            exit 1
-          fi
-          echo "Parsed entries from JSON (after base64 decode): ${PARSED_COUNT}"
-
       - name: Build APK + AAB (arm64, release)
         run: |
           set -e
           flutter build apk --release \
-            --target-platform android-arm64 \
-            --dart-define-from-file=/tmp/dart_defines.json
+            --target-platform android-arm64
           # v1.0.74: also produce the Android App Bundle that the Play
           # Store actually accepts (App Bundles are the mandatory upload
           # format for every new app since Aug 2021).
           flutter build appbundle \
-            --target-platform android-arm64 \
-            --dart-define-from-file=/tmp/dart_defines.json
+            --target-platform android-arm64
 
       - name: Compute APK hashes
         id: hashes
@@ -294,8 +242,7 @@ jobs:
           # to load assets from /flutter_bootstrap.js (root domain) and
           # gets 404, producing a blank white screen.
           flutter build web --release \
-            --base-href=/streetlore/ \
-            --dart-define-from-file=/tmp/dart_defines.json
+            --base-href=/streetlore/
 
       - name: Deploy Web bundle to gh-pages
         uses: peaceiris/actions-gh-pages@v4

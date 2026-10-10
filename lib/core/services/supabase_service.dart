@@ -57,8 +57,6 @@ class SupabaseService {
   Future<void> postMessage(ChatMessage message) async {
     if (_client == null) return;
     try {
-      
-      
       await _client!.from('place_chat').insert(message.toJson()).select();
     } catch (e) {
       _logError('postMessage', e);
@@ -104,17 +102,12 @@ class SupabaseService {
   Future<void> pushStats(GamificationStats stats) async {
     if (_client == null) return;
     try {
-      
-      
       await _client!.from('leaderboard').upsert(stats.toJson()).select();
     } catch (e) {
       _logError('pushStats', e);
     }
   }
 
-  
-  
-  
   Future<GamificationStats?> pullStats(String userId) async {
     if (_client == null) return null;
     try {
@@ -124,20 +117,13 @@ class SupabaseService {
           .eq('user_id', userId)
           .maybeSingle();
       if (res == null) return null;
-      return GamificationStats.fromJson(
-        Map<String, dynamic>.from(res as Map),
-      );
+      return GamificationStats.fromJson(Map<String, dynamic>.from(res as Map));
     } catch (e) {
       _logError('pullStats($userId)', e);
       return null;
     }
   }
 
-  
-  
-  
-  
-  
   Future<bool> pushSavedPlace(String userId, PlaceModel place) async {
     if (_client == null || userId.isEmpty) return false;
     try {
@@ -154,7 +140,6 @@ class SupabaseService {
     }
   }
 
-  
   Future<bool> deleteSavedPlace(String userId, String placeId) async {
     if (_client == null || userId.isEmpty) return false;
     try {
@@ -170,16 +155,6 @@ class SupabaseService {
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   Future<({bool ok, PostgrestException? error})> registerCheckin(
     String userId,
     String placeId,
@@ -188,7 +163,6 @@ class SupabaseService {
       return (ok: false, error: null);
     }
     try {
-
       await _client!.from('place_checkins').insert({
         'user_id': userId,
         'place_id': placeId,
@@ -234,13 +208,7 @@ class SupabaseService {
     }
   }
 
-  
-  
-  
-  
-  Future<({int savedPlaces, int checkIns})> countUserRows(
-    String userId,
-  ) async {
+  Future<({int savedPlaces, int checkIns})> countUserRows(String userId) async {
     if (_client == null || userId.isEmpty) {
       return (savedPlaces: 0, checkIns: 0);
     }
@@ -269,9 +237,6 @@ class SupabaseService {
     return (savedPlaces: saved, checkIns: checkins);
   }
 
-  
-  
-  
   Future<List<PlaceModel>> pullSavedPlaces(String userId) async {
     if (_client == null) return const [];
     try {
@@ -290,9 +255,7 @@ class SupabaseService {
                 );
               }
               if (data is Map) {
-                return PlaceModel.fromJson(
-                  Map<String, dynamic>.from(data),
-                );
+                return PlaceModel.fromJson(Map<String, dynamic>.from(data));
               }
               return null;
             } catch (_) {
@@ -308,7 +271,6 @@ class SupabaseService {
     }
   }
 
-  
   Future<List<Map<String, dynamic>>> pullSavedTours(String userId) async {
     if (_client == null) return const [];
     try {
@@ -339,8 +301,6 @@ class SupabaseService {
     }
   }
 
-  
-  
   void _logError(String method, Object e) {
     if (e is PostgrestException) {
       debugPrint(
@@ -371,9 +331,7 @@ class SupabaseService {
     if (client == null) {
       throw Exception('Supabase client not initialized');
     }
-    final token = accessToken ??
-        client.auth.currentSession?.accessToken ??
-        '';
+    final token = accessToken ?? client.auth.currentSession?.accessToken ?? '';
     if (token.isEmpty) {
       throw Exception('Not signed in');
     }
@@ -382,6 +340,7 @@ class SupabaseService {
       uri,
       headers: {
         'Content-Type': 'application/json',
+        'apikey': AppConfig.supabaseAnonKey,
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode(body),
@@ -392,9 +351,7 @@ class SupabaseService {
       );
     }
     if (response.statusCode != 200) {
-      throw Exception(
-        'ai-proxy HTTP ${response.statusCode}: ${response.body}',
-      );
+      throw Exception('ai-proxy HTTP ${response.statusCode}: ${response.body}');
     }
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     return decoded;
@@ -409,9 +366,7 @@ class SupabaseService {
     if (client == null) {
       throw Exception('Supabase client not initialized');
     }
-    final token = accessToken ??
-        client.auth.currentSession?.accessToken ??
-        '';
+    final token = accessToken ?? client.auth.currentSession?.accessToken ?? '';
     if (token.isEmpty) {
       throw Exception('Not signed in');
     }

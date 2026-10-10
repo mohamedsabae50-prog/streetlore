@@ -16,23 +16,6 @@ class AiService {
   
   
   
-  bool _looksLikeRealKey(String key) {
-    if (key.isEmpty) return false;
-    if (key.contains('YOUR_') || key.contains('REPLACE')) return false;
-    
-    if (key.startsWith('AIza') && key.length >= 30) return true;
-    
-    if (key.startsWith('AQ.') && key.length >= 30) return true;
-    
-    if (key.length < 20) return false;
-    if (RegExp(r'^[A-Za-z0-9_\-]+$').hasMatch(key) ||
-        key.contains('.') ||
-        key.contains('_')) {
-      return true;
-    }
-    return false;
-  }
-
   bool _isArabic(String text) {
     return text.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
   }
@@ -66,16 +49,10 @@ LOCAL GUIDE — CITY-AGNOSTIC TRAVEL PLANNING FACTS:
     int? daysHint,
     String? budget,
   }) async {
-    final keys = AppConfig.geminiApiKeys
-        .map((k) => k.trim())
-        .where((k) => k.isNotEmpty)
-        .toList();
-    final anyReal = keys.any(_looksLikeRealKey);
-    if (!AppConfig.geminiEnabled || !anyReal) {
+    if (!AppConfig.geminiEnabled) {
       debugPrint(
         'AiService.generateTrip: using local plan '
-        '(enabled=${AppConfig.geminiEnabled}, '
-        'realKeys=${keys.length})',
+        '(enabled=${AppConfig.geminiEnabled})',
       );
       return _localPlan(
         prompt: prompt,
@@ -185,17 +162,16 @@ AVAILABLE PLACES (use these placeId values exactly):
 
     try {
       final result = await GeminiRestClient.instance.generateContent(
-        apiKeys: keys,
         model: AppConfig.geminiModel,
         systemInstruction: system,
         userPrompt: user,
         temperature: 0.7,
         maxOutputTokens: 2048,
       );
-      if (result == null || !result.isOk) {
+      if (!result.isOk) {
         debugPrint(
-          'AiService: Gemini call failed (status=${result?.statusCode}, '
-          'err=${result?.errorBody}), falling back to local',
+          'AiService: Gemini call failed (status=${result.statusCode}, '
+          'err=${result.errorBody}), falling back to local',
         );
         return _localPlan(
           prompt: prompt,
