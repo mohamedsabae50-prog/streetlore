@@ -25,6 +25,8 @@ For an existing database, apply `supabase/migrations/2026_10_10_tour_draft_statu
 
 Apply `supabase/migrations/2026_10_11_admin_analytics.sql` after that migration to enable tour view counts and the protected Admin analytics RPC. AI guide usage reports the sum of current per-user 24-hour quota windows in `ai_quota`, not a lifetime total; check-ins and tour views are cumulative.
 
+Apply `supabase/migrations/2026_10_12_admin_checkins_by_place.sql` after the analytics migration to add the Top Places by Check-ins breakdown to the Admin dashboard.
+
 ---
 
 ## 2. Create the admin user (one-time)
