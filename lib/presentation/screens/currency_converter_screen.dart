@@ -54,17 +54,12 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _toCurrency,
     );
     if (!mounted) return;
-    final inEgp = amount * (_fromCurrency == 'EGP'
-        ? 1.0
-        : (res != null ? amount / amount : 1.0));
     setState(() {
       _convertedAmount = res;
       _currentRate = amount == 0
           ? null
           : (res == null ? null : res / amount);
       _liveBadge = res != null ? 'live' : 'fallback';
-      
-      inEgp.toString();
     });
   }
 
