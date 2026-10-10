@@ -1,9 +1,8 @@
 // ============================================================================
 // ai-proxy — v1.0.73
 //
-// Secure Gemini proxy. All Gemini API calls from the Streetlore mobile
-// app route through this function. The real GEMINI_API_KEY lives in
-// the function's encrypted secrets and is never sent to the client.
+// Secure Gemini proxy. Gemini credentials live in function secrets and
+// are never sent to the client.
 //
 // Request shape (POST JSON):
 //   {
@@ -23,7 +22,7 @@
 //
 // To deploy:
 //   supabase functions deploy ai-proxy --no-verify-jwt --project-ref tbivoxyxclwjjspwsgvc
-//   supabase secrets set GEMINI_API_KEY=<NEW_KEY>  --project-ref tbivoxyxclwjjspwsgvc
+//   supabase secrets set GEMINI_SERVICE_ACCOUNT_JSON='<SERVICE_ACCOUNT_JSON>' --project-ref tbivoxyxclwjjspwsgvc
 // ============================================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -37,6 +36,17 @@ const DEFAULT_DAILY_LIMIT = 60;
 const MODEL = "gemini-2.5-flash";
 const GEMINI_ENDPOINT_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
+const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
+const GEMINI_SCOPE = "https://www.googleapis.com/auth/generative-language";
+const OAUTH_ACCESS_TOKEN = Deno.env.get("GEMINI_OAUTH_ACCESS_TOKEN") ?? "";
+const SERVICE_ACCOUNT_JSON = Deno.env.get("GEMINI_SERVICE_ACCOUNT_JSON") ?? "";
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -51,26 +61,135 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
 
+type CachedAccessToken = {
+  value: string;
+  expiresAt: number;
+};
+
+let cachedAccessToken: CachedAccessToken | null = null;
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 }
 
-function userIdFromAuthHeader(req: Request): string | null {
+async function userIdFromAuthHeader(req: Request): Promise<string | null> {
   const auth = req.headers.get("authorization") ?? req.headers.get("Authorization");
   if (!auth) return null;
   const m = auth.match(/^Bearer\s+(.+)$/i);
   if (!m) return null;
-  try {
-    const payload = JSON.parse(
-      atob(m[1].split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
-    );
-    return (payload.sub as string | undefined) ?? null;
-  } catch {
-    return null;
+
+  const { data, error } = await admin.auth.getUser(m[1]);
+  if (error || !data.user) return null;
+  return data.user.id;
+}
+
+function base64UrlEncode(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+async function serviceAccountAccessToken(): Promise<string> {
+  if (cachedAccessToken && cachedAccessToken.expiresAt > Date.now() + 60_000) {
+    return cachedAccessToken.value;
   }
+
+  let serviceAccount: {
+    client_email?: string;
+    private_key?: string;
+    token_uri?: string;
+  };
+  try {
+    serviceAccount = JSON.parse(SERVICE_ACCOUNT_JSON);
+  } catch {
+    throw new Error("GEMINI_SERVICE_ACCOUNT_JSON is not valid JSON");
+  }
+
+  const { client_email, private_key } = serviceAccount;
+  if (!client_email || !private_key) {
+    throw new Error(
+      "GEMINI_SERVICE_ACCOUNT_JSON must include client_email and private_key",
+    );
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const encodeJson = (value: unknown) =>
+    base64UrlEncode(new TextEncoder().encode(JSON.stringify(value)));
+  const unsignedToken = [
+    encodeJson({ alg: "RS256", typ: "JWT" }),
+    encodeJson({
+      iss: client_email,
+      scope: GEMINI_SCOPE,
+      aud: serviceAccount.token_uri ?? GOOGLE_TOKEN_ENDPOINT,
+      iat: now,
+      exp: now + 3600,
+    }),
+  ].join(".");
+  const pem = private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+    .replace(/-----END PRIVATE KEY-----/g, "")
+    .replace(/\s/g, "");
+  const keyBytes = Uint8Array.from(atob(pem), (char) => char.charCodeAt(0));
+  const signingKey = await crypto.subtle.importKey(
+    "pkcs8",
+    keyBytes,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    signingKey,
+    new TextEncoder().encode(unsignedToken),
+  );
+  const assertion = `${unsignedToken}.${base64UrlEncode(
+    new Uint8Array(signature),
+  )}`;
+  const tokenUri = serviceAccount.token_uri ?? GOOGLE_TOKEN_ENDPOINT;
+  const response = await fetch(tokenUri, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Google OAuth token exchange failed (${response.status})`);
+  }
+
+  const tokenResponse = await response.json();
+  if (
+    typeof tokenResponse.access_token !== "string" ||
+    typeof tokenResponse.expires_in !== "number"
+  ) {
+    throw new Error("Google OAuth response did not include a valid access token");
+  }
+  cachedAccessToken = {
+    value: tokenResponse.access_token,
+    expiresAt: Date.now() + tokenResponse.expires_in * 1000,
+  };
+  return cachedAccessToken.value;
+}
+
+async function geminiAuthHeaders(): Promise<Record<string, string>> {
+  if (SERVICE_ACCOUNT_JSON) {
+    return {
+      Authorization: `Bearer ${await serviceAccountAccessToken()}`,
+    };
+  }
+  if (OAUTH_ACCESS_TOKEN) {
+    return { Authorization: `Bearer ${OAUTH_ACCESS_TOKEN}` };
+  }
+  if (GEMINI_API_KEY) {
+    return { "x-goog-api-key": GEMINI_API_KEY };
+  }
+  throw new Error(
+    "Configure GEMINI_SERVICE_ACCOUNT_JSON, GEMINI_OAUTH_ACCESS_TOKEN, or GEMINI_API_KEY",
+  );
 }
 
 async function consumeQuota(userId: string): Promise<boolean> {
@@ -113,11 +232,14 @@ async function isAdmin(userId: string): Promise<boolean> {
 }
 
 serve(async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: CORS_HEADERS });
+  }
   if (req.method !== "POST") {
     return json({ error: "method_not_allowed" }, 405);
   }
 
-  const userId = userIdFromAuthHeader(req);
+  const userId = await userIdFromAuthHeader(req);
   if (!userId) return json({ error: "unauthorized" }, 401);
 
   const adminUser = await isAdmin(userId);
@@ -135,12 +257,6 @@ serve(async (req: Request): Promise<Response> => {
   const model = (body.model as string | undefined) ?? MODEL;
   delete body.model;
 
-  const apiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!apiKey) {
-    console.error("ai-proxy: GEMINI_API_KEY not set");
-    return json({ error: "server_misconfigured", code: "BAD_REQUEST" }, 500);
-  }
-
   const url = `${GEMINI_ENDPOINT_BASE}/${encodeURIComponent(model)}:generateContent`;
   let upstream: Response;
   try {
@@ -148,12 +264,12 @@ serve(async (req: Request): Promise<Response> => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
+        ...await geminiAuthHeaders(),
       },
       body: JSON.stringify(body),
     });
   } catch (e) {
-    console.error("ai-proxy: upstream fetch failed:", e);
+    console.error("ai-proxy: upstream authentication or fetch failed:", e);
     return json({ error: "upstream_unreachable", code: "BAD_REQUEST" }, 502);
   }
 
@@ -167,6 +283,6 @@ serve(async (req: Request): Promise<Response> => {
 
   return new Response(JSON.stringify(parsed), {
     status: upstream.status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 });

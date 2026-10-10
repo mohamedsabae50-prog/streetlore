@@ -121,6 +121,22 @@ supabase secrets set ADMIN_EMAIL=mohamedsabae50@gmail.com --project-ref tbivoxyx
 The function verifies the caller's Auth token and admin email itself before accessing the Auth Admin API. It prevents deleting the admin account and removes the user's submitted photos, uploaded photo files, chat, check-ins, saved items, leaderboard entry, and AI quota before deleting the Auth account. The existing `place_photos` RLS admin policies remain required for photo moderation.
 - **Images** — uploaded to Supabase Storage bucket `place-images`
 
+### Gemini AI credentials
+
+All Flutter Gemini requests use the `ai-proxy` Edge Function; no Gemini credential is included in the app build. Configure one server-side credential:
+
+- Recommended: set `GEMINI_SERVICE_ACCOUNT_JSON` to the complete Google service-account JSON in the Supabase project's Edge Function secrets. The function exchanges it for OAuth access tokens and refreshes them as needed.
+- `GEMINI_OAUTH_ACCESS_TOKEN` accepts a bearer access token, but these tokens expire and must be rotated.
+- `GEMINI_API_KEY` remains supported for standard Gemini API keys.
+
+Deploy the proxy after setting the secret:
+
+```powershell
+supabase functions deploy ai-proxy --no-verify-jwt --project-ref tbivoxyxclwjjspwsgvc
+```
+
+The function validates each Supabase access token itself, so requests must come from a signed-in user. Do not pass Google credentials to Flutter or `--dart-define`.
+
 ---
 
 ## 6. Architecture summary
