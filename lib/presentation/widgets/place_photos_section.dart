@@ -75,7 +75,14 @@ class PlacePhotosSection extends StatelessWidget {
     );
     if (confirmed == true) {
       HapticFeedback.mediumImpact();
-      await photos.removePhoto(place.id, photo.id);
+      try {
+        await photos.removePhoto(place.id, photo.id);
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Photo deletion failed: $e')));
+      }
     }
   }
 
@@ -161,6 +168,27 @@ class PlacePhotosSection extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
+              if (provider.loadError != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Could not sync photos: ${provider.loadError}',
+                          style: const TextStyle(
+                            color: AppColors.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: provider.refreshFromSupabase,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
               if (photos.isEmpty)
                 _emptyState(context)
               else

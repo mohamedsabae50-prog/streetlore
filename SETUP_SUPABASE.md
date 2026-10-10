@@ -118,7 +118,7 @@ supabase functions deploy admin-user-management --no-verify-jwt --project-ref tb
 supabase secrets set ADMIN_EMAIL=mohamedsabae50@gmail.com --project-ref tbivoxyxclwjjspwsgvc
 ```
 
-The function verifies the caller's Auth token and admin email itself before accessing the Auth Admin API. It prevents deleting the admin account and removes the user's submitted photos, uploaded photo files, chat, check-ins, saved items, leaderboard entry, and AI quota before deleting the Auth account. The existing `place_photos` RLS admin policies remain required for photo moderation.
+The function verifies the caller's Auth token and admin email itself before accessing the Auth Admin API. It prevents deleting the admin account and removes the user's submitted photos, uploaded photo files, chat, check-ins, saved items, leaderboard entry, and AI quota before deleting the Auth account. Before using photo moderation, run `supabase/migrations/2026_10_13_admin_photo_storage_delete.sql` in the Supabase SQL Editor. It grants the configured admin account permission to delete both photo rows and files from the `place-images` bucket.
 - **Images** — uploaded to Supabase Storage bucket `place-images`
 
 ### Gemini AI credentials

@@ -92,11 +92,24 @@ drop policy if exists "public read place-images"   on storage.objects;
 drop policy if exists "auth upload place-images"   on storage.objects;
 drop policy if exists "auth update place-images"   on storage.objects;
 drop policy if exists "auth delete place-images"   on storage.objects;
+drop policy if exists "owner delete place-images" on storage.objects;
+drop policy if exists "admin can delete place-images" on storage.objects;
 
 create policy "public read place-images"   on storage.objects for select using (bucket_id = 'place-images');
 create policy "auth upload place-images"   on storage.objects for insert with check (bucket_id = 'place-images' and auth.role() = 'authenticated');
 create policy "auth update place-images"   on storage.objects for update using (bucket_id = 'place-images' and auth.role() = 'authenticated');
-create policy "auth delete place-images"   on storage.objects for delete using (bucket_id = 'place-images' and auth.role() = 'authenticated');
+create policy "owner delete place-images" on storage.objects for delete
+  to authenticated using (
+    bucket_id = 'place-images'
+    and name like 'user-photos/%'
+    and owner_id = auth.uid()::text
+  );
+create policy "admin can delete place-images" on storage.objects for delete
+  to authenticated using (
+    bucket_id = 'place-images'
+    and lower(coalesce(auth.jwt() ->> 'email', '')) =
+      lower('mohamedsabae50@gmail.com')
+  );
 
 create or replace view public.tours_with_places as
 select

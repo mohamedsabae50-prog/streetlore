@@ -12,8 +12,10 @@ class PlacePhotosProvider extends ChangeNotifier {
 
   final Map<String, List<PlacePhoto>> _byPlace = {};
   String _currentUserId = 'me';
+  String? _loadError;
 
   String get currentUserId => _currentUserId;
+  String? get loadError => _loadError;
 
   void setUserId(String id) {
     if (_currentUserId == id) return;
@@ -27,10 +29,18 @@ class PlacePhotosProvider extends ChangeNotifier {
   int totalFor(String placeId) => _byPlace[placeId]?.length ?? 0;
 
   PlacePhotosProvider() {
-    _load();
+    _initialize();
   }
 
-  Future<void> _load() async {
+  Future<void> _initialize() async {
+    if (SupabaseService.instance.clientOrNull == null) {
+      await _loadLocal();
+      return;
+    }
+    await refreshFromSupabase();
+  }
+
+  Future<void> _loadLocal() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_kKey);
     if (raw == null) return;
@@ -50,7 +60,49 @@ class PlacePhotosProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _save() async {
+  Future<void> refreshFromSupabase() async {
+    final client = SupabaseService.instance.clientOrNull;
+    if (client == null) return;
+    try {
+      final rows = await client
+          .from('place_photos')
+          .select()
+          .order('created_at', ascending: false);
+      final photos = (rows as List<dynamic>)
+          .map(
+            (row) => PlacePhoto.fromMap(Map<String, dynamic>.from(row as Map)),
+          )
+          .toList();
+      _byPlace
+        ..clear()
+        ..addEntries(
+          _groupByPlace(
+            photos,
+          ).entries.map((entry) => MapEntry(entry.key, entry.value)),
+        );
+      try {
+        await _saveLocal();
+      } catch (e) {
+        debugPrint('PlacePhotosProvider cache refresh error: $e');
+      }
+      _loadError = null;
+      notifyListeners();
+    } catch (e) {
+      _loadError = e.toString();
+      debugPrint('PlacePhotosProvider.refreshFromSupabase error: $e');
+      notifyListeners();
+    }
+  }
+
+  Map<String, List<PlacePhoto>> _groupByPlace(List<PlacePhoto> photos) {
+    final grouped = <String, List<PlacePhoto>>{};
+    for (final photo in photos) {
+      grouped.putIfAbsent(photo.placeId, () => []).add(photo);
+    }
+    return grouped;
+  }
+
+  Future<void> _saveLocal() async {
     final prefs = await SharedPreferences.getInstance();
     final all = _byPlace.values.expand((e) => e).map((p) => p.toMap()).toList();
     await prefs.setString(_kKey, jsonEncode(all));
@@ -72,7 +124,9 @@ class PlacePhotosProvider extends ChangeNotifier {
     if (effectiveUserId.isNotEmpty && svc.clientOrNull != null) {
       final client = svc.clientOrNull!;
       storagePath = 'user-photos/$placeId/$photoId.jpg';
-      await client.storage.from('place-images').uploadBinary(
+      await client.storage
+          .from('place-images')
+          .uploadBinary(
             storagePath,
             imageBytes,
             fileOptions: const FileOptions(
@@ -94,15 +148,15 @@ class PlacePhotosProvider extends ChangeNotifier {
     );
     if (effectiveUserId.isNotEmpty && svc.clientOrNull != null) {
       try {
-        await svc.clientOrNull!.from('place_photos').insert(
-          photo.toSupabaseInsert(),
-        );
+        await svc.clientOrNull!
+            .from('place_photos')
+            .insert(photo.toSupabaseInsert());
       } catch (e) {
         if (storagePath != null) {
           try {
-            await svc.clientOrNull!.storage
-                .from('place-images')
-                .remove([storagePath]);
+            await svc.clientOrNull!.storage.from('place-images').remove([
+              storagePath,
+            ]);
           } catch (cleanupError) {
             debugPrint(
               'PlacePhotosProvider.addPhoto: failed to clean up uploaded '
@@ -120,7 +174,7 @@ class PlacePhotosProvider extends ChangeNotifier {
     }
 
     _byPlace.putIfAbsent(placeId, () => []).insert(0, photo);
-    await _save();
+    await _saveLocal();
     notifyListeners();
     return photo;
   }
@@ -142,15 +196,63 @@ class PlacePhotosProvider extends ChangeNotifier {
       newLikes = newLikes + 1;
     }
     list[i] = photo.copyWith(likes: newLikes, likedBy: newLikedBy);
-    await _save();
+    await _saveLocal();
     notifyListeners();
   }
 
   Future<void> removePhoto(String placeId, String photoId) async {
     final list = _byPlace[placeId];
     if (list == null) return;
-    list.removeWhere((p) => p.id == photoId);
-    await _save();
+    final photoIndex = list.indexWhere((photo) => photo.id == photoId);
+    if (photoIndex == -1) return;
+    final photo = list[photoIndex];
+    final client = SupabaseService.instance.clientOrNull;
+    if (client != null) {
+      final deleted = await client
+          .from('place_photos')
+          .delete()
+          .eq('id', photoId)
+          .eq('place_id', placeId)
+          .select('id');
+      if ((deleted as List<dynamic>).isEmpty) {
+        throw StateError('Supabase did not delete photo $photoId.');
+      }
+    }
+    list.removeAt(photoIndex);
+    if (list.isEmpty) _byPlace.remove(placeId);
+    await _saveLocal();
+    if (client != null) {
+      final storagePath = _storagePath(client, photo.imageUrl);
+      if (storagePath != null) {
+        try {
+          await client.storage.from('place-images').remove([storagePath]);
+        } catch (e) {
+          notifyListeners();
+          throw StateError(
+            'Photo was deleted from the database, but its storage file '
+            'could not be removed: $e',
+          );
+        }
+      }
+    }
     notifyListeners();
+  }
+
+  String? _storagePath(SupabaseClient client, String imageUrl) {
+    final uri = Uri.tryParse(imageUrl);
+    final bucketUrl = Uri.tryParse(
+      client.storage.from('place-images').getPublicUrl('__host_check__'),
+    );
+    if (uri == null || bucketUrl == null || uri.host != bucketUrl.host) {
+      return null;
+    }
+    final segments = uri.pathSegments;
+    for (var i = 0; i + 1 < segments.length; i++) {
+      if (segments[i] == 'place-images') {
+        final path = segments.skip(i + 1).join('/');
+        return path.isEmpty ? null : path;
+      }
+    }
+    return null;
   }
 }
