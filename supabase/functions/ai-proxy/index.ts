@@ -11,14 +11,14 @@
 //     "model": "gemini-2.5-flash"   // optional override
 //   }
 //
-// Response: identical to the Gemini REST API response, OR
-//   { "error": "...", "code": "QUOTA_EXCEEDED" | "UNAUTHORIZED" | "BAD_REQUEST" }
+// Response: Gemini JSON by default, Gemini Server-Sent Events when
+//   "stream": true, OR a JSON error:
+//   { "error": "...", "code": "DAILY_LIMIT_EXCEEDED" | "UNAUTHORIZED" | "BAD_REQUEST" }
 //
 // Quota enforcement:
-//   - 60 calls / 24h per user (configurable per-row in ai_quota.daily_limit).
+//   - 15 calls / 24h per user (capped by ai_quota.daily_limit).
 //   - Admins (auth.jwt()->email = admin email) bypass the quota.
-//   - Daily window resets when the Edge Function notices the row's
-//     window_start is older than 24h.
+//   - The database RPC atomically tracks requests in a rolling 24-hour window.
 //
 // To deploy:
 //   supabase functions deploy ai-proxy --no-verify-jwt --project-ref tbivoxyxclwjjspwsgvc
@@ -32,7 +32,7 @@ const ADMIN_EMAIL = (Deno.env.get("ADMIN_EMAIL") ?? "mohamedsabae50@gmail.com")
   .toLowerCase()
   .trim();
 
-const DEFAULT_DAILY_LIMIT = 60;
+const DEFAULT_DAILY_LIMIT = 15;
 const MODEL = "gemini-2.5-flash";
 const GEMINI_ENDPOINT_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
@@ -192,37 +192,16 @@ async function geminiAuthHeaders(): Promise<Record<string, string>> {
   );
 }
 
-async function consumeQuota(userId: string): Promise<boolean> {
-  const { data: row, error } = await admin
-    .from("ai_quota")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
+async function consumeQuota(userId: string): Promise<boolean | null> {
+  const { data, error } = await admin.rpc("consume_ai_quota", {
+    p_user_id: userId,
+    p_daily_limit: DEFAULT_DAILY_LIMIT,
+  });
   if (error) {
-    console.error("ai-proxy: ai_quota select failed:", error);
-    return false;
+    console.error("ai-proxy: consume_ai_quota RPC failed:", error);
+    return null;
   }
-  const now = new Date();
-  const windowStart = row?.window_start ? new Date(row.window_start) : now;
-  const elapsedH = (now.getTime() - windowStart.getTime()) / (1000 * 60 * 60);
-  const used = elapsedH >= 24 ? 0 : (row?.used_today ?? 0);
-  const limit = row?.daily_limit ?? DEFAULT_DAILY_LIMIT;
-  if (used >= limit) return false;
-  const newCount = used + 1;
-  const patch = {
-    user_id: userId,
-    used_today: newCount,
-    window_start: elapsedH >= 24 ? now.toISOString() : windowStart.toISOString(),
-    updated_at: now.toISOString(),
-  };
-  const { error: upsertErr } = await admin
-    .from("ai_quota")
-    .upsert(patch, { onConflict: "user_id" });
-  if (upsertErr) {
-    console.error("ai-proxy: ai_quota upsert failed:", upsertErr);
-    return false;
-  }
-  return true;
+  return data === true;
 }
 
 async function isAdmin(userId: string): Promise<boolean> {
@@ -245,7 +224,16 @@ serve(async (req: Request): Promise<Response> => {
   const adminUser = await isAdmin(userId);
   if (!adminUser) {
     const ok = await consumeQuota(userId);
-    if (!ok) return json({ error: "quota_exceeded", code: "QUOTA_EXCEEDED" }, 429);
+    if (ok === null) {
+      return json({ error: "quota_unavailable", code: "BAD_REQUEST" }, 503);
+    }
+    if (!ok) {
+      return json({
+        error: "daily_limit_exceeded",
+        code: "DAILY_LIMIT_EXCEEDED",
+        message: "You have reached your daily limit, please come back tomorrow.",
+      }, 429);
+    }
   }
 
   let body: any;
@@ -255,9 +243,13 @@ serve(async (req: Request): Promise<Response> => {
     return json({ error: "invalid_json", code: "BAD_REQUEST" }, 400);
   }
   const model = (body.model as string | undefined) ?? MODEL;
+  const streaming = body.stream === true;
   delete body.model;
+  delete body.stream;
 
-  const url = `${GEMINI_ENDPOINT_BASE}/${encodeURIComponent(model)}:generateContent`;
+  const endpoint = streaming ? "streamGenerateContent?alt=sse" : "generateContent";
+  const url =
+    `${GEMINI_ENDPOINT_BASE}/${encodeURIComponent(model)}:${endpoint}`;
   let upstream: Response;
   try {
     upstream = await fetch(url, {
@@ -273,6 +265,18 @@ serve(async (req: Request): Promise<Response> => {
     return json({ error: "upstream_unreachable", code: "BAD_REQUEST" }, 502);
   }
 
+  if (upstream.ok && streaming) {
+    return new Response(upstream.body, {
+      status: upstream.status,
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        ...CORS_HEADERS,
+      },
+    });
+  }
+
   const text = await upstream.text();
   let parsed: unknown;
   try {
@@ -280,7 +284,6 @@ serve(async (req: Request): Promise<Response> => {
   } catch {
     parsed = { raw: text };
   }
-
   return new Response(JSON.stringify(parsed), {
     status: upstream.status,
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },

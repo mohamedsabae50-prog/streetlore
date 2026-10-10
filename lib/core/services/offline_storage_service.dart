@@ -16,6 +16,7 @@ class OfflineStorageService {
   static const _packsBox = 'offline_packs';
   static const _placesBox = 'offline_places';
   static const _reviewsBox = 'offline_reviews';
+  static const _apiResponsesBox = 'offline_api_responses';
 
   bool _ready = false;
 
@@ -27,6 +28,7 @@ class OfflineStorageService {
         await Hive.openBox(_packsBox);
         await Hive.openBox(_placesBox);
         await Hive.openBox(_reviewsBox);
+        await Hive.openBox(_apiResponsesBox);
         _ready = true;
         debugPrint('OfflineStorageService: Hive ready (web / IndexedDB)');
       } catch (e) {
@@ -40,6 +42,7 @@ class OfflineStorageService {
       await Hive.openBox(_packsBox);
       await Hive.openBox(_placesBox);
       await Hive.openBox(_reviewsBox);
+      await Hive.openBox(_apiResponsesBox);
       _ready = true;
       debugPrint('OfflineStorageService: Hive ready at ${dir.path}');
     } catch (e) {
@@ -51,6 +54,7 @@ class OfflineStorageService {
         await Hive.openBox(_packsBox);
         await Hive.openBox(_placesBox);
         await Hive.openBox(_reviewsBox);
+        await Hive.openBox(_apiResponsesBox);
         _ready = true;
       } catch (e2) {
         debugPrint('OfflineStorageService: fallback also failed: $e2');
@@ -59,6 +63,40 @@ class OfflineStorageService {
   }
 
   bool get isReady => _ready;
+
+  Future<void> cacheApiRows(String key, List<dynamic> rows) async {
+    if (!_ready) return;
+    try {
+      await Hive.box(_apiResponsesBox).put(key, jsonEncode(rows));
+    } catch (e) {
+      debugPrint('OfflineStorageService.cacheApiRows($key) failed: $e');
+    }
+  }
+
+  List<Map<String, dynamic>>? getCachedApiRows(String key) {
+    if (!_ready) return null;
+    try {
+      final encoded = Hive.box(_apiResponsesBox).get(key);
+      if (encoded is! String) return null;
+      final decoded = jsonDecode(encoded);
+      if (decoded is! List) {
+        throw const FormatException('Cached API response was not a list');
+      }
+      return decoded
+          .map((row) {
+            if (row is! Map) {
+              throw const FormatException(
+                'Cached API response contained a non-object row',
+              );
+            }
+            return Map<String, dynamic>.from(row);
+          })
+          .toList(growable: false);
+    } catch (e) {
+      debugPrint('OfflineStorageService.getCachedApiRows($key) failed: $e');
+      return null;
+    }
+  }
 
   List<OfflinePack> getAllPacks() {
     if (!_ready) return const [];

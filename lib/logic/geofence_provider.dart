@@ -1,17 +1,21 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
 import '../core/services/geofencing_service.dart';
 import '../data/models/geofence_alert.dart';
 
 class GeofenceProvider extends ChangeNotifier {
   static const _kKey = 'geofence_alerts_v1';
+  static const _monitoringKey = 'geofence_monitoring_opted_in_v1';
   final List<GeofenceAlert> _alerts = [];
   bool _monitoring = false;
+  GeofencingStartResult? _lastStartResult;
 
   List<GeofenceAlert> get alerts => List.unmodifiable(_alerts);
   bool get isMonitoring => _monitoring;
+  GeofencingStartResult? get lastStartResult => _lastStartResult;
 
   GeofenceProvider() {
     _load();
@@ -29,12 +33,22 @@ class GeofenceProvider extends ChangeNotifier {
           ),
         ),
       );
+    final monitoringWasEnabled = prefs.getBool(_monitoringKey) ?? false;
     notifyListeners();
-    
-    
-    
-    
-    await _syncService();
+    await GeofencingService.instance.setAlerts(_alerts);
+    if (monitoringWasEnabled && _alerts.any((alert) => alert.enabled)) {
+      _lastStartResult = await GeofencingService.instance.startMonitoring(
+        _alerts,
+        requestPermissions: false,
+      );
+      _monitoring = _lastStartResult == GeofencingStartResult.started;
+      if (!_monitoring) {
+        await prefs.setBool(_monitoringKey, false);
+      }
+      notifyListeners();
+    } else if (monitoringWasEnabled) {
+      await prefs.setBool(_monitoringKey, false);
+    }
   }
 
   Future<void> _save() async {
@@ -53,14 +67,14 @@ class GeofenceProvider extends ChangeNotifier {
       _alerts[i] = _alerts[i].copyWith(enabled: !_alerts[i].enabled);
     }
     await _save();
-    await _syncService();
+    await _syncAlerts();
     notifyListeners();
   }
 
   Future<void> remove(String placeId) async {
     _alerts.removeWhere((a) => a.placeId == placeId);
     await _save();
-    await _syncService();
+    await _syncAlerts();
     notifyListeners();
   }
 
@@ -69,36 +83,35 @@ class GeofenceProvider extends ChangeNotifier {
     if (i == -1) return;
     _alerts[i] = _alerts[i].copyWith(radiusMeters: radius);
     await _save();
-    await _syncService();
+    await _syncAlerts();
     notifyListeners();
   }
 
-  Future<void> startMonitoring() async {
-    
-    
-    
-    
-    
-    
-    for (var i = 0; i < _alerts.length; i++) {
-      if (!_alerts[i].enabled) {
-        _alerts[i] = _alerts[i].copyWith(enabled: true);
-      }
-    }
-    await _save();
-    await _syncService();
-    _monitoring = true;
+  Future<GeofencingStartResult> startMonitoring() async {
+    _lastStartResult = await GeofencingService.instance.startMonitoring(
+      _alerts,
+    );
+    _monitoring = _lastStartResult == GeofencingStartResult.started;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_monitoringKey, _monitoring);
     notifyListeners();
+    return _lastStartResult!;
   }
 
   Future<void> stopMonitoring() async {
     await GeofencingService.instance.stop();
     _monitoring = false;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_monitoringKey, false);
     notifyListeners();
   }
 
-  Future<void> _syncService() async {
+  Future<void> _syncAlerts() async {
     await GeofencingService.instance.setAlerts(_alerts);
     _monitoring = GeofencingService.instance.isMonitoring;
+    if (!_monitoring) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_monitoringKey, false);
+    }
   }
 }

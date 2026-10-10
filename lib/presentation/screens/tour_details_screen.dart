@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/social_share_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/itinerary_model.dart';
 import '../../l10n/app_strings.dart';
-import '../../logic/auth_provider.dart';
 import '../../logic/tour_provider.dart';
 import '../widgets/place_card.dart';
 import 'map_screen.dart';
@@ -99,32 +99,24 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
     );
   }
 
-  Future<void> _toggleVisited() async {
-    final tour = widget.tour;
-    final tourProvider = context.read<TourProvider>();
-    final userId = context.read<AuthProvider>().userId;
-    final wasVisited = tourProvider.isTourVisited(tour.id);
-
-    HapticFeedback.mediumImpact();
-    if (wasVisited) {
-      await tourProvider.unmarkTourVisited(tour.id);
+  Future<void> _shareCompletedTour() async {
+    final locale = Localizations.localeOf(context).languageCode;
+    try {
+      await SocialShareService.shareCompletedTour(
+        context: context,
+        tour: widget.tour,
+        locale: locale,
+        category: context.tr('share_completed_tour'),
+        completedDetails: context.tr('share_tour_details', {
+          'places': '${widget.tour.places.length}',
+          'duration': widget.tour.localizedDuration(locale),
+        }),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('TourDetailsScreen: could not share tour: $error\n$stackTrace');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('tour_visit_unmarked'))),
-      );
-      return;
-    }
-
-    final messenger = ScaffoldMessenger.of(context);
-    final ok = await tourProvider.markTourVisited(tour, userId);
-    if (!mounted) return;
-    if (ok.ok) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(context.tr('tour_visit_recorded'))),
-      );
-    } else {
-      messenger.showSnackBar(
-        SnackBar(content: Text(context.tr('tour_visit_offline'))),
+        SnackBar(content: Text(context.tr('share_failed'))),
       );
     }
   }
@@ -564,46 +556,72 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
     return Consumer<TourProvider>(
       builder: (context, tourProvider, _) {
         final visited = tourProvider.isTourVisited(widget.tour.id);
+        final checkedInCount = tourProvider.checkedInPlaceCount(widget.tour);
+        final totalPlaces = widget.tour.places.length;
         final color = visited
             ? AppColors.success
             : AppColors.primary.withValues(alpha: 0.6);
-        final iconData = visited
-            ? Icons.check_circle_rounded
-            : Icons.radio_button_unchecked_rounded;
-        final label = visited
-            ? context.tr('tour_visited')
-            : context.tr('tour_mark_visited');
+        final progress = totalPlaces == 0 ? 0.0 : checkedInCount / totalPlaces;
 
-        return GestureDetector(
-          onTap: _toggleVisited,
-          child: Container(
-            width: double.infinity,
-            height: 52,
-            decoration: BoxDecoration(
-              color: visited
-                  ? color.withValues(alpha: 0.18)
-                  : Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: visited
-                    ? color
-                    : Colors.white.withValues(alpha: 0.18),
-                width: visited ? 1.5 : 1.0,
-              ),
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: visited
+                ? color.withValues(alpha: 0.18)
+                : Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: visited ? color : Colors.white.withValues(alpha: 0.18),
+              width: visited ? 1.5 : 1.0,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(iconData, color: color, size: 22),
-                const SizedBox(width: 10),
-                Text(
-                  label,
-                  style: AppTextStyles.buttonText.copyWith(
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    visited
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_unchecked_rounded,
                     color: color,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    visited
+                        ? context.tr('tour_visited')
+                        : context.tr('tour_progress', {
+                            'done': '$checkedInCount',
+                            'total': '$totalPlaces',
+                          }),
+                    style: AppTextStyles.buttonText.copyWith(color: color),
+                  ),
+                ],
+              ),
+              if (totalPlaces > 0) ...[
+                const SizedBox(height: 10),
+                LinearProgressIndicator(
+                  value: progress,
+                  color: color,
+                  backgroundColor: color.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ],
+              if (visited) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _shareCompletedTour,
+                  icon: const Icon(Icons.ios_share_rounded, size: 18),
+                  label: Text(context.tr('share_tour')),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: color,
+                    side: BorderSide(color: color.withValues(alpha: 0.55)),
                   ),
                 ),
               ],
-            ),
+            ],
           ),
         );
       },

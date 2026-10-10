@@ -145,6 +145,30 @@ class GamificationProvider extends ChangeNotifier {
     final pts = GamificationStats.pointsFor(action);
     if (pts == 0) return null;
 
+    if (action == 'check_in' && placeId != null && placeId.isNotEmpty) {
+      final userId =
+          SupabaseService.instance.clientOrNull?.auth.currentUser?.id ?? '';
+      if (userId.isNotEmpty) {
+        final result = await SupabaseService.instance.registerCheckin(
+          userId,
+          placeId,
+        );
+        if (!result.ok) {
+          final errMsg = result.error?.message ?? 'unknown error';
+          final errCode = result.error?.code ?? '';
+          _lastCheckinError = errCode.isNotEmpty
+              ? '[$errCode] $errMsg'
+              : errMsg;
+          debugPrint(
+            'GamificationProvider.applyAction: registerCheckin FAILED '
+            'for userId=$userId placeId=$placeId -> $_lastCheckinError',
+          );
+          notifyListeners();
+          return null;
+        }
+      }
+    }
+
     // For check_ins, let the streak provider update its own state
     // BEFORE we re-evaluate achievements (achievements depend on
     // streak.currentStreak for the streak_* milestones).
@@ -195,40 +219,6 @@ class GamificationProvider extends ChangeNotifier {
 
     await _save();
     notifyListeners();
-
-    if (action == 'check_in' && placeId != null && placeId.isNotEmpty) {
-      final userId =
-          SupabaseService.instance.clientOrNull?.auth.currentUser?.id ?? '';
-      if (userId.isNotEmpty) {
-        final result = await SupabaseService.instance.registerCheckin(
-          userId,
-          placeId,
-        );
-        if (!result.ok) {
-          final errMsg = result.error?.message ?? 'unknown error';
-          final errCode = result.error?.code ?? '';
-          _lastCheckinError = errCode.isNotEmpty
-              ? '[$errCode] $errMsg'
-              : errMsg;
-          debugPrint(
-            'GamificationProvider.applyAction: registerCheckin FAILED '
-            'for userId=$userId placeId=$placeId -> $_lastCheckinError',
-          );
-        } else {
-          _lastCheckinError = null;
-          debugPrint(
-            'GamificationProvider.applyAction: check-in saved to DB '
-            'placeId=$placeId',
-          );
-        }
-        notifyListeners();
-      } else {
-        debugPrint(
-          'GamificationProvider.applyAction: no signed-in user, '
-          'skipped registerCheckin',
-        );
-      }
-    }
 
     // Pick the most-recently unlocked catalog badge to show in the UI.
     if (newLevel != prevLevel) return _levelBadge(newLevel);

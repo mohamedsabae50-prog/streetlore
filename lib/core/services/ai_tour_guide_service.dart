@@ -4,6 +4,9 @@ import '../config/app_config.dart';
 import '../../data/models/place_model.dart';
 import 'gemini_rest_client.dart';
 
+const aiDailyLimitMessage =
+    'You have reached your daily limit, please come back tomorrow.';
+
 class ChatMessage {
   final String text;
   final bool isUser;
@@ -154,7 +157,10 @@ family-friendliness, safety, and accessibility.''';
         'All answers here come from on-device data.)';
   }
 
-  Future<String> send(String userText) async {
+  Future<String> send(
+    String userText, {
+    void Function(String response)? onResponseChunk,
+  }) async {
     if (_session == null && _currentPlace != null) {
       _busy = true;
       _messages.add(
@@ -175,8 +181,10 @@ family-friendliness, safety, and accessibility.''';
     );
     final contextualTurn = _buildContextualUserPrompt(userText);
     try {
-      final res = await _session!.sendMessage(contextualTurn);
-      final reply = res.text;
+      final reply = await _session!.sendMessage(
+        contextualTurn,
+        onChunk: onResponseChunk,
+      );
       _messages.add(
         ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()),
       );
@@ -184,12 +192,14 @@ family-friendliness, safety, and accessibility.''';
     } catch (e, stackTrace) {
       debugPrint('Gemini Error: $e\n$stackTrace');
       debugPrint('AITourGuideService.send error: $e');
-      final isArabic = userText.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
-      final errBrief = _summarizeError(e);
-      final offline = _offlineAnswer(userText, _currentPlace!);
-      final reply = isArabic
-          ? '⚠️ Gemini API: $errBrief\n\n(إجابة محلية بدون نت)\n\n$offline'
-          : '⚠️ Gemini API: $errBrief\n\n(Local offline answer — API call failed)\n\n$offline';
+      final isDailyLimit =
+          e is GeminiApiException &&
+          e.statusCode == 429 &&
+          e.message.contains('AI_DAILY_LIMIT_EXCEEDED');
+      final reply = isDailyLimit
+          ? aiDailyLimitMessage
+          : _offlineErrorReply(userText, e);
+      onResponseChunk?.call(reply);
       _messages.add(
         ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()),
       );
@@ -197,6 +207,15 @@ family-friendliness, safety, and accessibility.''';
     } finally {
       _busy = false;
     }
+  }
+
+  String _offlineErrorReply(String userText, Object error) {
+    final isArabic = userText.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
+    final errBrief = _summarizeError(error);
+    final offline = _offlineAnswer(userText, _currentPlace!);
+    return isArabic
+        ? '⚠️ Gemini API: $errBrief\n\n(إجابة محلية بدون نت)\n\n$offline'
+        : '⚠️ Gemini API: $errBrief\n\n(Local offline answer — API call failed)\n\n$offline';
   }
 
   String _summarizeError(Object e) {
@@ -430,7 +449,10 @@ $userText''';
     _session = null;
   }
 
-  static Future<String> askLocalGuide(String userText) async {
+  static Future<String> askLocalGuide(
+    String userText, {
+    void Function(String response)? onResponseChunk,
+  }) async {
     final system =
         '''You are the street-level local tourism expert inside the "Streetlore" app. You answer questions about travel, places, food, history, and culture for the city or area the user is currently exploring.
 
@@ -444,21 +466,26 @@ STRICT RULES:
     if (!AppConfig.geminiEnabled) {
       throw GeminiApiException(statusCode: 0, message: 'AI not configured');
     }
-    final result = await GeminiRestClient.instance.generateContent(
-      model: AppConfig.geminiModel,
-      systemInstruction: system,
-      userPrompt: userText,
-      temperature: 0.7,
-      maxOutputTokens: 800,
-    );
-    if (!result.isOk) {
+    final response = StringBuffer();
+    try {
+      await for (final chunk in GeminiRestClient.instance.generateContentStream(
+        model: AppConfig.geminiModel,
+        systemInstruction: system,
+        userPrompt: userText,
+        temperature: 0.7,
+        maxOutputTokens: 800,
+      )) {
+        response.write(chunk);
+        onResponseChunk?.call(response.toString());
+      }
+    } catch (error) {
       throw GeminiApiException(
-        statusCode: result.statusCode,
-        message: result.errorBody ?? 'unknown error',
-        raw: result.raw,
+        statusCode: GeminiRestClient.instance.statusCodeFor(error),
+        message: error.toString(),
       );
     }
-    final text = (result.text ?? '').trim();
+    final text = response.toString().trim();
+    onResponseChunk?.call(text);
     return text.isEmpty ? '...' : text;
   }
 }
@@ -469,28 +496,37 @@ class _LiveSession {
   final String model;
   final String systemPrompt;
 
-  Future<_LiveReply> sendMessage(String userText) async {
-    final result = await GeminiRestClient.instance.generateContent(
-      model: model,
-      systemInstruction: systemPrompt,
-      userPrompt: userText,
-      temperature: 0.7,
-      maxOutputTokens: 1024,
-    );
-    if (!result.isOk) {
+  Future<String> sendMessage(
+    String userText, {
+    void Function(String response)? onChunk,
+  }) async {
+    final response = StringBuffer();
+    try {
+      await for (final chunk in GeminiRestClient.instance.generateContentStream(
+        model: model,
+        systemInstruction: systemPrompt,
+        userPrompt: userText,
+        temperature: 0.7,
+        maxOutputTokens: 1024,
+      )) {
+        response.write(chunk);
+        onChunk?.call(response.toString());
+      }
+    } catch (error) {
       throw GeminiApiException(
-        statusCode: result.statusCode,
-        message: result.errorBody ?? 'unknown error',
-        raw: result.raw,
+        statusCode: GeminiRestClient.instance.statusCodeFor(error),
+        message: error.toString(),
       );
     }
-    return _LiveReply(text: result.text ?? '');
+    final text = response.toString();
+    if (text.isEmpty) {
+      throw GeminiApiException(
+        statusCode: 200,
+        message: 'Gemini returned no text',
+      );
+    }
+    return text;
   }
-}
-
-class _LiveReply {
-  final String text;
-  const _LiveReply({required this.text});
 }
 
 class GeminiApiException implements Exception {

@@ -346,6 +346,12 @@ class SupabaseService {
       body: jsonEncode(body),
     );
     if (response.statusCode == 429) {
+      if (response.body.contains('DAILY_LIMIT_EXCEEDED')) {
+        throw Exception(
+          'AI_DAILY_LIMIT_EXCEEDED: You have reached your daily limit, '
+          'please come back tomorrow.',
+        );
+      }
       throw Exception(
         'AI_QUOTA_EXCEEDED: you have used all your daily AI requests.',
       );
@@ -355,6 +361,51 @@ class SupabaseService {
     }
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     return decoded;
+  }
+
+  Stream<List<int>> aiProxyStream(
+    Map<String, dynamic> body, {
+    String? accessToken,
+  }) async* {
+    final client = clientOrNull;
+    if (client == null) {
+      throw Exception('Supabase client not initialized');
+    }
+    final token = accessToken ?? client.auth.currentSession?.accessToken ?? '';
+    if (token.isEmpty) {
+      throw Exception('Not signed in');
+    }
+
+    final request = http.Request(
+      'POST',
+      Uri.parse('${AppConfig.supabaseUrl}/functions/v1/ai-proxy'),
+    )
+      ..headers.addAll({
+        'Content-Type': 'application/json',
+        'apikey': AppConfig.supabaseAnonKey,
+        'Authorization': 'Bearer $token',
+      })
+      ..body = jsonEncode(body);
+    final httpClient = http.Client();
+    try {
+      final response = await httpClient.send(request);
+      if (response.statusCode != 200) {
+        final responseBody = await response.stream.bytesToString();
+        if (response.statusCode == 429 &&
+            responseBody.contains('DAILY_LIMIT_EXCEEDED')) {
+          throw Exception(
+            'AI_DAILY_LIMIT_EXCEEDED: You have reached your daily limit, '
+            'please come back tomorrow.',
+          );
+        }
+        throw Exception(
+          'ai-proxy HTTP ${response.statusCode}: $responseBody',
+        );
+      }
+      yield* response.stream;
+    } finally {
+      httpClient.close();
+    }
   }
 
   /// Request full account + data deletion per Apple App Store and

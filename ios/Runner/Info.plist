@@ -67,6 +67,12 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-<string>This app needs your location to show the route to your destination.</string>
+	<string>Streetlore uses your location to verify check-ins and show routes.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Streetlore uses background location only when nearby alerts are enabled, so it can notify you when you approach selected places.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 </dict>
 </plist>

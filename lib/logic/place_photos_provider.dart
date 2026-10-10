@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -118,7 +119,14 @@ class PlacePhotosProvider extends ChangeNotifier {
     final effectiveUserId = (userId ?? _currentUserId).trim();
     final photoId = _uuid.v4();
     final svc = SupabaseService.instance;
-    var imageUrl = 'data:image/jpeg;base64,${base64Encode(imageBytes)}';
+    final compressedBytes = await FlutterImageCompress.compressWithList(
+      imageBytes,
+      minWidth: 1200,
+      minHeight: 1200,
+      quality: 75,
+      format: CompressFormat.jpeg,
+    );
+    var imageUrl = 'data:image/jpeg;base64,${base64Encode(compressedBytes)}';
     String? storagePath;
 
     if (effectiveUserId.isNotEmpty && svc.clientOrNull != null) {
@@ -128,7 +136,7 @@ class PlacePhotosProvider extends ChangeNotifier {
           .from('place-images')
           .uploadBinary(
             storagePath,
-            imageBytes,
+            compressedBytes,
             fileOptions: const FileOptions(
               contentType: 'image/jpeg',
               upsert: false,

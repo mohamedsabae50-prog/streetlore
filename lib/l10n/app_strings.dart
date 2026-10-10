@@ -32,8 +32,14 @@ class AppStrings {
     'filter_nearest': {'en': 'Nearest', 'ar': 'الأقرب'},
     'filter_free': {'en': 'Free only', 'ar': 'المجاني فقط'},
     'filter_hidden_gems': {'en': 'Hidden Gems', 'ar': 'جواهر مخفية'},
-    'download_offline': {'en': 'Download for Offline', 'ar': 'حمّل للوضع دون اتصال'},
-    'removed_offline': {'en': 'Removed from offline', 'ar': 'تمت الإزالة من الوضع دون اتصال'},
+    'download_offline': {
+      'en': 'Download for Offline',
+      'ar': 'حمّل للوضع دون اتصال',
+    },
+    'removed_offline': {
+      'en': 'Removed from offline',
+      'ar': 'تمت الإزالة من الوضع دون اتصال',
+    },
     'cat_hotels': {'en': 'Hotels', 'ar': 'الفنادق'},
     'all_places': {'en': 'All Places', 'ar': 'كل الأماكن'},
     'places_count': {'en': '{n} places', 'ar': '{n} مكان'},
@@ -58,7 +64,10 @@ class AppStrings {
 
     'quick_ai_trip': {'en': 'AI Trip', 'ar': 'رحلة ذكية'},
     'quick_best_time': {'en': 'Best Time', 'ar': 'أفضل وقت'},
-    'best_time_admin_hint': {'en': 'Set by the editorial team', 'ar': 'حددها فريق التحرير'},
+    'best_time_admin_hint': {
+      'en': 'Set by the editorial team',
+      'ar': 'حددها فريق التحرير',
+    },
     'quick_map': {'en': 'Map', 'ar': 'الخريطة'},
     'quick_transport': {'en': 'Transport', 'ar': 'المواصلات'},
     'quick_journal': {'en': 'Journal', 'ar': 'اليوميات'},
@@ -68,7 +77,10 @@ class AppStrings {
     'quick_prayer': {'en': 'Prayer', 'ar': 'الصلاة'},
     'quick_badges': {'en': 'Badges', 'ar': 'إنجازات'},
     'quick_routes': {'en': 'Routes', 'ar': 'مسارات'},
-    'ai_tour_guide': {'en': 'Streetlore AI Guide', 'ar': 'دليل ستريت لور الذكي'},
+    'ai_tour_guide': {
+      'en': 'Streetlore AI Guide',
+      'ar': 'دليل ستريت لور الذكي',
+    },
     'ai_guide_general_title': {
       'en': 'Streetlore AI Guide',
       'ar': 'دليل ستريت لور الذكي',
@@ -81,10 +93,7 @@ class AppStrings {
           "أهلاً! أنا دليل ستريت لور الذكي. اسألني عن أي حاجة — أماكن للزيارة، "
           'أكل، تاريخ، جواهر مخفية، أو نصايح للتنقل في المدينة.',
     },
-    'ai_guide_thinking': {
-      'en': 'Thinking…',
-      'ar': 'بفكر…',
-    },
+    'ai_guide_thinking': {'en': 'Thinking…', 'ar': 'بفكر…'},
     'ai_guide_hint': {
       'en': 'Ask about places, food, history…',
       'ar': 'اسأل عن أماكن، أكل، تاريخ…',
@@ -192,10 +201,7 @@ class AppStrings {
       'ar': 'شكرًا لدعمك! ',
     },
     'about_app': {'en': 'About Streetlore', 'ar': 'عن ستريت لور'},
-    'attributions_title': {
-      'en': 'Attributions',
-      'ar': 'حقوق الملكية',
-    },
+    'attributions_title': {'en': 'Attributions', 'ar': 'حقوق الملكية'},
     'attribution_osm': {
       'en':
           'Map tiles © OpenStreetMap contributors — open data under the Open Database License (ODbL).',
@@ -224,11 +230,11 @@ class AppStrings {
     'passion_banner_sub': {
       'en':
           'Your guide to the deepest stories behind every city. Free, ad-free, '
-              'and made with care. Every recommendation here is written by '
-              'someone who knows the place up close.',
+          'and made with care. Every recommendation here is written by '
+          'someone who knows the place up close.',
       'ar':
           'دليلك لاكتشاف أعمق ما في المدن من حكايات وذكريات. بدون إعلانات، '
-              'بدون اشتراكات، وكل توصية هنا كتبها إنسان يعرف المكان عن قرب.',
+          'بدون اشتراكات، وكل توصية هنا كتبها إنسان يعرف المكان عن قرب.',
     },
     'streak_start': {'en': 'Start your streak', 'ar': 'ابدأ سلسلتك'},
     'streak_days': {'en': '{n} visits streak', 'ar': 'ستريك {n} زيارة'},
@@ -330,10 +336,7 @@ class AppStrings {
       'en': 'Check-in removed',
       'ar': 'تم إلغاء تسجيل الزيارة',
     },
-    'unvisit_title': {
-      'en': 'Remove check-in?',
-      'ar': 'إلغاء تسجيل الزيارة؟',
-    },
+    'unvisit_title': {'en': 'Remove check-in?', 'ar': 'إلغاء تسجيل الزيارة؟'},
     'unvisit_body': {
       'en':
           'This will remove your check-in, deduct the points, and revoke any badges that were unlocked by it.',
@@ -362,39 +365,90 @@ class AppStrings {
     'badge_streak_50': {'en': '50 Visits', 'ar': '50 زيارة'},
     'First Steps': {'en': 'First Steps', 'ar': 'الخطوات الأولى'},
     'ach_first_steps_name': {'en': 'First Steps', 'ar': 'الخطوات الأولى'},
-    'ach_first_steps_desc': {'en': 'Check in at your first place', 'ar': 'سجّل دخولك في أول مكان'},
+    'ach_first_steps_desc': {
+      'en': 'Check in at your first place',
+      'ar': 'سجّل دخولك في أول مكان',
+    },
     'ach_explorer_5_name': {'en': 'Curious', 'ar': 'فضولي'},
-    'ach_explorer_5_desc': {'en': 'Visit 5 different places', 'ar': 'زُر 5 أماكن مختلفة'},
+    'ach_explorer_5_desc': {
+      'en': 'Visit 5 different places',
+      'ar': 'زُر 5 أماكن مختلفة',
+    },
     'ach_explorer_10_name': {'en': 'Adventurer', 'ar': 'مغامر'},
-    'ach_explorer_10_desc': {'en': 'Visit 10 different places', 'ar': 'زُر 10 أماكن مختلفة'},
+    'ach_explorer_10_desc': {
+      'en': 'Visit 10 different places',
+      'ar': 'زُر 10 أماكن مختلفة',
+    },
     'ach_explorer_25_name': {'en': 'Pathfinder', 'ar': 'مستكشف'},
-    'ach_explorer_25_desc': {'en': 'Visit 25 different places', 'ar': 'زُر 25 مكانًا مختلفًا'},
+    'ach_explorer_25_desc': {
+      'en': 'Visit 25 different places',
+      'ar': 'زُر 25 مكانًا مختلفًا',
+    },
     'ach_lorekeeper_name': {'en': 'Lorekeeper', 'ar': 'حارس التراث'},
-    'ach_lorekeeper_desc': {'en': 'Visit 42 places — the answer to everything', 'ar': 'زُر 42 مكانًا — إجابة كل شيء'},
+    'ach_lorekeeper_desc': {
+      'en': 'Visit 42 places — the answer to everything',
+      'ar': 'زُر 42 مكانًا — إجابة كل شيء',
+    },
     'ach_culture_buff_name': {'en': 'Culture Buff', 'ar': 'ثقافة عالية'},
-    'ach_culture_buff_desc': {'en': 'Visit 5 cultural spots', 'ar': 'زُر 5 أماكن ثقافية'},
+    'ach_culture_buff_desc': {
+      'en': 'Visit 5 cultural spots',
+      'ar': 'زُر 5 أماكن ثقافية',
+    },
     'ach_history_nerd_name': {'en': 'History Nerd', 'ar': 'مهووس بالتاريخ'},
-    'ach_history_nerd_desc': {'en': 'Visit 10 historical spots', 'ar': 'زُر 10 أماكن تاريخية'},
+    'ach_history_nerd_desc': {
+      'en': 'Visit 10 historical spots',
+      'ar': 'زُر 10 أماكن تاريخية',
+    },
     'ach_foodie_name': {'en': 'Foodie', 'ar': 'ذوّاق'},
-    'ach_foodie_desc': {'en': 'Check in at 3 food spots', 'ar': 'سجّل دخولك في 3 أماكن أكل'},
+    'ach_foodie_desc': {
+      'en': 'Check in at 3 food spots',
+      'ar': 'سجّل دخولك في 3 أماكن أكل',
+    },
     'ach_gourmet_name': {'en': 'Gourmet', 'ar': 'خبير أكل'},
-    'ach_gourmet_desc': {'en': 'Check in at 8 food spots', 'ar': 'سجّل دخولك في 8 أماكن أكل'},
+    'ach_gourmet_desc': {
+      'en': 'Check in at 8 food spots',
+      'ar': 'سجّل دخولك في 8 أماكن أكل',
+    },
     'ach_shopaholic_name': {'en': 'Shopaholic', 'ar': 'مدمن تسوق'},
-    'ach_shopaholic_desc': {'en': 'Visit 3 shopping spots', 'ar': 'زُر 3 أماكن تسوق'},
+    'ach_shopaholic_desc': {
+      'en': 'Visit 3 shopping spots',
+      'ar': 'زُر 3 أماكن تسوق',
+    },
     'ach_spiritual_seeker_name': {'en': 'Spiritual Seeker', 'ar': 'باحث روحي'},
     'ach_spiritual_seeker_desc': {'en': 'Visit 2 mosques', 'ar': 'زُر مسجدين'},
     'ach_pilgrim_name': {'en': 'Pilgrim', 'ar': 'حاج'},
-    'ach_pilgrim_desc': {'en': 'Visit 2 churches or holy sites', 'ar': 'زُر كنيستين أو موقعين مقدسين'},
+    'ach_pilgrim_desc': {
+      'en': 'Visit 2 churches or holy sites',
+      'ar': 'زُر كنيستين أو موقعين مقدسين',
+    },
     'ach_streak_3_name': {'en': 'Warming Up', 'ar': 'بداية دافئة'},
-    'ach_streak_3_desc': {'en': '3-day check-in streak', 'ar': 'سلسلة 3 أيام من تسجيل الدخول'},
+    'ach_streak_3_desc': {
+      'en': '3-day check-in streak',
+      'ar': 'سلسلة 3 أيام من تسجيل الدخول',
+    },
     'ach_streak_7_name': {'en': 'On a Roll', 'ar': 'على مَوجة'},
-    'ach_streak_7_desc': {'en': '7-day check-in streak', 'ar': 'سلسلة 7 أيام من تسجيل الدخول'},
+    'ach_streak_7_desc': {
+      'en': '7-day check-in streak',
+      'ar': 'سلسلة 7 أيام من تسجيل الدخول',
+    },
     'ach_streak_30_name': {'en': 'Devoted', 'ar': 'مُخلِص'},
-    'ach_streak_30_desc': {'en': '30-day check-in streak', 'ar': 'سلسلة 30 يومًا من تسجيل الدخول'},
+    'ach_streak_30_desc': {
+      'en': '30-day check-in streak',
+      'ar': 'سلسلة 30 يومًا من تسجيل الدخول',
+    },
     'ach_streak_100_name': {'en': 'Legend', 'ar': 'أسطورة'},
-    'ach_streak_100_desc': {'en': '100-day check-in streak', 'ar': 'سلسلة 100 يوم من تسجيل الدخول'},
-    'ach_hidden_gem_hunter_name': {'en': 'Hidden Gem Hunter', 'ar': 'صيّاد الجواهر المخفية'},
-    'ach_hidden_gem_hunter_desc': {'en': 'Discover 3 hidden gems', 'ar': 'اكتشف 3 جواهر مخفية'},
+    'ach_streak_100_desc': {
+      'en': '100-day check-in streak',
+      'ar': 'سلسلة 100 يوم من تسجيل الدخول',
+    },
+    'ach_hidden_gem_hunter_name': {
+      'en': 'Hidden Gem Hunter',
+      'ar': 'صيّاد الجواهر المخفية',
+    },
+    'ach_hidden_gem_hunter_desc': {
+      'en': 'Discover 3 hidden gems',
+      'ar': 'اكتشف 3 جواهر مخفية',
+    },
     'ach_reviewer_name': {'en': 'Reviewer', 'ar': 'مُراجِع'},
     'ach_reviewer_desc': {'en': 'Post 3 reviews', 'ar': 'انشر 3 تقييمات'},
     'ach_critic_name': {'en': 'Critic', 'ar': 'ناقد'},
@@ -404,11 +458,20 @@ class AppStrings {
     'ach_influencer_name': {'en': 'Influencer', 'ar': 'مؤثر'},
     'ach_influencer_desc': {'en': 'Upload 20 photos', 'ar': 'ارفع 20 صورة'},
     'ach_early_bird_name': {'en': 'Early Bird', 'ar': 'طائر الفجر'},
-    'ach_early_bird_desc': {'en': 'Check in at 5 places before 9 AM', 'ar': 'سجّل دخولك في 5 أماكن قبل 9 صباحًا'},
+    'ach_early_bird_desc': {
+      'en': 'Check in at 5 places before 9 AM',
+      'ar': 'سجّل دخولك في 5 أماكن قبل 9 صباحًا',
+    },
     'ach_night_owl_name': {'en': 'Night Owl', 'ar': 'بومة الليل'},
-    'ach_night_owl_desc': {'en': 'Check in at 5 places after 9 PM', 'ar': 'سجّل دخولك في 5 أماكن بعد 9 مساءً'},
+    'ach_night_owl_desc': {
+      'en': 'Check in at 5 places after 9 PM',
+      'ar': 'سجّل دخولك في 5 أماكن بعد 9 مساءً',
+    },
     'ach_completionist_name': {'en': 'Completionist', 'ar': 'مُكتمِل'},
-    'ach_completionist_desc': {'en': 'Unlock 20 different achievements', 'ar': 'افتح 20 إنجازات مختلفة'},
+    'ach_completionist_desc': {
+      'en': 'Unlock 20 different achievements',
+      'ar': 'افتح 20 إنجازات مختلفة',
+    },
     'write_review': {'en': 'Write Review', 'ar': 'اكتب تقييمًا'},
     'community_reviews': {'en': 'Community Reviews', 'ar': 'تقييمات المجتمع'},
     'no_reviews': {
@@ -428,8 +491,7 @@ class AppStrings {
       'ar': 'مفيش حاجة محفوظة لسه',
     },
     'trip_tab_saved_empty_body': {
-      'en':
-          'Tap the bookmark on any place to save it here for later.',
+      'en': 'Tap the bookmark on any place to save it here for later.',
       'ar': 'اضغط على أيقونة الحفظ في أي مكان وهيظهر هنا.',
     },
     'trip_tab_visited_empty_title': {
@@ -437,11 +499,29 @@ class AppStrings {
       'ar': 'مفيش زيارات لسه',
     },
     'trip_tab_visited_empty_body': {
-      'en':
-          'Tap the flag on any place to check in — your visits show up here.',
+      'en': 'Tap the flag on any place to check in — your visits show up here.',
       'ar': 'سجّل حضورك في أي مكان من زر العلم، وهتلاقي زياراتك هنا.',
     },
     'share_app': {'en': 'Share Streetlore', 'ar': 'شارك ستريت لور'},
+    'share_tour': {'en': 'Share completed tour', 'ar': 'شارك الجولة المكتملة'},
+    'share_completed_tour': {'en': 'Tour completed', 'ar': 'جولة مكتملة'},
+    'share_tour_details': {
+      'en': '{places} places · {duration}',
+      'ar': '{places} أماكن · {duration}',
+    },
+    'share_photo': {'en': 'Share photo', 'ar': 'مشاركة الصورة'},
+    'share_place_photo': {
+      'en': 'A moment from this place',
+      'ar': 'لحظة من هذا المكان',
+    },
+    'share_card_footer': {
+      'en': 'Discover the story behind every place',
+      'ar': 'اكتشف حكاية كل مكان',
+    },
+    'share_failed': {
+      'en': 'Could not prepare this share image. Please try again.',
+      'ar': 'تعذر تجهيز صورة المشاركة. حاول مرة أخرى.',
+    },
     'copy_link': {'en': 'Copy Link', 'ar': 'نسخ الرابط'},
     'message': {'en': 'Message', 'ar': 'رسالة'},
     'email': {'en': 'Email', 'ar': 'بريد'},
@@ -519,6 +599,69 @@ class AppStrings {
       'en': '{d} m from city center',
       'ar': '{d} م من وسط المدينة',
     },
+    'geo_select_first': {
+      'en': 'Choose at least one place before enabling nearby alerts.',
+      'ar': 'اختر مكانًا واحدًا على الأقل قبل تفعيل التنبيهات القريبة.',
+    },
+    'geo_background_title': {
+      'en': 'Allow background location?',
+      'ar': 'السماح بالموقع في الخلفية؟',
+    },
+    'geo_background_explanation': {
+      'en':
+          'Streetlore checks your location in the background only while '
+          'nearby alerts are enabled, so it can notify you when you approach '
+          'a selected place. Updates are limited to reduce battery use. '
+          'Your location is not stored.',
+      'ar':
+          'يتحقق ستريت لور من موقعك في الخلفية فقط أثناء تفعيل التنبيهات '
+          'القريبة، ليخبرك عند الاقتراب من مكان اخترته. نقلل التحديثات '
+          'للحفاظ على البطارية ولا نخزن موقعك.',
+    },
+    'geo_enable': {'en': 'Continue', 'ar': 'متابعة'},
+    'geo_background_denied': {
+      'en':
+          'Background location was not allowed. You can enable it in Settings.',
+      'ar': 'لم يتم السماح بالموقع في الخلفية. يمكنك تفعيله من الإعدادات.',
+    },
+    'geo_notifications_denied': {
+      'en':
+          'Notifications are disabled. Enable them in Settings to receive nearby alerts.',
+      'ar':
+          'الإشعارات معطلة. فعّلها من الإعدادات لاستلام تنبيهات الأماكن القريبة.',
+    },
+    'geo_unsupported': {
+      'en': 'Nearby alerts are not supported on this device.',
+      'ar': 'تنبيهات الأماكن القريبة غير مدعومة على هذا الجهاز.',
+    },
+    'geo_start_failed': {
+      'en': 'Nearby alerts could not be started. Please try again.',
+      'ar': 'تعذر تشغيل تنبيهات الأماكن القريبة. حاول مرة أخرى.',
+    },
+    'checkin_too_far': {
+      'en': 'You need to be within 100 meters of this place to check in.',
+      'ar': 'يجب أن تكون على بُعد ١٠٠ متر من هذا المكان لتسجيل الزيارة.',
+    },
+    'checkin_location_permission': {
+      'en': 'Allow location access to verify your check-in.',
+      'ar': 'اسمح بالوصول إلى الموقع للتحقق من تسجيل زيارتك.',
+    },
+    'checkin_location_disabled': {
+      'en': 'Turn on location services to check in.',
+      'ar': 'فعّل خدمات الموقع لتسجيل زيارتك.',
+    },
+    'checkin_location_unavailable': {
+      'en': 'Your location could not be verified. Please try again.',
+      'ar': 'تعذر التحقق من موقعك. حاول مرة أخرى.',
+    },
+    'checkin_save_failed': {
+      'en': 'Check-in could not be saved',
+      'ar': 'تعذر حفظ تسجيل الزيارة',
+    },
+    'tour_progress': {
+      'en': '{done} of {total} places visited',
+      'ar': 'تمت زيارة {done} من {total} أماكن',
+    },
 
     'chat_live': {'en': 'Live chat', 'ar': 'دردشة مباشرة'},
     'chat_empty': {
@@ -589,13 +732,11 @@ class AppStrings {
     'tour_mark_visited': {'en': 'Mark as Visited', 'ar': 'سجّل الزيارة'},
     'tour_visited': {'en': 'Visited', 'ar': 'تمت الزيارة'},
     'tour_visit_recorded': {
-      'en': 'Tour marked as visited. The Tours counter on your profile just increased.',
+      'en':
+          'Tour marked as visited. The Tours counter on your profile just increased.',
       'ar': 'تم تسجيل الجولة كزيارة. عداد الجولات في ملفك الشخصي زاد للتو.',
     },
-    'tour_visit_unmarked': {
-      'en': 'Visit removed.',
-      'ar': 'تمت إزالة الزيارة.',
-    },
+    'tour_visit_unmarked': {'en': 'Visit removed.', 'ar': 'تمت إزالة الزيارة.'},
     'tour_visit_offline': {
       'en': "You're offline — will sync the visit when connection returns.",
       'ar': 'أنت غير متصل — ستتم المزامنة عند عودة الاتصال.',
@@ -774,10 +915,7 @@ class AppStrings {
 
     'emg_title': {'en': 'Emergency', 'ar': 'الطوارئ'},
     'admin_title': {'en': 'Admin Panel', 'ar': 'لوحة الإدارة'},
-    'admin_forbidden': {
-      'en': 'Admin only',
-      'ar': 'للمشرفين فقط',
-    },
+    'admin_forbidden': {'en': 'Admin only', 'ar': 'للمشرفين فقط'},
     'admin_forbidden_sub': {
       'en': 'Your account is not authorised to add places.',
       'ar': 'حسابك مش مخوّل بإضافة أماكن.',
@@ -796,10 +934,7 @@ class AppStrings {
       'en': 'Category is required (e.g. ATM, Hotel, Cafe)',
       'ar': 'الفئة مطلوبة (مثلاً ATM, Hotel, Cafe)',
     },
-    'admin_err_address': {
-      'en': 'Address is required',
-      'ar': 'العنوان مطلوب',
-    },
+    'admin_err_address': {'en': 'Address is required', 'ar': 'العنوان مطلوب'},
     'admin_submit': {'en': 'Add to map', 'ar': 'أضف للخريطة'},
     'admin_added': {'en': 'Added', 'ar': 'اتضاف'},
     'admin_failed': {'en': 'Failed', 'ar': 'فشل'},
@@ -848,10 +983,22 @@ class AppStrings {
       'en': 'Sign in to save your favorite places and access exclusive tours.',
       'ar': 'سجّل دخولك لحفظ أماكنك المفضلة والوصول لجولات حصرية.',
     },
-    'google_sha1_error': {'en': 'Google Sign-In setup error (Code 10). Contact developer.', 'ar': 'خطأ إعدادات تسجيل جوجل (كود 10). تواصل مع المطور.'},
-    'google_config_error': {'en': 'Google Sign-In not configured properly. Try email login.', 'ar': 'تسجيل جوجل غير مُعد بشكل صحيح. جرّب الإيميل.'},
-    'google_network_error': {'en': 'Network error. Check your connection.', 'ar': 'خطأ في الشبكة. تأكد من اتصالك بالإنترنت.'},
-    'google_general_error': {'en': 'Google Sign-In failed. Try email login instead.', 'ar': 'فشل تسجيل جوجل. جرّب الإيميل بدلاً من كده.'},
+    'google_sha1_error': {
+      'en': 'Google Sign-In setup error (Code 10). Contact developer.',
+      'ar': 'خطأ إعدادات تسجيل جوجل (كود 10). تواصل مع المطور.',
+    },
+    'google_config_error': {
+      'en': 'Google Sign-In not configured properly. Try email login.',
+      'ar': 'تسجيل جوجل غير مُعد بشكل صحيح. جرّب الإيميل.',
+    },
+    'google_network_error': {
+      'en': 'Network error. Check your connection.',
+      'ar': 'خطأ في الشبكة. تأكد من اتصالك بالإنترنت.',
+    },
+    'google_general_error': {
+      'en': 'Google Sign-In failed. Try email login instead.',
+      'ar': 'فشل تسجيل جوجل. جرّب الإيميل بدلاً من كده.',
+    },
     'login_full_name': {'en': 'Full Name', 'ar': 'الاسم الكامل'},
     'login_name_hint': {'en': 'e.g. Ahmed Hassan', 'ar': 'مثال: أحمد حسن'},
     'login_err_name': {
@@ -998,10 +1145,7 @@ class AppStrings {
       'en': 'Quietest, best light',
       'ar': 'أهدأ وقت وأفضل إضاءة',
     },
-    'bt_reason_admin_set': {
-      'en': 'Set by admin',
-      'ar': 'محدد من الأدمن',
-    },
+    'bt_reason_admin_set': {'en': 'Set by admin', 'ar': 'محدد من الأدمن'},
     'bt_reason_cool_photo': {
       'en': 'Cool, photogenic',
       'ar': 'مناخس، وقت التصوير',

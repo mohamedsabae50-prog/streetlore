@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/checkin_location_service.dart';
 import '../../core/widgets/app_image.dart';
 import '../../core/widgets/confetti_overlay.dart';
 import '../../core/widgets/shimmer_image.dart';
@@ -16,6 +17,7 @@ import '../../logic/place_provider.dart';
 import '../../logic/review_provider.dart';
 import '../../logic/streak_provider.dart';
 import '../../logic/trip_provider.dart';
+import '../../logic/tour_provider.dart';
 import '../../logic/gamification_provider.dart';
 import '../../logic/locale_provider.dart';
 import '../../logic/offline_provider.dart';
@@ -64,24 +66,14 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshNearby();
-      
-      
-      
-      
+
       _loadCheckinState();
     });
   }
 
-  
-  
-  
-  
-  
-  
   Future<void> _loadCheckinState() async {
     if (!mounted) return;
-    final userId =
-        Supabase.instance.client.auth.currentUser?.id ?? '';
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
     if (userId.isEmpty) return;
     try {
       final res = await Supabase.instance.client
@@ -99,8 +91,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
           'already checked in for user $userId - _isVisited=true',
         );
       } else if (!checked && _isVisited) {
-        
-        
         setState(() => _isVisited = false);
       }
     } catch (e) {
@@ -118,12 +108,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
     final scored = <MapEntry<PlaceModel, double>>[];
     for (final p in allPlaces) {
       if (p.id == current.id) continue;
-      final d = _haversineKm(
-        current.lat,
-        current.lng,
-        p.lat,
-        p.lng,
-      );
+      final d = _haversineKm(current.lat, current.lng, p.lat, p.lng);
       if (d <= 5.0) scored.add(MapEntry(p, d));
     }
     scored.sort((a, b) => a.value.compareTo(b.value));
@@ -138,9 +123,12 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
     const r = 6371.0;
     final dLat = _deg2rad(lat2 - lat1);
     final dLon = _deg2rad(lon2 - lon1);
-    final a = (sin(dLat) / 2) * sin(dLat / 2) +
-        cos(_deg2rad(lat1)) * cos(_deg2rad(lat2)) *
-            (sin(dLon) / 2) * sin(dLon / 2);
+    final a =
+        (sin(dLat) / 2) * sin(dLat / 2) +
+        cos(_deg2rad(lat1)) *
+            cos(_deg2rad(lat2)) *
+            (sin(dLon) / 2) *
+            sin(dLon / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return r * c;
   }
@@ -241,21 +229,21 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                     fit: StackFit.expand,
                     children: [
                       PlaceImageCarousel(
-                          images: place.officialImages,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                          heroTag: 'place-image-${place.id}',
-                          errorWidget: Container(
-                            color: Colors.white12,
-                            child: const Center(
-                              child: Icon(
-                                Icons.broken_image_rounded,
-                                color: Colors.white38,
-                                size: 60,
-                              ),
+                        images: place.officialImages,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        heroTag: 'place-image-${place.id}',
+                        errorWidget: Container(
+                          color: Colors.white12,
+                          child: const Center(
+                            child: Icon(
+                              Icons.broken_image_rounded,
+                              color: Colors.white38,
+                              size: 60,
                             ),
                           ),
                         ),
+                      ),
                       Container(
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
@@ -332,7 +320,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     BuildContext fromHeroContext,
                                     BuildContext toHeroContext,
                                   ) {
-                                   
                                     final destWidget = toHeroContext.widget;
                                     if (destWidget is! Hero) {
                                       return const SizedBox.shrink();
@@ -483,7 +470,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                         label: saved
                                             ? context.tr('saved')
                                             : context.tr('save'),
-                                       
+
                                         color: saved
                                             ? context.quickActionGold
                                             : context.quickActionPrimary,
@@ -507,7 +494,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     label: _isVisited
                                         ? context.tr('visited')
                                         : context.tr('checkin'),
-                                    
+
                                     color: context.quickActionSuccess,
                                     backgroundColor:
                                         context.quickActionSuccessBg,
@@ -515,9 +502,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                       HapticFeedback.mediumImpact();
                                       final wasVisited = _isVisited;
                                       if (!wasVisited) {
-                                        
-                                      
-                                        
                                         final streak = context
                                             .read<StreakProvider>();
                                         final placeProvider = context
@@ -527,12 +511,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                         final messenger = ScaffoldMessenger.of(
                                           context,
                                         );
-                                        final userId = Supabase.instance
-                                            .client.auth
+                                        final userId = Supabase
+                                            .instance
+                                            .client
+                                            .auth
                                             .currentUser
                                             ?.id;
-                                        if (userId == null ||
-                                            userId.isEmpty) {
+                                        if (userId == null || userId.isEmpty) {
                                           if (!context.mounted) return;
                                           messenger.showSnackBar(
                                             SnackBar(
@@ -546,105 +531,111 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                           return;
                                         }
 
+                                        final locationResult =
+                                            await CheckInLocationService
+                                                .instance
+                                                .verify(
+                                                  latitude: place.lat,
+                                                  longitude: place.lng,
+                                                );
+                                        if (locationResult !=
+                                            CheckInLocationResult.verified) {
+                                          if (!context.mounted) return;
+                                          final message = switch (locationResult) {
+                                            CheckInLocationResult.tooFar =>
+                                              context.tr('checkin_too_far'),
+                                            CheckInLocationResult
+                                                .permissionDenied =>
+                                              context.tr(
+                                                'checkin_location_permission',
+                                              ),
+                                            CheckInLocationResult
+                                                .serviceDisabled =>
+                                              context.tr(
+                                                'checkin_location_disabled',
+                                              ),
+                                            CheckInLocationResult.unavailable =>
+                                              context.tr(
+                                                'checkin_location_unavailable',
+                                              ),
+                                            CheckInLocationResult.verified =>
+                                              '',
+                                          };
+                                          messenger.showSnackBar(
+                                            SnackBar(content: Text(message)),
+                                          );
+                                          return;
+                                        }
+
                                         await gamification.applyAction(
                                           'check_in',
                                           placeId: place.id,
                                         );
-                                       
+                                        final checkinError =
+                                            gamification.lastCheckinError;
+                                        if (checkinError != null) {
+                                          gamification.clearCheckinError();
+                                          if (!context.mounted) return;
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '${context.tr('checkin_save_failed')}: $checkinError',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                          return;
+                                        }
                                         if (context.mounted) {
                                           context
                                               .read<TripProvider>()
                                               .markVisited(place.id);
+                                          context
+                                              .read<TourProvider>()
+                                              .markPlaceCheckedIn(place.id);
                                         }
-                                        final newStreak =
-                                            streak.currentStreak;
-                                        setState(
-                                          () => _isVisited = true,
-                                        );
+                                        final newStreak = streak.currentStreak;
+                                        setState(() => _isVisited = true);
                                         try {
-                                          placeProvider
-                                              .fetchRemoteCounts(userId);
-                                          
-                                          
-                    
-                                          
-                                          placeProvider
-                                              .fetchRemoteCounts(userId);
-                                          if (!context.mounted) return;
-                                          messenger.showSnackBar(
-                                            SnackBar(
-                                              content: Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons
-                                                        .local_fire_department_rounded,
-                                                    color: Colors.white,
-                                                    size: 18,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Expanded(
-                                                    child: Text(
-                                                      context.tr(
-                                                        'checked_in_streak',
-                                                        {'n': '$newStreak'},
-                                                      ),
+                                          await placeProvider.fetchRemoteCounts(
+                                            userId,
+                                          );
+                                        } catch (error, stackTrace) {
+                                          debugPrint(
+                                            'PlaceDetailsScreen: check-in '
+                                            'counts refresh failed: '
+                                            '$error\n$stackTrace',
+                                          );
+                                        }
+                                        if (!context.mounted) return;
+                                        messenger.showSnackBar(
+                                          SnackBar(
+                                            content: Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons
+                                                      .local_fire_department_rounded,
+                                                  color: Colors.white,
+                                                  size: 18,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    context.tr(
+                                                      'checked_in_streak',
+                                                      {'n': '$newStreak'},
                                                     ),
                                                   ),
-                                                ],
-                                              ),
-                                              backgroundColor:
-                                                  AppColors.success,
-                                              duration: const Duration(
-                                                seconds: 3,
-                                              ),
+                                                ),
+                                              ],
                                             ),
-                                          );
-                                          return;
-                                        } on PostgrestException catch (e) {
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          if (!context.mounted) return;
-                                          setState(
-                                            () => _isVisited = false,
-                                          );
-                                          messenger.showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                'Check-in failed: '
-                                                '[${e.code ?? ""}] '
-                                                '${e.message}',
-                                              ),
-                                              backgroundColor: Colors.red,
-                                              duration: const Duration(
-                                                seconds: 6,
-                                              ),
+                                            backgroundColor: AppColors.success,
+                                            duration: const Duration(
+                                              seconds: 3,
                                             ),
-                                          );
-                                          return;
-                                        } catch (e) {
-                                          
-                                          
-                                          if (!context.mounted) return;
-                                          setState(
-                                            () => _isVisited = false,
-                                          );
-                                          messenger.showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                'Check-in failed: '
-                                                '$e',
-                                              ),
-                                              backgroundColor: Colors.red,
-                                              duration: const Duration(
-                                                seconds: 6,
-                                              ),
-                                            ),
-                                          );
-                                          return;
-                                        }
+                                          ),
+                                        );
+                                        return;
                                       } else {
                                         final placeProvider = context
                                             .read<PlaceProvider>();
@@ -653,8 +644,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                         final messenger = ScaffoldMessenger.of(
                                           context,
                                         );
-                                        final userId = Supabase.instance
-                                            .client.auth
+                                        final userId = Supabase
+                                            .instance
+                                            .client
+                                            .auth
                                             .currentUser
                                             ?.id;
                                         if (userId == null || userId.isEmpty) {
@@ -674,15 +667,23 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                         final confirm = await showDialog<bool>(
                                           context: context,
                                           builder: (ctx) => AlertDialog(
-                                            title: Text(context.tr('unvisit_title')),
-                                            content: Text(context.tr('unvisit_body')),
+                                            title: Text(
+                                              context.tr('unvisit_title'),
+                                            ),
+                                            content: Text(
+                                              context.tr('unvisit_body'),
+                                            ),
                                             actions: [
                                               TextButton(
-                                                onPressed: () => Navigator.pop(ctx, false),
-                                                child: Text(context.tr('cancel')),
+                                                onPressed: () =>
+                                                    Navigator.pop(ctx, false),
+                                                child: Text(
+                                                  context.tr('cancel'),
+                                                ),
                                               ),
                                               TextButton(
-                                                onPressed: () => Navigator.pop(ctx, true),
+                                                onPressed: () =>
+                                                    Navigator.pop(ctx, true),
                                                 child: Text(
                                                   context.tr('unvisit_confirm'),
                                                   style: const TextStyle(
@@ -699,18 +700,25 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
 
                                         setState(() => _isVisited = false);
                                         try {
-                                        
                                           await gamification.reverseAction(
                                             'check_in',
                                             placeId: place.id,
                                           );
                                           if (context.mounted) {
                                             try {
-                                              final tp = context.read<TripProvider>();
+                                              final tp = context
+                                                  .read<TripProvider>();
                                               tp.unmarkVisited(place.id);
+                                              context
+                                                  .read<TourProvider>()
+                                                  .unmarkPlaceCheckedIn(
+                                                    place.id,
+                                                  );
                                             } catch (_) {}
                                           }
-                                          await placeProvider.fetchRemoteCounts(userId);
+                                          await placeProvider.fetchRemoteCounts(
+                                            userId,
+                                          );
                                           if (!context.mounted) return;
                                           messenger.showSnackBar(
                                             SnackBar(
@@ -723,12 +731,19 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                   ),
                                                   const SizedBox(width: 8),
                                                   Expanded(
-                                                    child: Text(context.tr('checkin_removed')),
+                                                    child: Text(
+                                                      context.tr(
+                                                        'checkin_removed',
+                                                      ),
+                                                    ),
                                                   ),
                                                 ],
                                               ),
-                                              backgroundColor: AppColors.success,
-                                              duration: const Duration(seconds: 2),
+                                              backgroundColor:
+                                                  AppColors.success,
+                                              duration: const Duration(
+                                                seconds: 2,
+                                              ),
                                             ),
                                           );
                                         } catch (e) {
@@ -736,9 +751,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                           setState(() => _isVisited = true);
                                           messenger.showSnackBar(
                                             SnackBar(
-                                              content: Text('Could not remove check-in: $e'),
+                                              content: Text(
+                                                'Could not remove check-in: $e',
+                                              ),
                                               backgroundColor: Colors.red,
-                                              duration: const Duration(seconds: 6),
+                                              duration: const Duration(
+                                                seconds: 6,
+                                              ),
                                             ),
                                           );
                                         }
@@ -751,7 +770,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                   child: _QuickAction(
                                     icon: Icons.directions_rounded,
                                     label: context.tr('go'),
-                                    
+
                                     color: context.quickActionPrimary,
                                     backgroundColor:
                                         context.quickActionPrimaryBg,
@@ -762,20 +781,15 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                 Expanded(
                                   child: Consumer<OfflineProvider>(
                                     builder: (context, offline, _) {
-                                      final cached = offline.isCached(
-                                        place.id,
-                                      );
+                                      final cached = offline.isCached(place.id);
                                       return _QuickAction(
                                         icon: cached
                                             ? Icons.cloud_done_rounded
                                             : Icons.cloud_download_outlined,
                                         label: cached
-                                            ? context.tr(
-                                                'downloaded',
-                                              )
+                                            ? context.tr('downloaded')
                                             : context.tr('download_offline'),
                                         color: cached
-                                        
                                             ? context.quickActionSuccess
                                             : context.quickActionPurple,
                                         backgroundColor: cached
@@ -784,41 +798,37 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                         onTap: () async {
                                           HapticFeedback.lightImpact();
                                           if (cached) {
-                                            await offline
-                                                .removeCachedPlace(place.id);
-                                            if (!context.mounted) return;
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      context.tr(
-                                                        'removed_offline',
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                          } else {
-                                            final result =
-                                                await offline.downloadSinglePlace(
-                                              place,
+                                            await offline.removeCachedPlace(
+                                              place.id,
                                             );
                                             if (!context.mounted) return;
-                                            final ok =
-                                                result is DownloadOk;
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      ok
-                                                          ? context.tr(
-                                                              'downloaded',
-                                                            )
-                                                          : 'Offline '
-                                                                'download '
-                                                                'failed',
-                                                    ),
-                                                  ),
-                                                );
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  context.tr('removed_offline'),
+                                                ),
+                                              ),
+                                            );
+                                          } else {
+                                            final result = await offline
+                                                .downloadSinglePlace(place);
+                                            if (!context.mounted) return;
+                                            final ok = result is DownloadOk;
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  ok
+                                                      ? context.tr('downloaded')
+                                                      : 'Offline '
+                                                            'download '
+                                                            'failed',
+                                                ),
+                                              ),
+                                            );
                                           }
                                         },
                                       );
@@ -831,8 +841,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
 
                           if ((place.bestTimeToVisit ?? '').trim().isNotEmpty)
                             Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(24, 18, 24, 0),
+                              padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
                               child: _BestTimeBadge(place: place),
                             ),
 
@@ -1046,7 +1055,6 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  
     final bg = backgroundColor ?? color.withValues(alpha: 0.12);
     return GestureDetector(
       onTap: onTap,
@@ -1055,10 +1063,7 @@ class _QuickAction extends StatelessWidget {
           Container(
             width: 48,
             height: 48,
-            decoration: BoxDecoration(
-              color: bg,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 6),
@@ -1619,9 +1624,7 @@ class _PriceBanner extends StatelessWidget {
                           .languageCode;
                       final priceNote = place.localizedPriceNote(locale);
                       return Text(
-                        priceNote.isEmpty
-                            ? place.priceLevel.label
-                            : priceNote,
+                        priceNote.isEmpty ? place.priceLevel.label : priceNote,
                         style: TextStyle(
                           color: isDark
                               ? const Color(0xFFCBD5E1)

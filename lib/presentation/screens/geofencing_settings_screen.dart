@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/geofencing_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../data/models/geofence_alert.dart';
@@ -84,36 +85,42 @@ class GeofencingSettingsScreen extends StatelessWidget {
                 isMonitoring: geo.isMonitoring,
                 onChanged: (v) async {
                   if (v) {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    await geo.startMonitoring();
-                    for (final place in places) {
-                      final existing = geo.alerts.firstWhere(
-                        (a) => a.placeId == place.id,
-                        orElse: () => GeofenceAlert(
-                          placeId: place.id,
-                          placeName: place.localizedName(
-                            Localizations.localeOf(context).languageCode,
+                    final selectedAlerts = geo.alerts
+                        .where((alert) => alert.enabled)
+                        .toList(growable: false);
+                    if (selectedAlerts.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(context.tr('geo_select_first'))),
+                      );
+                      return;
+                    }
+                    final consent = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: Text(context.tr('geo_background_title')),
+                        content: Text(context.tr('geo_background_explanation')),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, false),
+                            child: Text(context.tr('cancel')),
                           ),
-                          lat: place.lat,
-                          lng: place.lng,
+                          FilledButton(
+                            onPressed: () => Navigator.pop(dialogContext, true),
+                            child: Text(context.tr('geo_enable')),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (consent != true || !context.mounted) return;
+                    final result = await geo.startMonitoring();
+                    if (result != GeofencingStartResult.started &&
+                        context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(_startFailureMessage(context, result)),
                         ),
                       );
-                      
-                      
-                      
-                      
-                      
-                      
-                      if (!existing.enabled) {
-                        await geo.toggle(existing);
-                      }
                     }
                   } else {
                     await geo.stopMonitoring();
@@ -154,6 +161,28 @@ class GeofencingSettingsScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  String _startFailureMessage(
+    BuildContext context,
+    GeofencingStartResult result,
+  ) {
+    final key = switch (result) {
+      GeofencingStartResult.noPlacesSelected => 'geo_select_first',
+      GeofencingStartResult.unsupported => 'geo_unsupported',
+      GeofencingStartResult.locationServicesDisabled =>
+        'checkin_location_disabled',
+      GeofencingStartResult.locationPermissionDenied =>
+        'checkin_location_permission',
+      GeofencingStartResult.backgroundPermissionDenied =>
+        'geo_background_denied',
+      GeofencingStartResult.notificationPermissionDenied =>
+        'geo_notifications_denied',
+      GeofencingStartResult.notificationsUnavailable ||
+      GeofencingStartResult.locationUnavailable => 'geo_start_failed',
+      GeofencingStartResult.started => 'geo_monitoring_on',
+    };
+    return context.tr(key);
   }
 }
 

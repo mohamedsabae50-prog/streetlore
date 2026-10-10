@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/services/offline_storage_service.dart';
 import '../core/services/supabase_service.dart';
 import '../data/mock_data.dart' show MockData, fallbackPlaces;
 import '../data/models/map_seed.dart';
@@ -156,9 +157,25 @@ class PlaceProvider extends ChangeNotifier {
     if (_loading) return;
     if (!force && _places.isNotEmpty) return;
 
+    final storage = OfflineStorageService.instance;
     final cachedSeed = OfflineProvider.cachedFallback;
-    if (cachedSeed.isNotEmpty && _places.isEmpty) {
-      _places = cachedSeed;
+    if (_places.isEmpty) {
+      final cachedRows = storage.getCachedApiRows('supabase_places');
+      if (cachedRows != null && cachedRows.isNotEmpty) {
+        try {
+          final cached = _filterInvalidCoords(
+            cachedRows.map(_placeFromSupabase).toList(growable: false),
+          );
+          if (cached.isNotEmpty) _places = cached;
+        } catch (e) {
+          debugPrint('PlaceProvider.loadPlaces: cached response invalid: $e');
+        }
+      }
+      if (_places.isEmpty && cachedSeed.isNotEmpty) {
+        _places = cachedSeed;
+      } else if (_places.isEmpty) {
+        _places = List<PlaceModel>.from(fallbackPlaces);
+      }
       notifyListeners();
     }
 
@@ -172,8 +189,12 @@ class PlaceProvider extends ChangeNotifier {
           .order('display_order', ascending: true)
           .order('id', ascending: true)
           .timeout(const Duration(seconds: 10));
-      final list = (res as List<dynamic>)
-          .map((e) => _placeFromSupabase(e as Map<String, dynamic>))
+      final rows = (res as List<dynamic>)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(growable: false);
+      await storage.cacheApiRows('supabase_places', rows);
+      final list = rows
+          .map(_placeFromSupabase)
           .toList();
 
       final filtered = _filterInvalidCoords(list);

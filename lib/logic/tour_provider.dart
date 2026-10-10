@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/services/offline_storage_service.dart';
 import '../core/services/supabase_service.dart';
 import '../data/models/itinerary_model.dart';
 import '../data/models/place_model.dart';
@@ -22,19 +23,60 @@ class TourProvider extends ChangeNotifier {
   List<ItineraryModel> _savedTours = [];
   List<ItineraryModel> get savedTours => _savedTours;
 
-  Set<String> _visitedTourIds = <String>{};
-  Set<String> get visitedTourIds => Set<String>.unmodifiable(_visitedTourIds);
-  int get visitedToursCount => _visitedTourIds.length;
-  bool isTourVisited(String tourId) => _visitedTourIds.contains(tourId);
+  final Set<String> _checkedInPlaceIds = <String>{};
+  Set<String> get visitedTourIds => Set.unmodifiable(
+    _tours
+        .where((tour) => tour.places.isNotEmpty && isTourVisited(tour.id))
+        .map((tour) => tour.id),
+  );
+  int get visitedToursCount => visitedTourIds.length;
+
+  bool isTourVisited(String tourId) {
+    final matches = _tours.where((tour) => tour.id == tourId);
+    if (matches.isEmpty || matches.first.places.isEmpty) return false;
+    return matches.first.places.every(
+      (place) => _checkedInPlaceIds.contains(place.id),
+    );
+  }
+
+  int checkedInPlaceCount(ItineraryModel tour) => tour.places
+      .where((place) => _checkedInPlaceIds.contains(place.id))
+      .length;
+
+  void markPlaceCheckedIn(String placeId) {
+    if (placeId.isNotEmpty && _checkedInPlaceIds.add(placeId)) {
+      notifyListeners();
+    }
+  }
+
+  void unmarkPlaceCheckedIn(String placeId) {
+    if (placeId.isNotEmpty && _checkedInPlaceIds.remove(placeId)) {
+      notifyListeners();
+    }
+  }
 
   TourProvider() {
     _loadSavedTours();
-    _loadVisitedTourIds();
   }
 
   Future<void> loadTours({bool force = false}) async {
     if (_loading) return;
     if (!force && _tours.isNotEmpty) return;
+    final storage = OfflineStorageService.instance;
+    if (_tours.isEmpty) {
+      final cachedRows = storage.getCachedApiRows('supabase_tours');
+      if (cachedRows != null && cachedRows.isNotEmpty) {
+        try {
+          _tours = cachedRows.map(_tourFromSupabase).toList(growable: false);
+        } catch (e) {
+          debugPrint('TourProvider.loadTours: cached response invalid: $e');
+        }
+      }
+      if (_tours.isEmpty) {
+        _tours = List<ItineraryModel>.from(fallbackTours);
+      }
+      notifyListeners();
+    }
     _loading = true;
     _error = null;
     notifyListeners();
@@ -45,9 +87,11 @@ class TourProvider extends ChangeNotifier {
           .eq('status', 'published')
           .order('id')
           .timeout(const Duration(seconds: 10));
-      final loaded = (res as List<dynamic>)
-          .map((e) => _tourFromSupabase(e as Map<String, dynamic>))
-          .toList();
+      final rows = (res as List<dynamic>)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(growable: false);
+      await storage.cacheApiRows('supabase_tours', rows);
+      final loaded = rows.map(_tourFromSupabase).toList();
       if (loaded.isEmpty) {
         _tours = List<ItineraryModel>.from(fallbackTours);
       } else {
@@ -176,56 +220,6 @@ class TourProvider extends ChangeNotifier {
     await prefs.setString('saved_tours_data', encodedList);
   }
 
-  Future<void> _loadVisitedTourIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getStringList('visited_tour_ids') ?? const <String>[];
-    _visitedTourIds = raw.toSet();
-    notifyListeners();
-  }
-
-  Future<void> _persistVisitedTourIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('visited_tour_ids', _visitedTourIds.toList());
-  }
-
-  Future<({bool ok})> markTourVisited(
-    ItineraryModel tour,
-    String userId,
-  ) async {
-    if (_visitedTourIds.contains(tour.id)) {
-      return (ok: true);
-    }
-    _visitedTourIds.add(tour.id);
-    notifyListeners();
-    await _persistVisitedTourIds();
-
-    if (userId.isEmpty) {
-      return (ok: true);
-    }
-
-    bool allOk = true;
-    for (final p in tour.places) {
-      if (p.id.isEmpty) continue;
-      try {
-        final res = await SupabaseService.instance.registerCheckin(
-          userId,
-          p.id,
-        );
-        if (!res.ok) allOk = false;
-      } catch (_) {
-        allOk = false;
-      }
-    }
-    return (ok: allOk);
-  }
-
-  Future<void> unmarkTourVisited(String tourId) async {
-    if (!_visitedTourIds.contains(tourId)) return;
-    _visitedTourIds.remove(tourId);
-    notifyListeners();
-    await _persistVisitedTourIds();
-  }
-
   Future<bool> bootstrapForUser(String userId) async {
     if (userId.isEmpty) return false;
     final remoteMaps = await SupabaseService.instance.pullSavedTours(userId);
@@ -276,23 +270,17 @@ class TourProvider extends ChangeNotifier {
           .whereType<String>()
           .toSet();
 
-      bool changed = false;
-      for (final tour in _tours) {
-        if (tour.places.isEmpty) continue;
-        final allCheckedIn = tour.places.every(
-          (p) => checkedInPlaceIds.contains(p.id),
-        );
-        if (allCheckedIn && !_visitedTourIds.contains(tour.id)) {
-          _visitedTourIds.add(tour.id);
-          changed = true;
-        }
-      }
+      final changed =
+          !_checkedInPlaceIds.containsAll(checkedInPlaceIds) ||
+          !checkedInPlaceIds.containsAll(_checkedInPlaceIds);
       if (changed) {
-        await _persistVisitedTourIds();
+        _checkedInPlaceIds
+          ..clear()
+          ..addAll(checkedInPlaceIds);
         notifyListeners();
         debugPrint(
           'TourProvider: synced visited tours from place_checkins -> '
-          '${_visitedTourIds.length} visited',
+          '$visitedToursCount completed',
         );
       }
     } catch (e) {

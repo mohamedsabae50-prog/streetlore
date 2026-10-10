@@ -17,6 +17,8 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
   final TextEditingController _inputCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
   bool _started = false;
+  bool _sending = false;
+  String? _streamingReply;
 
   @override
   void initState() {
@@ -40,14 +42,31 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
 
   Future<void> _send() async {
     final text = _inputCtrl.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _sending) return;
     HapticFeedback.lightImpact();
     _inputCtrl.clear();
-    setState(() {});
-    await AITourGuideService.instance.send(text);
-    if (!mounted) return;
-    setState(() {});
-    _scrollToBottom();
+    setState(() {
+      _sending = true;
+      _streamingReply = '';
+    });
+    try {
+      await AITourGuideService.instance.send(
+        text,
+        onResponseChunk: (response) {
+          if (!mounted) return;
+          setState(() => _streamingReply = response);
+          _scrollToBottom();
+        },
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _sending = false;
+          _streamingReply = null;
+        });
+        _scrollToBottom();
+      }
+    }
   }
 
   void _scrollToBottom() {
@@ -112,14 +131,17 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
 
   Widget _buildChatList() {
     final msgs = AITourGuideService.instance.messages;
-    if (msgs.isEmpty) {
+    if (msgs.isEmpty && _streamingReply == null) {
       return const Center(child: CircularProgressIndicator());
     }
     return ListView.builder(
       controller: _scrollCtrl,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      itemCount: msgs.length,
+      itemCount: msgs.length + (_streamingReply == null ? 0 : 1),
       itemBuilder: (context, i) {
+        if (i == msgs.length) {
+          return _MessageBubble(text: _streamingReply!, isUser: false);
+        }
         final m = msgs[i];
         return _MessageBubble(text: m.text, isUser: m.isUser);
       },
@@ -172,7 +194,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
             shape: const CircleBorder(),
             child: InkWell(
               customBorder: const CircleBorder(),
-              onTap: _send,
+              onTap: _sending ? null : _send,
               child: const Padding(
                 padding: EdgeInsets.all(12),
                 child: Icon(Icons.send_rounded, color: Colors.white, size: 20),

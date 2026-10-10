@@ -42,15 +42,28 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
     if (text.isEmpty || _busy) return;
     setState(() {
       _messages.add(_Msg(role: _Role.user, text: text));
+      _messages.add(const _Msg(role: _Role.bot, text: ''));
       _busy = true;
     });
     _input.clear();
     _scrollToBottom();
     try {
-      final reply = await AITourGuideService.askLocalGuide(text);
+      final reply = await AITourGuideService.askLocalGuide(
+        text,
+        onResponseChunk: (response) {
+          if (!mounted) return;
+          setState(() {
+            _messages[_messages.length - 1] = _Msg(
+              role: _Role.bot,
+              text: response,
+            );
+          });
+          _scrollToBottom();
+        },
+      );
       if (!mounted) return;
       setState(() {
-        _messages.add(_Msg(role: _Role.bot, text: reply));
+        _messages[_messages.length - 1] = _Msg(role: _Role.bot, text: reply);
         _busy = false;
       });
       _scrollToBottom();
@@ -58,13 +71,14 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
       debugPrint('Gemini Error: $e\n$stackTrace');
       if (!mounted) return;
       setState(() {
-        _messages.add(
-          _Msg(
-            role: _Role.bot,
-            text:
-                'Could not reach the AI right now (${e.message}). Try again '
-                'in a moment.',
-          ),
+        _messages[_messages.length - 1] = _Msg(
+          role: _Role.bot,
+          text:
+              e.statusCode == 429 &&
+                  e.message.contains('AI_DAILY_LIMIT_EXCEEDED')
+              ? aiDailyLimitMessage
+              : 'Could not reach the AI right now (${e.message}). Try again '
+                    'in a moment.',
         );
         _busy = false;
       });
@@ -73,7 +87,10 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
       debugPrint('Gemini Error: $e\n$stackTrace');
       if (!mounted) return;
       setState(() {
-        _messages.add(_Msg(role: _Role.bot, text: 'Something went wrong: $e'));
+        _messages[_messages.length - 1] = _Msg(
+          role: _Role.bot,
+          text: 'Something went wrong: $e',
+        );
         _busy = false;
       });
       _scrollToBottom();

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/app_image.dart';
+import '../../core/services/social_share_service.dart';
 import '../../data/models/place_photo.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
@@ -83,6 +84,26 @@ class PlacePhotosSection extends StatelessWidget {
           context,
         ).showSnackBar(SnackBar(content: Text('Photo deletion failed: $e')));
       }
+    }
+  }
+
+  Future<void> _sharePhoto(BuildContext context, PlacePhoto photo) async {
+    final locale = Localizations.localeOf(context).languageCode;
+    try {
+      await SocialShareService.sharePlacePhoto(
+        context: context,
+        photo: photo,
+        place: place,
+        locale: locale,
+        category: context.tr('share_place_photo'),
+        footer: context.tr('share_card_footer'),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('PlacePhotosSection: could not share photo: $error\n$stackTrace');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('share_failed'))),
+      );
     }
   }
 
@@ -263,6 +284,8 @@ class PlacePhotosSection extends StatelessWidget {
           }
           return _PhotoCard(
             photo: photo,
+            canDelete: context.read<AuthProvider>().owns(photo.userId),
+            onShare: () => _sharePhoto(context, photo),
             onLike: () {
               HapticFeedback.lightImpact();
               context.read<PlacePhotosProvider>().toggleLike(
@@ -280,10 +303,14 @@ class PlacePhotosSection extends StatelessWidget {
 
 class _PhotoCard extends StatelessWidget {
   final PlacePhoto photo;
+  final bool canDelete;
+  final VoidCallback onShare;
   final VoidCallback onLike;
   final VoidCallback onDelete;
   const _PhotoCard({
     required this.photo,
+    required this.canDelete,
+    required this.onShare,
     required this.onLike,
     required this.onDelete,
   });
@@ -292,7 +319,6 @@ class _PhotoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<PlacePhotosProvider>();
     final liked = photo.isLikedBy(provider.currentUserId);
-    final canDelete = context.read<AuthProvider>().owns(photo.userId);
     return Container(
       width: 160,
       decoration: BoxDecoration(
@@ -369,27 +395,28 @@ class _PhotoCard extends StatelessWidget {
                 ),
               ),
             ),
-            if (canDelete)
-              Positioned(
-                top: 8,
-                left: 8,
-                child: GestureDetector(
-                  onTap: onDelete,
-                  child: Container(
-                    width: 26,
-                    height: 26,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.delete_outline_rounded,
-                      color: Colors.white,
-                      size: 15,
-                    ),
+            Positioned(
+              top: 8,
+              left: 8,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _PhotoActionButton(
+                    icon: Icons.ios_share_rounded,
+                    tooltip: context.tr('share_photo'),
+                    onTap: onShare,
                   ),
-                ),
+                  if (canDelete) ...[
+                    const SizedBox(width: 6),
+                    _PhotoActionButton(
+                      icon: Icons.delete_outline_rounded,
+                      tooltip: context.tr('delete'),
+                      onTap: onDelete,
+                    ),
+                  ],
+                ],
               ),
+            ),
             Positioned(
               left: 10,
               right: 10,
@@ -423,6 +450,37 @@ class _PhotoCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PhotoActionButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _PhotoActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.4),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Colors.white, size: 15),
         ),
       ),
     );

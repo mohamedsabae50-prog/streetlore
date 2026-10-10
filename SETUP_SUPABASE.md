@@ -129,6 +129,8 @@ All Flutter Gemini requests use the `ai-proxy` Edge Function; no Gemini credenti
 - `GEMINI_OAUTH_ACCESS_TOKEN` accepts a bearer access token, but these tokens expire and must be rotated.
 - `GEMINI_API_KEY` remains supported for standard Gemini API keys.
 
+Apply `supabase/migrations/2026_10_14_ai_quota_streaming.sql` in the Supabase SQL Editor before deploying the proxy. It installs the atomic rolling 24-hour quota RPC and caps each non-admin user at 15 requests. Chat requests opt into Gemini Server-Sent Events for incremental rendering; other AI requests keep the regular JSON response.
+
 Deploy the proxy after setting the secret:
 
 ```powershell
