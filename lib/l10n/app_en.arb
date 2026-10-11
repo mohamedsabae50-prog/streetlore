@@ -340,7 +340,7 @@
   "@free_entry": { "description": "Translation key: free_entry" },
   "geo_choose_places": "Choose places",
   "@geo_choose_places": { "description": "Translation key: geo_choose_places" },
-  "geo_distance": "{d} m from city center",
+  "geo_distance": "{d} km from city center",
   "@geo_distance": { "description": "Translation key: geo_distance", "placeholders": {"d": { "type": "String" }} },
   "geo_hero_sub": "Choose the places you want alerts for - within 500m by default.",
   "@geo_hero_sub": { "description": "Translation key: geo_hero_sub" },

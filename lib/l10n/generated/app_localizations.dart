@@ -1121,7 +1121,7 @@ abstract class AppLocalizations {
   /// Translation key: geo_distance
   ///
   /// In en, this message translates to:
-  /// **'{d} m from city center'**
+  /// **'{d} km from city center'**
   String geo_distance(String d);
 
   /// Translation key: geo_hero_sub

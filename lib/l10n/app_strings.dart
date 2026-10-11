@@ -596,8 +596,8 @@ class AppStrings {
     'geo_monitoring_off': {'en': 'Monitoring paused', 'ar': 'المراقبة متوقفة'},
     'geo_choose_places': {'en': 'Choose places', 'ar': 'اختار الأماكن'},
     'geo_distance': {
-      'en': '{d} m from city center',
-      'ar': '{d} م من وسط المدينة',
+      'en': '{d} km from city center',
+      'ar': '{d} كم من مركز المدينة',
     },
     'geo_select_first': {
       'en': 'Choose at least one place before enabling nearby alerts.',

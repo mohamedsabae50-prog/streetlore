@@ -555,7 +555,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String geo_distance(String d) {
-    return '$d m from city center';
+    return '$d km from city center';
   }
 
   @override

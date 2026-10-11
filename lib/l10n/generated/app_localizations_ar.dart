@@ -549,7 +549,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String geo_distance(String d) {
-    return '$d م من وسط المدينة';
+    return '$d كم من مركز المدينة';
   }
 
   @override

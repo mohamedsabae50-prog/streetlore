@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/city_coordinates.dart';
 import '../../core/services/geofencing_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
@@ -237,6 +238,16 @@ class _PlaceToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final distanceKm =
+        (Geolocator.distanceBetween(
+                  alexandriaCenterLat,
+                  alexandriaCenterLng,
+                  place.lat,
+                  place.lng,
+                ) /
+                1000)
+            .toStringAsFixed(1);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -301,14 +312,7 @@ class _PlaceToggle extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      context.tr('geo_distance', {
-                        'd': Geolocator.distanceBetween(
-                          0,
-                          0,
-                          place.lat,
-                          place.lng,
-                        ).toStringAsFixed(0),
-                      }),
+                      context.tr('geo_distance', {'d': distanceKm}),
                       style: TextStyle(color: context.textSec, fontSize: 11),
                     ),
                   ],

@@ -342,7 +342,7 @@
   "@free_entry": { "description": "Translation key: free_entry" },
   "geo_choose_places": "اختار الأماكن",
   "@geo_choose_places": { "description": "Translation key: geo_choose_places" },
-  "geo_distance": "{d} م من وسط المدينة",
+  "geo_distance": "{d} كم من مركز المدينة",
   "@geo_distance": { "description": "Translation key: geo_distance", "placeholders": {"d": { "type": "String" }} },
   "geo_hero_sub": "اختار الأماكن اللي عايز تنبيهات لها - في نطاق ٥٠٠ متر افتراضيًا.",
   "@geo_hero_sub": { "description": "Translation key: geo_hero_sub" },

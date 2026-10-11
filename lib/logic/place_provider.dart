@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/constants/city_coordinates.dart';
 import '../core/services/offline_storage_service.dart';
 import '../core/services/supabase_service.dart';
 import '../data/mock_data.dart' show MockData, fallbackPlaces;
@@ -484,15 +485,13 @@ class PlaceProvider extends ChangeNotifier {
       result.sort((a, b) => a.priceLevel.index.compareTo(b.priceLevel.index));
     }
     if (_isFilterNearest) {
-      const refLat = 31.2001;
-      const refLng = 29.9187;
       result.sort((a, b) {
         final da =
-            (a.lat - refLat) * (a.lat - refLat) +
-            (a.lng - refLng) * (a.lng - refLng);
+            (a.lat - alexandriaCenterLat) * (a.lat - alexandriaCenterLat) +
+            (a.lng - alexandriaCenterLng) * (a.lng - alexandriaCenterLng);
         final db =
-            (b.lat - refLat) * (b.lat - refLat) +
-            (b.lng - refLng) * (b.lng - refLng);
+            (b.lat - alexandriaCenterLat) * (b.lat - alexandriaCenterLat) +
+            (b.lng - alexandriaCenterLng) * (b.lng - alexandriaCenterLng);
         return da.compareTo(db);
       });
     }
