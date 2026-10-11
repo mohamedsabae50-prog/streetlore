@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide Badge;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../data/models/place_model.dart';
 import '../data/achievement_catalog.dart';
 import '../data/models/gamification_stats.dart';
 import 'auth_provider.dart';
 import 'gamification_provider.dart';
 import 'place_provider.dart';
 import 'streak_provider.dart';
+import 'tour_provider.dart';
 
 class AchievementProgress {
   final String achievementId;
@@ -50,20 +52,39 @@ class AchievementProvider extends ChangeNotifier {
   final GamificationProvider gam;
   final PlaceProvider places;
   final StreakProvider streak;
+  final TourProvider tours;
 
   String _userKey = 'guest';
   Map<String, AchievementProgress> _progress = {};
+  bool _initialized = false;
+  int _loadGeneration = 0;
   static const _kPrefix = 'achievements_v2';
+  String get _kKey => '${_kPrefix}_$_userKey';
 
   AchievementProvider({
     required this.auth,
     required this.gam,
     required this.places,
     required this.streak,
+    required this.tours,
   }) {
     _userKey = _effectiveKey();
-    _load();
-    _recalculateAll();
+    unawaited(_load());
+    places.addListener(_onSourceChanged);
+    streak.addListener(_onSourceChanged);
+    tours.addListener(_onSourceChanged);
+  }
+
+  @override
+  void dispose() {
+    places.removeListener(_onSourceChanged);
+    streak.removeListener(_onSourceChanged);
+    tours.removeListener(_onSourceChanged);
+    super.dispose();
+  }
+
+  void _onSourceChanged() {
+    if (_initialized) _recalculateAll();
   }
 
   String _effectiveKey() {
@@ -75,44 +96,45 @@ class AchievementProvider extends ChangeNotifier {
     final newKey = auth.userId.isEmpty ? 'guest' : auth.userId;
     if (newKey == _userKey) return;
     _userKey = newKey;
-    _load();
-    _recalculateAll();
+    _initialized = false;
+    _progress = {};
+    unawaited(_load());
   }
 
-  String get _kKey => '${_kPrefix}_$_userKey';
-
   Future<void> _load() async {
+    final loadGeneration = ++_loadGeneration;
+    final userKey = _userKey;
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_kKey);
-    if (raw == null) {
-      _progress = {};
-      return;
-    }
+    final raw = prefs.getString('${_kPrefix}_$userKey');
+    final loaded = <String, AchievementProgress>{};
     try {
-      final list = (raw.split('|'));
-      final Map<String, AchievementProgress> loaded = {};
-      for (final entry in list) {
-        if (entry.isEmpty) continue;
-        final parts = entry.split('::');
-        if (parts.length < 2) continue;
-        final id = parts[0];
-        final cur = int.tryParse(parts[1]) ?? 0;
-        final unlocked = parts.length > 2 && parts[2] == '1';
-        final unlockedAt = parts.length > 3 && parts[3].isNotEmpty
-            ? DateTime.tryParse(parts[3])
-            : null;
-        loaded[id] = AchievementProgress(
-          achievementId: id,
-          current: cur,
-          target: 0,
-          unlocked: unlocked,
-          unlockedAt: unlockedAt,
-        );
+      if (raw != null) {
+        for (final entry in raw.split('|')) {
+          if (entry.isEmpty) continue;
+          final parts = entry.split('::');
+          if (parts.length < 2) continue;
+          final id = parts[0];
+          final cur = int.tryParse(parts[1]) ?? 0;
+          final unlocked = parts.length > 2 && parts[2] == '1';
+          final unlockedAt = parts.length > 3 && parts[3].isNotEmpty
+              ? DateTime.tryParse(parts[3])
+              : null;
+          loaded[id] = AchievementProgress(
+            achievementId: id,
+            current: cur,
+            target: 0,
+            unlocked: unlocked,
+            unlockedAt: unlockedAt,
+          );
+        }
       }
-      _progress = loaded;
     } catch (e) {
-      _progress = {};
+      debugPrint('AchievementProvider: failed to load progress: $e');
     }
+    if (loadGeneration != _loadGeneration || userKey != _userKey) return;
+    _progress = loaded;
+    _initialized = true;
+    _recalculateAll();
   }
 
   Future<void> _save() async {
@@ -127,6 +149,14 @@ class AchievementProvider extends ChangeNotifier {
   }
 
   AchievementProgress progressFor(String id) {
+    if (!_initialized || (auth.userId.isNotEmpty && !tours.checkInsLoaded)) {
+      return AchievementProgress(
+        achievementId: id,
+        current: 0,
+        target: AchievementCatalog.byId(id)?.target ?? 0,
+        unlocked: false,
+      );
+    }
     return _progress[id] ??
         AchievementProgress(
           achievementId: id,
@@ -136,7 +166,12 @@ class AchievementProvider extends ChangeNotifier {
         );
   }
 
-  int get totalUnlocked => _progress.values.where((p) => p.unlocked).length;
+  int get totalUnlocked {
+    if (!_initialized || (auth.userId.isNotEmpty && !tours.checkInsLoaded)) {
+      return 0;
+    }
+    return _progress.values.where((p) => p.unlocked).length;
+  }
   int get totalAvailable => AchievementCatalog.all.length;
   double get completionRatio =>
       totalAvailable == 0 ? 0 : totalUnlocked / totalAvailable;
@@ -152,6 +187,9 @@ class AchievementProvider extends ChangeNotifier {
   }
 
   List<AchievementDefinition> recentUnlocked({int limit = 3}) {
+    if (!_initialized || (auth.userId.isNotEmpty && !tours.checkInsLoaded)) {
+      return const <AchievementDefinition>[];
+    }
     final entries =
         _progress.entries
             .where((e) => e.value.unlocked && e.value.unlockedAt != null)
@@ -165,29 +203,28 @@ class AchievementProvider extends ChangeNotifier {
   }
 
   void _recalculateAll() {
+    if (auth.userId.isNotEmpty && !tours.checkInsLoaded) return;
+
     final stats = gam.stats;
     final all = places.places;
     final streakDays = streak.currentStreak;
-
-    final byCategory = <String, int>{};
-    for (final p in all) {
-      byCategory[p.category] = (byCategory[p.category] ?? 0) + 1;
-    }
-
-    final visitedCategories = <String>{};
-    final visitedCount = stats.placesVisited;
-
-    for (final p in all.take(visitedCount)) {
-      visitedCategories.add(p.category);
-    }
-
-    final hiddenGemsVisited = all
-        .where((p) => p.isHiddenGem && visitedCount > all.indexOf(p))
+    final checkedInPlaceIds = tours.checkedInPlaceIds;
+    final visitedCount = checkedInPlaceIds.length;
+    final checkedInPlaces = all
+        .where((place) => checkedInPlaceIds.contains(place.id))
+        .toList(growable: false);
+    final visitedTourCount = tours.visitedTourIds.length;
+    gam.syncPlaceVisitCount(visitedCount);
+    final hiddenGemsVisited = checkedInPlaces
+        .where((place) => place.isHiddenGem)
         .length;
 
     for (final def in AchievementCatalog.all) {
       int cur = 0;
-      switch (def.id) {
+      if (visitedCount == 0) {
+        cur = 0;
+      } else {
+        switch (def.id) {
         case 'first_steps':
         case 'explorer_5':
         case 'explorer_10':
@@ -197,23 +234,23 @@ class AchievementProvider extends ChangeNotifier {
           break;
         case 'culture_buff':
         case 'history_nerd':
-          cur = _estimateVisitedIn(all, [
+          cur = _countVisitedIn(checkedInPlaces, [
             'Culture',
             'Historical',
-          ], visitedCount);
+          ]);
           break;
         case 'foodie':
         case 'gourmet':
-          cur = _estimateVisitedIn(all, ['Food'], visitedCount);
+          cur = _countVisitedIn(checkedInPlaces, ['Food']);
           break;
         case 'shopaholic':
-          cur = _estimateVisitedIn(all, ['Shopping'], visitedCount);
+          cur = _countVisitedIn(checkedInPlaces, ['Shopping']);
           break;
         case 'spiritual_seeker':
-          cur = _estimateVisitedIn(all, ['Mosques'], visitedCount);
+          cur = _countVisitedIn(checkedInPlaces, ['Mosques']);
           break;
         case 'pilgrim':
-          cur = _estimateVisitedIn(all, ['Churches'], visitedCount);
+          cur = _countVisitedIn(checkedInPlaces, ['Churches']);
           break;
         case 'streak_3':
         case 'streak_7':
@@ -234,29 +271,29 @@ class AchievementProvider extends ChangeNotifier {
           break;
         case 'early_bird':
         case 'night_owl':
-        case 'completionist':
           cur = visitedCount;
           break;
+        case 'completionist':
+          cur = visitedTourCount;
+          break;
+        }
       }
       _updateProgress(def, cur);
     }
   }
 
-  int _estimateVisitedIn(
-    List<dynamic> all,
-    List<String> cats,
-    int visitedCount,
-  ) {
-    if (visitedCount <= 0) return 0;
-    final filtered = all.where((p) => cats.contains(p.category)).toList();
-    return filtered.length < visitedCount ? filtered.length : visitedCount;
+  int _countVisitedIn(List<PlaceModel> checkedInPlaces, List<String> cats) {
+    return checkedInPlaces
+        .where((place) => cats.contains(place.category))
+        .length;
   }
 
   void _updateProgress(AchievementDefinition def, int current) {
-    final wasUnlocked = _progress[def.id]?.unlocked ?? false;
-    final wasCurrent = _progress[def.id]?.current ?? 0;
+    final previous = _progress[def.id];
+    final wasUnlocked = previous?.unlocked ?? false;
+    final wasCurrent = previous?.current ?? 0;
     final shouldUnlock = current >= def.target;
-    final wasAt = _progress[def.id]?.unlockedAt;
+    final wasAt = previous?.unlockedAt;
     _progress[def.id] = AchievementProgress(
       achievementId: def.id,
       current: current,
@@ -264,15 +301,16 @@ class AchievementProvider extends ChangeNotifier {
       unlocked: shouldUnlock,
       unlockedAt: shouldUnlock ? (wasAt ?? DateTime.now()) : null,
     );
-    if (shouldUnlock && !wasUnlocked) {
+    final hasBadge = gam.stats.badges.any((badge) => badge.id == def.id);
+    if (shouldUnlock && !hasBadge) {
       _grantBadge(def);
-    } else if (!shouldUnlock && wasUnlocked) {
+    } else if (!shouldUnlock && hasBadge) {
       // v1.0.63: revoke — the underlying stat dropped back below the
       // required target (e.g. user un-visited a place, placesVisited
       // went 1 → 0, first_steps' target of 1 is no longer met).
       _revokeBadge(def);
     }
-    if (current != wasCurrent) {
+    if (current != wasCurrent || shouldUnlock != wasUnlocked) {
       _save();
       notifyListeners();
     }
@@ -306,6 +344,7 @@ class AchievementProvider extends ChangeNotifier {
   }
 
   void refreshFromStats() {
+    if (!_initialized) return;
     _recalculateAll();
     _save();
     notifyListeners();

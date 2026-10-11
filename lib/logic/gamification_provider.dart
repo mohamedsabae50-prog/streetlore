@@ -42,30 +42,43 @@ class GamificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  static const _kKey = 'gamification_stats_v1';
+  static const _kKeyPrefix = 'gamification_stats_v2';
+  int _loadGeneration = 0;
 
   GamificationProvider() {
-    _load();
+    _load(_stats.userId);
   }
 
   void syncWithAuth(AuthProvider auth) {
-    if (auth.userId.isEmpty) return;
-    if (_stats.userId == auth.userId && _stats.userName == auth.userName) {
+    final userId = auth.userId.isEmpty ? 'guest' : auth.userId;
+    final userName = auth.userName.isEmpty ? 'Explorer' : auth.userName;
+    if (_stats.userId == userId && _stats.userName == userName) {
       return;
     }
-    setUserIdentity(
-      userId: auth.userId,
-      userName: auth.userName.isEmpty ? 'Explorer' : auth.userName,
-    );
+    _stats = GamificationStats(userId: userId, userName: userName);
+    notifyListeners();
+    _load(userId);
   }
 
-  Future<void> _load() async {
+  String _keyForUser(String userId) => '${_kKeyPrefix}_$userId';
+
+  Future<void> _load(String userId) async {
+    final generation = ++_loadGeneration;
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_kKey);
+    final raw = prefs.getString(_keyForUser(userId));
+    if (generation != _loadGeneration || _stats.userId != userId) return;
     if (raw == null) return;
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
-      _stats = GamificationStats.fromJson(json);
+      final loaded = GamificationStats.fromJson(json);
+      if (loaded.userId != userId) return;
+      final badgesById = <String, Badge>{};
+      for (final badge in loaded.badges) {
+        badgesById.putIfAbsent(badge.id, () => badge);
+      }
+      _stats = loaded.copyWith(
+        badges: badgesById.values.toList(growable: false),
+      );
     } catch (e) {
       debugPrint('GamificationProvider: failed to load: $e');
     }
@@ -75,12 +88,14 @@ class GamificationProvider extends ChangeNotifier {
   Future<void> bootstrapForUser(String userId) async {
     if (userId.isEmpty) return;
     final remote = await SupabaseService.instance.pullStats(userId);
+    if (_stats.userId != userId) return;
     if (remote == null) {
       debugPrint(
         'GamificationProvider: no remote stats for $userId, keeping local',
       );
       return;
     }
+    _loadGeneration++;
     final local = _stats;
 
     final mergedPoints = remote.totalPoints > local.totalPoints
@@ -96,11 +111,11 @@ class GamificationProvider extends ChangeNotifier {
         ? remote.photosUploaded
         : local.photosUploaded;
     final mergedLevel = GamificationStats.levelForPoints(mergedPoints);
-    final badgeIds = local.badges.map((b) => b.id).toSet();
-    final mergedBadges = <Badge>[
-      ...local.badges,
-      ...remote.badges.where((b) => !badgeIds.contains(b.id)),
-    ];
+    final mergedBadgesById = <String, Badge>{};
+    for (final badge in [...local.badges, ...remote.badges]) {
+      mergedBadgesById.putIfAbsent(badge.id, () => badge);
+    }
+    final mergedBadges = mergedBadgesById.values.toList(growable: false);
     _stats = local.copyWith(
       totalPoints: mergedPoints,
       placesVisited: mergedVisited,
@@ -119,7 +134,10 @@ class GamificationProvider extends ChangeNotifier {
 
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kKey, jsonEncode(_stats.toJson()));
+    await prefs.setString(
+      _keyForUser(_stats.userId),
+      jsonEncode(_stats.toJson()),
+    );
 
     SupabaseService.instance.pushStats(_stats);
   }
@@ -397,6 +415,14 @@ class GamificationProvider extends ChangeNotifier {
       badges: _stats.badges,
       level: _stats.level,
     );
+    _save();
+    notifyListeners();
+  }
+
+  void syncPlaceVisitCount(int checkedInPlaceCount) {
+    final count = checkedInPlaceCount.clamp(0, 1 << 30).toInt();
+    if (_stats.placesVisited == count) return;
+    _stats = _stats.copyWith(placesVisited: count);
     _save();
     notifyListeners();
   }

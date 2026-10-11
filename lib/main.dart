@@ -88,6 +88,7 @@ Future<void> main() async {
     gam: gamification,
     places: placeProvider,
     streak: streak,
+    tours: tourProvider,
   );
   // v1.0.56: wire gamification -> streak/achievements so a single
   // gamification.applyAction('check_in', ...) call updates the
@@ -107,8 +108,13 @@ Future<void> main() async {
 
   void authListener() {
     final id = auth.userId;
-    if (id.isEmpty) return;
-
+    gamification.syncWithAuth(auth);
+    achievements.syncWithAuth(auth);
+    if (id.isEmpty) {
+      _lastBootstrappedUserId = null;
+      tourProvider.clearCheckedInPlaces();
+      return;
+    }
     if (id == _lastBootstrappedUserId) return;
     _lastBootstrappedUserId = id;
     unawaited(bootstrapFromSupabase(id));

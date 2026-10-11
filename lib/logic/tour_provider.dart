@@ -24,6 +24,10 @@ class TourProvider extends ChangeNotifier {
   List<ItineraryModel> get savedTours => _savedTours;
 
   final Set<String> _checkedInPlaceIds = <String>{};
+  String? _checkInUserId;
+  Set<String> get checkedInPlaceIds => Set.unmodifiable(_checkedInPlaceIds);
+  bool _checkInsLoaded = false;
+  bool get checkInsLoaded => _checkInsLoaded;
   Set<String> get visitedTourIds => Set.unmodifiable(
     _tours
         .where((tour) => tour.places.isNotEmpty && isTourVisited(tour.id))
@@ -44,15 +48,25 @@ class TourProvider extends ChangeNotifier {
       .length;
 
   void markPlaceCheckedIn(String placeId) {
+    _checkInsLoaded = true;
     if (placeId.isNotEmpty && _checkedInPlaceIds.add(placeId)) {
       notifyListeners();
     }
   }
 
   void unmarkPlaceCheckedIn(String placeId) {
+    _checkInsLoaded = true;
     if (placeId.isNotEmpty && _checkedInPlaceIds.remove(placeId)) {
       notifyListeners();
     }
+  }
+
+  void clearCheckedInPlaces() {
+    _checkInUserId = null;
+    _checkInsLoaded = false;
+    if (_checkedInPlaceIds.isEmpty) return;
+    _checkedInPlaceIds.clear();
+    notifyListeners();
   }
 
   TourProvider() {
@@ -222,6 +236,12 @@ class TourProvider extends ChangeNotifier {
 
   Future<bool> bootstrapForUser(String userId) async {
     if (userId.isEmpty) return false;
+    if (_checkInUserId != userId) {
+      _checkInUserId = userId;
+      _checkInsLoaded = false;
+      _checkedInPlaceIds.clear();
+      notifyListeners();
+    }
     final remoteMaps = await SupabaseService.instance.pullSavedTours(userId);
     if (remoteMaps.isEmpty) {
       debugPrint(
@@ -258,7 +278,6 @@ class TourProvider extends ChangeNotifier {
         await loadTours();
       } catch (_) {}
     }
-    if (_tours.isEmpty) return;
 
     try {
       final res = await _client
@@ -270,6 +289,8 @@ class TourProvider extends ChangeNotifier {
           .whereType<String>()
           .toSet();
 
+      final wasLoaded = _checkInsLoaded;
+      _checkInsLoaded = true;
       final changed =
           !_checkedInPlaceIds.containsAll(checkedInPlaceIds) ||
           !checkedInPlaceIds.containsAll(_checkedInPlaceIds);
@@ -277,6 +298,8 @@ class TourProvider extends ChangeNotifier {
         _checkedInPlaceIds
           ..clear()
           ..addAll(checkedInPlaceIds);
+      }
+      if (changed || !wasLoaded) {
         notifyListeners();
         debugPrint(
           'TourProvider: synced visited tours from place_checkins -> '

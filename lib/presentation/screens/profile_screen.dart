@@ -311,7 +311,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                             _Stat(
                               label: context.tr('prof_explored'),
-                              numericValue: placeP.remoteCheckinCount,
+                              numericValue: tourP.checkedInPlaceIds.length,
                               icon: Icons.explore_rounded,
                               delayMs: 320,
                             ),
@@ -428,7 +428,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                   child: Consumer<GamificationProvider>(
                     builder: (context, g, _) {
-                      final badges = g.stats.badges;
+                      final badgesById = {
+                        for (final badge in g.stats.badges) badge.id: badge,
+                      };
+                      final badges = badgesById.values.toList(growable: false);
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

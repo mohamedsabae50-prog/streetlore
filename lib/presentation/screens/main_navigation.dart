@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/achievement_provider.dart';
 import '../../logic/gamification_provider.dart';
 import '../../logic/journal_provider.dart';
 import '../../logic/streak_provider.dart';
@@ -73,6 +74,7 @@ class _MainNavigationState extends State<MainNavigation>
       if (!mounted) return;
       final auth = context.read<AuthProvider>();
       context.read<GamificationProvider>().syncWithAuth(auth);
+      context.read<AchievementProvider>().syncWithAuth(auth);
       context.read<StreakProvider>().setUserId(auth.userId);
       context.read<JournalProvider>().setUserId(auth.userId);
       context.read<PlacePhotosProvider>().setUserId(auth.userId);
