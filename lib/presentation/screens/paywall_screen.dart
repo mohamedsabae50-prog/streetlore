@@ -219,7 +219,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
               ),
             const SizedBox(height: 12),
             FilledButton(
-              onPressed: _loading || _loadingPackages
+              onPressed:
+                  _loading ||
+                      _loadingPackages ||
+                      !RevenueCatService.instance.isConfigured
                   ? null
                   : () => _purchase(PackageType.monthly),
               style: FilledButton.styleFrom(
@@ -238,14 +241,26 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : _packageLabel(
+                  : RevenueCatService.instance.isConfigured
+                  ? _packageLabel(
                       context.tr('pro_monthly'),
                       _monthlyPackage,
+                    )
+                  : Text(
+                      context.tr('pro_coming_soon'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
-              onPressed: _loading || _loadingPackages
+              onPressed:
+                  _loading ||
+                      _loadingPackages ||
+                      !RevenueCatService.instance.isConfigured
                   ? null
                   : () => _purchase(PackageType.annual),
               style: OutlinedButton.styleFrom(
@@ -256,14 +271,26 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: _packageLabel(
-                context.tr('pro_yearly'),
-                _yearlyPackage,
-              ),
+              child: RevenueCatService.instance.isConfigured
+                  ? _packageLabel(
+                      context.tr('pro_yearly'),
+                      _yearlyPackage,
+                    )
+                  : Text(
+                      context.tr('pro_coming_soon'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
-              onPressed: _loading || _loadingPackages
+              onPressed:
+                  _loading ||
+                      _loadingPackages ||
+                      !RevenueCatService.instance.isConfigured
                   ? null
                   : () => _purchase(PackageType.lifetime),
               style: OutlinedButton.styleFrom(
@@ -274,10 +301,19 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: _packageLabel(
-                context.tr('pro_lifetime'),
-                _lifetimePackage,
-              ),
+              child: RevenueCatService.instance.isConfigured
+                  ? _packageLabel(
+                      context.tr('pro_lifetime'),
+                      _lifetimePackage,
+                    )
+                  : Text(
+                      context.tr('pro_coming_soon'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
             ),
             const SizedBox(height: 12),
             Text(

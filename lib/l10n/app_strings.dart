@@ -848,8 +848,12 @@ class AppStrings {
       'ar': 'شراء آمن عبر App Store أو Google Play.',
     },
     'pro_setup_note': {
-      'en': 'RevenueCat is ready to connect. Add your public SDK keys and products to enable purchases.',
-      'ar': 'تكامل RevenueCat جاهز. أضف مفاتيح SDK العامة والمنتجات لتفعيل الشراء.',
+      'en': 'Pro subscriptions are coming soon. Stay tuned for the official launch!',
+      'ar': 'اشتراكات برو قادمة قريباً. ترقّبوا الإطلاق الرسمي!',
+    },
+    'pro_coming_soon': {
+      'en': 'Coming soon',
+      'ar': 'قريباً',
     },
     'pro_setup_required': {
       'en': 'Purchases are not configured yet. Add the RevenueCat public SDK keys to enable them.',

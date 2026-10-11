@@ -8,11 +8,15 @@ class RevenueCatService {
 
   static final RevenueCatService instance = RevenueCatService._();
 
-  static const _androidApiKey = 'test_qrlowpR7Y7DFXYHShFjPFdelzFY';
-  static const _iosApiKey = 'test_qrlowpR7Y7DFXYHShFjPFdelzFY';
+  static const bool _disabledForRelease = true;
+  static const _androidApiKey =
+      ''; // was: 'test_qrlowpR7Y7DFXYHShFjPFdelzFY'
+  static const _iosApiKey =
+      ''; // was: 'test_qrlowpR7Y7DFXYHShFjPFdelzFY'
   static const entitlementId = 'pro';
 
   bool get isConfigured =>
+      !_disabledForRelease &&
       !kIsWeb &&
       (Platform.isAndroid || Platform.isIOS) &&
       (_androidApiKey.isNotEmpty || _iosApiKey.isNotEmpty);
