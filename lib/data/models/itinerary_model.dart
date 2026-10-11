@@ -10,6 +10,8 @@ class ItineraryModel {
   final String? durationAr;
   final String imageUrl;
   final String status;
+  final bool isPremium;
+  final bool isHiddenGem;
   final List<PlaceModel> places;
   const ItineraryModel({
     required this.id,
@@ -21,8 +23,12 @@ class ItineraryModel {
     this.durationAr,
     required this.imageUrl,
     this.status = 'published',
+    this.isPremium = false,
+    this.isHiddenGem = false,
     required this.places,
   });
+
+  bool get requiresPro => isPremium || isHiddenGem;
 
   String? get coverImageUrl {
     String? validUrl(String candidate) {
@@ -45,7 +51,6 @@ class ItineraryModel {
     return places.isEmpty ? cover : null;
   }
 
-  
   String localizedTitle(String locale) {
     if (locale == 'ar' && titleAr != null && titleAr!.isNotEmpty) {
       return titleAr!;
@@ -53,7 +58,6 @@ class ItineraryModel {
     return title;
   }
 
-  
   String localizedDescription(String locale) {
     if (locale == 'ar' && descriptionAr != null && descriptionAr!.isNotEmpty) {
       return descriptionAr!;
@@ -61,7 +65,6 @@ class ItineraryModel {
     return description;
   }
 
-  
   String localizedDuration(String locale) {
     if (locale == 'ar' && durationAr != null && durationAr!.isNotEmpty) {
       return durationAr!;
@@ -81,10 +84,18 @@ class ItineraryModel {
       durationAr:
           json['duration_ar'] as String? ?? json['durationAr'] as String?,
       imageUrl:
-          (json['imageUrl'] as String?) ??
-          (json['image_url'] as String?) ??
-          '',
+          (json['imageUrl'] as String?) ?? (json['image_url'] as String?) ?? '',
       status: (json['status'] as String?) ?? 'published',
+      isPremium:
+          (json['is_premium'] as bool?) ??
+          (json['isPremium'] as bool?) ??
+          (json['premium'] as bool?) ??
+          false,
+      isHiddenGem:
+          (json['is_hidden_gem'] as bool?) ??
+          (json['isHiddenGem'] as bool?) ??
+          (json['hidden_gem'] as bool?) ??
+          false,
       places:
           (json['places'] as List<dynamic>?)
               ?.map((e) => PlaceModel.fromJson(e as Map<String, dynamic>))
@@ -103,6 +114,8 @@ class ItineraryModel {
       'durationAr': durationAr,
       'imageUrl': imageUrl,
       'status': status,
+      'isPremium': isPremium,
+      'isHiddenGem': isHiddenGem,
       'places': places.map((e) => e.toJson()).toList(),
     };
   }

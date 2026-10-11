@@ -20,6 +20,7 @@ class AuthProvider extends ChangeNotifier {
   String _userEmail = '';
   String _userId = '';
   bool _isGuest = false;
+  bool _isPro = false;
 
   bool get isLoggedIn => _isLoggedIn;
   bool get hasSeenOnboarding => _hasSeenOnboarding;
@@ -29,6 +30,29 @@ class AuthProvider extends ChangeNotifier {
   String get userEmail => _userEmail;
   String get userId => _userId;
   bool get isGuest => _isGuest;
+  bool get isPro => _isPro || isAdmin;
+
+  Future<void> refreshProStatus() async {
+    if (_userId.isEmpty || _isGuest || !AppConfig.supabaseEnabled) {
+      _isPro = false;
+      notifyListeners();
+      return;
+    }
+    try {
+      final profile = await Supabase.instance.client
+          .from('profiles')
+          .select('is_pro')
+          .eq('user_id', _userId)
+          .maybeSingle();
+      _isPro = profile?['is_pro'] == true;
+    } catch (error, stackTrace) {
+      debugPrint(
+        'AuthProvider: failed to refresh Pro status: $error\n$stackTrace',
+      );
+      rethrow;
+    }
+    notifyListeners();
+  }
 
   
   
@@ -81,6 +105,7 @@ class AuthProvider extends ChangeNotifier {
         } else if (event == AuthChangeEvent.signedOut) {
           _isLoggedIn = false;
           _isGuest = false;
+          _isPro = false;
           notifyListeners();
           unawaited(_clearPersistedAuthSnapshot());
         }
@@ -182,6 +207,7 @@ class AuthProvider extends ChangeNotifier {
     _isLoggedIn = true;
     _isGuest = false;
     _userId = user.id;
+    _isPro = false;
     final meta = user.userMetadata ?? const <String, dynamic>{};
     _userName =
         (meta['full_name'] as String?) ??
@@ -190,6 +216,17 @@ class AuthProvider extends ChangeNotifier {
         'Explorer';
     _username = (meta['username'] as String?) ?? _username;
     _userEmail = user.email ?? _userEmail;
+    try {
+      final profile = await Supabase.instance.client
+          .from('profiles')
+          .select('is_pro')
+          .eq('user_id', user.id)
+          .maybeSingle();
+      _isPro = profile?['is_pro'] == true;
+    } catch (error, stackTrace) {
+      _isPro = false;
+      debugPrint('AuthProvider: failed to load Pro profile: $error\n$stackTrace');
+    }
     notifyListeners();
     await _persistAuthSnapshot(
       accessToken: session?.accessToken,
@@ -262,6 +299,7 @@ class AuthProvider extends ChangeNotifier {
           _isLoggedIn = true;
           _isGuest = false;
           _userId = res.user!.id;
+          _isPro = false;
           _userEmail = res.user!.email ?? cleanEmail;
           final meta = res.user!.userMetadata ?? const <String, dynamic>{};
           _userName =
@@ -323,6 +361,7 @@ class AuthProvider extends ChangeNotifier {
 
     _isLoggedIn = true;
     _isGuest = false;
+    _isPro = false;
     _userName = cleanName;
     _username = cleanUsername;
     _userEmail = cleanEmail;
@@ -416,6 +455,7 @@ class AuthProvider extends ChangeNotifier {
     if (cleanName.isEmpty) return;
     _isLoggedIn = true;
     _isGuest = true;
+    _isPro = false;
     _userName = cleanName;
     _username = '';
     _userEmail = 'guest@streetlore.com';
@@ -462,6 +502,7 @@ class AuthProvider extends ChangeNotifier {
     
     _isLoggedIn = false;
     _isGuest = false;
+    _isPro = false;
     _userId = '';
     _userName = '';
     _username = '';

@@ -8,9 +8,11 @@ import '../../core/services/social_share_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/itinerary_model.dart';
 import '../../l10n/app_strings.dart';
+import '../../logic/auth_provider.dart';
 import '../../logic/tour_provider.dart';
 import '../widgets/place_card.dart';
 import 'map_screen.dart';
+import 'paywall_screen.dart';
 import 'place_details_screen.dart';
 
 class TourDetailsScreen extends StatefulWidget {
@@ -55,7 +57,9 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
         params: {'p_tour_id': widget.tour.id},
       );
     } catch (error, stackTrace) {
-      debugPrint('TourDetailsScreen: failed to record view: $error\n$stackTrace');
+      debugPrint(
+        'TourDetailsScreen: failed to record view: $error\n$stackTrace',
+      );
     }
   }
 
@@ -67,6 +71,17 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
 
   Future<void> _startNavigation() async {
     final tour = widget.tour;
+    if (tour.requiresPro && !context.read<AuthProvider>().isPro) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('tour_pro_locked'))));
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
+      );
+      return;
+    }
     if (tour.places.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -113,11 +128,13 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
         }),
       );
     } catch (error, stackTrace) {
-      debugPrint('TourDetailsScreen: could not share tour: $error\n$stackTrace');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('share_failed'))),
+      debugPrint(
+        'TourDetailsScreen: could not share tour: $error\n$stackTrace',
       );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('share_failed'))));
     }
   }
 
@@ -125,6 +142,8 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
   Widget build(BuildContext context) {
     final tour = widget.tour;
     final imageUrl = tour.coverImageUrl;
+    final requiresPro = tour.requiresPro;
+    final isLocked = requiresPro && !context.watch<AuthProvider>().isPro;
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -275,8 +294,9 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                                   const SizedBox(width: 4),
                                   Text(
                                     tour.localizedDuration(
-                                      Localizations.localeOf(context)
-                                          .languageCode,
+                                      Localizations.localeOf(
+                                        context,
+                                      ).languageCode,
                                     ),
                                     style: const TextStyle(
                                       color: Colors.white,
@@ -287,6 +307,42 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                                 ],
                               ),
                             ),
+                            if (requiresPro) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 9,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.ratingGold.withValues(
+                                    alpha: 0.9,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isLocked
+                                          ? Icons.lock_rounded
+                                          : Icons.workspace_premium_rounded,
+                                      color: Colors.white,
+                                      size: 13,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      context.tr('tour_pro'),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -375,8 +431,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                                 icon: Icons.access_time_rounded,
                                 label: context.tr('tour_duration'),
                                 value: tour.localizedDuration(
-                                  Localizations.localeOf(context)
-                                      .languageCode,
+                                  Localizations.localeOf(context).languageCode,
                                 ),
                                 color: AppColors.primary,
                               ),
@@ -393,10 +448,16 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                             const SizedBox(width: 12),
                             Expanded(
                               child: _StatCard(
-                                icon: Icons.lock_open_rounded,
+                                icon: requiresPro
+                                    ? Icons.workspace_premium_rounded
+                                    : Icons.lock_open_rounded,
                                 label: context.tr('tour_access'),
-                                value: context.tr('tour_free'),
-                                color: AppColors.success,
+                                value: requiresPro
+                                    ? context.tr('tour_pro')
+                                    : context.tr('tour_free'),
+                                color: requiresPro
+                                    ? AppColors.ratingGold
+                                    : AppColors.success,
                               ),
                             ),
                           ],
@@ -506,7 +567,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
 
                       Padding(
                         padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
-                        child: _buildStartButton(),
+                        child: _buildStartButton(isLocked),
                       ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
@@ -523,7 +584,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
     );
   }
 
-  Widget _buildStartButton() {
+  Widget _buildStartButton(bool isLocked) {
     return GestureDetector(
       onTap: _startNavigation,
       child: Container(
@@ -543,9 +604,16 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.navigation_rounded, color: Colors.white, size: 22),
+            Icon(
+              isLocked ? Icons.lock_rounded : Icons.navigation_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
             const SizedBox(width: 10),
-            Text(context.tr('tour_start_nav'), style: AppTextStyles.buttonText),
+            Text(
+              isLocked ? context.tr('pro_title') : context.tr('tour_start_nav'),
+              style: AppTextStyles.buttonText,
+            ),
           ],
         ),
       ),

@@ -13,6 +13,7 @@ import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/geofence_provider.dart';
 import '../../logic/place_provider.dart';
+import 'privacy_policy_screen.dart';
 
 class GeofencingSettingsScreen extends StatelessWidget {
   const GeofencingSettingsScreen({super.key});
@@ -21,7 +22,21 @@ class GeofencingSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(title: Text(context.tr('geo_title'))),
+      appBar: AppBar(
+        title: Text(context.tr('geo_title')),
+        actions: [
+          IconButton(
+            tooltip: context.tr('privacy_policy_title'),
+            icon: const Icon(Icons.privacy_tip_outlined),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const PrivacyPolicyScreen(),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: Consumer<GeofenceProvider>(
         builder: (context, geo, _) {
           final places = context.watch<PlaceProvider>().places;
@@ -99,7 +114,28 @@ class GeofencingSettingsScreen extends StatelessWidget {
                       context: context,
                       builder: (dialogContext) => AlertDialog(
                         title: Text(context.tr('geo_background_title')),
-                        content: Text(context.tr('geo_background_explanation')),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              context.tr('geo_background_explanation'),
+                            ),
+                            TextButton.icon(
+                              onPressed: () => Navigator.of(
+                                dialogContext,
+                              ).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const PrivacyPolicyScreen(),
+                                ),
+                              ),
+                              icon: const Icon(Icons.privacy_tip_outlined),
+                              label: Text(
+                                context.tr('geo_read_privacy_policy'),
+                              ),
+                            ),
+                          ],
+                        ),
                         actions: [
                           TextButton(
                             onPressed: () =>

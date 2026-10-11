@@ -16,7 +16,7 @@
 //   { "error": "...", "code": "DAILY_LIMIT_EXCEEDED" | "UNAUTHORIZED" | "BAD_REQUEST" }
 //
 // Quota enforcement:
-//   - 15 calls / 24h per user (capped by ai_quota.daily_limit).
+//   - 3 calls / 24h for free users and 50 for Pro (enforced in SQL).
 //   - Admins (auth.jwt()->email = admin email) bypass the quota.
 //   - The database RPC atomically tracks requests in a rolling 24-hour window.
 //
@@ -32,7 +32,6 @@ const ADMIN_EMAIL = (Deno.env.get("ADMIN_EMAIL") ?? "mohamedsabae50@gmail.com")
   .toLowerCase()
   .trim();
 
-const DEFAULT_DAILY_LIMIT = 15;
 const MODEL = "gemini-2.5-flash";
 const GEMINI_ENDPOINT_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
@@ -195,7 +194,6 @@ async function geminiAuthHeaders(): Promise<Record<string, string>> {
 async function consumeQuota(userId: string): Promise<boolean | null> {
   const { data, error } = await admin.rpc("consume_ai_quota", {
     p_user_id: userId,
-    p_daily_limit: DEFAULT_DAILY_LIMIT,
   });
   if (error) {
     console.error("ai-proxy: consume_ai_quota RPC failed:", error);

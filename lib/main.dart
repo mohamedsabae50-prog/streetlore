@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_colors.dart';
 import 'core/services/offline_storage_service.dart';
+import 'core/services/revenuecat_service.dart';
 import 'core/services/supabase_service.dart';
 import 'core/config/app_config.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -70,6 +71,7 @@ Future<void> main() async {
 
   final auth = AuthProvider();
   await auth.bootstrap();
+  await _configureRevenueCat(auth.userId);
   unawaited(_bindAuthDeepLink(auth));
 
   final placeProvider = PlaceProvider();
@@ -117,6 +119,7 @@ Future<void> main() async {
     }
     if (id == _lastBootstrappedUserId) return;
     _lastBootstrappedUserId = id;
+    unawaited(_configureRevenueCat(id));
     unawaited(bootstrapFromSupabase(id));
   }
 
@@ -149,6 +152,14 @@ Future<void> main() async {
       child: const StreetloreApp(),
     ),
   );
+}
+
+Future<void> _configureRevenueCat(String userId) async {
+  try {
+    await RevenueCatService.instance.configure(userId);
+  } catch (error, stackTrace) {
+    debugPrint('RevenueCat startup configuration failed: $error\n$stackTrace');
+  }
 }
 
 String? _lastBootstrappedUserId;

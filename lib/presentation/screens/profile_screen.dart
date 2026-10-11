@@ -26,6 +26,7 @@ import 'journal_screen.dart';
 import 'prayer_times_screen.dart';
 import 'achievements_screen.dart';
 import 'admin_panel_screen.dart';
+import 'privacy_policy_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -977,6 +978,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                           ),
+                        ),
+                        _Div(),
+                        _ActionTile(
+                          icon: Icons.privacy_tip_outlined,
+                          title: context.tr('privacy_policy_title'),
+                          subtitle: context.tr('geo_read_privacy_policy'),
+                          color: const Color(0xFF0EA5E9),
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (_) => const PrivacyPolicyScreen(),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),

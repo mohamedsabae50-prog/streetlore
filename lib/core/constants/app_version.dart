@@ -7,8 +7,8 @@
 ///
 /// The build number (`+NN`) is the Android versionCode / iOS build
 /// number; the version string (`1.x.y`) is the human-readable name.
-const String kAppVersion = '1.2.2';
-const String kAppBuildNumber = '108';
+const String kAppVersion = '1.3.0';
+const String kAppBuildNumber = '109';
 const String kAppVersionFull = '$kAppVersion+$kAppBuildNumber';
 
 /// Human-friendly label for the About screen.

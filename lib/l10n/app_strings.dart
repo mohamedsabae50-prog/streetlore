@@ -609,16 +609,97 @@ class AppStrings {
     },
     'geo_background_explanation': {
       'en':
-          'Streetlore checks your location in the background only while '
-          'nearby alerts are enabled, so it can notify you when you approach '
-          'a selected place. Updates are limited to reduce battery use. '
-          'Your location is not stored.',
+          'Streetlore collects location data in the background to enable '
+          'geofenced notifications for nearby historical landmarks, even '
+          'when the app is closed or not in use. This happens only while '
+          'nearby alerts are enabled.',
       'ar':
-          'يتحقق ستريت لور من موقعك في الخلفية فقط أثناء تفعيل التنبيهات '
-          'القريبة، ليخبرك عند الاقتراب من مكان اخترته. نقلل التحديثات '
-          'للحفاظ على البطارية ولا نخزن موقعك.',
+          'يجمع Streetlore بيانات الموقع في الخلفية لتمكين الإشعارات المحددة '
+          'جغرافيًا عن المعالم التاريخية القريبة، حتى عندما يكون التطبيق '
+          'مغلقًا أو غير قيد الاستخدام. يحدث ذلك فقط أثناء تفعيل التنبيهات '
+          'القريبة.',
+    },
+    'privacy_policy_title': {'en': 'Privacy Policy', 'ar': 'سياسة الخصوصية'},
+    'privacy_policy_intro': {
+      'en':
+          'This policy explains what information Streetlore uses and how it '
+          'supports your experience discovering places.',
+      'ar':
+          'توضح هذه السياسة المعلومات التي يستخدمها Streetlore وكيف تساعد '
+          'في تحسين تجربتك في اكتشاف الأماكن.',
+    },
+    'privacy_data_title': {
+      'en': 'Information you provide',
+      'ar': 'المعلومات التي تقدمها',
+    },
+    'privacy_data_body': {
+      'en':
+          'Information you add to your profile and your saved places, alert '
+          'selections, and app preferences are used to provide and personalize '
+          'Streetlore features.',
+      'ar':
+          'تُستخدم المعلومات التي تضيفها إلى ملفك الشخصي والأماكن المحفوظة '
+          'واختيارات التنبيهات وتفضيلات التطبيق لتقديم ميزات Streetlore '
+          'وتخصيصها.',
+    },
+    'privacy_location_title': {'en': 'Location', 'ar': 'الموقع'},
+    'privacy_location_body': {
+      'en':
+          'When you allow location access, Streetlore uses your location for '
+          'nearby recommendations and location-based features. You can manage '
+          'location access in your device settings.',
+      'ar':
+          'عند السماح بالوصول إلى الموقع، يستخدم Streetlore موقعك لاقتراح '
+          'أماكن قريبة وتقديم الميزات المرتبطة بالموقع. يمكنك إدارة إذن '
+          'الوصول إلى الموقع من إعدادات جهازك.',
+    },
+    'privacy_background_location': {
+      'en':
+          'Streetlore collects location data in the background to enable geofenced notifications for nearby historical landmarks, even when the app is closed or not in use.',
+      'ar':
+          'يجمع Streetlore بيانات الموقع في الخلفية لتمكين الإشعارات المحددة جغرافيًا عن المعالم التاريخية القريبة، حتى عندما يكون التطبيق مغلقًا أو غير قيد الاستخدام.',
+    },
+    'privacy_geofence_title': {
+      'en': 'Nearby landmark alerts',
+      'ar': 'تنبيهات المعالم القريبة',
+    },
+    'privacy_geofence_body': {
+      'en':
+          'Background location is used only after you enable nearby alerts. '
+          'Streetlore checks your location against the landmarks you selected '
+          'so it can notify you when you are nearby. Turn alerts off in '
+          'Geofencing Settings or revoke location access in your device '
+          'settings to stop this use.',
+      'ar':
+          'يُستخدم الموقع في الخلفية فقط بعد تفعيل التنبيهات القريبة. يقارن '
+          'Streetlore موقعك بالمعالم التي اخترتها ليتمكن من تنبيهك عند '
+          'اقترابك منها. أوقف التنبيهات من إعدادات التنبيهات الجغرافية أو '
+          'ألغِ إذن الموقع من إعدادات جهازك لإيقاف هذا الاستخدام.',
+    },
+    'privacy_notifications_title': {'en': 'Notifications', 'ar': 'الإشعارات'},
+    'privacy_notifications_body': {
+      'en':
+          'Notifications are used to deliver nearby landmark alerts and other '
+          'updates you enable. You can manage notification permissions in '
+          'your device settings.',
+      'ar':
+          'تُستخدم الإشعارات لإرسال تنبيهات المعالم القريبة والتحديثات الأخرى '
+          'التي تفعّلها. يمكنك إدارة أذونات الإشعارات من إعدادات جهازك.',
+    },
+    'privacy_controls_title': {'en': 'Your choices', 'ar': 'خياراتك'},
+    'privacy_controls_body': {
+      'en':
+          'You can choose which places trigger alerts, pause geofencing, and '
+          'change location or notification permissions at any time.',
+      'ar':
+          'يمكنك اختيار الأماكن التي تصدر عنها التنبيهات وإيقاف التنبيهات '
+          'الجغرافية مؤقتًا وتغيير أذونات الموقع أو الإشعارات في أي وقت.',
     },
     'geo_enable': {'en': 'Continue', 'ar': 'متابعة'},
+    'geo_read_privacy_policy': {
+      'en': 'Read the Privacy Policy',
+      'ar': 'اقرأ سياسة الخصوصية',
+    },
     'geo_background_denied': {
       'en':
           'Background location was not allowed. You can enable it in Settings.',
@@ -720,6 +801,76 @@ class AppStrings {
     'tour_stops': {'en': 'Stops', 'ar': 'محطات'},
     'tour_access': {'en': 'Access', 'ar': 'الدخول'},
     'tour_free': {'en': 'Free', 'ar': 'مجاني'},
+    'tour_pro': {'en': 'Streetlore Pro', 'ar': 'ستريت لور برو'},
+    'tour_pro_locked': {
+      'en': 'This tour is part of Streetlore Pro.',
+      'ar': 'هذه الجولة متاحة ضمن ستريت لور برو.',
+    },
+    'pro_title': {'en': 'Streetlore Pro', 'ar': 'ستريت لور برو'},
+    'pro_subtitle': {
+      'en': 'Discover more of the stories behind your city.',
+      'ar': 'اكتشف المزيد من الحكايات وراء مدينتك.',
+    },
+    'pro_benefit_hidden_gems': {
+      'en': 'Unlock Hidden Gems Tours',
+      'ar': 'افتح جولات الجواهر المخفية',
+    },
+    'pro_benefit_ai': {
+      'en': '50 AI Questions daily',
+      'ar': '٥٠ سؤالًا للذكاء الاصطناعي يوميًا',
+    },
+    'pro_benefit_offline': {
+      'en': 'Offline Downloads',
+      'ar': 'التنزيلات دون اتصال',
+    },
+    'pro_benefit_badges': {
+      'en': 'Exclusive Pro Badges',
+      'ar': 'شارات برو حصرية',
+    },
+    'pro_monthly': {
+      'en': 'Monthly Subscription',
+      'ar': 'اشتراك شهري',
+    },
+    'pro_yearly': {
+      'en': 'Yearly Subscription',
+      'ar': 'اشتراك سنوي',
+    },
+    'pro_lifetime': {
+      'en': 'Lifetime Access',
+      'ar': 'وصول مدى الحياة',
+    },
+    'pro_store_note': {
+      'en': 'Secure purchase through the App Store or Google Play.',
+      'ar': 'شراء آمن عبر App Store أو Google Play.',
+    },
+    'pro_setup_note': {
+      'en': 'RevenueCat is ready to connect. Add your public SDK keys and products to enable purchases.',
+      'ar': 'تكامل RevenueCat جاهز. أضف مفاتيح SDK العامة والمنتجات لتفعيل الشراء.',
+    },
+    'pro_setup_required': {
+      'en': 'Purchases are not configured yet. Add the RevenueCat public SDK keys to enable them.',
+      'ar': 'لم يتم إعداد عمليات الشراء بعد. أضف مفاتيح RevenueCat العامة لتفعيلها.',
+    },
+    'pro_sign_in_required': {
+      'en': 'Sign in to subscribe to Streetlore Pro.',
+      'ar': 'سجّل الدخول للاشتراك في ستريت لور برو.',
+    },
+    'pro_offering_unavailable': {
+      'en': 'This purchase option is not available right now.',
+      'ar': 'خيار الشراء هذا غير متاح حاليًا.',
+    },
+    'pro_purchase_success': {
+      'en': 'Streetlore Pro is active. Enjoy exploring!',
+      'ar': 'تم تفعيل ستريت لور برو. استمتع بالاكتشاف!',
+    },
+    'pro_purchase_pending': {
+      'en': 'Purchase received. Pro access will activate after verification.',
+      'ar': 'تم استلام الشراء. سيتم تفعيل برو بعد التحقق.',
+    },
+    'pro_purchase_failed': {
+      'en': 'The purchase could not be completed. Please try again.',
+      'ar': 'تعذر إكمال عملية الشراء. حاول مرة أخرى.',
+    },
     'tour_about': {'en': 'About this Tour', 'ar': 'عن هذه الجولة'},
     'tour_itinerary': {'en': 'Tour Itinerary', 'ar': 'خط سير الجولة'},
     'tour_stops_count': {'en': '{n} stops', 'ar': '{n} محطة'},

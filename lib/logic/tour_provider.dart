@@ -141,6 +141,8 @@ class TourProvider extends ChangeNotifier {
       durationAr: json['duration_ar'] as String?,
       imageUrl: (json['image_url'] as String?) ?? '',
       status: (json['status'] as String?) ?? 'published',
+      isPremium: (json['is_premium'] as bool?) ?? false,
+      isHiddenGem: (json['is_hidden_gem'] as bool?) ?? false,
       places: places,
     );
   }
