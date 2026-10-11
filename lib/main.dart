@@ -84,7 +84,7 @@ Future<void> main() async {
   gamification.syncWithAuth(auth);
 
   final streak = StreakProvider();
-  streak.setUserId(auth.userId);
+  await streak.setUserId(auth.userId);
   final achievements = AchievementProvider(
     auth: auth,
     gam: gamification,
@@ -99,11 +99,13 @@ Future<void> main() async {
   gamification.bindHelpers(streak: streak, achievements: achievements);
 
   Future<void> bootstrapFromSupabase(String userId) async {
+    await streak.setUserId(userId);
     await Future.wait([
       placeProvider.bootstrapForUser(userId),
       tourProvider.bootstrapForUser(userId),
       gamification.bootstrapForUser(userId),
       tripProvider.refreshVisited(),
+      streak.refreshFromRemote(),
     ]);
     achievements.refreshFromStats();
   }
@@ -115,6 +117,7 @@ Future<void> main() async {
     if (id.isEmpty) {
       _lastBootstrappedUserId = null;
       tourProvider.clearCheckedInPlaces();
+      unawaited(streak.setUserId(''));
       return;
     }
     if (id == _lastBootstrappedUserId) return;

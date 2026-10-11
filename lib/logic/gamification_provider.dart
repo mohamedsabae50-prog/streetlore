@@ -319,7 +319,32 @@ class GamificationProvider extends ChangeNotifier {
           SupabaseService.instance.clientOrNull?.auth.currentUser?.id ?? '';
       if (userId.isNotEmpty) {
         try {
-          await SupabaseService.instance.deleteCheckin(userId, placeId);
+          final deleted = await SupabaseService.instance.deleteCheckin(
+            userId,
+            placeId,
+          );
+          if (deleted) {
+            await _streak?.refreshFromRemote();
+            final streak = _streak;
+            if (streak != null) {
+              _stats = _stats.copyWith(
+                currentStreak: streak.currentStreak,
+                longestStreak: streak.longestStreak,
+                totalVisitDays: streak.totalVisitDays,
+                lastVisitDate: streak.lastVisitDate,
+                clearLastVisitDate: streak.lastVisitDate == null,
+              );
+              _achievements?.refreshFromStats();
+              _stats = _stats.copyWith(badges: _stats.badges);
+              await _save();
+              notifyListeners();
+            }
+          } else {
+            debugPrint(
+              'GamificationProvider.reverseAction: deleteCheckin failed '
+              'for userId=$userId placeId=$placeId',
+            );
+          }
         } catch (e) {
           debugPrint(
             'GamificationProvider.reverseAction: deleteCheckin FAILED '

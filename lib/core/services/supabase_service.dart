@@ -208,6 +208,34 @@ class SupabaseService {
     }
   }
 
+  Future<List<DateTime>?> pullCheckinTimestamps(String userId) async {
+    if (_client == null || userId.isEmpty) return null;
+    const pageSize = 1000;
+    final timestamps = <DateTime>[];
+    var offset = 0;
+    try {
+      while (true) {
+        final rows = await _client!
+            .from('place_checkins')
+            .select('checked_in_at')
+            .eq('user_id', userId)
+            .order('checked_in_at')
+            .range(offset, offset + pageSize - 1);
+        final page = rows as List;
+        for (final row in page) {
+          final value = (row as Map<String, dynamic>)['checked_in_at'];
+          if (value is String) timestamps.add(DateTime.parse(value));
+        }
+        if (page.length < pageSize) break;
+        offset += page.length;
+      }
+      return timestamps;
+    } catch (e) {
+      _logError('pullCheckinTimestamps($userId)', e);
+      return null;
+    }
+  }
+
   Future<({int savedPlaces, int checkIns})> countUserRows(String userId) async {
     if (_client == null || userId.isEmpty) {
       return (savedPlaces: 0, checkIns: 0);

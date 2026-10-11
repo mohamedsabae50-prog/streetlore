@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/services/supabase_service.dart';
+
 /// StreakProvider tracks the user's DAILY activity, not the total
 /// number of visits.
 ///
@@ -25,7 +27,15 @@ class StreakProvider extends ChangeNotifier {
   Set<String> _visitedDates = <String>{};
   String _userId = '';
 
-  int get currentStreak => _currentStreak;
+  int get currentStreak {
+    final lastVisit = _lastVisitDate;
+    if (lastVisit == null ||
+        _calendarDayDifference(DateTime.now(), lastVisit) > 1) {
+      return 0;
+    }
+    return _currentStreak;
+  }
+
   int get longestStreak => _longestStreak;
   DateTime? get lastVisitDate => _lastVisitDate;
   int get totalVisitDays => _totalVisitDays;
@@ -37,12 +47,8 @@ class StreakProvider extends ChangeNotifier {
     return _dateOnly(_lastVisitDate!) == today;
   }
 
-  StreakProvider() {
-    _load();
-  }
-
   Future<void> setUserId(String userId) async {
-    if (userId.isEmpty || userId == _userId) return;
+    if (userId == _userId) return;
     await _save();
     _userId = userId;
     _currentStreak = 0;
@@ -50,13 +56,14 @@ class StreakProvider extends ChangeNotifier {
     _totalVisitDays = 0;
     _visitedDates = <String>{};
     _lastVisitDate = null;
-    await _load();
+    if (userId.isNotEmpty) await _load(userId);
     notifyListeners();
   }
 
-  Future<void> _load() async {
+  Future<void> _load(String userId) async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
+    if (_userId != userId) return;
+    final raw = prefs.getString('$_kPrefix$userId');
     if (raw == null) return;
     try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
@@ -109,44 +116,24 @@ class StreakProvider extends ChangeNotifier {
   /// Returns the current streak after the call.
   Future<int> registerVisit({DateTime? when}) async {
     if (_userId.isEmpty) return _currentStreak;
-    final t = when ?? DateTime.now();
-    final day = _dateOnly(t);
-    final key = _dateKey(day);
-
-    if (_visitedDates.contains(key)) {
-      // Same calendar day — idempotent.
-      _lastVisitDate = day;
-      await _save();
-      notifyListeners();
-      return _currentStreak;
-    }
-
-    _visitedDates.add(key);
-    _totalVisitDays = _visitedDates.length;
-
-    if (_lastVisitDate == null) {
-      _currentStreak = 1;
-    } else {
-      final lastDay = _dateOnly(_lastVisitDate!);
-      final diff = day.difference(lastDay).inDays;
-      if (diff == 1) {
-        _currentStreak += 1;
-      } else if (diff <= 0) {
-        // Should not happen (we already checked visitedDates.contains)
-        // but treat defensively as no-op for streak length.
-        _currentStreak = (_currentStreak == 0) ? 1 : _currentStreak;
-      } else {
-        _currentStreak = 1;
-      }
-    }
-
-    if (_currentStreak > _longestStreak) {
-      _longestStreak = _currentStreak;
-    }
-    _lastVisitDate = day;
+    final day = _dateOnly(when ?? DateTime.now());
+    if (!_visitedDates.add(_dateKey(day))) return currentStreak;
+    _recomputeDerivedStats();
     await _save();
     notifyListeners();
-    return _currentStreak;
+    return currentStreak;
+  }
+
+  /// Reloads the authoritative check-in history for the current signed-in
+  /// user. A null result means the server was unavailable; keep local state.
+  Future<void> refreshFromRemote() async {
+    final userId = _userId;
+    if (userId.isEmpty) return;
+    final timestamps = await SupabaseService.instance.pullCheckinTimestamps(
+      userId,
+    );
+    if (timestamps == null || _userId != userId) return;
+    await recomputeFromTimestamps(timestamps);
   }
 
   /// Recompute the streak and totalVisitDays from an arbitrary set
@@ -155,30 +142,53 @@ class StreakProvider extends ChangeNotifier {
   Future<void> recomputeFromTimestamps(Iterable<DateTime> visits) async {
     if (_userId.isEmpty) return;
     final days = <String>{};
-    DateTime? latest;
     for (final v in visits) {
-      final d = _dateOnly(v);
-      days.add(_dateKey(d));
-      if (latest == null || d.isAfter(latest)) latest = d;
+      final localVisit = v.isUtc ? v.toLocal() : v;
+      days.add(_dateKey(_dateOnly(localVisit)));
     }
     _visitedDates = days;
-    _totalVisitDays = days.length;
-    _lastVisitDate = latest;
-    _currentStreak = _computeStreakFromDays(days, latest);
-    if (_currentStreak > _longestStreak) _longestStreak = _currentStreak;
+    _recomputeDerivedStats();
     await _save();
     notifyListeners();
   }
 
+  void _recomputeDerivedStats() {
+    _totalVisitDays = _visitedDates.length;
+    final sortedDays = _visitedDates.toList()..sort();
+    _lastVisitDate = sortedDays.isEmpty
+        ? null
+        : DateTime.parse(sortedDays.last);
+    _currentStreak = _computeStreakFromDays(_visitedDates, _lastVisitDate);
+    _longestStreak = _computeLongestStreak(sortedDays);
+  }
+
   int _computeStreakFromDays(Set<String> days, DateTime? anchor) {
     if (days.isEmpty || anchor == null) return 0;
+    if (_calendarDayDifference(DateTime.now(), anchor) > 1) return 0;
     var count = 0;
     var cursor = _dateOnly(anchor);
     while (days.contains(_dateKey(cursor))) {
       count += 1;
-      cursor = cursor.subtract(const Duration(days: 1));
+      cursor = DateTime.utc(cursor.year, cursor.month, cursor.day - 1);
     }
     return count;
+  }
+
+  int _computeLongestStreak(List<String> sortedDays) {
+    var longest = 0;
+    var current = 0;
+    DateTime? previous;
+    for (final key in sortedDays) {
+      final day = DateTime.parse(key);
+      if (previous == null || _calendarDayDifference(day, previous) != 1) {
+        current = 1;
+      } else {
+        current += 1;
+      }
+      if (current > longest) longest = current;
+      previous = day;
+    }
+    return longest;
   }
 
   void reset() {
@@ -191,7 +201,13 @@ class StreakProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+  int _calendarDayDifference(DateTime later, DateTime earlier) {
+    final laterDay = DateTime.utc(later.year, later.month, later.day);
+    final earlierDay = DateTime.utc(earlier.year, earlier.month, earlier.day);
+    return laterDay.difference(earlierDay).inDays;
+  }
+
+  DateTime _dateOnly(DateTime d) => DateTime.utc(d.year, d.month, d.day);
   String _dateKey(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-'
       '${d.month.toString().padLeft(2, '0')}-'

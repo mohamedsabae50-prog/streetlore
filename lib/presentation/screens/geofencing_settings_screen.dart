@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/city_coordinates.dart';
 import '../../core/services/geofencing_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
@@ -15,8 +16,69 @@ import '../../logic/geofence_provider.dart';
 import '../../logic/place_provider.dart';
 import 'privacy_policy_screen.dart';
 
-class GeofencingSettingsScreen extends StatelessWidget {
+class GeofencingSettingsScreen extends StatefulWidget {
   const GeofencingSettingsScreen({super.key});
+
+  @override
+  State<GeofencingSettingsScreen> createState() =>
+      _GeofencingSettingsScreenState();
+}
+
+class _GeofencingSettingsScreenState extends State<GeofencingSettingsScreen> {
+  Position? _currentPosition;
+  StreamSubscription<Position>? _positionSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_watchCurrentLocation());
+  }
+
+  Future<void> _watchCurrentLocation() async {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) return;
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.unableToDetermine) {
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low,
+        timeLimit: const Duration(seconds: 10),
+      );
+      if (!mounted) return;
+      setState(() => _currentPosition = position);
+      _positionSubscription = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+          distanceFilter: 50,
+        ),
+      ).listen(
+        (position) {
+          if (mounted) setState(() => _currentPosition = position);
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          debugPrint(
+            'GeofencingSettingsScreen: location stream failed: '
+            '$error\n$stackTrace',
+          );
+        },
+      );
+    } catch (error, stackTrace) {
+      debugPrint(
+        'GeofencingSettingsScreen: current location unavailable: '
+        '$error\n$stackTrace',
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_positionSubscription?.cancel());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -178,6 +240,7 @@ class GeofencingSettingsScreen extends StatelessWidget {
                   enabled: geo.alerts.any(
                     (a) => a.placeId == place.id && a.enabled,
                   ),
+                  currentPosition: _currentPosition,
                   onToggle: () {
                     final existing = geo.alerts.firstWhere(
                       (a) => a.placeId == place.id,
@@ -265,24 +328,31 @@ class _MonitoringTile extends StatelessWidget {
 class _PlaceToggle extends StatelessWidget {
   final PlaceModel place;
   final bool enabled;
+  final Position? currentPosition;
   final VoidCallback onToggle;
   const _PlaceToggle({
     required this.place,
     required this.enabled,
+    required this.currentPosition,
     required this.onToggle,
   });
 
   @override
   Widget build(BuildContext context) {
-    final distanceKm =
-        (Geolocator.distanceBetween(
-                  alexandriaCenterLat,
-                  alexandriaCenterLng,
-                  place.lat,
-                  place.lng,
-                ) /
-                1000)
-            .toStringAsFixed(1);
+    final position = currentPosition;
+    final distanceText = position == null
+        ? null
+        : context.tr(
+            'geo_distance',
+            {
+              'd': (Geolocator.distanceBetween(
+                position.latitude,
+                position.longitude,
+                place.lat,
+                place.lng,
+              ) / 1000).toStringAsFixed(1),
+            },
+          );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -347,10 +417,11 @@ class _PlaceToggle extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      context.tr('geo_distance', {'d': distanceKm}),
-                      style: TextStyle(color: context.textSec, fontSize: 11),
-                    ),
+                    if (distanceText != null)
+                      Text(
+                        distanceText,
+                        style: TextStyle(color: context.textSec, fontSize: 11),
+                      ),
                   ],
                 ),
               ),
