@@ -831,17 +831,41 @@ class AppStrings {
       'en': 'Exclusive Pro Badges',
       'ar': 'شارات برو حصرية',
     },
+    'pro_benefits_title': {
+      'en': 'Included with Pro',
+      'ar': 'مزايا برو',
+    },
     'pro_monthly': {
       'en': 'Monthly Subscription',
       'ar': 'اشتراك شهري',
+    },
+    'pro_monthly_description': {
+      'en': 'Perfect for short trips',
+      'ar': 'مثالي للرحلات القصيرة',
     },
     'pro_yearly': {
       'en': 'Yearly Subscription',
       'ar': 'اشتراك سنوي',
     },
+    'pro_yearly_description': {
+      'en': 'Best value for frequent travelers',
+      'ar': 'أفضل قيمة للمسافرين باستمرار',
+    },
     'pro_lifetime': {
       'en': 'Lifetime Access',
       'ar': 'وصول مدى الحياة',
+    },
+    'pro_lifetime_description': {
+      'en': 'Pay once, explore forever',
+      'ar': 'ادفع مرة واحدة واستكشف إلى الأبد',
+    },
+    'pro_best_value': {
+      'en': 'BEST VALUE',
+      'ar': 'أفضل قيمة',
+    },
+    'pro_one_time': {
+      'en': 'ONE-TIME',
+      'ar': 'مرة واحدة',
     },
     'pro_store_note': {
       'en': 'Secure purchase through the App Store or Google Play.',

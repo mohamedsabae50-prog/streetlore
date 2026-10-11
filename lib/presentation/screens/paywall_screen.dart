@@ -130,7 +130,6 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final benefits = [
       context.tr('pro_benefit_hidden_gems'),
       context.tr('pro_benefit_premium_tours'),
@@ -192,128 +191,80 @@ class _PaywallScreenState extends State<PaywallScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            for (final benefit in benefits)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 15),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.check_circle_rounded,
-                      color: AppColors.success,
-                      size: 22,
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: context.cardColor,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: context.borderColor),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.tr('pro_benefits_title'),
+                    style: TextStyle(
+                      color: context.textPri,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        benefit,
-                        textAlign: isArabic ? TextAlign.right : TextAlign.left,
-                        style: TextStyle(
-                          color: context.textPri,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                  ),
+                  const SizedBox(height: 16),
+                  for (var i = 0; i < benefits.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 13),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.success,
+                          size: 21,
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            benefits[i],
+                            style: TextStyle(
+                              color: context.textPri,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                ),
+                ],
               ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed:
-                  _loading ||
-                      _loadingPackages ||
-                      !RevenueCatService.instance.isConfigured
-                  ? null
-                  : () => _purchase(PackageType.monthly),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: _loading
-                  ? const SizedBox.square(
-                      dimension: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : RevenueCatService.instance.isConfigured
-                  ? _packageLabel(
-                      context.tr('pro_monthly'),
-                      _monthlyPackage,
-                    )
-                  : Text(
-                      context.tr('pro_coming_soon'),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
             ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed:
-                  _loading ||
-                      _loadingPackages ||
-                      !RevenueCatService.instance.isConfigured
-                  ? null
-                  : () => _purchase(PackageType.annual),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                minimumSize: const Size.fromHeight(56),
-                side: BorderSide(color: context.hintColor),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: RevenueCatService.instance.isConfigured
-                  ? _packageLabel(
-                      context.tr('pro_yearly'),
-                      _yearlyPackage,
-                    )
-                  : Text(
-                      context.tr('pro_coming_soon'),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+            const SizedBox(height: 26),
+            _planCard(
+              type: PackageType.monthly,
+              title: context.tr('pro_monthly'),
+              description: context.tr('pro_monthly_description'),
+              package: _monthlyPackage,
+              icon: Icons.calendar_month_rounded,
+              accent: AppColors.primary,
             ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed:
-                  _loading ||
-                      _loadingPackages ||
-                      !RevenueCatService.instance.isConfigured
-                  ? null
-                  : () => _purchase(PackageType.lifetime),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                minimumSize: const Size.fromHeight(56),
-                side: BorderSide(color: context.hintColor),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: RevenueCatService.instance.isConfigured
-                  ? _packageLabel(
-                      context.tr('pro_lifetime'),
-                      _lifetimePackage,
-                    )
-                  : Text(
-                      context.tr('pro_coming_soon'),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+            const SizedBox(height: 14),
+            _planCard(
+              type: PackageType.annual,
+              title: context.tr('pro_yearly'),
+              description: context.tr('pro_yearly_description'),
+              package: _yearlyPackage,
+              icon: Icons.flight_takeoff_rounded,
+              accent: AppColors.ratingGold,
+              badge: context.tr('pro_best_value'),
+              featured: true,
+            ),
+            const SizedBox(height: 14),
+            _planCard(
+              type: PackageType.lifetime,
+              title: context.tr('pro_lifetime'),
+              description: context.tr('pro_lifetime_description'),
+              package: _lifetimePackage,
+              icon: Icons.all_inclusive_rounded,
+              accent: const Color(0xFF8B5CF6),
+              badge: context.tr('pro_one_time'),
             ),
             const SizedBox(height: 12),
             Text(
@@ -325,6 +276,143 @@ class _PaywallScreenState extends State<PaywallScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _planCard({
+    required PackageType type,
+    required String title,
+    required String description,
+    required Package? package,
+    required IconData icon,
+    required Color accent,
+    String? badge,
+    bool featured = false,
+  }) {
+    final isConfigured = RevenueCatService.instance.isConfigured;
+    final isLoading = _loading || _loadingPackages;
+    final label = isConfigured
+        ? _packageLabel(title, package)
+        : Text(
+            context.tr('pro_coming_soon'),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+          );
+
+    return Container(
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: featured
+            ? (context.isDark
+                  ? const Color(0xFF302817)
+                  : const Color(0xFFFFFBEB))
+            : context.cardColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: accent.withValues(alpha: featured ? 0.75 : 0.32),
+          width: featured ? 1.7 : 1,
+        ),
+        boxShadow: featured
+            ? [
+                BoxShadow(
+                  color: accent.withValues(alpha: 0.12),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.13),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: accent, size: 24),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: context.textPri,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        color: context.textSec,
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (badge != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    badge,
+                    style: TextStyle(
+                      color: accent,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: !isConfigured || isLoading
+                  ? null
+                  : () => _purchase(type),
+              style: FilledButton.styleFrom(
+                backgroundColor: accent,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: accent.withValues(alpha: 0.72),
+                disabledForegroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+              child: _loading
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : label,
+            ),
+          ),
+        ],
       ),
     );
   }
