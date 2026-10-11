@@ -803,8 +803,8 @@ class AppStrings {
     'tour_free': {'en': 'Free', 'ar': 'مجاني'},
     'tour_pro': {'en': 'Streetlore Pro', 'ar': 'ستريت لور برو'},
     'tour_pro_locked': {
-      'en': 'This tour is part of Streetlore Pro.',
-      'ar': 'هذه الجولة متاحة ضمن ستريت لور برو.',
+      'en': 'This tour is part of Streetlore Pro. Hidden Gems and Premium Tours are for Pro members.',
+      'ar': 'هذه الجولة متاحة ضمن ستريت لور برو. الجواهر المخفية والجولات المميزة حصرية لأعضاء برو.',
     },
     'pro_title': {'en': 'Streetlore Pro', 'ar': 'ستريت لور برو'},
     'pro_subtitle': {
@@ -812,8 +812,12 @@ class AppStrings {
       'ar': 'اكتشف المزيد من الحكايات وراء مدينتك.',
     },
     'pro_benefit_hidden_gems': {
-      'en': 'Unlock Hidden Gems Tours',
-      'ar': 'افتح جولات الجواهر المخفية',
+      'en': 'Hidden Gems and Premium Tours',
+      'ar': 'الجواهر المخفية والجولات المميزة',
+    },
+    'pro_benefit_premium_tours': {
+      'en': 'Curated Premium Tours from local experts',
+      'ar': 'جولات مميزة مختارة من خبراء محليين',
     },
     'pro_benefit_ai': {
       'en': '50 AI Questions daily',

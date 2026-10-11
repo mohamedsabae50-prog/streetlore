@@ -133,6 +133,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final benefits = [
       context.tr('pro_benefit_hidden_gems'),
+      context.tr('pro_benefit_premium_tours'),
       context.tr('pro_benefit_ai'),
       context.tr('pro_benefit_offline'),
       context.tr('pro_benefit_badges'),

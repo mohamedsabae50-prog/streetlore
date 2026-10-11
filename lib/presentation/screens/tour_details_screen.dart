@@ -48,6 +48,24 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
           ),
         );
     _recordTourView();
+    _maybeShowProGate();
+  }
+
+  void _maybeShowProGate() {
+    if (!mounted) return;
+    if (!widget.tour.requiresPro) return;
+    if (context.read<AuthProvider>().isPro) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (context.read<AuthProvider>().isPro) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('tour_pro_locked'))),
+      );
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
+      );
+    });
   }
 
   Future<void> _recordTourView() async {
