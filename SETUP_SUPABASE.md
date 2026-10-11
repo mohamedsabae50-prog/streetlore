@@ -111,7 +111,7 @@ Open http://localhost:8081 and log in with the email/password you created in ste
 - **Users** — search Auth accounts by name or email and remove inappropriate accounts
 - **Official place images** — add, reorder, and remove multiple image URLs; mobile Place Details shows them in a swipeable carousel
 
-The project does not have a public profiles table: user accounts are stored in Supabase Auth, with names in Auth user metadata. Deploy the protected admin-user-management Edge Function from the project root before using the Users screen:
+User accounts are stored in Supabase Auth, with names in Auth user metadata. The `profiles` table stores the RevenueCat Pro entitlement used by the AI quota; users with no profile or an unverified entitlement are treated as free users. Deploy the protected admin-user-management Edge Function from the project root before using the Users screen:
 
 ```bash
 supabase functions deploy admin-user-management --no-verify-jwt --project-ref tbivoxyxclwjjspwsgvc
@@ -129,7 +129,7 @@ All Flutter Gemini requests use the `ai-proxy` Edge Function; no Gemini credenti
 - `GEMINI_OAUTH_ACCESS_TOKEN` accepts a bearer access token, but these tokens expire and must be rotated.
 - `GEMINI_API_KEY` remains supported for standard Gemini API keys.
 
-Apply `supabase/migrations/2026_10_14_ai_quota_streaming.sql` in the Supabase SQL Editor before deploying the proxy. It installs the atomic rolling 24-hour quota RPC and caps each non-admin user at 15 requests. Chat requests opt into Gemini Server-Sent Events for incremental rendering; other AI requests keep the regular JSON response.
+Apply `supabase/migrations/2026_10_14_ai_quota_streaming.sql` and then `supabase/migrations/2026_10_15_freemium_revenuecat.sql` in the Supabase SQL Editor before deploying the proxy. The first migration installs the atomic rolling 24-hour quota table and RPC; the second replaces the RPC with the one-argument signature used by `ai-proxy` and sets the quota to 3 requests per 24 hours for free users and 50 for users whose RevenueCat Pro entitlement has been synced to `profiles`. A missing profile or an `is_pro` value other than `true` receives the free quota, so RevenueCat initialization or verification is not required for free-tier users. If only the first migration has been applied, the RPC signature does not match the Edge Function and quota requests fail with `quota_unavailable` (HTTP 503). Chat requests opt into Gemini Server-Sent Events for incremental rendering; other AI requests keep the regular JSON response.
 
 Deploy the proxy after setting the secret:
 
