@@ -11,7 +11,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/constants/app_colors.dart';
-import '../../l10n/app_strings.dart';
 
 final Uint8List _kTransparentPng = Uint8List.fromList(<int>[
   0x89,
@@ -120,7 +119,6 @@ class _MapScreenState extends State<MapScreen> {
   LatLng? _currentLocation;
   List<LatLng> _routePoints = [];
   bool _isLoading = true;
-  String _errorMessage = '';
 
   StreamSubscription<Position>? _positionSub;
   final MapController _mapController = MapController();
@@ -188,13 +186,13 @@ class _MapScreenState extends State<MapScreen> {
             ).listen(_onPositionUpdate);
           }
         } else {
-          _errorMessage = context.tr('map_err_location');
+          // Location services disabled; route will fall back below.
         }
       } else {
-        _errorMessage = context.tr('map_err_location_denied');
+        // Location permission denied; route will fall back below.
       }
     } catch (e) {
-      _errorMessage = context.tr('map_err_location');
+      debugPrint('MapScreen: failed to read current location: $e');
     }
 
     if (!mounted) return;
@@ -334,7 +332,6 @@ class _MapScreenState extends State<MapScreen> {
       debugPrint('OSRM Error: $e');
       if (!mounted) return;
       setState(() {
-        _errorMessage = context.tr('map_err_route');
         final List<LatLng> fallbackRoute = [];
         for (var i = 0; i < waypoints.length; i++) {
           fallbackRoute.add(LatLng(waypoints[i].lat, waypoints[i].lng));
