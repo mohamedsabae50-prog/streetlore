@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/offline_storage_service.dart';
 import '../../core/widgets/app_image.dart';
 import '../../core/services/social_share_service.dart';
 import '../../data/models/place_photo.dart';
@@ -284,6 +287,7 @@ class PlacePhotosSection extends StatelessWidget {
           }
           return _PhotoCard(
             photo: photo,
+            placeId: place.id,
             canDelete: context.read<AuthProvider>().owns(photo.userId),
             onShare: () => _sharePhoto(context, photo),
             onLike: () {
@@ -303,12 +307,14 @@ class PlacePhotosSection extends StatelessWidget {
 
 class _PhotoCard extends StatelessWidget {
   final PlacePhoto photo;
+  final String placeId;
   final bool canDelete;
   final VoidCallback onShare;
   final VoidCallback onLike;
   final VoidCallback onDelete;
   const _PhotoCard({
     required this.photo,
+    required this.placeId,
     required this.canDelete,
     required this.onShare,
     required this.onLike,
@@ -319,6 +325,31 @@ class _PhotoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<PlacePhotosProvider>();
     final liked = photo.isLikedBy(provider.currentUserId);
+    final image = AppImage.isNetwork(photo.imageUrl)
+        ? FutureBuilder<File?>(
+            future: OfflineStorageService.instance.getCachedImageFile(
+              placeId,
+              photo.imageUrl,
+            ),
+            builder: (context, snapshot) {
+              final file = snapshot.data;
+              if (file != null) {
+                return Image.file(
+                  file,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      _networkPhotoImage(),
+                );
+              }
+              return _networkPhotoImage();
+            },
+          )
+        : AppImage(
+            source: photo.imageUrl,
+            fit: BoxFit.cover,
+            fallbackIcon: Icons.broken_image_rounded,
+            memCacheWidth: 320,
+          );
     return Container(
       width: 160,
       decoration: BoxDecoration(
@@ -336,12 +367,7 @@ class _PhotoCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            AppImage(
-              source: photo.imageUrl,
-              fit: BoxFit.cover,
-              fallbackIcon: Icons.broken_image_rounded,
-              memCacheWidth: 320,
-            ),
+            image,
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -454,6 +480,13 @@ class _PhotoCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _networkPhotoImage() => AppImage(
+    source: photo.imageUrl,
+    fit: BoxFit.cover,
+    fallbackIcon: Icons.broken_image_rounded,
+    memCacheWidth: 320,
+  );
 }
 
 class _PhotoActionButton extends StatelessWidget {

@@ -76,7 +76,7 @@ async function listUsers(query: string, page: number, perPage: number) {
         name: displayName(user),
         created_at: user.created_at,
       }));
-    return { users, has_more: data.users.length === perPage };
+    return { users: await includeProStatus(users), has_more: data.users.length === perPage };
   }
 
   const matches: Array<{
@@ -113,8 +113,36 @@ async function listUsers(query: string, page: number, perPage: number) {
 
   const start = (page - 1) * perPage;
   return {
-    users: matches.slice(start, start + perPage),
+    users: await includeProStatus(matches.slice(start, start + perPage)),
     has_more: matches.length > start + perPage,
+  };
+}
+
+async function includeProStatus<T extends { id: string }>(users: T[]) {
+  if (!users.length) return users;
+  const { data, error } = await admin
+    .from("profiles")
+    .select("user_id, is_pro")
+    .in("user_id", users.map((user) => user.id));
+  if (error) throw error;
+  const statuses = new Map(
+    (data ?? []).map((profile) => [profile.user_id, profile.is_pro === true]),
+  );
+  return users.map((user) => ({ ...user, is_pro: statuses.get(user.id) ?? false }));
+}
+
+async function listChatLogs(page: number, perPage: number) {
+  const from = (page - 1) * perPage;
+  const { data, error, count } = await admin
+    .from("ai_chat_logs")
+    .select("id, user_id, user_prompt, ai_response, created_at", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, from + perPage - 1);
+  if (error) throw error;
+
+  return {
+    logs: data ?? [],
+    has_more: (count ?? 0) > from + (data?.length ?? 0),
   };
 }
 
@@ -215,6 +243,51 @@ serve(async (req: Request): Promise<Response> => {
       console.error("admin-user-management: list users failed:", error);
       return json({ error: "list_users_failed" }, 500);
     }
+  }
+
+  if (body.action === "chat_logs") {
+    const requestedPage = Number(body.page);
+    const page = Number.isInteger(requestedPage) && requestedPage > 0
+      ? requestedPage
+      : 1;
+    const requestedPerPage = Number(body.per_page);
+    const perPage = Number.isInteger(requestedPerPage)
+      ? Math.min(Math.max(requestedPerPage, 1), 100)
+      : 50;
+    try {
+      return json(await listChatLogs(page, perPage));
+    } catch (error) {
+      console.error("admin-user-management: list chat logs failed:", error);
+      return json({ error: "list_chat_logs_failed" }, 500);
+    }
+  }
+
+  if (body.action === "set_pro") {
+    const userId = typeof body.user_id === "string" ? body.user_id.trim() : "";
+    if (!userId) return json({ error: "user_id_required" }, 400);
+    if (userId === caller.id) {
+      return json({ error: "cannot_change_own_admin_account" }, 400);
+    }
+    const { data: target, error: targetError } =
+      await admin.auth.admin.getUserById(userId);
+    if (targetError || !target.user) {
+      return json({ error: "user_not_found" }, 404);
+    }
+    if ((target.user.email ?? "").toLowerCase().trim() === ADMIN_EMAIL) {
+      return json({ error: "cannot_change_admin_account" }, 400);
+    }
+
+    const isPro = body.is_pro === true;
+    const { error } = await admin.from("profiles").upsert({
+      user_id: userId,
+      is_pro: isPro,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
+    if (error) {
+      console.error("admin-user-management: update Pro status failed:", error);
+      return json({ error: "update_pro_status_failed" }, 500);
+    }
+    return json({ ok: true, user_id: userId, is_pro: isPro });
   }
 
   if (body.action === "delete") {

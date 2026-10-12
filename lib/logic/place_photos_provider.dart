@@ -34,8 +34,8 @@ class PlacePhotosProvider extends ChangeNotifier {
   }
 
   Future<void> _initialize() async {
+    await _loadLocal();
     if (SupabaseService.instance.clientOrNull == null) {
-      await _loadLocal();
       return;
     }
     await refreshFromSupabase();

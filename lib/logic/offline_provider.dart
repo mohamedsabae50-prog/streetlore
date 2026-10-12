@@ -185,13 +185,19 @@ class OfflineProvider extends ChangeNotifier {
   
   
   
-  Future<DownloadResult> downloadSinglePlace(PlaceModel place) async {
+  Future<DownloadResult> downloadSinglePlace(
+    PlaceModel place, {
+    List<String> additionalImageUrls = const [],
+  }) async {
     try {
       
       
       await _storage.cachePlaces([place]);
       
-      final imgResult = await _storage.prefetchImages([place]);
+      final imgResult = await _storage.prefetchImages(
+        [place],
+        additionalImageUrls: {place.id: additionalImageUrls},
+      );
       _cachedPlaces = _storage.getCachedPlaces();
       notifyListeners();
       debugPrint(
@@ -226,8 +232,7 @@ class OfflineProvider extends ChangeNotifier {
     final i = _instance;
     if (i == null) return;
     
-    final box = await (i._storage).boxForPlaces;
-    await box.delete(placeId);
+    await i._storage.removeCachedPlace(placeId);
     _cachedPlaces = _storage.getCachedPlaces();
     notifyListeners();
   }

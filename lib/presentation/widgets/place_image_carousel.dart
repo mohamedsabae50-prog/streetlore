@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../core/services/offline_storage_service.dart';
 
 /// A swipable horizontal image carousel for places with multiple
 /// official images. Falls back to a single static image when
 /// [images] has only one entry (no carousel UI, no indicator).
 class PlaceImageCarousel extends StatefulWidget {
   final List<String> images;
+  final String? placeId;
   final BoxFit fit;
   final double height;
   final BorderRadius? borderRadius;
@@ -20,6 +24,7 @@ class PlaceImageCarousel extends StatefulWidget {
   const PlaceImageCarousel({
     super.key,
     required this.images,
+    this.placeId,
     this.fit = BoxFit.cover,
     this.height = 320,
     this.borderRadius,
@@ -111,16 +116,11 @@ class _PlaceImageCarouselState extends State<PlaceImageCarousel> {
             top: 12,
             right: 12,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 9,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
               child: Text(
                 '${_index + 1} / ${urls.length}',
@@ -161,7 +161,7 @@ class _PlaceImageCarouselState extends State<PlaceImageCarousel> {
     required Object? heroTag,
     required bool useHero,
   }) {
-    Widget img = CachedNetworkImage(
+    final networkImage = CachedNetworkImage(
       imageUrl: url,
       fit: widget.fit,
       placeholder: (_, __) => Container(color: Colors.black12),
@@ -178,6 +178,24 @@ class _PlaceImageCarouselState extends State<PlaceImageCarousel> {
             ),
           ),
     );
+    Widget img = networkImage;
+    final placeId = widget.placeId;
+    if (placeId != null) {
+      img = FutureBuilder<File?>(
+        future: OfflineStorageService.instance.getCachedImageFile(placeId, url),
+        builder: (context, snapshot) {
+          final file = snapshot.data;
+          if (file != null) {
+            return Image.file(
+              file,
+              fit: widget.fit,
+              errorBuilder: (_, __, ___) => networkImage,
+            );
+          }
+          return networkImage;
+        },
+      );
+    }
     if (useHero && heroTag != null) {
       img = Hero(tag: heroTag, child: img);
     }

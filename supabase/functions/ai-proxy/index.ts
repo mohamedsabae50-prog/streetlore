@@ -16,9 +16,9 @@
 //   { "error": "...", "code": "DAILY_LIMIT_EXCEEDED" | "UNAUTHORIZED" | "BAD_REQUEST" }
 //
 // Quota enforcement:
-//   - 3 calls / 24h for free users and 50 for Pro (enforced in SQL).
+//   - 3 calls per UTC calendar day for free users and 50 for Pro (enforced in SQL).
 //   - Admins (auth.jwt()->email = admin email) bypass the quota.
-//   - The database RPC atomically tracks requests in a rolling 24-hour window.
+//   - public.consume_ai_quota(p_user_id text) returns whether a call is allowed.
 //
 // To deploy:
 //   supabase functions deploy ai-proxy --no-verify-jwt --project-ref tbivoxyxclwjjspwsgvc
@@ -208,6 +208,66 @@ async function isAdmin(userId: string): Promise<boolean> {
   return ((data.user.email ?? "").toLowerCase().trim()) === ADMIN_EMAIL;
 }
 
+function promptFromBody(body: unknown): string {
+  if (!body || typeof body !== "object") return "";
+  const contents = (body as { contents?: unknown }).contents;
+  if (!Array.isArray(contents)) return "";
+  return contents
+    .flatMap((content) => {
+      if (!content || typeof content !== "object") return [];
+      const parts = (content as { parts?: unknown }).parts;
+      if (!Array.isArray(parts)) return [];
+      return parts.flatMap((part) =>
+        part && typeof part === "object" &&
+          typeof (part as { text?: unknown }).text === "string"
+          ? [(part as { text: string }).text]
+          : []
+      );
+    })
+    .join("\n")
+    .trim();
+}
+
+function responseText(value: unknown): string {
+  if (!value || typeof value !== "object") return "";
+  const candidates = (value as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+  }).candidates;
+  return candidates
+    ?.flatMap((candidate) =>
+      candidate.content?.parts?.map((part) => part.text ?? "") ?? []
+    )
+    .join("") ?? "";
+}
+
+function responseTextFromStream(streamText: string): string {
+  const chunks: string[] = [];
+  for (const line of streamText.split(/\r?\n/)) {
+    if (!line.startsWith("data:")) continue;
+    const data = line.slice(5).trim();
+    if (!data || data === "[DONE]") continue;
+    try {
+      chunks.push(responseText(JSON.parse(data)));
+    } catch (error) {
+      console.error("ai-proxy: could not parse streamed response for logging", error);
+    }
+  }
+  return chunks.join("");
+}
+
+async function logInteraction(
+  userId: string,
+  prompt: string,
+  response: string,
+): Promise<void> {
+  const { error } = await admin.from("ai_chat_logs").insert({
+    user_id: userId,
+    user_prompt: prompt,
+    ai_response: response,
+  });
+  if (error) console.error("ai-proxy: failed to log chat interaction:", error);
+}
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
@@ -242,6 +302,7 @@ serve(async (req: Request): Promise<Response> => {
   }
   const model = (body.model as string | undefined) ?? MODEL;
   const streaming = body.stream === true;
+  const prompt = promptFromBody(body);
   delete body.model;
   delete body.stream;
 
@@ -260,10 +321,20 @@ serve(async (req: Request): Promise<Response> => {
     });
   } catch (e) {
     console.error("ai-proxy: upstream authentication or fetch failed:", e);
+    await logInteraction(userId, prompt, JSON.stringify({
+      error: "upstream_unreachable",
+    }));
     return json({ error: "upstream_unreachable", code: "BAD_REQUEST" }, 502);
   }
 
   if (upstream.ok && streaming) {
+    const responseForLogging = upstream.clone();
+    const logging = responseForLogging.text().then((text) =>
+      logInteraction(userId, prompt, responseTextFromStream(text))
+    ).catch((error) => {
+      console.error("ai-proxy: failed to read streamed response for logging:", error);
+    });
+    EdgeRuntime.waitUntil(logging);
     return new Response(upstream.body, {
       status: upstream.status,
       headers: {
@@ -282,6 +353,10 @@ serve(async (req: Request): Promise<Response> => {
   } catch {
     parsed = { raw: text };
   }
+  const aiResponse = typeof parsed === "object" && parsed !== null
+    ? responseText(parsed) || (upstream.ok ? "" : JSON.stringify(parsed))
+    : "";
+  await logInteraction(userId, prompt, aiResponse);
   return new Response(JSON.stringify(parsed), {
     status: upstream.status,
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },

@@ -144,7 +144,9 @@ class OfflineStorageService {
   
   
   Future<({int ok, int failed})> prefetchImages(
-    List<PlaceModel> places,
+    List<PlaceModel> places, {
+    Map<String, List<String>> additionalImageUrls = const {},
+  }
   ) async {
     int ok = 0;
     int failed = 0;
@@ -164,35 +166,43 @@ class OfflineStorageService {
     }
     final manager = DefaultCacheManager();
     for (final p in places) {
-      final url = p.imageUrl.trim();
-      if (url.isEmpty) continue;
-      try {
-        final dir = Directory(
-          '${docs.path}/offline_images/${_safeSegment(p.id)}',
-        );
-        if (!await dir.exists()) {
-          await dir.create(recursive: true);
+      final imageUrls = {
+        ...p.officialImages,
+        ...?additionalImageUrls[p.id],
+      };
+      for (final url in imageUrls) {
+        final cleanUrl = url.trim();
+        if (cleanUrl.isEmpty ||
+            (!cleanUrl.startsWith('http://') &&
+                !cleanUrl.startsWith('https://'))) {
+          continue;
         }
-        final ext = _extForUrl(url);
-        final target = File('${dir.path}/image$ext');
-        // v1.0.78 — DefaultCacheManager (used just for the actual
-        // download + ETag handling) is copied into our PERMANENT
-        // directory so the file survives the OS cache wipe and
-        // app reinstalls that preserve the ApplicationDocumentsDirectory.
-        final info = await manager.downloadFile(url);
-        if (await info.file.exists()) {
-          final bytes = await info.file.readAsBytes();
-          await target.writeAsBytes(bytes, flush: true);
-          ok++;
-        } else {
+        try {
+          final dir = Directory(
+            '${docs.path}/offline_images/${_safeSegment(p.id)}',
+          );
+          if (!await dir.exists()) {
+            await dir.create(recursive: true);
+          }
+          final target = File(
+            '${dir.path}/${_imageFileName(cleanUrl)}',
+          );
+          // Keep permanent copies outside the evictable image cache.
+          final info = await manager.downloadFile(cleanUrl);
+          if (await info.file.exists()) {
+            final bytes = await info.file.readAsBytes();
+            await target.writeAsBytes(bytes, flush: true);
+            ok++;
+          } else {
+            failed++;
+          }
+        } catch (e) {
+          debugPrint(
+            'OfflineStorageService.prefetchImages: failed for '
+            '${p.id} -> $cleanUrl: $e',
+          );
           failed++;
         }
-      } catch (e) {
-        debugPrint(
-          'OfflineStorageService.prefetchImages: failed for '
-          '${p.id} -> $url: $e',
-        );
-        failed++;
       }
     }
     return (ok: ok, failed: failed);
@@ -209,12 +219,41 @@ class OfflineStorageService {
         '${docs.path}/offline_images/${_safeSegment(placeId)}',
       );
       if (!await dir.exists()) return null;
-      final ext = _extForUrl(imageUrl);
-      final f = File('${dir.path}/image$ext');
-      return await f.exists() ? f : null;
+      final f = File('${dir.path}/${_imageFileName(imageUrl)}');
+      if (await f.exists()) return f;
+
+      // Backward compatibility for images cached by earlier app versions.
+      final legacyFile = File('${dir.path}/image${_extForUrl(imageUrl)}');
+      return await legacyFile.exists() ? legacyFile : null;
     } catch (_) {
       return null;
     }
+  }
+
+  Future<void> removeCachedPlace(String placeId) async {
+    if (!_ready) return;
+    await Hive.box(_placesBox).delete(placeId);
+    if (kIsWeb) return;
+    final docs = await getApplicationDocumentsDirectory();
+    final imageDir = Directory(
+      '${docs.path}/offline_images/${_safeSegment(placeId)}',
+    );
+    if (await imageDir.exists()) {
+      await imageDir.delete(recursive: true);
+    }
+  }
+
+  String _imageFileName(String url) {
+    final normalizedUrl = url.trim();
+    return 'image_${_stableHash(normalizedUrl)}${_extForUrl(normalizedUrl)}';
+  }
+
+  String _stableHash(String value) {
+    var hash = 0x811c9dc5;
+    for (final byte in utf8.encode(value)) {
+      hash = ((hash ^ byte) * 0x01000193) & 0xffffffff;
+    }
+    return hash.toRadixString(16).padLeft(8, '0');
   }
 
   /// v1.0.78 — strip characters that would break a filesystem path.

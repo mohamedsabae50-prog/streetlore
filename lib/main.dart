@@ -21,9 +21,11 @@ import 'logic/streak_provider.dart';
 import 'logic/journal_provider.dart';
 import 'logic/achievement_provider.dart';
 import 'presentation/screens/splash_screen.dart';
+import 'presentation/screens/no_internet_screen.dart';
 import 'logic/trip_provider.dart';
 import 'logic/review_provider.dart';
 import 'logic/ai_features_providers.dart';
+import 'logic/connectivity_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -137,6 +139,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: auth),
         ChangeNotifierProvider(create: (_) => ReviewProvider()),
+        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider<TripProvider>.value(value: tripProvider),
         ChangeNotifierProvider<PlaceProvider>.value(value: placeProvider),
@@ -204,7 +207,19 @@ class StreetloreApp extends StatelessWidget {
           builder: (context, child) {
             return _LocaleScope(
               locale: localeProvider.locale,
-              child: child ?? const SizedBox.shrink(),
+              child: Consumer2<AuthProvider, ConnectivityProvider>(
+                builder: (context, auth, connectivity, app) {
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      app ?? const SizedBox.shrink(),
+                      if (!auth.isPro && connectivity.hasInternet == false)
+                        const NoInternetScreen(),
+                    ],
+                  );
+                },
+                child: child,
+              ),
             );
           },
           themeMode: themeProvider.themeMode,

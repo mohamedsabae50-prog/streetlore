@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/checkin_location_service.dart';
+import '../../core/services/app_review_service.dart';
 import '../../core/widgets/app_image.dart';
 import '../../core/widgets/confetti_overlay.dart';
 import '../../core/widgets/shimmer_image.dart';
@@ -21,6 +23,7 @@ import '../../logic/tour_provider.dart';
 import '../../logic/gamification_provider.dart';
 import '../../logic/locale_provider.dart';
 import '../../logic/offline_provider.dart';
+import '../../logic/place_photos_provider.dart';
 import '../../data/models/review_model.dart';
 import '../../l10n/app_strings.dart';
 import '../widgets/add_review_sheet.dart';
@@ -230,6 +233,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                     children: [
                       PlaceImageCarousel(
                         images: place.officialImages,
+                        placeId: place.id,
                         height: double.infinity,
                         fit: BoxFit.cover,
                         heroTag: 'place-image-${place.id}',
@@ -595,6 +599,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                               .markPlaceCheckedIn(place.id);
                                         }
                                         final newStreak = streak.currentStreak;
+                                        unawaited(
+                                          AppReviewService.instance
+                                              .requestAfterPositiveExperience(
+                                                successfulCheckIn: true,
+                                                currentStreak: newStreak,
+                                              ),
+                                        );
                                         setState(() => _isVisited = true);
                                         try {
                                           await placeProvider.fetchRemoteCounts(
@@ -777,64 +788,86 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     onTap: _openMaps,
                                   ),
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Consumer<OfflineProvider>(
-                                    builder: (context, offline, _) {
-                                      final cached = offline.isCached(place.id);
-                                      return _QuickAction(
-                                        icon: cached
-                                            ? Icons.cloud_done_rounded
-                                            : Icons.cloud_download_outlined,
-                                        label: cached
-                                            ? context.tr('downloaded')
-                                            : context.tr('download_offline'),
-                                        color: cached
-                                            ? context.quickActionSuccess
-                                            : context.quickActionPurple,
-                                        backgroundColor: cached
-                                            ? context.quickActionSuccessBg
-                                            : context.quickActionPurpleBg,
-                                        onTap: () async {
-                                          HapticFeedback.lightImpact();
-                                          if (cached) {
-                                            await offline.removeCachedPlace(
-                                              place.id,
-                                            );
-                                            if (!context.mounted) return;
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  context.tr('removed_offline'),
+                                if (context.watch<AuthProvider>().isPro) ...[
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Consumer<OfflineProvider>(
+                                      builder: (context, offline, _) {
+                                        final cached = offline.isCached(
+                                          place.id,
+                                        );
+                                        return _QuickAction(
+                                          icon: cached
+                                              ? Icons.cloud_done_rounded
+                                              : Icons.cloud_download_outlined,
+                                          label: cached
+                                              ? context.tr('downloaded')
+                                              : context.tr('download_offline'),
+                                          color: cached
+                                              ? context.quickActionSuccess
+                                              : context.quickActionPurple,
+                                          backgroundColor: cached
+                                              ? context.quickActionSuccessBg
+                                              : context.quickActionPurpleBg,
+                                          onTap: () async {
+                                            if (!context
+                                                .read<AuthProvider>()
+                                                .isPro) {
+                                              return;
+                                            }
+                                            HapticFeedback.lightImpact();
+                                            if (cached) {
+                                              await offline.removeCachedPlace(
+                                                place.id,
+                                              );
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    context.tr(
+                                                      'removed_offline',
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
-                                            );
-                                          } else {
-                                            final result = await offline
-                                                .downloadSinglePlace(place);
-                                            if (!context.mounted) return;
-                                            final ok = result is DownloadOk;
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  ok
-                                                      ? context.tr('downloaded')
-                                                      : 'Offline '
-                                                            'download '
-                                                            'failed',
+                                              );
+                                            } else {
+                                              final additionalImageUrls = context
+                                                  .read<PlacePhotosProvider>()
+                                                  .photosFor(place.id)
+                                                  .map((photo) => photo.imageUrl)
+                                                  .toList(growable: false);
+                                              final result = await offline
+                                                  .downloadSinglePlace(
+                                                    place,
+                                                    additionalImageUrls:
+                                                        additionalImageUrls,
+                                                  );
+                                              if (!context.mounted) return;
+                                              final ok = result is DownloadOk;
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    ok
+                                                        ? context.tr(
+                                                            'downloaded',
+                                                          )
+                                                        : 'Offline '
+                                                              'download '
+                                                              'failed',
+                                                  ),
                                                 ),
-                                              ),
-                                            );
-                                          }
-                                        },
-                                      );
-                                    },
+                                              );
+                                            }
+                                          },
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                           ),

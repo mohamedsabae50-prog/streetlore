@@ -55,4 +55,10 @@ class RevenueCatService {
     final result = await Purchases.purchase(PurchaseParams.package(package));
     return result.customerInfo.entitlements.active.containsKey(entitlementId);
   }
+
+  Future<bool> restorePurchases(String userId) async {
+    if (!await configure(userId)) return false;
+    final customerInfo = await Purchases.restorePurchases();
+    return customerInfo.entitlements.active.containsKey(entitlementId);
+  }
 }

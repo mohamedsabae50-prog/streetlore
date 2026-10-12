@@ -207,6 +207,7 @@ class PlaceModel {
       'description_en': descriptionEn,
       'description_ar': descriptionAr,
       'imageUrl': imageUrl,
+      'image_urls': imageUrls,
       'rating': rating,
       'category': category,
       'category_ar': categoryAr,

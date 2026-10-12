@@ -40,6 +40,16 @@ class AppStrings {
       'en': 'Removed from offline',
       'ar': 'تمت الإزالة من الوضع دون اتصال',
     },
+    'no_internet_title': {
+      'en': 'No Internet Connection',
+      'ar': 'لا يوجد اتصال بالإنترنت',
+    },
+    'no_internet_message': {
+      'en':
+          'Please reconnect to the internet to load the latest places and stories.',
+      'ar': 'أعد الاتصال بالإنترنت لتحميل أحدث الأماكن والحكايات.',
+    },
+    'no_internet_retry': {'en': 'Try Again', 'ar': 'إعادة المحاولة'},
     'cat_hotels': {'en': 'Hotels', 'ar': 'الفنادق'},
     'all_places': {'en': 'All Places', 'ar': 'كل الأماكن'},
     'places_count': {'en': '{n} places', 'ar': '{n} مكان'},
@@ -803,8 +813,10 @@ class AppStrings {
     'tour_free': {'en': 'Free', 'ar': 'مجاني'},
     'tour_pro': {'en': 'Streetlore Pro', 'ar': 'ستريت لور برو'},
     'tour_pro_locked': {
-      'en': 'This tour is part of Streetlore Pro. Hidden Gems and Premium Tours are for Pro members.',
-      'ar': 'هذه الجولة متاحة ضمن ستريت لور برو. الجواهر المخفية والجولات المميزة حصرية لأعضاء برو.',
+      'en':
+          'This tour is part of Streetlore Pro. Hidden Gems and Premium Tours are for Pro members.',
+      'ar':
+          'هذه الجولة متاحة ضمن ستريت لور برو. الجواهر المخفية والجولات المميزة حصرية لأعضاء برو.',
     },
     'pro_title': {'en': 'Streetlore Pro', 'ar': 'ستريت لور برو'},
     'pro_subtitle': {
@@ -831,57 +843,39 @@ class AppStrings {
       'en': 'Exclusive Pro Badges',
       'ar': 'شارات برو حصرية',
     },
-    'pro_benefits_title': {
-      'en': 'Included with Pro',
-      'ar': 'مزايا برو',
-    },
-    'pro_monthly': {
-      'en': 'Monthly Subscription',
-      'ar': 'اشتراك شهري',
-    },
+    'pro_benefits_title': {'en': 'Included with Pro', 'ar': 'مزايا برو'},
+    'pro_monthly': {'en': 'Monthly Subscription', 'ar': 'اشتراك شهري'},
     'pro_monthly_description': {
       'en': 'Perfect for short trips',
       'ar': 'مثالي للرحلات القصيرة',
     },
-    'pro_yearly': {
-      'en': 'Yearly Subscription',
-      'ar': 'اشتراك سنوي',
-    },
+    'pro_yearly': {'en': 'Yearly Subscription', 'ar': 'اشتراك سنوي'},
     'pro_yearly_description': {
       'en': 'Best value for frequent travelers',
       'ar': 'أفضل قيمة للمسافرين باستمرار',
     },
-    'pro_lifetime': {
-      'en': 'Lifetime Access',
-      'ar': 'وصول مدى الحياة',
-    },
+    'pro_lifetime': {'en': 'Lifetime Access', 'ar': 'وصول مدى الحياة'},
     'pro_lifetime_description': {
       'en': 'Pay once, explore forever',
       'ar': 'ادفع مرة واحدة واستكشف إلى الأبد',
     },
-    'pro_best_value': {
-      'en': 'BEST VALUE',
-      'ar': 'أفضل قيمة',
-    },
-    'pro_one_time': {
-      'en': 'ONE-TIME',
-      'ar': 'مرة واحدة',
-    },
+    'pro_best_value': {'en': 'BEST VALUE', 'ar': 'أفضل قيمة'},
+    'pro_one_time': {'en': 'ONE-TIME', 'ar': 'مرة واحدة'},
     'pro_store_note': {
       'en': 'Secure purchase through the App Store or Google Play.',
       'ar': 'شراء آمن عبر App Store أو Google Play.',
     },
     'pro_setup_note': {
-      'en': 'Pro subscriptions are coming soon. Stay tuned for the official launch!',
+      'en':
+          'Pro subscriptions are coming soon. Stay tuned for the official launch!',
       'ar': 'اشتراكات برو قادمة قريباً. ترقّبوا الإطلاق الرسمي!',
     },
-    'pro_coming_soon': {
-      'en': 'Coming soon',
-      'ar': 'قريباً',
-    },
+    'pro_coming_soon': {'en': 'Coming soon', 'ar': 'قريباً'},
     'pro_setup_required': {
-      'en': 'Purchases are not configured yet. Add the RevenueCat public SDK keys to enable them.',
-      'ar': 'لم يتم إعداد عمليات الشراء بعد. أضف مفاتيح RevenueCat العامة لتفعيلها.',
+      'en':
+          'Purchases are not configured yet. Add the RevenueCat public SDK keys to enable them.',
+      'ar':
+          'لم يتم إعداد عمليات الشراء بعد. أضف مفاتيح RevenueCat العامة لتفعيلها.',
     },
     'pro_sign_in_required': {
       'en': 'Sign in to subscribe to Streetlore Pro.',
@@ -902,6 +896,36 @@ class AppStrings {
     'pro_purchase_failed': {
       'en': 'The purchase could not be completed. Please try again.',
       'ar': 'تعذر إكمال عملية الشراء. حاول مرة أخرى.',
+    },
+    'pro_member': {'en': 'Streetlore Pro Member', 'ar': 'عضو ستريت لور برو'},
+    'pro_member_subtitle': {
+      'en': 'Your membership is active',
+      'ar': 'عضويتك فعّالة',
+    },
+    'restore_purchases': {'en': 'Restore Purchases', 'ar': 'استعادة المشتريات'},
+    'restore_sign_in_required': {
+      'en': 'Sign in to restore your Streetlore Pro purchases.',
+      'ar': 'سجّل الدخول لاستعادة مشتريات ستريت لور برو.',
+    },
+    'restore_setup_required': {
+      'en': 'Purchase restoration is not available right now.',
+      'ar': 'استعادة المشتريات غير متاحة حاليًا.',
+    },
+    'restore_none_found': {
+      'en': 'No previous Pro purchases were found.',
+      'ar': 'لم يتم العثور على مشتريات سابقة لبرو.',
+    },
+    'restore_success': {
+      'en': 'Your Streetlore Pro purchases have been restored.',
+      'ar': 'تمت استعادة مشتريات ستريت لور برو.',
+    },
+    'restore_pending': {
+      'en': 'Purchase restored. Pro access will activate after verification.',
+      'ar': 'تمت استعادة الشراء. سيتم تفعيل برو بعد التحقق.',
+    },
+    'restore_failed': {
+      'en': 'Purchases could not be restored. Please try again.',
+      'ar': 'تعذرت استعادة المشتريات. حاول مرة أخرى.',
     },
     'tour_about': {'en': 'About this Tour', 'ar': 'عن هذه الجولة'},
     'tour_itinerary': {'en': 'Tour Itinerary', 'ar': 'خط سير الجولة'},

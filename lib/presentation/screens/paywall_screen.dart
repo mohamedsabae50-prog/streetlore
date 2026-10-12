@@ -21,6 +21,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
   Package? _lifetimePackage;
   bool _loading = false;
   bool _loadingPackages = false;
+  bool _restoring = false;
 
   @override
   void initState() {
@@ -59,6 +60,61 @@ class _PaywallScreenState extends State<PaywallScreen> {
       if (package.packageType == type) return package;
     }
     return null;
+  }
+
+  Future<void> _restorePurchases() async {
+    final auth = context.read<AuthProvider>();
+    if (auth.userId.isEmpty) {
+      _showMessage(context.tr('restore_sign_in_required'));
+      return;
+    }
+    if (!RevenueCatService.instance.isConfigured) {
+      _showMessage(context.tr('restore_setup_required'));
+      return;
+    }
+
+    setState(() => _restoring = true);
+    try {
+      final restored = await RevenueCatService.instance.restorePurchases(
+        auth.userId,
+      );
+      if (!mounted) return;
+      if (!restored) {
+        _showMessage(context.tr('restore_none_found'));
+        return;
+      }
+
+      var profileActivated = false;
+      for (var attempt = 0; attempt < 5 && !profileActivated; attempt++) {
+        try {
+          await auth.refreshProStatus();
+          profileActivated = auth.isPro;
+        } catch (error) {
+          debugPrint('PaywallScreen: Pro restore sync is pending: $error');
+        }
+        if (!profileActivated && attempt < 4) {
+          await Future<void>.delayed(const Duration(seconds: 1));
+        }
+      }
+      if (!mounted) return;
+      _showMessage(
+        profileActivated
+            ? context.tr('restore_success')
+            : context.tr('restore_pending'),
+      );
+      if (profileActivated) Navigator.pop(context);
+    } on PlatformException catch (error) {
+      debugPrint(
+        'PaywallScreen: RevenueCat restore failed: '
+        '${error.code} ${error.message}',
+      );
+      if (mounted) _showMessage(context.tr('restore_failed'));
+    } catch (error, stackTrace) {
+      debugPrint('PaywallScreen: restore failed: $error\n$stackTrace');
+      if (mounted) _showMessage(context.tr('restore_failed'));
+    } finally {
+      if (mounted) setState(() => _restoring = false);
+    }
   }
 
   Future<void> _purchase(PackageType type) async {
@@ -274,6 +330,18 @@ class _PaywallScreenState extends State<PaywallScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(color: context.textSec, fontSize: 12),
             ),
+            const SizedBox(height: 18),
+            Center(
+              child: TextButton(
+                onPressed: _loading || _restoring ? null : _restorePurchases,
+                child: _restoring
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(context.tr('restore_purchases')),
+              ),
+            ),
           ],
         ),
       ),
@@ -291,7 +359,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     bool featured = false,
   }) {
     final isConfigured = RevenueCatService.instance.isConfigured;
-    final isLoading = _loading || _loadingPackages;
+    final isLoading = _loading || _loadingPackages || _restoring;
     final label = isConfigured
         ? _packageLabel(title, package)
         : Text(
