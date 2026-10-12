@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import 'paywall_screen.dart';
 import '../../logic/achievement_provider.dart';
 import '../../logic/gamification_provider.dart';
 import '../../logic/journal_provider.dart';
@@ -89,6 +90,14 @@ class _MainNavigationState extends State<MainNavigation>
 
   void _selectTab(int i) {
     if (i == _currentIndex) return;
+    if (i == 1 && !context.read<AuthProvider>().isPro) {
+      HapticFeedback.selectionClick();
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
+      );
+      return;
+    }
     HapticFeedback.selectionClick();
     setState(() {
       _previousIndex = _currentIndex;

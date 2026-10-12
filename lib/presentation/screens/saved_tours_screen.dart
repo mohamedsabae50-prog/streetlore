@@ -5,11 +5,13 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/tour_provider.dart';
+import '../../logic/auth_provider.dart';
 import '../../l10n/app_strings.dart';
 import '../widgets/place_card.dart';
 import '../widgets/tour_card.dart';
 import 'place_details_screen.dart';
 import 'tour_details_screen.dart';
+import 'paywall_screen.dart';
 
 class SavedToursScreen extends StatefulWidget {
   const SavedToursScreen({super.key});
@@ -36,6 +38,7 @@ class _SavedToursScreenState extends State<SavedToursScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isPro = context.watch<AuthProvider>().isPro;
     return Scaffold(
       backgroundColor: context.bgColor,
       body: SafeArea(
@@ -78,6 +81,21 @@ class _SavedToursScreenState extends State<SavedToursScreen>
                 ),
                 child: TabBar(
                   controller: _tabCtrl,
+                  physics: isPro
+                      ? const BouncingScrollPhysics()
+                      : const NeverScrollableScrollPhysics(),
+                  onTap: (index) {
+                    if (index != 1 || context.read<AuthProvider>().isPro) {
+                      return;
+                    }
+                    _tabCtrl.animateTo(0);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const PaywallScreen(),
+                      ),
+                    );
+                  },
                   indicator: BoxDecoration(
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(22),
@@ -105,9 +123,56 @@ class _SavedToursScreenState extends State<SavedToursScreen>
             Expanded(
               child: TabBarView(
                 controller: _tabCtrl,
-                physics: const BouncingScrollPhysics(),
-                children: const [_SavedPlacesTab(), _SavedToursTab()],
+                physics: isPro
+                    ? const BouncingScrollPhysics()
+                    : const NeverScrollableScrollPhysics(),
+                children: [
+                  const _SavedPlacesTab(),
+                  isPro ? const _SavedToursTab() : const _SavedToursLockedTab(),
+                ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SavedToursLockedTab extends StatelessWidget {
+  const _SavedToursLockedTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.lock_rounded,
+              size: 48,
+              color: AppColors.ratingGold,
+            ),
+            const SizedBox(height: 14),
+            Text(
+              context.tr('tour_pro_locked'),
+              textAlign: TextAlign.center,
+              style: TextStyle(color: context.textSec, fontSize: 14),
+            ),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const PaywallScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.workspace_premium_rounded),
+              label: Text(context.tr('pro_title')),
             ),
           ],
         ),
@@ -123,7 +188,10 @@ class _SavedPlacesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<PlaceProvider>(
       builder: (context, placeProvider, _) {
-        final places = placeProvider.savedPlaces;
+        final isPro = context.watch<AuthProvider>().isPro;
+        final places = placeProvider.savedPlaces
+            .where((place) => isPro || !place.isHiddenGem)
+            .toList();
 
         if (places.isEmpty) {
           return _EmptyState(

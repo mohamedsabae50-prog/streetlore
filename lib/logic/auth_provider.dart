@@ -21,6 +21,7 @@ class AuthProvider extends ChangeNotifier {
   String _userId = '';
   bool _isGuest = false;
   bool _isPro = false;
+  String? _subscriptionTier;
 
   bool get isLoggedIn => _isLoggedIn;
   bool get hasSeenOnboarding => _hasSeenOnboarding;
@@ -31,20 +32,25 @@ class AuthProvider extends ChangeNotifier {
   String get userId => _userId;
   bool get isGuest => _isGuest;
   bool get isPro => _isPro || isAdmin;
+  String? get subscriptionTier => _subscriptionTier;
 
   Future<void> refreshProStatus() async {
     if (_userId.isEmpty || _isGuest || !AppConfig.supabaseEnabled) {
       _isPro = false;
+      _subscriptionTier = null;
       notifyListeners();
       return;
     }
+    await _restoreCachedProStatus(_userId);
     try {
       final profile = await Supabase.instance.client
           .from('profiles')
-          .select('is_pro')
+          .select('is_pro, subscription_tier')
           .eq('user_id', _userId)
           .maybeSingle();
       _isPro = profile?['is_pro'] == true;
+      _subscriptionTier = profile?['subscription_tier'] as String?;
+      await _persistCachedProStatus(_userId);
     } catch (error, stackTrace) {
       debugPrint(
         'AuthProvider: failed to refresh Pro status: $error\n$stackTrace',
@@ -106,6 +112,7 @@ class AuthProvider extends ChangeNotifier {
           _isLoggedIn = false;
           _isGuest = false;
           _isPro = false;
+          _subscriptionTier = null;
           notifyListeners();
           unawaited(_clearPersistedAuthSnapshot());
         }
@@ -207,7 +214,7 @@ class AuthProvider extends ChangeNotifier {
     _isLoggedIn = true;
     _isGuest = false;
     _userId = user.id;
-    _isPro = false;
+    await _restoreCachedProStatus(user.id);
     final meta = user.userMetadata ?? const <String, dynamic>{};
     _userName =
         (meta['full_name'] as String?) ??
@@ -219,12 +226,13 @@ class AuthProvider extends ChangeNotifier {
     try {
       final profile = await Supabase.instance.client
           .from('profiles')
-          .select('is_pro')
+          .select('is_pro, subscription_tier')
           .eq('user_id', user.id)
           .maybeSingle();
       _isPro = profile?['is_pro'] == true;
+      _subscriptionTier = profile?['subscription_tier'] as String?;
+      await _persistCachedProStatus(user.id);
     } catch (error, stackTrace) {
-      _isPro = false;
       debugPrint('AuthProvider: failed to load Pro profile: $error\n$stackTrace');
     }
     notifyListeners();
@@ -233,6 +241,25 @@ class AuthProvider extends ChangeNotifier {
       refreshToken: session?.refreshToken,
       expiresAtUnixSeconds: session?.expiresAt,
     );
+  }
+
+  Future<void> _restoreCachedProStatus(String userId) async {
+    final preferences = await SharedPreferences.getInstance();
+    _isPro = preferences.getBool('subscription_is_pro_$userId') ?? false;
+    _subscriptionTier = preferences.getString('subscription_tier_$userId');
+  }
+
+  Future<void> _persistCachedProStatus(String userId) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool('subscription_is_pro_$userId', _isPro);
+    if (_subscriptionTier == null) {
+      await preferences.remove('subscription_tier_$userId');
+    } else {
+      await preferences.setString(
+        'subscription_tier_$userId',
+        _subscriptionTier!,
+      );
+    }
   }
 
   
@@ -300,6 +327,7 @@ class AuthProvider extends ChangeNotifier {
           _isGuest = false;
           _userId = res.user!.id;
           _isPro = false;
+          _subscriptionTier = null;
           _userEmail = res.user!.email ?? cleanEmail;
           final meta = res.user!.userMetadata ?? const <String, dynamic>{};
           _userName =
@@ -362,6 +390,7 @@ class AuthProvider extends ChangeNotifier {
     _isLoggedIn = true;
     _isGuest = false;
     _isPro = false;
+    _subscriptionTier = null;
     _userName = cleanName;
     _username = cleanUsername;
     _userEmail = cleanEmail;
@@ -456,6 +485,7 @@ class AuthProvider extends ChangeNotifier {
     _isLoggedIn = true;
     _isGuest = true;
     _isPro = false;
+    _subscriptionTier = null;
     _userName = cleanName;
     _username = '';
     _userEmail = 'guest@streetlore.com';
@@ -503,6 +533,7 @@ class AuthProvider extends ChangeNotifier {
     _isLoggedIn = false;
     _isGuest = false;
     _isPro = false;
+    _subscriptionTier = null;
     _userId = '';
     _userName = '';
     _username = '';

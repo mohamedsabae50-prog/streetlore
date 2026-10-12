@@ -404,16 +404,17 @@ class SupabaseService {
       throw Exception('Not signed in');
     }
 
-    final request = http.Request(
-      'POST',
-      Uri.parse('${AppConfig.supabaseUrl}/functions/v1/ai-proxy'),
-    )
-      ..headers.addAll({
-        'Content-Type': 'application/json',
-        'apikey': AppConfig.supabaseAnonKey,
-        'Authorization': 'Bearer $token',
-      })
-      ..body = jsonEncode(body);
+    final request =
+        http.Request(
+            'POST',
+            Uri.parse('${AppConfig.supabaseUrl}/functions/v1/ai-proxy'),
+          )
+          ..headers.addAll({
+            'Content-Type': 'application/json',
+            'apikey': AppConfig.supabaseAnonKey,
+            'Authorization': 'Bearer $token',
+          })
+          ..body = jsonEncode(body);
     final httpClient = http.Client();
     try {
       final response = await httpClient.send(request);
@@ -426,9 +427,7 @@ class SupabaseService {
             'please come back tomorrow.',
           );
         }
-        throw Exception(
-          'ai-proxy HTTP ${response.statusCode}: $responseBody',
-        );
+        throw Exception('ai-proxy HTTP ${response.statusCode}: $responseBody');
       }
       yield* response.stream;
     } finally {
@@ -438,7 +437,7 @@ class SupabaseService {
 
   /// Request full account + data deletion per Apple App Store and
   /// Google Play Store account-deletion requirements (PR #6). Calls
-  /// the `delete-account` Edge Function which uses the service_role key
+  /// the `delete-user-account` Edge Function which uses the service_role key
   /// to drop every user-owned row, then the auth.users entry itself.
   Future<Map<String, dynamic>> deleteAccount({String? accessToken}) async {
     final client = clientOrNull;
@@ -450,7 +449,7 @@ class SupabaseService {
       throw Exception('Not signed in');
     }
     final uri = Uri.parse(
-      '${AppConfig.supabaseUrl}/functions/v1/delete-account',
+      '${AppConfig.supabaseUrl}/functions/v1/delete-user-account',
     );
     final response = await http.post(
       uri,
@@ -461,9 +460,13 @@ class SupabaseService {
     );
     if (response.statusCode != 200) {
       throw Exception(
-        'delete-account HTTP ${response.statusCode}: ${response.body}',
+        'delete-user-account HTTP ${response.statusCode}: ${response.body}',
       );
     }
-    return jsonDecode(response.body) as Map<String, dynamic>;
+    final result = jsonDecode(response.body);
+    if (result is! Map<String, dynamic> || result['ok'] != true) {
+      throw const FormatException('Invalid account deletion response.');
+    }
+    return result;
   }
 }

@@ -11,6 +11,7 @@ import 'core/services/revenuecat_service.dart';
 import 'core/services/supabase_service.dart';
 import 'core/config/app_config.dart';
 import 'l10n/generated/app_localizations.dart';
+import 'l10n/app_strings.dart';
 import 'logic/place_provider.dart';
 import 'logic/tour_provider.dart';
 import 'logic/theme_provider.dart';
@@ -185,14 +186,38 @@ Future<void> _bindAuthDeepLink(AuthProvider auth) async {
   }
 }
 
-class StreetloreApp extends StatelessWidget {
+class StreetloreApp extends StatefulWidget {
   const StreetloreApp({super.key});
+
+  @override
+  State<StreetloreApp> createState() => _StreetloreAppState();
+}
+
+class _StreetloreAppState extends State<StreetloreApp> {
+  final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+  bool _offlineNoticeShown = false;
+
+  void _updateOfflineNotice(bool shouldShow, String message) {
+    if (!shouldShow) {
+      _offlineNoticeShown = false;
+      return;
+    }
+    if (_offlineNoticeShown) return;
+    _offlineNoticeShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _scaffoldMessengerKey.currentState?.showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer2<ThemeProvider, LocaleProvider>(
       builder: (context, themeProvider, localeProvider, _) {
         return MaterialApp(
+          scaffoldMessengerKey: _scaffoldMessengerKey,
           title: 'Streetlore',
           debugShowCheckedModeBanner: false,
           locale: localeProvider.locale,
@@ -209,6 +234,10 @@ class StreetloreApp extends StatelessWidget {
               locale: localeProvider.locale,
               child: Consumer2<AuthProvider, ConnectivityProvider>(
                 builder: (context, auth, connectivity, app) {
+                  _updateOfflineNotice(
+                    auth.isPro && connectivity.hasInternet == false,
+                    context.tr('offline_mode_notice'),
+                  );
                   return Stack(
                     fit: StackFit.expand,
                     children: [

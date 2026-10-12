@@ -50,6 +50,10 @@ class AppStrings {
       'ar': 'أعد الاتصال بالإنترنت لتحميل أحدث الأماكن والحكايات.',
     },
     'no_internet_retry': {'en': 'Try Again', 'ar': 'إعادة المحاولة'},
+    'offline_mode_notice': {
+      'en': 'Offline Mode: Your saved places are available.',
+      'ar': 'وضع عدم الاتصال: الأماكن المحفوظة متاحة.',
+    },
     'cat_hotels': {'en': 'Hotels', 'ar': 'الفنادق'},
     'all_places': {'en': 'All Places', 'ar': 'كل الأماكن'},
     'places_count': {'en': '{n} places', 'ar': '{n} مكان'},
@@ -630,6 +634,26 @@ class AppStrings {
           'القريبة.',
     },
     'privacy_policy_title': {'en': 'Privacy Policy', 'ar': 'سياسة الخصوصية'},
+    'terms_of_service_title': {'en': 'Terms of Service', 'ar': 'شروط الخدمة'},
+    'profile_legal_title': {'en': 'Settings & Legal', 'ar': 'الإعدادات والشؤون القانونية'},
+    'delete_account_title': {'en': 'Delete Account', 'ar': 'حذف الحساب'},
+    'delete_account_warning': {
+      'en': 'This permanently deletes your account, personal data, saved items, and check-ins. Your Streetlore Pro access will be lost. Deleting the account does not cancel or refund billing managed by Apple or Google; cancel any active subscription in your store settings first. This action cannot be undone.',
+      'ar': 'سيؤدي ذلك إلى حذف حسابك وبياناتك الشخصية والعناصر المحفوظة وتسجيلات الوصول نهائيًا. ستفقد إمكانية الوصول إلى ستريت لور برو. حذف الحساب لا يلغي أو يسترد المدفوعات التي تديرها Apple أو Google؛ ألغِ أي اشتراك نشط من إعدادات المتجر أولًا. لا يمكن التراجع عن هذا الإجراء.',
+    },
+    'delete_account_confirm': {'en': 'Delete my account', 'ar': 'احذف حسابي'},
+    'delete_account_success': {
+      'en': 'Your account and its data have been deleted.',
+      'ar': 'تم حذف حسابك وبياناته.',
+    },
+    'delete_account_failed': {
+      'en': 'Your account could not be deleted. Please try again.',
+      'ar': 'تعذر حذف حسابك. حاول مرة أخرى.',
+    },
+    'legal_coming_soon': {
+      'en': 'Coming soon',
+      'ar': 'قريبًا',
+    },
     'privacy_policy_intro': {
       'en':
           'This policy explains what information Streetlore uses and how it '
@@ -898,6 +922,9 @@ class AppStrings {
       'ar': 'تعذر إكمال عملية الشراء. حاول مرة أخرى.',
     },
     'pro_member': {'en': 'Streetlore Pro Member', 'ar': 'عضو ستريت لور برو'},
+    'pro_tier_weekly': {'en': 'Weekly', 'ar': 'أسبوعي'},
+    'pro_tier_monthly': {'en': 'Monthly', 'ar': 'شهري'},
+    'pro_tier_lifetime': {'en': 'Lifetime', 'ar': 'مدى الحياة'},
     'pro_member_subtitle': {
       'en': 'Your membership is active',
       'ar': 'عضويتك فعّالة',

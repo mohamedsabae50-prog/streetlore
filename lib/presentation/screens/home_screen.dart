@@ -25,6 +25,7 @@ import 'geofencing_settings_screen.dart';
 import 'achievements_screen.dart';
 import 'walking_routes_screen.dart';
 import 'general_ai_tour_guide_screen.dart';
+import 'paywall_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -156,10 +157,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   List<PlaceModel> _filtered(List<PlaceModel> all) {
     final base = _isSearching ? _searchResults(all) : _categoryFiltered(all);
-    var result = base;
+    final isPro = context.read<AuthProvider>().isPro;
+    var result = isPro ? base : base.where((place) => !place.isHiddenGem).toList();
     if (_freeOnly) result = result.where((p) => p.isFree).toList();
     if (_hiddenGemsOnly) result = result.where((p) => p.isHiddenGem).toList();
     return result;
+  }
+
+  void _openPaywall() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
+    );
   }
 
   Widget _buildCompassIntro() => const CompassCard();
@@ -474,8 +483,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         iconOff: Icons.diamond_outlined,
                         color: const Color(0xFF8B5CF6),
                         active: _hiddenGemsOnly,
+                        locked: !context.watch<AuthProvider>().isPro,
                         onTap: () {
                           HapticFeedback.lightImpact();
+                          if (!context.read<AuthProvider>().isPro) {
+                            _openPaywall();
+                            return;
+                          }
                           setState(() => _hiddenGemsOnly = !_hiddenGemsOnly);
                         },
                       );
@@ -943,6 +957,7 @@ class _FilterPill extends StatelessWidget {
   final IconData iconOff;
   final Color color;
   final bool active;
+  final bool locked;
   final VoidCallback onTap;
   const _FilterPill({
     required this.label,
@@ -950,6 +965,7 @@ class _FilterPill extends StatelessWidget {
     required this.iconOff,
     required this.color,
     required this.active,
+    this.locked = false,
     required this.onTap,
   });
   @override
@@ -994,6 +1010,14 @@ class _FilterPill extends StatelessWidget {
                 fontSize: 13,
               ),
             ),
+            if (locked) ...[
+              const SizedBox(width: 5),
+              Icon(
+                Icons.lock_rounded,
+                size: 13,
+                color: active ? Colors.white : color,
+              ),
+            ],
           ],
         ),
       ),

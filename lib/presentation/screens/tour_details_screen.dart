@@ -53,14 +53,13 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
 
   void _maybeShowProGate() {
     if (!mounted) return;
-    if (!widget.tour.requiresPro) return;
     if (context.read<AuthProvider>().isPro) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (context.read<AuthProvider>().isPro) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('tour_pro_locked'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('tour_pro_locked'))));
       Navigator.push(
         context,
         MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
@@ -89,7 +88,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
 
   Future<void> _startNavigation() async {
     final tour = widget.tour;
-    if (tour.requiresPro && !context.read<AuthProvider>().isPro) {
+    if (!context.read<AuthProvider>().isPro) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -160,8 +159,54 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
   Widget build(BuildContext context) {
     final tour = widget.tour;
     final imageUrl = tour.coverImageUrl;
-    final requiresPro = tour.requiresPro;
-    final isLocked = requiresPro && !context.watch<AuthProvider>().isPro;
+    final isLocked = !context.watch<AuthProvider>().isPro;
+
+    if (isLocked) {
+      return Scaffold(
+        backgroundColor: context.bgColor,
+        appBar: AppBar(
+          backgroundColor: context.bgColor,
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.lock_rounded,
+                  size: 56,
+                  color: AppColors.ratingGold,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.tr('tour_pro_locked'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: context.textSec, fontSize: 15),
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const PaywallScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.workspace_premium_rounded),
+                  label: Text(context.tr('pro_title')),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -325,42 +370,40 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                                 ],
                               ),
                             ),
-                            if (requiresPro) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 9,
-                                  vertical: 5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.ratingGold.withValues(
-                                    alpha: 0.9,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      isLocked
-                                          ? Icons.lock_rounded
-                                          : Icons.workspace_premium_rounded,
-                                      color: Colors.white,
-                                      size: 13,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      context.tr('tour_pro'),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 5,
                               ),
-                            ],
+                              decoration: BoxDecoration(
+                                color: AppColors.ratingGold.withValues(
+                                  alpha: 0.9,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isLocked
+                                        ? Icons.lock_rounded
+                                        : Icons.workspace_premium_rounded,
+                                    color: Colors.white,
+                                    size: 13,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    context.tr('tour_pro'),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -466,16 +509,10 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                             const SizedBox(width: 12),
                             Expanded(
                               child: _StatCard(
-                                icon: requiresPro
-                                    ? Icons.workspace_premium_rounded
-                                    : Icons.lock_open_rounded,
+                                icon: Icons.workspace_premium_rounded,
                                 label: context.tr('tour_access'),
-                                value: requiresPro
-                                    ? context.tr('tour_pro')
-                                    : context.tr('tour_free'),
-                                color: requiresPro
-                                    ? AppColors.ratingGold
-                                    : AppColors.success,
+                                value: context.tr('tour_pro'),
+                                color: AppColors.ratingGold,
                               ),
                             ),
                           ],

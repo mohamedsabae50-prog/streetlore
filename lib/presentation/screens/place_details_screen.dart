@@ -32,6 +32,7 @@ import '../widgets/place_photos_section.dart';
 import 'ai_tour_guide_screen.dart';
 import 'live_chat_screen.dart';
 import 'map_screen.dart';
+import 'paywall_screen.dart';
 
 class PlaceDetailsScreen extends StatefulWidget {
   final PlaceModel place;
@@ -68,6 +69,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
         );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.place.isHiddenGem && !context.read<AuthProvider>().isPro) {
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
+        );
+        return;
+      }
       _refreshNearby();
 
       _loadCheckinState();
@@ -108,9 +116,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
     if (!mounted) return;
     final allPlaces = context.read<PlaceProvider>().places;
     final current = widget.place;
+    final isPro = context.read<AuthProvider>().isPro;
     final scored = <MapEntry<PlaceModel, double>>[];
     for (final p in allPlaces) {
       if (p.id == current.id) continue;
+      if (p.isHiddenGem && !isPro) continue;
       final d = _haversineKm(current.lat, current.lng, p.lat, p.lng);
       if (d <= 5.0) scored.add(MapEntry(p, d));
     }
@@ -174,6 +184,57 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
     final place = context.select<PlaceProvider, PlaceModel>(
       (provider) => provider.findById(widget.place.id) ?? widget.place,
     );
+    final isLocked =
+        place.isHiddenGem && !context.watch<AuthProvider>().isPro;
+    if (isLocked) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.lock_rounded,
+                  size: 56,
+                  color: AppColors.ratingGold,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.tr('tour_pro_locked'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const PaywallScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.workspace_premium_rounded),
+                  label: Text(context.tr('pro_title')),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     final theme = Theme.of(context);
     final scaffoldBgColor = theme.scaffoldBackgroundColor;
     final textPri = theme.textTheme.bodyLarge?.color ?? Colors.black;

@@ -5,8 +5,10 @@ import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../logic/tour_provider.dart';
+import '../../logic/auth_provider.dart';
 import '../../l10n/app_strings.dart';
 import '../widgets/tour_card.dart';
+import 'paywall_screen.dart';
 import 'tour_details_screen.dart';
 
 class ToursScreen extends StatefulWidget {
@@ -42,6 +44,43 @@ class _ToursScreenState extends State<ToursScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (!context.watch<AuthProvider>().isPro) {
+      return Scaffold(
+        backgroundColor: context.bgColor,
+        appBar: AppBar(
+          backgroundColor: context.bgColor,
+          title: Text(context.tr('tours_title')),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.lock_rounded,
+                  size: 56,
+                  color: AppColors.ratingGold,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.tr('tour_pro_locked'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: context.textSec, fontSize: 15),
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: _openPaywall,
+                  icon: const Icon(Icons.workspace_premium_rounded),
+                  label: Text(context.tr('pro_title')),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final filtered = context.watch<TourProvider>().tours;
 
     return Scaffold(
@@ -135,6 +174,13 @@ class _ToursScreenState extends State<ToursScreen>
           ),
         ),
       ),
+    );
+  }
+
+  void _openPaywall() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
     );
   }
 }

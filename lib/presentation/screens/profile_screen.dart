@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_version.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/supabase_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/confetti_overlay.dart';
@@ -40,6 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ConfettiController _confetti = ConfettiController();
   bool _notificationsEnabled = true;
   bool _locationEnabled = true;
+  bool _deletingAccount = false;
 
   @override
   void initState() {
@@ -170,7 +172,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Widget _proProfileCard(BuildContext context, {required bool isPro}) {
+  Widget _proProfileCard(
+    BuildContext context, {
+    required bool isPro,
+    required String? subscriptionTier,
+  }) {
+    final tierLabel = switch (subscriptionTier?.toLowerCase()) {
+      'weekly' => context.tr('pro_tier_weekly'),
+      'monthly' => context.tr('pro_tier_monthly'),
+      'lifetime' => context.tr('pro_tier_lifetime'),
+      _ => null,
+    };
+    final title = isPro
+        ? [
+            context.tr('pro_member'),
+            if (tierLabel != null) tierLabel,
+          ].join(' - ')
+        : context.tr('pro_title');
     final card = Ink(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -205,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.tr(isPro ? 'pro_member' : 'pro_title'),
+                  title,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 17,
@@ -214,9 +232,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  context.tr(
-                    isPro ? 'pro_member_subtitle' : 'pro_subtitle',
-                  ),
+                  context.tr(isPro ? 'pro_member_subtitle' : 'pro_subtitle'),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 12,
@@ -427,7 +443,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                  child: _proProfileCard(context, isPro: auth.isPro),
+                  child: _proProfileCard(
+                    context,
+                    isPro: auth.isPro,
+                    subscriptionTier: auth.subscriptionTier,
+                  ),
                 ),
               ),
 
@@ -1075,22 +1095,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
-                        _Div(),
-                        _ActionTile(
-                          icon: Icons.privacy_tip_outlined,
-                          title: context.tr('privacy_policy_title'),
-                          subtitle: context.tr('geo_read_privacy_policy'),
-                          color: const Color(0xFF0EA5E9),
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute<void>(
-                                builder: (_) => const PrivacyPolicyScreen(),
-                              ),
-                            );
-                          },
-                        ),
                       ],
                     ),
                   ),
@@ -1131,6 +1135,81 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
+                  ),
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                  child: Text(
+                    context.tr('profile_legal_title'),
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: context.textPri,
+                    ),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _Card(
+                    children: [
+                      ListTile(
+                        leading: const Icon(
+                          Icons.description_outlined,
+                          color: AppColors.accent,
+                        ),
+                        title: Text(context.tr('terms_of_service_title')),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => _showLegalComingSoon(context),
+                      ),
+                      _Div(),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.privacy_tip_outlined,
+                          color: Color(0xFF0EA5E9),
+                        ),
+                        title: Text(context.tr('privacy_policy_title')),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => const PrivacyPolicyScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _Div(),
+                      ListTile(
+                        enabled: !_deletingAccount,
+                        leading: _deletingAccount
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.error,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.delete_forever_outlined,
+                                color: AppColors.error,
+                              ),
+                        title: Text(
+                          context.tr('delete_account_title'),
+                          style: const TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        onTap: _deletingAccount
+                            ? null
+                            : () => _confirmDeleteAccount(context),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1199,6 +1278,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  void _showLegalComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.tr('legal_coming_soon'))));
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: context.cardColor,
+        icon: const Icon(
+          Icons.warning_amber_rounded,
+          color: AppColors.error,
+          size: 36,
+        ),
+        title: Text(
+          context.tr('delete_account_title'),
+          style: TextStyle(color: context.textPri, fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          context.tr('delete_account_warning'),
+          style: TextStyle(color: context.textSec, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.tr('cancel')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(context.tr('delete_account_confirm')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    setState(() => _deletingAccount = true);
+    try {
+      await SupabaseService.instance.deleteAccount();
+      if (!context.mounted) return;
+      await context.read<AuthProvider>().signOut();
+      if (!context.mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
+    } catch (error, stackTrace) {
+      debugPrint('ProfileScreen: account deletion failed: $error\n$stackTrace');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('delete_account_failed'))),
+      );
+    } finally {
+      if (mounted) setState(() => _deletingAccount = false);
+    }
   }
 
   void _showSignOutDialog(BuildContext context) {
