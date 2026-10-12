@@ -16,8 +16,8 @@ class PaywallScreen extends StatefulWidget {
 }
 
 class _PaywallScreenState extends State<PaywallScreen> {
+  Package? _weeklyPackage;
   Package? _monthlyPackage;
-  Package? _yearlyPackage;
   Package? _lifetimePackage;
   bool _loading = false;
   bool _loadingPackages = false;
@@ -41,8 +41,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
       );
       if (!mounted) return;
       setState(() {
+        _weeklyPackage = _packageOf(packages, PackageType.weekly);
         _monthlyPackage = _packageOf(packages, PackageType.monthly);
-        _yearlyPackage = _packageOf(packages, PackageType.annual);
         _lifetimePackage = _packageOf(packages, PackageType.lifetime);
       });
     } catch (error, stackTrace) {
@@ -84,6 +84,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
         return;
       }
 
+      try {
+        await RevenueCatService.instance.syncSubscription(auth.userId);
+      } catch (error) {
+        debugPrint('PaywallScreen: RevenueCat restore sync is pending: $error');
+      }
       var profileActivated = false;
       for (var attempt = 0; attempt < 5 && !profileActivated; attempt++) {
         try {
@@ -131,8 +136,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
     setState(() => _loading = true);
     try {
       final package = switch (type) {
+        PackageType.weekly => _weeklyPackage,
         PackageType.monthly => _monthlyPackage,
-        PackageType.annual => _yearlyPackage,
         PackageType.lifetime => _lifetimePackage,
         _ => null,
       };
@@ -145,6 +150,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
         auth.userId,
       );
       if (!mounted) return;
+      if (activated) {
+        try {
+          await RevenueCatService.instance.syncSubscription(auth.userId);
+        } catch (error) {
+          debugPrint('PaywallScreen: RevenueCat purchase sync is pending: $error');
+        }
+      }
       var profileActivated = false;
       for (var attempt = 0; attempt < 5 && !profileActivated; attempt++) {
         try {
@@ -294,23 +306,21 @@ class _PaywallScreenState extends State<PaywallScreen> {
             ),
             const SizedBox(height: 26),
             _planCard(
+              type: PackageType.weekly,
+              title: context.tr('pro_weekly'),
+              description: context.tr('pro_weekly_description'),
+              package: _weeklyPackage,
+              icon: Icons.calendar_view_week_rounded,
+              accent: AppColors.primary,
+            ),
+            const SizedBox(height: 14),
+            _planCard(
               type: PackageType.monthly,
               title: context.tr('pro_monthly'),
               description: context.tr('pro_monthly_description'),
               package: _monthlyPackage,
               icon: Icons.calendar_month_rounded,
               accent: AppColors.primary,
-            ),
-            const SizedBox(height: 14),
-            _planCard(
-              type: PackageType.annual,
-              title: context.tr('pro_yearly'),
-              description: context.tr('pro_yearly_description'),
-              package: _yearlyPackage,
-              icon: Icons.flight_takeoff_rounded,
-              accent: AppColors.ratingGold,
-              badge: context.tr('pro_best_value'),
-              featured: true,
             ),
             const SizedBox(height: 14),
             _planCard(

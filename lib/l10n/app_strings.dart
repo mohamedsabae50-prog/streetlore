@@ -844,15 +844,15 @@ class AppStrings {
       'ar': 'شارات برو حصرية',
     },
     'pro_benefits_title': {'en': 'Included with Pro', 'ar': 'مزايا برو'},
+    'pro_weekly': {'en': 'Weekly Subscription', 'ar': 'اشتراك أسبوعي'},
+    'pro_weekly_description': {
+      'en': 'Pro access for one week',
+      'ar': 'وصول برو لمدة أسبوع',
+    },
     'pro_monthly': {'en': 'Monthly Subscription', 'ar': 'اشتراك شهري'},
     'pro_monthly_description': {
       'en': 'Perfect for short trips',
       'ar': 'مثالي للرحلات القصيرة',
-    },
-    'pro_yearly': {'en': 'Yearly Subscription', 'ar': 'اشتراك سنوي'},
-    'pro_yearly_description': {
-      'en': 'Best value for frequent travelers',
-      'ar': 'أفضل قيمة للمسافرين باستمرار',
     },
     'pro_lifetime': {'en': 'Lifetime Access', 'ar': 'وصول مدى الحياة'},
     'pro_lifetime_description': {

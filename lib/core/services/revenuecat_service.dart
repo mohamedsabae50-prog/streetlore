@@ -2,21 +2,25 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RevenueCatService {
   RevenueCatService._();
 
   static final RevenueCatService instance = RevenueCatService._();
 
-  static const bool _disabledForRelease = true;
-  static const _androidApiKey =
-      ''; // was: 'test_qrlowpR7Y7DFXYHShFjPFdelzFY'
-  static const _iosApiKey =
-      ''; // was: 'test_qrlowpR7Y7DFXYHShFjPFdelzFY'
+  static const bool _enabled = bool.fromEnvironment(
+    'ENABLE_REVENUECAT',
+    defaultValue: false,
+  );
+  static const _androidApiKey = String.fromEnvironment(
+    'REVENUECAT_ANDROID_API_KEY',
+  );
+  static const _iosApiKey = String.fromEnvironment('REVENUECAT_IOS_API_KEY');
   static const entitlementId = 'pro';
 
   bool get isConfigured =>
-      !_disabledForRelease &&
+      _enabled &&
       !kIsWeb &&
       (Platform.isAndroid || Platform.isIOS) &&
       (_androidApiKey.isNotEmpty || _iosApiKey.isNotEmpty);
@@ -60,5 +64,25 @@ class RevenueCatService {
     if (!await configure(userId)) return false;
     final customerInfo = await Purchases.restorePurchases();
     return customerInfo.entitlements.active.containsKey(entitlementId);
+  }
+
+  Future<bool> syncSubscription(String userId) async {
+    final client = Supabase.instance.client;
+    if (client.auth.currentUser?.id != userId) {
+      throw StateError('Cannot sync a subscription for a different user.');
+    }
+    final response = await client.functions.invoke('sync-subscription');
+    if (response.status < 200 || response.status >= 300) {
+      final data = response.data;
+      final detail = data is Map ? data['error'] : null;
+      throw StateError(
+        'Subscription sync failed (${response.status})'
+        '${detail == null ? '' : ': $detail'}',
+      );
+    }
+    if (response.data is! Map || response.data['is_pro'] is! bool) {
+      throw const FormatException('Invalid subscription sync response.');
+    }
+    return response.data['is_pro'] as bool;
   }
 }

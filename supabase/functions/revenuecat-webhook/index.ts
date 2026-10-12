@@ -45,6 +45,8 @@ serve(async (req: Request): Promise<Response> => {
       type?: string;
       app_user_id?: string;
       entitlement_ids?: string[] | null;
+      product_id?: string | null;
+      expiration_at_ms?: number | null;
     };
   };
   try {
@@ -64,8 +66,11 @@ serve(async (req: Request): Promise<Response> => {
     return json({ error: "invalid_app_user_id" }, 400);
   }
 
-  const entitled = event.entitlement_ids?.includes(PRO_ENTITLEMENT_ID) ?? false;
+  const entitled = event.entitlement_ids?.includes(PRO_ENTITLEMENT_ID) ??
+    eventType === "EXPIRATION";
   let isPro: boolean | null = null;
+  let subscriptionTier: string | null = null;
+  let subscriptionEndDate: string | null = null;
   if (entitled && [
     "INITIAL_PURCHASE",
     "RENEWAL",
@@ -74,8 +79,45 @@ serve(async (req: Request): Promise<Response> => {
     "NON_RENEWING_PURCHASE",
   ].includes(eventType)) {
     isPro = true;
+    const productId = event.product_id ?? "";
+    let productTiers: Record<string, unknown>;
+    try {
+      productTiers = JSON.parse(
+        Deno.env.get("REVENUECAT_PRODUCT_TIERS") ?? "",
+      );
+    } catch (error) {
+      console.error("revenuecat-webhook: product tier map is invalid:", error);
+      return json({ error: "subscription_tier_mapping_not_configured" }, 503);
+    }
+    const configuredTier = productTiers[productId];
+    if (
+      configuredTier !== "weekly" &&
+      configuredTier !== "monthly" &&
+      configuredTier !== "lifetime"
+    ) {
+      console.error("revenuecat-webhook: unmapped RevenueCat product:", productId);
+      return json({ error: "unmapped_revenuecat_product" }, 409);
+    }
+    subscriptionTier = configuredTier;
+    if (event.expiration_at_ms != null) {
+      if (!Number.isFinite(event.expiration_at_ms)) {
+        return json({ error: "invalid_expiration_date" }, 400);
+      }
+      const expiry = new Date(event.expiration_at_ms);
+      if (!Number.isFinite(expiry.getTime())) {
+        return json({ error: "invalid_expiration_date" }, 400);
+      }
+      subscriptionEndDate = expiry.toISOString();
+    }
+    if (
+      (subscriptionTier === "lifetime" && subscriptionEndDate !== null) ||
+      (subscriptionTier !== "lifetime" && subscriptionEndDate === null)
+    ) {
+      return json({ error: "invalid_subscription_expiration" }, 409);
+    }
   } else if (entitled && eventType === "EXPIRATION") {
     isPro = false;
+    subscriptionTier = "free";
   }
   if (isPro === null) {
     return json({ ok: true, ignored: true });
@@ -83,7 +125,13 @@ serve(async (req: Request): Promise<Response> => {
 
   const { error } = await admin
     .from("profiles")
-    .upsert({ user_id: userId, is_pro: isPro }, { onConflict: "user_id" });
+    .upsert({
+      user_id: userId,
+      is_pro: isPro,
+      subscription_tier: subscriptionTier,
+      subscription_end_date: subscriptionEndDate,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
   if (error) {
     console.error("revenuecat-webhook: profile entitlement sync failed:", error);
     return json({ error: "profile_sync_failed" }, 500);

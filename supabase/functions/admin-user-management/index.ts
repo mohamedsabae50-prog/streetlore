@@ -122,13 +122,27 @@ async function includeProStatus<T extends { id: string }>(users: T[]) {
   if (!users.length) return users;
   const { data, error } = await admin
     .from("profiles")
-    .select("user_id, is_pro")
+    .select("user_id, is_pro, subscription_tier, subscription_end_date")
     .in("user_id", users.map((user) => user.id));
   if (error) throw error;
   const statuses = new Map(
-    (data ?? []).map((profile) => [profile.user_id, profile.is_pro === true]),
+    (data ?? []).map((profile) => [
+      profile.user_id,
+      {
+        is_pro: profile.is_pro === true,
+        subscription_tier: profile.subscription_tier,
+        subscription_end_date: profile.subscription_end_date,
+      },
+    ]),
   );
-  return users.map((user) => ({ ...user, is_pro: statuses.get(user.id) ?? false }));
+  return users.map((user) => ({
+    ...user,
+    ...(statuses.get(user.id) ?? {
+      is_pro: false,
+      subscription_tier: null,
+      subscription_end_date: null,
+    }),
+  }));
 }
 
 async function listChatLogs(page: number, perPage: number) {
@@ -262,7 +276,7 @@ serve(async (req: Request): Promise<Response> => {
     }
   }
 
-  if (body.action === "set_pro") {
+  if (body.action === "set_plan" || body.action === "set_pro") {
     const userId = typeof body.user_id === "string" ? body.user_id.trim() : "";
     if (!userId) return json({ error: "user_id_required" }, 400);
     if (userId === caller.id) {
@@ -277,17 +291,42 @@ serve(async (req: Request): Promise<Response> => {
       return json({ error: "cannot_change_admin_account" }, 400);
     }
 
-    const isPro = body.is_pro === true;
+    const plan = body.action === "set_pro"
+      ? (body.is_pro === true ? "monthly" : "free")
+      : body.plan;
+    if (
+      plan !== "weekly" &&
+      plan !== "monthly" &&
+      plan !== "lifetime" &&
+      plan !== "free"
+    ) {
+      return json({ error: "invalid_plan" }, 400);
+    }
+
+    const isPro = plan !== "free";
+    const endDate = plan === "weekly"
+      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      : plan === "monthly"
+      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      : null;
     const { error } = await admin.from("profiles").upsert({
       user_id: userId,
       is_pro: isPro,
+      subscription_tier: plan,
+      subscription_end_date: endDate,
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" });
     if (error) {
-      console.error("admin-user-management: update Pro status failed:", error);
-      return json({ error: "update_pro_status_failed" }, 500);
+      console.error("admin-user-management: update subscription plan failed:", error);
+      return json({ error: "update_subscription_plan_failed" }, 500);
     }
-    return json({ ok: true, user_id: userId, is_pro: isPro });
+    return json({
+      ok: true,
+      user_id: userId,
+      is_pro: isPro,
+      subscription_tier: plan,
+      subscription_end_date: endDate,
+    });
   }
 
   if (body.action === "delete") {

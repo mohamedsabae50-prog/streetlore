@@ -111,14 +111,32 @@ Open http://localhost:8081 and log in with the email/password you created in ste
 - **Users** — search Auth accounts by name or email and remove inappropriate accounts
 - **Official place images** — add, reorder, and remove multiple image URLs; mobile Place Details shows them in a swipeable carousel
 
-User accounts are stored in Supabase Auth, with names in Auth user metadata. The `profiles` table stores the RevenueCat Pro entitlement used by the AI quota; users with no profile or an unverified entitlement are treated as free users. Deploy the protected admin-user-management Edge Function from the project root before using the Users screen:
+User accounts are stored in Supabase Auth, with names in Auth user metadata. The `profiles` table stores the RevenueCat Pro entitlement used by the AI quota, along with its subscription tier and expiry. Users with no profile or an unverified entitlement are treated as free users. Apply `supabase/migrations/20261019000000_profile_subscription_tiers.sql` before deploying the updated functions.
 
 ```bash
 supabase functions deploy admin-user-management --no-verify-jwt --project-ref tbivoxyxclwjjspwsgvc
+supabase functions deploy sync-subscription --project-ref tbivoxyxclwjjspwsgvc
 supabase secrets set ADMIN_EMAIL=mohamedsabae50@gmail.com --project-ref tbivoxyxclwjjspwsgvc
 ```
 
-The function verifies the caller's Auth token and admin email itself before accessing the Auth Admin API. It prevents deleting the admin account and removes the user's submitted photos, uploaded photo files, chat, check-ins, saved items, leaderboard entry, and AI quota before deleting the Auth account. Before using photo moderation, run `supabase/migrations/2026_10_13_admin_photo_storage_delete.sql` in the Supabase SQL Editor. It grants the configured admin account permission to delete both photo rows and files from the `place-images` bucket.
+The admin function verifies the caller's Auth token and admin email itself before accessing the Auth Admin API. It prevents deleting or changing the admin account and removes the user's submitted photos, uploaded photo files, chat, check-ins, saved items, leaderboard entry, and AI quota before deleting the Auth account. The admin Users screen can set Weekly (+7 days), Monthly (+30 days), Lifetime (no expiry), or Free. The `sync-subscription` function verifies the signed-in user and checks their active `pro` entitlement against RevenueCat before updating the profile; it does not trust a tier sent by the app.
+
+Set a RevenueCat **secret API key** (never the public SDK key) and a JSON map of exact store product identifiers to tiers, then deploy the webhook:
+
+```powershell
+supabase secrets set REVENUECAT_SECRET_API_KEY="your_revenuecat_secret_api_key" REVENUECAT_WEBHOOK_SECRET="your_webhook_authorization_secret" REVENUECAT_PRODUCT_TIERS='{"weekly_product_id":"weekly","monthly_product_id":"monthly","lifetime_product_id":"lifetime"}' --project-ref tbivoxyxclwjjspwsgvc
+supabase functions deploy revenuecat-webhook --no-verify-jwt --project-ref tbivoxyxclwjjspwsgvc
+```
+
+Use the exact product identifiers configured in RevenueCat, mapping every product attached to the `pro` entitlement. Configure the RevenueCat webhook to call `revenuecat-webhook` with the `REVENUECAT_WEBHOOK_SECRET` authorization value. The mobile app calls `sync-subscription` after a successful purchase or restore; the webhook handles renewal and expiration events. Before using photo moderation, run `supabase/migrations/2026_10_13_admin_photo_storage_delete.sql` in the Supabase SQL Editor. It grants the configured admin account permission to delete both photo rows and files from the `place-images` bucket.
+
+For local mobile purchase testing, build/run with the platform's RevenueCat **public SDK key** and explicitly enable the SDK. Keep `REVENUECAT_SECRET_API_KEY` out of the app:
+
+```powershell
+flutter run --dart-define=ENABLE_REVENUECAT=true --dart-define=REVENUECAT_ANDROID_API_KEY=your_android_public_sdk_key
+```
+
+Use `REVENUECAT_IOS_API_KEY` for iOS builds. Purchases remain disabled by default when `ENABLE_REVENUECAT` is omitted.
 - **Images** — uploaded to Supabase Storage bucket `place-images`
 
 ### Gemini AI credentials
