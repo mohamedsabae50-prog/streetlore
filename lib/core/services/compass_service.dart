@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 
 class CompassService {
-  static const double _headingSmoothingFactor = 0.25;
+  static const double _headingSmoothingFactor = 0.12;
+  static const double _headingNoiseThreshold = 0.5;
 
   CompassService._();
   static final CompassService instance = CompassService._();
@@ -77,6 +78,7 @@ class CompassService {
     double diff = to - from;
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;
+    if (diff.abs() < _headingNoiseThreshold) return from;
     return _normalizeHeading(from + diff * _headingSmoothingFactor);
   }
 

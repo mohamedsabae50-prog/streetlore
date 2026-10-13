@@ -221,7 +221,9 @@ class AchievementProvider extends ChangeNotifier {
 
     for (final def in AchievementCatalog.all) {
       int cur = 0;
-      if (visitedCount == 0) {
+      if (def.id == 'squad_explorer') {
+        cur = stats.badges.any((badge) => badge.id == def.id) ? def.target : 0;
+      } else if (visitedCount == 0) {
         cur = 0;
       } else {
         switch (def.id) {

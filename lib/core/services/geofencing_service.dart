@@ -1,13 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/models/geofence_alert.dart';
 
 class GeofencingService {
+  static const _lastFiredKey = 'geofence_last_fired_at_v1';
+  static const _notificationCooldown = Duration(hours: 24);
+
   GeofencingService._();
   static final GeofencingService instance = GeofencingService._();
 
@@ -18,6 +23,7 @@ class GeofencingService {
   final Set<String> _insidePlaceIds = {};
   final Map<String, DateTime> _lastFiredAt = {};
   bool _initialised = false;
+  bool _cooldownsLoaded = false;
 
   bool get isMonitoring => _positionSub != null;
 
@@ -35,6 +41,31 @@ class GeofencingService {
     } catch (e) {
       debugPrint('GeofencingService: notifications init failed: $e');
     }
+  }
+
+  Future<void> _loadCooldowns() async {
+    if (_cooldownsLoaded) return;
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_lastFiredKey);
+    if (raw != null) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) {
+          for (final entry in decoded.entries) {
+            final value = entry.value;
+            if (value is String) {
+              final firedAt = DateTime.tryParse(value);
+              if (firedAt != null) _lastFiredAt[entry.key] = firedAt;
+            }
+          }
+        }
+      } catch (error) {
+        debugPrint(
+          'GeofencingService: invalid notification cooldown cache: $error',
+        );
+      }
+    }
+    _cooldownsLoaded = true;
   }
 
   Future<GeofencingStartResult> _ensurePermissions({
@@ -116,6 +147,7 @@ class GeofencingService {
       return permissionResult;
     }
     try {
+      await _loadCooldowns();
       _positionSub = Geolocator.getPositionStream(
         locationSettings: _backgroundLocationSettings,
       ).listen(
@@ -189,7 +221,7 @@ class GeofencingService {
       );
       if (distance <= a.radiusMeters) {
         if (_insidePlaceIds.add(a.placeId)) {
-          _maybeFire(a);
+          unawaited(_maybeFire(a));
         }
       } else if (distance > a.radiusMeters + 100) {
         _insidePlaceIds.remove(a.placeId);
@@ -197,22 +229,42 @@ class GeofencingService {
     }
   }
 
-  void _maybeFire(GeofenceAlert a) {
+  Future<void> _maybeFire(GeofenceAlert a) async {
     final now = DateTime.now();
     final lastFire = _lastFiredAt[a.placeId];
-    if (lastFire != null && now.difference(lastFire).inMinutes < 30) {
+    if (lastFire != null && now.difference(lastFire) < _notificationCooldown) {
       return;
     }
     _lastFiredAt[a.placeId] = now;
-    _fireNotification(a);
+    if (!await _fireNotification(a)) {
+      _lastFiredAt.remove(a.placeId);
+      return;
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _lastFiredKey,
+        jsonEncode(
+          _lastFiredAt.map(
+            (placeId, firedAt) => MapEntry(placeId, firedAt.toIso8601String()),
+          ),
+        ),
+      );
+    } catch (error) {
+      debugPrint(
+        'GeofencingService: failed to persist notification cooldown: $error',
+      );
+    }
   }
 
-  Future<void> _fireNotification(GeofenceAlert a) async {
+  Future<bool> _fireNotification(GeofenceAlert a) async {
     try {
       await _notifications.show(
         a.placeId.hashCode,
-        'You are steps away from ${a.placeName}',
-        'Want me to tell you its story?',
+        a.isSmartAlert ? 'Hidden gem nearby' : 'Nearby place',
+        a.isSmartAlert
+            ? 'You are near ${a.placeName}. Open Streetlore to discover it.'
+            : 'You are near ${a.placeName}. Open Streetlore to discover its story.',
         const NotificationDetails(
           android: AndroidNotificationDetails(
             'streetlore_geofence',
@@ -229,8 +281,10 @@ class GeofencingService {
           ),
         ),
       );
+      return true;
     } catch (e) {
       debugPrint('GeofencingService: notification fire failed: $e');
+      return false;
     }
   }
 }

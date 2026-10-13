@@ -8,6 +8,8 @@ import '../config/app_config.dart';
 import '../../data/models/chat_message.dart';
 import '../../data/models/gamification_stats.dart';
 import '../../data/models/place_model.dart';
+import '../../data/models/social_user.dart';
+import 'sync_queue_service.dart';
 
 class SupabaseService {
   SupabaseService._();
@@ -99,6 +101,140 @@ class SupabaseService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> fetchCityLeaderboard({
+    required String period,
+    required String metric,
+    int limit = 50,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    try {
+      final result = await client.rpc(
+        'get_city_leaderboard',
+        params: {
+          'p_period': period,
+          'p_metric': metric,
+          'p_limit': limit,
+        },
+      );
+      if (result is! List) {
+        throw const FormatException('Leaderboard response was not a list.');
+      }
+      return result
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList(growable: false);
+    } catch (e) {
+      _logError('fetchCityLeaderboard($period, $metric)', e);
+      rethrow;
+    }
+  }
+
+  Future<List<SocialUser>> searchUsers(String query) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    final result = await client.rpc(
+      'search_users',
+      params: {'p_query': query.trim(), 'p_limit': 30},
+    );
+    if (result is! List) {
+      throw const FormatException('User search response was not a list.');
+    }
+    return result
+        .map((row) => SocialUser.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList(growable: false);
+  }
+
+  Future<bool> isFollowing(String followerId, String followingId) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    final result = await client
+        .from('user_follows')
+        .select('follower_id')
+        .eq('follower_id', followerId)
+        .eq('following_id', followingId)
+        .maybeSingle();
+    return result != null;
+  }
+
+  Future<void> followUser(String followerId, String followingId) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    await client.from('user_follows').upsert(
+      {'follower_id': followerId, 'following_id': followingId},
+      onConflict: 'follower_id,following_id',
+      ignoreDuplicates: true,
+    );
+  }
+
+  Future<void> unfollowUser(String followerId, String followingId) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    await client
+        .from('user_follows')
+        .delete()
+        .eq('follower_id', followerId)
+        .eq('following_id', followingId);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchFollowingActivity({
+    int limit = 50,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    final result = await client.rpc(
+      'get_following_activity',
+      params: {'p_limit': limit},
+    );
+    if (result is! List) {
+      throw const FormatException('Activity feed response was not a list.');
+    }
+    return result
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList(growable: false);
+  }
+
+  Future<void> submitReport({
+    required String reporterId,
+    required String targetId,
+    required String targetType,
+    required String reason,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    if (reporterId.isEmpty ||
+        targetId.trim().isEmpty ||
+        !const {'place', 'user', 'review'}.contains(targetType) ||
+        !const {
+          'Inappropriate content',
+          'Spam',
+          'Harassment',
+          'False information',
+          'Other',
+        }.contains(reason)) {
+      throw ArgumentError('Invalid report details.');
+    }
+    await client.from('reports').insert({
+      'reporter_id': reporterId,
+      'target_id': targetId.trim(),
+      'target_type': targetType,
+      'reason': reason,
+    });
+  }
+
   Future<void> pushStats(GamificationStats stats) async {
     if (_client == null) return;
     try {
@@ -155,33 +291,61 @@ class SupabaseService {
     }
   }
 
-  Future<({bool ok, PostgrestException? error})> registerCheckin(
+  Future<({bool ok, bool queued, PostgrestException? error})> registerCheckin(
     String userId,
     String placeId,
   ) async {
     if (_client == null || userId.isEmpty) {
-      return (ok: false, error: null);
+      return (ok: false, queued: false, error: null);
+    }
+    final checkedInAt = DateTime.now().toUtc();
+    final timestamp = checkedInAt.toIso8601String();
+
+    Future<bool> queueCheckin() => SyncQueueService.instance.enqueueCheckin(
+      userId: userId,
+      placeId: placeId,
+      checkedInAt: checkedInAt,
+    );
+
+    if (!SyncQueueService.instance.isOnline) {
+      final queued = await queueCheckin();
+      return (
+        ok: queued,
+        queued: queued,
+        error: queued
+            ? null
+            : PostgrestException(
+                message: 'Check-in could not be saved to the offline queue.',
+                code: 'offline_queue_unavailable',
+                details: null,
+                hint: null,
+              ),
+      );
     }
     try {
       await _client!.from('place_checkins').insert({
         'user_id': userId,
         'place_id': placeId,
-        'checked_in_at': DateTime.now().toUtc().toIso8601String(),
+        'checked_in_at': timestamp,
       }).select();
-      return (ok: true, error: null);
+      return (ok: true, queued: false, error: null);
     } on PostgrestException catch (e) {
       _logError('registerCheckin($userId, $placeId)', e);
-      return (ok: false, error: e);
+      return (ok: false, queued: false, error: e);
     } catch (e) {
       _logError('registerCheckin($userId, $placeId)', e);
+      final queued = await queueCheckin();
       return (
-        ok: false,
-        error: PostgrestException(
-          message: e.toString(),
-          code: 'unknown',
-          details: null,
-          hint: null,
-        ),
+        ok: queued,
+        queued: queued,
+        error: queued
+            ? null
+            : PostgrestException(
+                message: e.toString(),
+                code: 'unknown',
+                details: null,
+                hint: null,
+              ),
       );
     }
   }

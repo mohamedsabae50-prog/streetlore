@@ -10,6 +10,7 @@ import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../widgets/compass_brand.dart';
 import 'main_navigation.dart';
+import 'choose_username_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 
@@ -108,7 +109,9 @@ class _LoginScreenState extends State<LoginScreen>
       );
       return;
     }
-    _goToMain();
+    await _routeAfterAuth(
+      initialUsername: _isSignUp ? _usernameCtrl.text.trim() : '',
+    );
   }
 
   String _authErrorMessage(String key) {
@@ -129,10 +132,26 @@ class _LoginScreenState extends State<LoginScreen>
   
   
 
-  void _goToMain() {
+  Future<void> _routeAfterAuth({String initialUsername = ''}) async {
+    final auth = context.read<AuthProvider>();
+    try {
+      await auth.refreshUsernameStatus();
+    } catch (error, stackTrace) {
+      debugPrint('Could not verify account username: $error\n$stackTrace');
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('username_check_failed'))),
+      );
+      return;
+    }
+    if (!mounted) return;
+    final destination = auth.requiresUsername
+        ? ChooseUsernameScreen(initialUsername: initialUsername)
+        : const MainNavigation();
     Navigator.of(context).pushAndRemoveUntil(
       PageRouteBuilder(
-        pageBuilder: (ctx, a, second) => const MainNavigation(),
+        pageBuilder: (ctx, a, second) => destination,
         transitionDuration: const Duration(milliseconds: 550),
         reverseTransitionDuration: const Duration(milliseconds: 350),
         transitionsBuilder: (ctx, a, second, child) =>
@@ -411,7 +430,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 }
 
                                 if (auth.isLoggedIn) {
-                                  _goToMain();
+                                  await _routeAfterAuth();
                                   return;
                                 }
 
@@ -433,7 +452,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         .timeout(const Duration(minutes: 2));
 
                                     if (auth.isLoggedIn && mounted) {
-                                      _goToMain();
+                                      await _routeAfterAuth();
                                     }
                                   } else {
                                     final errorKey = await auth.signInWithGoogleNative();
@@ -463,7 +482,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       return;
                                     }
                                     if (mounted) {
-                                      _goToMain();
+                                      await _routeAfterAuth();
                                     }
                                   }
                                 } on TimeoutException {

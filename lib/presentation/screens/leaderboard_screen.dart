@@ -33,11 +33,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     });
   }
 
-  int _computeMyRank(List<GamificationStats> entries, GamificationStats mine) {
-    final better = entries
-        .where((e) => e.totalPoints > mine.totalPoints)
-        .length;
-    return better + 1;
+  int? _computeMyRank(
+    List<CityLeaderboardEntry> entries,
+    GamificationStats mine,
+  ) {
+    final index = entries.indexWhere((entry) => entry.stats.userId == mine.userId);
+    return index < 0 ? null : index + 1;
   }
 
   void _maybeCelebrate(int newRank, String newLevel) {
@@ -67,9 +68,18 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               final entries = lb.entries;
               final myStats = g.stats;
               final myRank = _computeMyRank(entries, myStats);
-              WidgetsBinding.instance.addPostFrameCallback(
-                (_) => _maybeCelebrate(myRank, myStats.level),
-              );
+              CityLeaderboardEntry? myStanding;
+              for (final entry in entries) {
+                if (entry.stats.userId == myStats.userId) {
+                  myStanding = entry;
+                  break;
+                }
+              }
+              if (myRank != null) {
+                WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => _maybeCelebrate(myRank, myStats.level),
+                );
+              }
               return CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
@@ -81,7 +91,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          context.tr('lb_subtitle'),
+                          context.tr('lb_city_title'),
                           style: TextStyle(
                             fontSize: 12,
                             color: context.textSec,
@@ -112,17 +122,55 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     ],
                   ),
                   SliverToBoxAdapter(
-                    child: _MyCard(stats: myStats, rank: myRank),
+                    child: _MyCard(
+                      stats: myStats,
+                      rank: myRank,
+                      score: myStanding?.score,
+                      metric: lb.metric,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: _LeaderboardFilters(provider: lb),
                   ),
                   if (lb.isLoading)
                     const SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(child: CircularProgressIndicator()),
                     )
+                  else if (lb.error != null)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                lb.error!,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: context.textSec),
+                              ),
+                              const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                onPressed: () => lb.load(),
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: Text(context.tr('lb_try_again')),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
                   else if (entries.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
-                      child: Center(child: Text(context.tr('lb_empty'))),
+                      child: Center(
+                        child: Text(
+                          context.tr('lb_empty'),
+                          style: TextStyle(color: context.textSec),
+                        ),
+                      ),
                     )
                   else
                     SliverList(
@@ -130,7 +178,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         (context, i) => FadeInUp(
                           delay: Duration(milliseconds: 80 * i + 200),
                           offsetY: 30,
-                          child: _Row(rank: i + 1, stats: entries[i]),
+                          child: _Row(
+                            rank: i + 1,
+                            entry: entries[i],
+                            metric: lb.metric,
+                          ),
                         ),
                         childCount: entries.length,
                       ),
@@ -148,10 +200,95 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 }
 
+class _LeaderboardFilters extends StatelessWidget {
+  const _LeaderboardFilters({required this.provider});
+
+  final LeaderboardProvider provider;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final period in LeaderboardPeriod.values)
+                ChoiceChip(
+                  label: Text(context.tr(_periodKey(period))),
+                  selected: provider.period == period,
+                  onSelected: (selected) {
+                    if (selected) provider.load(period: period);
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final metric in LeaderboardMetric.values)
+                ChoiceChip(
+                  label: Text(context.tr(_metricKey(metric))),
+                  selected: provider.metric == metric,
+                  onSelected: (selected) {
+                    if (selected) provider.load(metric: metric);
+                  },
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _periodKey(LeaderboardPeriod period) {
+    switch (period) {
+      case LeaderboardPeriod.week:
+        return 'lb_period_week';
+      case LeaderboardPeriod.month:
+        return 'lb_period_month';
+      case LeaderboardPeriod.allTime:
+        return 'lb_period_all_time';
+    }
+  }
+
+  String _metricKey(LeaderboardMetric metric) {
+    switch (metric) {
+      case LeaderboardMetric.checkIns:
+        return 'lb_metric_checkins';
+      case LeaderboardMetric.longestStreak:
+        return 'lb_metric_streak';
+      case LeaderboardMetric.hiddenGems:
+        return 'lb_metric_gems';
+    }
+  }
+}
+
+String _metricLabel(LeaderboardMetric metric) {
+  switch (metric) {
+    case LeaderboardMetric.checkIns:
+      return 'check-ins';
+    case LeaderboardMetric.longestStreak:
+      return 'day streak';
+    case LeaderboardMetric.hiddenGems:
+      return 'hidden gems';
+  }
+}
+
 class _MyCard extends StatelessWidget {
   final GamificationStats stats;
-  final int rank;
-  const _MyCard({required this.stats, required this.rank});
+  final int? rank;
+  final int? score;
+  final LeaderboardMetric metric;
+  const _MyCard({
+    required this.stats,
+    required this.rank,
+    required this.score,
+    required this.metric,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -213,12 +350,13 @@ class _MyCard extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    AnimatedCounter(
-                      value: stats.totalPoints,
-                      suffix: context.tr('lb_points_level', {
-                        'p': '',
-                        'l': AppStrings.level(context, stats.level),
-                      }),
+                    Text(
+                      score == null
+                          ? context.tr('lb_points_level', {
+                              'p': '${stats.totalPoints}',
+                              'l': AppStrings.level(context, stats.level),
+                            })
+                          : '${score!} ${_metricLabel(metric)}',
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 12,
@@ -256,7 +394,7 @@ class _MyCard extends StatelessWidget {
                       size: 18,
                     ),
                     Text(
-                      '#$rank',
+                      rank == null ? '—' : '#$rank',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
@@ -348,10 +486,17 @@ class _MyCard extends StatelessWidget {
 
 class _Row extends StatelessWidget {
   final int rank;
-  final GamificationStats stats;
-  const _Row({required this.rank, required this.stats});
+  final CityLeaderboardEntry entry;
+  final LeaderboardMetric metric;
+  const _Row({
+    required this.rank,
+    required this.entry,
+    required this.metric,
+  });
+
   @override
   Widget build(BuildContext context) {
+    final stats = entry.stats;
     Color? avatarColor;
     if (stats.avatarColorHex != null && stats.avatarColorHex!.isNotEmpty) {
       try {
@@ -438,10 +583,9 @@ class _Row extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  context.tr('lb_row_sub', {
-                    'v': '${stats.placesVisited}',
-                    'r': '${stats.reviewsPosted}',
-                  }),
+                  '${entry.checkIns} check-ins · '
+                  '${entry.longestStreak} day streak · '
+                  '${entry.hiddenGems} hidden gems',
                   style: TextStyle(color: context.textSec, fontSize: 12),
                 ),
               ],
@@ -451,7 +595,7 @@ class _Row extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               AnimatedCounter(
-                value: stats.totalPoints,
+                value: entry.score,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
@@ -459,7 +603,7 @@ class _Row extends StatelessWidget {
                 ),
               ),
               Text(
-                AppStrings.level(context, stats.level),
+                _metricLabel(metric),
                 style: TextStyle(color: context.textSec, fontSize: 11),
               ),
             ],

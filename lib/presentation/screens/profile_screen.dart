@@ -5,11 +5,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_version.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/geofencing_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/confetti_overlay.dart';
 import '../../logic/place_provider.dart';
+import '../../logic/geofence_provider.dart';
 import '../../logic/tour_provider.dart';
 import '../../logic/theme_provider.dart';
 import '../../logic/auth_provider.dart';
@@ -29,6 +31,8 @@ import 'achievements_screen.dart';
 import 'admin_panel_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'paywall_screen.dart';
+import 'suggest_place_screen.dart';
+import 'search_users_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -68,6 +72,74 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
         _locationEnabled = prefs.getBool('location_enabled') ?? true;
       });
+    }
+  }
+
+  Future<void> _setSmartAlerts(
+    BuildContext context,
+    GeofenceProvider geo,
+    bool enabled,
+  ) async {
+    if (!enabled) {
+      await geo.disableSmartAlerts();
+      return;
+    }
+    final consent = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.tr('geo_background_title')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(context.tr('smart_alerts_consent')),
+            TextButton.icon(
+              onPressed: () => Navigator.of(dialogContext).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PrivacyPolicyScreen(),
+                ),
+              ),
+              icon: const Icon(Icons.privacy_tip_outlined),
+              label: Text(context.tr('geo_read_privacy_policy')),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.tr('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(context.tr('geo_enable')),
+          ),
+        ],
+      ),
+    );
+    if (consent != true || !context.mounted) return;
+
+    final result = await geo.enableSmartAlerts(
+      context.read<PlaceProvider>().places,
+    );
+    if (result != GeofencingStartResult.started && context.mounted) {
+      final key = switch (result) {
+        GeofencingStartResult.noPlacesSelected => 'smart_alerts_no_gems',
+        GeofencingStartResult.unsupported => 'geo_unsupported',
+        GeofencingStartResult.locationServicesDisabled =>
+          'checkin_location_disabled',
+        GeofencingStartResult.locationPermissionDenied =>
+          'checkin_location_permission',
+        GeofencingStartResult.backgroundPermissionDenied =>
+          'geo_background_denied',
+        GeofencingStartResult.notificationPermissionDenied =>
+          'geo_notifications_denied',
+        GeofencingStartResult.notificationsUnavailable ||
+        GeofencingStartResult.locationUnavailable => 'geo_start_failed',
+        GeofencingStartResult.started => 'geo_monitoring_on',
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr(key))),
+      );
     }
   }
 
@@ -907,6 +979,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                         ),
                         _Div(),
+                        Consumer<GeofenceProvider>(
+                          builder: (context, geo, _) => _ToggleTile(
+                            icon: Icons.radar_rounded,
+                            title: context.tr('smart_alerts_title'),
+                            subtitle: context.tr('smart_alerts_subtitle'),
+                            color: const Color(0xFF0EA5E9),
+                            value: geo.smartAlertsEnabled,
+                            onChanged: (enabled) async {
+                              HapticFeedback.lightImpact();
+                              await geo.ready;
+                              if (!context.mounted) return;
+                              await _setSmartAlerts(context, geo, enabled);
+                            },
+                          ),
+                        ),
+                        _Div(),
                         Consumer<LocaleProvider>(
                           builder: (context, lp, _) {
                             return _ToggleTile(
@@ -990,6 +1078,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => const MapViewScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _Div(),
+                        _ActionTile(
+                          icon: Icons.people_alt_rounded,
+                          title: context.tr('users_search_title'),
+                          subtitle: context.tr('users_search_subtitle'),
+                          color: const Color(0xFF6366F1),
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (_) => const SearchUsersScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _Div(),
+                        _ActionTile(
+                          icon: Icons.add_location_alt_rounded,
+                          title: 'Suggest a Hidden Gem',
+                          subtitle: 'Share a special place with our team',
+                          color: const Color(0xFF10B981),
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SuggestPlaceScreen(),
                               ),
                             );
                           },

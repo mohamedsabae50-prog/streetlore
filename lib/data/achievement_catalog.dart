@@ -304,6 +304,17 @@ class AchievementCatalog {
       nameKey: 'ach_completionist_name',
       descKey: 'ach_completionist_desc',
     ),
+    AchievementDefinition(
+      id: 'squad_explorer',
+      icon: Icons.groups_rounded,
+      color: Color(0xFFFFD700),
+      tier: AchievementTier.gold,
+      category: AchievementCategory.special,
+      target: 1,
+      points: 125,
+      nameKey: 'ach_squad_explorer_name',
+      descKey: 'ach_squad_explorer_desc',
+    ),
   ];
 
   static AchievementDefinition? byId(String id) {

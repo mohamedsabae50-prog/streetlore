@@ -28,6 +28,8 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get userName => _userName;
   String get username => _username;
+  bool get requiresUsername =>
+      AppConfig.supabaseEnabled && _isLoggedIn && !_isGuest && _username.isEmpty;
   String get userEmail => _userEmail;
   String get userId => _userId;
   bool get isGuest => _isGuest;
@@ -58,6 +60,47 @@ class AuthProvider extends ChangeNotifier {
       rethrow;
     }
     notifyListeners();
+  }
+
+  Future<void> refreshUsernameStatus() async {
+    if (!AppConfig.supabaseEnabled || _userId.isEmpty || _isGuest) return;
+    final profile = await Supabase.instance.client
+        .from('profiles')
+        .select('username')
+        .eq('user_id', _userId)
+        .maybeSingle();
+    _username = profile?['username'] as String? ?? '';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_username', _username);
+    notifyListeners();
+  }
+
+  Future<String?> claimUsername(String value) async {
+    final cleanUsername = value.trim();
+    if (!_isValidUsername(cleanUsername)) return 'username_invalid';
+    if (!AppConfig.supabaseEnabled || _userId.isEmpty || _isGuest) {
+      return 'username_save_failed';
+    }
+    try {
+      final result = await Supabase.instance.client.rpc(
+        'set_my_username',
+        params: {'p_username': cleanUsername},
+      );
+      if (result != true) return 'username_save_failed';
+      _username = cleanUsername;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_username', _username);
+      notifyListeners();
+      return null;
+    } on PostgrestException catch (error) {
+      if (error.code == '23505') return 'username_taken';
+      if (error.code == '22023') return 'username_invalid';
+      debugPrint('AuthProvider.claimUsername failed: ${error.message}');
+      return 'username_save_failed';
+    } catch (error, stackTrace) {
+      debugPrint('AuthProvider.claimUsername failed: $error\n$stackTrace');
+      return 'username_save_failed';
+    }
   }
 
   
@@ -221,16 +264,17 @@ class AuthProvider extends ChangeNotifier {
         (meta['name'] as String?) ??
         (user.email?.split('@').first) ??
         'Explorer';
-    _username = (meta['username'] as String?) ?? _username;
+    _username = '';
     _userEmail = user.email ?? _userEmail;
     try {
       final profile = await Supabase.instance.client
           .from('profiles')
-          .select('is_pro, subscription_tier')
+          .select('is_pro, subscription_tier, username')
           .eq('user_id', user.id)
           .maybeSingle();
       _isPro = profile?['is_pro'] == true;
       _subscriptionTier = profile?['subscription_tier'] as String?;
+      _username = profile?['username'] as String? ?? '';
       await _persistCachedProStatus(user.id);
     } catch (error, stackTrace) {
       debugPrint('AuthProvider: failed to load Pro profile: $error\n$stackTrace');
@@ -323,23 +367,7 @@ class AuthProvider extends ChangeNotifier {
         final res = await Supabase.instance.client.auth
             .signInWithPassword(email: cleanEmail, password: cleanPassword);
         if (res.user != null) {
-          _isLoggedIn = true;
-          _isGuest = false;
-          _userId = res.user!.id;
-          _isPro = false;
-          _subscriptionTier = null;
-          _userEmail = res.user!.email ?? cleanEmail;
-          final meta = res.user!.userMetadata ?? const <String, dynamic>{};
-          _userName =
-              (meta['full_name'] as String?) ?? cleanName;
-          _username =
-              (meta['username'] as String?) ?? cleanUsername;
-          await _persistAuthSnapshot(
-            accessToken: res.session?.accessToken,
-            refreshToken: res.session?.refreshToken,
-            expiresAtUnixSeconds: res.session?.expiresAt,
-          );
-          notifyListeners();
+          await _syncFromSupabase();
           return null;
         }
         return 'auth_failed';
@@ -412,10 +440,7 @@ class AuthProvider extends ChangeNotifier {
   
   bool _isValidUsername(String u) {
     if (u.length < 3 || u.length > 20) return false;
-    if (u.startsWith('.') || u.startsWith('-') || u.startsWith('_')) {
-      return false;
-    }
-    return RegExp(r'^[A-Za-z0-9._-]+$').hasMatch(u);
+    return RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{2,19}$').hasMatch(u);
   }
 
   

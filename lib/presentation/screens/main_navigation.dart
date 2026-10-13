@@ -14,6 +14,8 @@ import 'home_screen.dart';
 import 'tours_screen.dart';
 import 'saved_tours_screen.dart';
 import 'profile_screen.dart';
+import 'choose_username_screen.dart';
+import 'activity_feed_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -34,6 +36,7 @@ class _MainNavigationState extends State<MainNavigation>
     HomeScreen(),
     ToursScreen(),
     SavedToursScreen(),
+    ActivityFeedScreen(),
     ProfileScreen(),
   ];
 
@@ -52,6 +55,11 @@ class _MainNavigationState extends State<MainNavigation>
       icon: Icons.bookmark_outline_rounded,
       activeIcon: Icons.bookmark_rounded,
       label: 'nav_saved',
+    ),
+    _NavItem(
+      icon: Icons.dynamic_feed_outlined,
+      activeIcon: Icons.dynamic_feed_rounded,
+      label: 'feed_title',
     ),
     _NavItem(
       icon: Icons.person_outline_rounded,
@@ -110,6 +118,9 @@ class _MainNavigationState extends State<MainNavigation>
 
   @override
   Widget build(BuildContext context) {
+    if (context.watch<AuthProvider>().requiresUsername) {
+      return const ChooseUsernameScreen();
+    }
     final cardColor = Theme.of(context).cardColor;
     final borderColor = Theme.of(context).dividerColor;
     final mediaWidth = MediaQuery.of(context).size.width;

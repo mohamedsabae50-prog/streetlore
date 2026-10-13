@@ -135,15 +135,83 @@ class PlaceModel {
   String get primaryImage =>
       officialImages.isNotEmpty ? officialImages.first : imageUrl;
 
+  static String _stringValue(
+    Map<String, dynamic> json,
+    List<String> keys, {
+    String fallback = '',
+  }) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      if (value is String) {
+        if (value.isNotEmpty) return value;
+        continue;
+      }
+      return value.toString();
+    }
+    return fallback;
+  }
+
+  static int _intValue(
+    Map<String, dynamic> json,
+    List<String> keys, {
+    int fallback = 0,
+  }) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      final parsed = int.tryParse(value.toString());
+      if (parsed != null) return parsed;
+    }
+    return fallback;
+  }
+
+  static double _doubleValue(
+    Map<String, dynamic> json,
+    List<String> keys, {
+    double fallback = 0.0,
+  }) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      if (value is double) return value;
+      if (value is num) return value.toDouble();
+      final parsed = double.tryParse(value.toString());
+      if (parsed != null) return parsed;
+    }
+    return fallback;
+  }
+
+  static bool _boolValue(
+    Map<String, dynamic> json,
+    List<String> keys, {
+    bool fallback = false,
+  }) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      if (value is bool) return value;
+      if (value is num) return value != 0;
+      if (value is String) {
+        final lowered = value.toLowerCase();
+        if (lowered == 'true') return true;
+        if (lowered == 'false') return false;
+      }
+    }
+    return fallback;
+  }
+
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
     Map<String, int>? bestTimeOverride;
     final raw = json['best_time_override'];
     if (raw is Map) {
       bestTimeOverride = raw.map(
-        (k, v) => MapEntry(k.toString(), (v as num).toInt()),
+        (k, v) => MapEntry(k.toString(), (v is num ? v.toInt() : 0)),
       );
     }
-    final urlsRaw = json['image_urls'] ?? json['imageUrls'];
+    final urlsRaw = json['image_urls'] ?? json['imageUrls'] ?? json['image_url'];
     List<String> urls = const <String>[];
     if (urlsRaw is List) {
       urls = urlsRaw
@@ -151,51 +219,52 @@ class PlaceModel {
           .map((e) => e.toString().trim())
           .where((s) => s.isNotEmpty)
           .toList(growable: false);
+    } else if (urlsRaw is String && urlsRaw.isNotEmpty) {
+      urls = [urlsRaw.trim()];
     }
     return PlaceModel(
-      id: json['id'] as String,
-      nameEn:
-          (json['name_en'] as String?) ??
-          (json['name'] as String?) ??
-          (json['nameEn'] as String?) ??
-          '',
-      nameAr: json['name_ar'] as String? ?? json['nameAr'] as String?,
-      descriptionEn:
-          (json['description_en'] as String?) ??
-          (json['description'] as String?) ??
-          (json['descriptionEn'] as String?) ??
-          '',
-      descriptionAr:
-          json['description_ar'] as String? ?? json['descriptionAr'] as String?,
-      imageUrl: json['imageUrl'] as String,
+      id: _stringValue(json, ['id'], fallback: ''),
+      nameEn: _stringValue(json, ['name_en', 'name', 'nameEn'], fallback: ''),
+      nameAr: _stringValue(json, ['name_ar', 'nameAr']),
+      descriptionEn: _stringValue(
+        json,
+        ['description_en', 'description', 'descriptionEn'],
+        fallback: '',
+      ),
+      descriptionAr: _stringValue(json, ['description_ar', 'descriptionAr']),
+      imageUrl: _stringValue(json, ['imageUrl', 'image_url'], fallback: ''),
       imageUrls: urls,
-      rating: (json['rating'] as num).toDouble(),
-      category: json['category'] as String? ?? 'General',
-      categoryAr:
-          json['category_ar'] as String? ?? json['categoryAr'] as String?,
-      lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
-      lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
-      address: json['address'] as String? ?? 'Alexandria, Egypt',
-      addressAr: json['address_ar'] as String? ?? json['addressAr'] as String?,
-      openHours: json['openHours'] as String? ?? '9:00 AM - 6:00 PM',
-      reviewCount: json['reviewCount'] as int? ?? 0,
-      priceLevel: PriceLevel.fromName(json['priceLevel'] as String?),
-      priceNote: json['priceNote'] as String? ?? '',
-      priceNoteAr:
-          json['price_note_ar'] as String? ?? json['priceNoteAr'] as String?,
-      isHiddenGem: json['isHiddenGem'] as bool? ?? false,
-      priceLocalEgp: json['priceLocalEgp'] as int?,
-      priceForeignerEgp: json['priceForeignerEgp'] as int?,
-      displayOrder: (json['display_order'] as num?)?.toInt() ?? 999,
+      rating: _doubleValue(json, ['rating'], fallback: 0.0),
+      category: _stringValue(json, ['category'], fallback: 'General'),
+      categoryAr: _stringValue(json, ['category_ar', 'categoryAr']),
+      lat: _doubleValue(json, ['lat'], fallback: 0.0),
+      lng: _doubleValue(json, ['lng'], fallback: 0.0),
+      address: _stringValue(json, ['address'], fallback: 'Alexandria, Egypt'),
+      addressAr: _stringValue(json, ['address_ar', 'addressAr']),
+      openHours: _stringValue(json, ['openHours', 'open_hours'], fallback: '9:00 AM - 6:00 PM'),
+      reviewCount: _intValue(json, ['reviewCount', 'review_count'], fallback: 0),
+      priceLevel: PriceLevel.fromName(
+        _stringValue(json, ['priceLevel', 'price_level']),
+      ),
+      priceNote: _stringValue(json, ['priceNote', 'price_note'], fallback: ''),
+      priceNoteAr: _stringValue(json, ['price_note_ar', 'priceNoteAr']),
+      isHiddenGem: _boolValue(json, ['isHiddenGem', 'is_hidden_gem'], fallback: false),
+      priceLocalEgp: _intValue(json, ['priceLocalEgp', 'price_local_egp']),
+      priceForeignerEgp: _intValue(
+        json,
+        ['priceForeignerEgp', 'price_foreigner_egp'],
+      ),
+      displayOrder: _intValue(json, ['display_order'], fallback: 999),
       bestTimeOverride: bestTimeOverride,
-      bestTimeNote: json['best_time_note'] as String?,
-      bestTimeToVisit: json['best_time_to_visit'] as String?,
-      isIndoor: json['is_indoor'] as bool? ?? false,
-      enableChat:
-          (json['enable_chat'] as bool?) ??
-          (json['is_chat_enabled'] as bool?) ??
-          true,
-      enableGallery: (json['enable_gallery'] as bool?) ?? true,
+      bestTimeNote: _stringValue(json, ['best_time_note']),
+      bestTimeToVisit: _stringValue(json, ['best_time_to_visit']),
+      isIndoor: _boolValue(json, ['is_indoor'], fallback: false),
+      enableChat: _boolValue(
+        json,
+        ['enable_chat', 'is_chat_enabled'],
+        fallback: true,
+      ),
+      enableGallery: _boolValue(json, ['enable_gallery'], fallback: true),
     );
   }
 

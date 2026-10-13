@@ -147,6 +147,17 @@ class AppStrings {
       'en': 'Most travelled around the world',
       'ar': 'الأكثر تنقلًا حول العالم',
     },
+    'lb_city_title': {
+      'en': 'King of Alexandria',
+      'ar': 'ملك الإسكندرية',
+    },
+    'lb_period_week': {'en': 'Weekly', 'ar': 'أسبوعي'},
+    'lb_period_month': {'en': 'Monthly', 'ar': 'شهري'},
+    'lb_period_all_time': {'en': 'All time', 'ar': 'طوال الوقت'},
+    'lb_metric_checkins': {'en': 'Check-ins', 'ar': 'الزيارات'},
+    'lb_metric_streak': {'en': 'Longest streak', 'ar': 'أطول سلسلة'},
+    'lb_metric_gems': {'en': 'Hidden gems', 'ar': 'الجواهر المخفية'},
+    'lb_try_again': {'en': 'Try again', 'ar': 'حاول مرة أخرى'},
     'lb_title': {'en': 'Leaderboard', 'ar': 'الترتيب'},
     'lb_your_rank': {'en': 'YOUR RANK', 'ar': 'ترتيبك'},
     'lb_points_level': {'en': '{p} points · {l}', 'ar': '{p} نقطة · {l}'},
@@ -159,6 +170,106 @@ class AppStrings {
     'lb_row_sub': {
       'en': '{v} visited · {r} reviews',
       'ar': '{v} زيارة · {r} تقييم',
+    },
+    'username_title': {
+      'en': 'Choose your username',
+      'ar': 'اختر اسم المستخدم',
+    },
+    'username_subtitle': {
+      'en': 'This unique name helps other explorers find and follow you.',
+      'ar': 'يساعد هذا الاسم الفريد المستكشفين الآخرين في العثور عليك ومتابعتك.',
+    },
+    'username_label': {'en': 'Username', 'ar': 'اسم المستخدم'},
+    'username_requirements': {
+      'en': 'Use 3-20 letters, numbers, dots, underscores, or hyphens. Start with a letter or number.',
+      'ar': 'استخدم ٣ إلى ٢٠ حرفًا أو رقمًا أو نقطة أو شرطة سفلية أو واصلة، وابدأ بحرف أو رقم.',
+    },
+    'username_continue': {'en': 'Continue', 'ar': 'متابعة'},
+    'username_taken': {
+      'en': 'That username is already taken. Try another.',
+      'ar': 'اسم المستخدم هذا مستخدم بالفعل. جرّب اسمًا آخر.',
+    },
+    'username_invalid': {
+      'en': 'Enter a valid username using the rules shown above.',
+      'ar': 'أدخل اسم مستخدم صالحًا وفقًا للقواعد الموضحة أعلاه.',
+    },
+    'username_save_failed': {
+      'en': 'We could not save your username. Please try again.',
+      'ar': 'تعذر حفظ اسم المستخدم. حاول مرة أخرى.',
+    },
+    'username_check_failed': {
+      'en': 'We could not verify your account profile. Check your connection and try again.',
+      'ar': 'تعذر التحقق من ملفك الشخصي. تحقق من الاتصال وحاول مرة أخرى.',
+    },
+    'users_search_title': {'en': 'Search Users', 'ar': 'البحث عن مستخدمين'},
+    'users_search_subtitle': {
+      'en': 'Find and follow other Streetlore explorers',
+      'ar': 'اعثر على مستكشفي Streetlore الآخرين وتابعهم',
+    },
+    'users_search_hint': {'en': 'Search usernames', 'ar': 'ابحث عن أسماء المستخدمين'},
+    'users_search_min_length': {
+      'en': 'Enter at least two characters to search.',
+      'ar': 'أدخل حرفين على الأقل للبحث.',
+    },
+    'users_search_failed': {
+      'en': 'User search failed. Please try again.',
+      'ar': 'تعذر البحث عن المستخدمين. حاول مرة أخرى.',
+    },
+    'users_search_empty': {
+      'en': 'No users found. Try another username.',
+      'ar': 'لم يتم العثور على مستخدمين. جرّب اسمًا آخر.',
+    },
+    'users_sign_in_required': {
+      'en': 'Sign in to find and follow other explorers.',
+      'ar': 'سجّل الدخول للعثور على مستكشفين آخرين ومتابعتهم.',
+    },
+    'user_profile_title': {'en': 'Explorer Profile', 'ar': 'ملف المستكشف'},
+    'follow_user': {'en': 'Follow', 'ar': 'متابعة'},
+    'unfollow_user': {'en': 'Unfollow', 'ar': 'إلغاء المتابعة'},
+    'follow_action_failed': {
+      'en': 'Could not update follow status. Please try again.',
+      'ar': 'تعذر تحديث حالة المتابعة. حاول مرة أخرى.',
+    },
+    'feed_title': {'en': 'Activity', 'ar': 'النشاط'},
+    'feed_empty': {
+      'en': 'No recent activity yet. Follow explorers to see their check-ins, badges, and approved place suggestions.',
+      'ar': 'لا يوجد نشاط حديث بعد. تابع المستكشفين لرؤية زياراتهم وشاراتهم واقتراحات الأماكن المقبولة.',
+    },
+    'feed_load_failed': {
+      'en': 'Could not load the activity feed. Please try again.',
+      'ar': 'تعذر تحميل موجز النشاط. حاول مرة أخرى.',
+    },
+    'feed_action_checkin': {'en': 'checked in at', 'ar': 'زار'},
+    'feed_action_badge': {'en': 'unlocked a badge', 'ar': 'حصل على شارة'},
+    'feed_action_suggestion': {
+      'en': 'suggested a place',
+      'ar': 'اقترح مكانًا',
+    },
+    'report_title': {'en': 'Report content', 'ar': 'الإبلاغ عن محتوى'},
+    'report_reason_prompt': {
+      'en': 'Why are you reporting this?',
+      'ar': 'لماذا تريد الإبلاغ عن هذا المحتوى؟',
+    },
+    'report_reason_inappropriate': {
+      'en': 'Inappropriate content',
+      'ar': 'محتوى غير لائق',
+    },
+    'report_reason_spam': {'en': 'Spam', 'ar': 'رسائل مزعجة'},
+    'report_reason_harassment': {'en': 'Harassment',
+      'ar': 'مضايقة'},
+    'report_reason_false_info': {
+      'en': 'False information',
+      'ar': 'معلومات مضللة',
+    },
+    'report_reason_other': {'en': 'Other', 'ar': 'سبب آخر'},
+    'report_submit': {'en': 'Submit report', 'ar': 'إرسال البلاغ'},
+    'report_submitted': {
+      'en': 'Thanks. Your report was submitted for review.',
+      'ar': 'شكرًا. تم إرسال بلاغك للمراجعة.',
+    },
+    'report_failed': {
+      'en': 'Could not submit your report. Please try again.',
+      'ar': 'تعذر إرسال البلاغ. حاول مرة أخرى.',
     },
 
     'level_explorer': {'en': 'Explorer', 'ar': 'مستكشف'},
@@ -179,6 +290,24 @@ class AppStrings {
     'location_services_sub': {
       'en': 'Used for nearby recommendations',
       'ar': 'تُستخدم لاقتراح أماكن قريبة',
+    },
+    'smart_alerts_title': {
+      'en': 'Smart Location Alerts',
+      'ar': 'تنبيهات الموقع الذكية',
+    },
+    'smart_alerts_subtitle': {
+      'en': 'Get notified within 150 m of a hidden gem',
+      'ar': 'احصل على تنبيه عند الاقتراب حتى ١٥٠ مترًا من جوهرة مخفية',
+    },
+    'smart_alerts_consent': {
+      'en':
+          'Streetlore uses background location to alert you when you are within 150 m of a hidden gem. You can turn this off at any time.',
+      'ar':
+          'يستخدم Streetlore موقعك في الخلفية لتنبيهك عند الاقتراب لمسافة ١٥٠ مترًا من جوهرة مخفية. يمكنك إيقاف ذلك في أي وقت.',
+    },
+    'smart_alerts_no_gems': {
+      'en': 'No hidden gems are available to monitor right now.',
+      'ar': 'لا توجد جواهر مخفية متاحة للتنبيه عنها حاليًا.',
     },
     'language': {'en': 'Language', 'ar': 'اللغة'},
     'emergency_info': {'en': 'Emergency Info', 'ar': 'معلومات الطوارئ'},
@@ -486,6 +615,34 @@ class AppStrings {
       'en': 'Unlock 20 different achievements',
       'ar': 'افتح 20 إنجازات مختلفة',
     },
+    'ach_squad_explorer_name': {'en': 'Squad Explorer', 'ar': 'مستكشف الفريق'},
+    'ach_squad_explorer_desc': {
+      'en': 'Check in while exploring with an active squad',
+      'ar': 'سجّل زيارتك أثناء الاستكشاف مع فريق نشط',
+    },
+    'squad_title': {'en': 'Co-op Exploration', 'ar': 'استكشاف جماعي'},
+    'squad_active_title': {'en': 'Your active squad', 'ar': 'فريقك النشط'},
+    'squad_invite_subtitle': {
+      'en': 'Invite friends and explore together',
+      'ar': 'ادعُ أصدقاءك واستكشفوا معًا',
+    },
+    'squad_start_subtitle': {
+      'en': 'Create or join a squad with a short code',
+      'ar': 'أنشئ فريقًا أو انضم إليه باستخدام رمز قصير',
+    },
+    'squad_create': {'en': 'Create a squad', 'ar': 'أنشئ فريقًا'},
+    'squad_join': {'en': 'Join squad', 'ar': 'انضم إلى فريق'},
+    'squad_code_label': {
+      'en': '4-6 digit squad code',
+      'ar': 'رمز الفريق من 4 إلى 6 أرقام',
+    },
+    'squad_copy_code': {'en': 'Copy code', 'ar': 'انسخ الرمز'},
+    'squad_leave': {'en': 'Leave squad', 'ar': 'غادر الفريق'},
+    'squad_members': {'en': '{n} members', 'ar': '{n} أعضاء'},
+    'squad_sign_in': {
+      'en': 'Sign in to create or join a squad.',
+      'ar': 'سجّل الدخول لإنشاء فريق أو الانضمام إليه.',
+    },
     'write_review': {'en': 'Write Review', 'ar': 'اكتب تقييمًا'},
     'community_reviews': {'en': 'Community Reviews', 'ar': 'تقييمات المجتمع'},
     'no_reviews': {
@@ -635,11 +792,16 @@ class AppStrings {
     },
     'privacy_policy_title': {'en': 'Privacy Policy', 'ar': 'سياسة الخصوصية'},
     'terms_of_service_title': {'en': 'Terms of Service', 'ar': 'شروط الخدمة'},
-    'profile_legal_title': {'en': 'Settings & Legal', 'ar': 'الإعدادات والشؤون القانونية'},
+    'profile_legal_title': {
+      'en': 'Settings & Legal',
+      'ar': 'الإعدادات والشؤون القانونية',
+    },
     'delete_account_title': {'en': 'Delete Account', 'ar': 'حذف الحساب'},
     'delete_account_warning': {
-      'en': 'This permanently deletes your account, personal data, saved items, and check-ins. Your Streetlore Pro access will be lost. Deleting the account does not cancel or refund billing managed by Apple or Google; cancel any active subscription in your store settings first. This action cannot be undone.',
-      'ar': 'سيؤدي ذلك إلى حذف حسابك وبياناتك الشخصية والعناصر المحفوظة وتسجيلات الوصول نهائيًا. ستفقد إمكانية الوصول إلى ستريت لور برو. حذف الحساب لا يلغي أو يسترد المدفوعات التي تديرها Apple أو Google؛ ألغِ أي اشتراك نشط من إعدادات المتجر أولًا. لا يمكن التراجع عن هذا الإجراء.',
+      'en':
+          'This permanently deletes your account, personal data, saved items, and check-ins. Your Streetlore Pro access will be lost. Deleting the account does not cancel or refund billing managed by Apple or Google; cancel any active subscription in your store settings first. This action cannot be undone.',
+      'ar':
+          'سيؤدي ذلك إلى حذف حسابك وبياناتك الشخصية والعناصر المحفوظة وتسجيلات الوصول نهائيًا. ستفقد إمكانية الوصول إلى ستريت لور برو. حذف الحساب لا يلغي أو يسترد المدفوعات التي تديرها Apple أو Google؛ ألغِ أي اشتراك نشط من إعدادات المتجر أولًا. لا يمكن التراجع عن هذا الإجراء.',
     },
     'delete_account_confirm': {'en': 'Delete my account', 'ar': 'احذف حسابي'},
     'delete_account_success': {
@@ -650,10 +812,7 @@ class AppStrings {
       'en': 'Your account could not be deleted. Please try again.',
       'ar': 'تعذر حذف حسابك. حاول مرة أخرى.',
     },
-    'legal_coming_soon': {
-      'en': 'Coming soon',
-      'ar': 'قريبًا',
-    },
+    'legal_coming_soon': {'en': 'Coming soon', 'ar': 'قريبًا'},
     'privacy_policy_intro': {
       'en':
           'This policy explains what information Streetlore uses and how it '
@@ -1304,10 +1463,6 @@ class AppStrings {
     'login_err_username_chars': {
       'en': 'Only letters, digits, dot, underscore and dash',
       'ar': 'حروف وأرقام و . _ - فقط',
-    },
-    'username_invalid': {
-      'en': 'Invalid username (3-20 chars, letters/digits/._-)',
-      'ar': 'اسم المستخدم غير صالح (3-20 حرف، حروف/أرقام/._-)',
     },
     'login_or': {'en': 'or', 'ar': 'أو'},
     'login_google': {'en': 'Google', 'ar': 'جوجل'},

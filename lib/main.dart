@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_colors.dart';
 import 'core/services/offline_storage_service.dart';
 import 'core/services/revenuecat_service.dart';
 import 'core/services/supabase_service.dart';
+import 'core/services/sync_queue_service.dart';
 import 'core/config/app_config.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'l10n/app_strings.dart';
@@ -19,6 +21,7 @@ import 'logic/auth_provider.dart';
 import 'logic/locale_provider.dart';
 import 'logic/place_photos_provider.dart';
 import 'logic/streak_provider.dart';
+import 'logic/squad_provider.dart';
 import 'logic/journal_provider.dart';
 import 'logic/achievement_provider.dart';
 import 'presentation/screens/splash_screen.dart';
@@ -29,7 +32,21 @@ import 'logic/ai_features_providers.dart';
 import 'logic/connectivity_provider.dart';
 
 Future<void> main() async {
+  const sentryDsn = 'https://a53b51a6844eba2f4f122031f2c12f7d@o4512250554810368.ingest.de.sentry.io/4512250574798928';
+  await SentryFlutter.init((options) {
+    // An empty DSN keeps the app runnable until a project DSN is configured.
+    options.dsn = sentryDsn == 'YOUR_SENTRY_DSN_HERE' ? '' : sentryDsn;
+  }, appRunner: _runApplication);
+}
+
+Future<void> _runApplication() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    unawaited(
+      Sentry.captureException(details.exception, stackTrace: details.stack),
+    );
+  };
 
   // v1.0.80 — surface any unhandled build-time widget error as a
   // visible red panel instead of a silent gray screen in release.
@@ -71,9 +88,11 @@ Future<void> main() async {
 
   await OfflineStorageService.instance.init();
   await SupabaseService.instance.init();
+  await SyncQueueService.instance.init();
 
   final auth = AuthProvider();
   await auth.bootstrap();
+  unawaited(SyncQueueService.instance.flush());
   await _configureRevenueCat(auth.userId);
   unawaited(_bindAuthDeepLink(auth));
 
@@ -88,6 +107,8 @@ Future<void> main() async {
 
   final streak = StreakProvider();
   await streak.setUserId(auth.userId);
+  final squad = SquadProvider();
+  unawaited(squad.setUserId(auth.userId));
   final achievements = AchievementProvider(
     auth: auth,
     gam: gamification,
@@ -99,7 +120,11 @@ Future<void> main() async {
   // gamification.applyAction('check_in', ...) call updates the
   // streak and re-runs the catalog-based achievement re-evaluation
   // automatically (the missing piece that broke badge unlocks).
-  gamification.bindHelpers(streak: streak, achievements: achievements);
+  gamification.bindHelpers(
+    streak: streak,
+    achievements: achievements,
+    squad: squad,
+  );
 
   Future<void> bootstrapFromSupabase(String userId) async {
     await streak.setUserId(userId);
@@ -115,8 +140,10 @@ Future<void> main() async {
 
   void authListener() {
     final id = auth.userId;
+    unawaited(SyncQueueService.instance.flush());
     gamification.syncWithAuth(auth);
     achievements.syncWithAuth(auth);
+    unawaited(squad.setUserId(id));
     if (id.isEmpty) {
       _lastBootstrappedUserId = null;
       tourProvider.clearCheckedInPlaces();
@@ -152,6 +179,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => OfflineProvider()),
         ChangeNotifierProvider(create: (_) => PlacePhotosProvider()),
         ChangeNotifierProvider<StreakProvider>.value(value: streak),
+        ChangeNotifierProvider<SquadProvider>.value(value: squad),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => JournalProvider()),
         ChangeNotifierProvider<AchievementProvider>.value(value: achievements),

@@ -7,6 +7,7 @@ import '../data/achievement_catalog.dart';
 import '../core/services/supabase_service.dart';
 import 'achievement_provider.dart';
 import 'auth_provider.dart';
+import 'squad_provider.dart';
 import 'streak_provider.dart';
 
 class GamificationProvider extends ChangeNotifier {
@@ -19,6 +20,7 @@ class GamificationProvider extends ChangeNotifier {
 
   StreakProvider? _streak;
   AchievementProvider? _achievements;
+  SquadProvider? _squad;
 
   /// Wire the dependent providers so applyAction('check_in', ...) can
   /// update the streak and re-evaluate achievements after every
@@ -28,9 +30,11 @@ class GamificationProvider extends ChangeNotifier {
   void bindHelpers({
     required StreakProvider streak,
     required AchievementProvider achievements,
+    required SquadProvider squad,
   }) {
     _streak = streak;
     _achievements = achievements;
+    _squad = squad;
   }
 
   String? _lastCheckinError;
@@ -191,6 +195,8 @@ class GamificationProvider extends ChangeNotifier {
     // BEFORE we re-evaluate achievements (achievements depend on
     // streak.currentStreak for the streak_* milestones).
     if (action == 'check_in') {
+      final squad = _squad;
+      if (squad != null && !squad.isLoaded) await squad.refresh();
       await _streak?.registerVisit();
     }
 
@@ -226,6 +232,25 @@ class GamificationProvider extends ChangeNotifier {
       badges: _stats.badges,
     );
 
+    if (action == 'check_in' &&
+        _squad?.hasActiveSquad == true &&
+        !_stats.badges.any((badge) => badge.id == 'squad_explorer')) {
+      final definition = AchievementCatalog.byId('squad_explorer');
+      if (definition != null) {
+        await addBadgeIfMissing(
+          Badge(
+            id: definition.id,
+            name: definition.nameKey,
+            description: definition.descKey,
+            iconName: 'icon_${definition.icon.codePoint}',
+            tier: AchievementCatalog.tierName(definition.tier).toLowerCase(),
+            earnedAt: DateTime.now(),
+            pointsAwarded: definition.points,
+          ),
+        );
+      }
+    }
+
     // Now re-evaluate achievements with the FRESH, post-increment stats
     // so the first check-in unlocks `first_steps` and similar milestones.
     _achievements?.refreshFromStats();
@@ -241,10 +266,12 @@ class GamificationProvider extends ChangeNotifier {
     // Pick the most-recently unlocked catalog badge to show in the UI.
     if (newLevel != prevLevel) return _levelBadge(newLevel);
     final justUnlocked = _stats.badges
-        .where((b) =>
-            b.earnedAt != null &&
-            DateTime.now().difference(b.earnedAt!).inSeconds.abs() < 30 &&
-            AchievementCatalog.byId(b.id) != null)
+        .where(
+          (b) =>
+              b.earnedAt != null &&
+              DateTime.now().difference(b.earnedAt!).inSeconds.abs() < 30 &&
+              AchievementCatalog.byId(b.id) != null,
+        )
         .toList();
     if (justUnlocked.isNotEmpty) {
       justUnlocked.sort((a, b) => b.earnedAt!.compareTo(a.earnedAt!));
@@ -413,8 +440,7 @@ class GamificationProvider extends ChangeNotifier {
     final removed = _stats.badges[idx];
     final remaining = [..._stats.badges]..removeAt(idx);
     final clawback = removed.pointsAwarded;
-    final newPoints =
-        (_stats.totalPoints - clawback).clamp(0, 1 << 30).toInt();
+    final newPoints = (_stats.totalPoints - clawback).clamp(0, 1 << 30).toInt();
     _stats = _stats.copyWith(
       badges: remaining,
       totalPoints: newPoints,

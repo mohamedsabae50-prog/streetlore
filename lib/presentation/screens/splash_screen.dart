@@ -6,6 +6,7 @@ import '../widgets/compass_brand.dart';
 import 'login_screen.dart';
 import 'main_navigation.dart';
 import 'onboarding_screen.dart';
+import 'choose_username_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -42,19 +43,16 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _taglineFade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _introCtrl,
-        curve: const Interval(0.55, 1.0),
-      ),
+      CurvedAnimation(parent: _introCtrl, curve: const Interval(0.55, 1.0)),
     );
 
-    _taglineSlide =
-        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
-      CurvedAnimation(
-        parent: _introCtrl,
-        curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
-      ),
-    );
+    _taglineSlide = Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _introCtrl,
+            curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
+          ),
+        );
 
     _exitCtrl = AnimationController(
       vsync: this,
@@ -90,6 +88,8 @@ class _SplashScreenState extends State<SplashScreen>
       destination = const OnboardingScreen();
     } else if (!auth.isLoggedIn) {
       destination = const LoginScreen();
+    } else if (auth.requiresUsername) {
+      destination = const ChooseUsernameScreen();
     } else {
       destination = const MainNavigation();
     }

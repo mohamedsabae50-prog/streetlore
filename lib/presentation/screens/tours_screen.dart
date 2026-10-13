@@ -6,10 +6,12 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../logic/tour_provider.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/squad_provider.dart';
 import '../../l10n/app_strings.dart';
 import '../widgets/tour_card.dart';
 import 'paywall_screen.dart';
 import 'tour_details_screen.dart';
+import 'squad_screen.dart';
 
 class ToursScreen extends StatefulWidget {
   const ToursScreen({super.key});
@@ -68,6 +70,8 @@ class _ToursScreenState extends State<ToursScreen>
                   textAlign: TextAlign.center,
                   style: TextStyle(color: context.textSec, fontSize: 15),
                 ),
+                const SizedBox(height: 18),
+                _squadButton(context),
                 const SizedBox(height: 20),
                 FilledButton.icon(
                   onPressed: _openPaywall,
@@ -115,6 +119,12 @@ class _ToursScreenState extends State<ToursScreen>
                       ),
                     ),
                   ],
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                  child: _squadButton(context),
                 ),
               ),
               SliverToBoxAdapter(
@@ -181,6 +191,52 @@ class _ToursScreenState extends State<ToursScreen>
     Navigator.push(
       context,
       MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
+    );
+  }
+
+  Widget _squadButton(BuildContext context) {
+    final hasActiveSquad = context.watch<SquadProvider>().hasActiveSquad;
+    return Card(
+      margin: EdgeInsets.zero,
+      color: context.cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: context.borderColor),
+      ),
+      child: ListTile(
+        leading: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.success.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Icon(Icons.groups_rounded, color: AppColors.success),
+        ),
+        title: Text(
+          hasActiveSquad
+              ? context.tr('squad_active_title')
+              : context.tr('squad_title'),
+          style: TextStyle(
+            color: context.textPri,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        subtitle: Text(
+          hasActiveSquad
+              ? context.tr('squad_invite_subtitle')
+              : context.tr('squad_start_subtitle'),
+          style: TextStyle(color: context.textSec),
+        ),
+        trailing: Icon(Icons.chevron_right_rounded, color: context.textSec),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (_) => const SquadScreen()),
+          );
+        },
+      ),
     );
   }
 }

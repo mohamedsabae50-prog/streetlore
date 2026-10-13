@@ -29,6 +29,7 @@ import '../../l10n/app_strings.dart';
 import '../widgets/add_review_sheet.dart';
 import '../widgets/place_image_carousel.dart';
 import '../widgets/place_photos_section.dart';
+import '../widgets/report_content_sheet.dart';
 import 'ai_tour_guide_screen.dart';
 import 'live_chat_screen.dart';
 import 'map_screen.dart';
@@ -184,8 +185,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
     final place = context.select<PlaceProvider, PlaceModel>(
       (provider) => provider.findById(widget.place.id) ?? widget.place,
     );
-    final isLocked =
-        place.isHiddenGem && !context.watch<AuthProvider>().isPro;
+    final isLocked = place.isHiddenGem && !context.watch<AuthProvider>().isPro;
     if (isLocked) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -195,6 +195,18 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_rounded),
           ),
+          actions: [
+            if (Supabase.instance.client.auth.currentUser != null)
+              IconButton(
+                tooltip: context.tr('report_title'),
+                onPressed: () => ReportContentSheet.show(
+                  context,
+                  targetId: widget.place.id,
+                  targetType: 'place',
+                ),
+                icon: const Icon(Icons.flag_outlined),
+              ),
+          ],
         ),
         body: Center(
           child: Padding(
@@ -254,6 +266,18 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
           ),
         ),
         actions: [
+          if (Supabase.instance.client.auth.currentUser != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: _GlassBtn(
+                icon: Icons.flag_outlined,
+                onTap: () => ReportContentSheet.show(
+                  context,
+                  targetId: place.id,
+                  targetType: 'place',
+                ),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: Consumer<PlaceProvider>(
@@ -894,11 +918,17 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                 ),
                                               );
                                             } else {
-                                              final additionalImageUrls = context
-                                                  .read<PlacePhotosProvider>()
-                                                  .photosFor(place.id)
-                                                  .map((photo) => photo.imageUrl)
-                                                  .toList(growable: false);
+                                              final additionalImageUrls =
+                                                  context
+                                                      .read<
+                                                        PlacePhotosProvider
+                                                      >()
+                                                      .photosFor(place.id)
+                                                      .map(
+                                                        (photo) =>
+                                                            photo.imageUrl,
+                                                      )
+                                                      .toList(growable: false);
                                               final result = await offline
                                                   .downloadSinglePlace(
                                                     place,

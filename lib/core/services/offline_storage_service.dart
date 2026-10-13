@@ -17,6 +17,7 @@ class OfflineStorageService {
   static const _placesBox = 'offline_places';
   static const _reviewsBox = 'offline_reviews';
   static const _apiResponsesBox = 'offline_api_responses';
+  static const syncQueueBox = 'sync_queue';
 
   bool _ready = false;
 
@@ -29,6 +30,7 @@ class OfflineStorageService {
         await Hive.openBox(_placesBox);
         await Hive.openBox(_reviewsBox);
         await Hive.openBox(_apiResponsesBox);
+        await Hive.openBox(syncQueueBox);
         _ready = true;
         debugPrint('OfflineStorageService: Hive ready (web / IndexedDB)');
       } catch (e) {
@@ -43,6 +45,7 @@ class OfflineStorageService {
       await Hive.openBox(_placesBox);
       await Hive.openBox(_reviewsBox);
       await Hive.openBox(_apiResponsesBox);
+      await Hive.openBox(syncQueueBox);
       _ready = true;
       debugPrint('OfflineStorageService: Hive ready at ${dir.path}');
     } catch (e) {
@@ -55,6 +58,7 @@ class OfflineStorageService {
         await Hive.openBox(_placesBox);
         await Hive.openBox(_reviewsBox);
         await Hive.openBox(_apiResponsesBox);
+        await Hive.openBox(syncQueueBox);
         _ready = true;
       } catch (e2) {
         debugPrint('OfflineStorageService: fallback also failed: $e2');
