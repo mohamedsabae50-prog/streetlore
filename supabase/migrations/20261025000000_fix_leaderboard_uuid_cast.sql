@@ -47,7 +47,7 @@ BEGIN
   RETURN QUERY
   WITH checkin_rollup AS (
     SELECT
-      checkins.user_id,
+      CAST(checkins.user_id AS uuid) AS user_id,
       count(*) FILTER (
         WHERE v_since IS NULL OR checkins.checked_in_at >= v_since
       ) AS check_ins,
@@ -58,11 +58,11 @@ BEGIN
     FROM public.place_checkins AS checkins
     LEFT JOIN public.places AS places
       ON places.id = checkins.place_id
-    GROUP BY checkins.user_id
+    GROUP BY CAST(checkins.user_id AS uuid)
   ),
   ranked AS (
     SELECT
-      leaderboard.user_id,
+      CAST(leaderboard.user_id AS uuid) AS user_id,
       leaderboard.user_name,
       leaderboard.avatar_color_hex,
       leaderboard.total_points,
@@ -84,7 +84,7 @@ BEGIN
       END AS score
     FROM public.leaderboard AS leaderboard
     LEFT JOIN checkin_rollup
-      ON checkin_rollup.user_id::text = leaderboard.user_id::text
+      ON checkin_rollup.user_id = leaderboard.user_id
   )
   SELECT
     ranked.user_id,

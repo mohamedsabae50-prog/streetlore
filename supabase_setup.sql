@@ -196,6 +196,54 @@ create policy "Public read place_photos" on public.place_photos for select
 create policy "Owner insert place_photos" on public.place_photos for insert
   with check (auth.uid()::text = user_id);
 
+-- 2b. Profiles used by the social/activity feed
+create table if not exists public.profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  username text,
+  is_pro boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists profiles_username_lower_unique
+  on public.profiles (lower(username))
+  where username is not null;
+
+alter table public.profiles enable row level security;
+drop policy if exists "users can read own profile" on public.profiles;
+create policy "users can read own profile" on public.profiles for select
+  using (auth.uid() = user_id);
+drop policy if exists "authenticated can read public profile fields"
+  on public.profiles;
+create policy "authenticated can read public profile fields" on public.profiles
+  for select to authenticated using (true);
+
+revoke insert, update, delete on public.profiles from anon, authenticated;
+grant select on public.profiles to authenticated;
+grant all on public.profiles to service_role;
+
+create or replace function public.create_user_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.profiles (user_id)
+  values (new.id)
+  on conflict (user_id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created_profile on auth.users;
+create trigger on_auth_user_created_profile
+  after insert on auth.users
+  for each row execute function public.create_user_profile();
+
+insert into public.profiles (user_id)
+select id from auth.users
+on conflict (user_id) do nothing;
+
 -- 3. Leaderboard (gamification stats)
 create table if not exists public.leaderboard (
   user_id         uuid primary key,
@@ -207,6 +255,10 @@ create table if not exists public.leaderboard (
   photos_uploaded integer default 0,
   level           text default 'Explorer',
   badges          jsonb default '[]'::jsonb,
+  current_streak  integer not null default 0,
+  longest_streak  integer not null default 0,
+  total_visit_days integer not null default 0,
+  last_visit_date timestamptz,
   updated_at      timestamptz default now()
 );
 
@@ -216,6 +268,235 @@ create policy "auth upsert own leaderboard" on public.leaderboard for insert
   with check (auth.uid() = user_id);
 create policy "auth update own leaderboard" on public.leaderboard for update
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create or replace function public.get_city_leaderboard(
+  p_period text default 'week',
+  p_metric text default 'check_ins',
+  p_limit integer default 50
+)
+returns table (
+  user_id uuid,
+  user_name text,
+  avatar_color_hex text,
+  total_points integer,
+  places_visited integer,
+  reviews_posted integer,
+  photos_uploaded integer,
+  level text,
+  badges jsonb,
+  current_streak integer,
+  longest_streak integer,
+  total_visit_days integer,
+  last_visit_date timestamptz,
+  check_ins bigint,
+  hidden_gems bigint,
+  score bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_since timestamptz;
+begin
+  if p_period not in ('week', 'month', 'all_time') then
+    raise exception 'Unsupported leaderboard period';
+  end if;
+  if p_metric not in ('check_ins', 'longest_streak', 'hidden_gems') then
+    raise exception 'Unsupported leaderboard metric';
+  end if;
+
+  v_since := case p_period
+    when 'week' then date_trunc('week', statement_timestamp() at time zone 'UTC') at time zone 'UTC'
+    when 'month' then date_trunc('month', statement_timestamp() at time zone 'UTC') at time zone 'UTC'
+    else null
+  end;
+
+  return query
+  with checkin_rollup as (
+    select
+      cast(checkins.user_id as uuid) as user_id,
+      count(*) filter (
+        where v_since is null or checkins.checked_in_at >= v_since
+      ) as check_ins,
+      count(distinct checkins.place_id) filter (
+        where places.is_hidden_gem is true
+          and (v_since is null or checkins.checked_in_at >= v_since)
+      ) as hidden_gems
+    from public.place_checkins as checkins
+    left join public.places as places on places.id = checkins.place_id
+    group by cast(checkins.user_id as uuid)
+  ),
+  ranked as (
+    select
+      cast(leaderboard.user_id as uuid) as user_id,
+      leaderboard.user_name,
+      leaderboard.avatar_color_hex,
+      leaderboard.total_points,
+      leaderboard.places_visited,
+      leaderboard.reviews_posted,
+      leaderboard.photos_uploaded,
+      leaderboard.level,
+      coalesce(leaderboard.badges, '[]'::jsonb) as badges,
+      leaderboard.current_streak,
+      leaderboard.longest_streak,
+      leaderboard.total_visit_days,
+      leaderboard.last_visit_date,
+      coalesce(checkin_rollup.check_ins, 0) as check_ins,
+      coalesce(checkin_rollup.hidden_gems, 0) as hidden_gems,
+      case p_metric
+        when 'check_ins' then coalesce(checkin_rollup.check_ins, 0)
+        when 'longest_streak' then coalesce(leaderboard.longest_streak, 0)
+        when 'hidden_gems' then coalesce(checkin_rollup.hidden_gems, 0)
+      end as score
+    from public.leaderboard as leaderboard
+    left join checkin_rollup
+      on checkin_rollup.user_id = leaderboard.user_id
+  )
+  select
+    ranked.user_id,
+    ranked.user_name,
+    ranked.avatar_color_hex,
+    ranked.total_points,
+    ranked.places_visited,
+    ranked.reviews_posted,
+    ranked.photos_uploaded,
+    ranked.level,
+    ranked.badges,
+    ranked.current_streak,
+    ranked.longest_streak,
+    ranked.total_visit_days,
+    ranked.last_visit_date,
+    ranked.check_ins,
+    ranked.hidden_gems,
+    ranked.score
+  from ranked
+  order by ranked.score desc, ranked.total_points desc, ranked.user_name
+  limit greatest(1, least(coalesce(p_limit, 50), 100));
+end;
+$$;
+
+revoke all on function public.get_city_leaderboard(text, text, integer) from public;
+grant execute on function public.get_city_leaderboard(text, text, integer) to anon, authenticated;
+
+create or replace function public.get_following_activity(p_limit integer default 50)
+returns table(
+  event_id text,
+  event_type text,
+  actor_id uuid,
+  actor_username text,
+  target_id text,
+  title text,
+  description text,
+  occurred_at timestamptz
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_checkin_count integer;
+  v_badge_count integer;
+  v_suggestion_count integer;
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required' using errcode = '42501';
+  end if;
+
+  select count(*) into v_checkin_count
+    from public.place_checkins as checkins
+    join public.user_follows as follows
+      on follows.following_id = checkins.user_id
+    where follows.follower_id = auth.uid()
+    limit 1;
+
+  select count(*) into v_badge_count
+    from public.leaderboard as leaderboard
+    join public.user_follows as follows
+      on follows.following_id = leaderboard.user_id
+    where follows.follower_id = auth.uid()
+    limit 1;
+
+  select count(*) into v_suggestion_count
+    from public.suggested_places as suggestions
+    join public.user_follows as follows
+      on follows.following_id = suggestions.user_id
+    where follows.follower_id = auth.uid()
+      and suggestions.status = 'approved'
+    limit 1;
+
+  return query
+  with followed_users as (
+    select follows.following_id
+    from public.user_follows as follows
+    where follows.follower_id = auth.uid()
+  ),
+  activities as (
+    select
+      'checkin:' || checkins.id::text as event_id,
+      'checkin'::text as event_type,
+      checkins.user_id as actor_id,
+      profile.username as actor_username,
+      checkins.place_id as target_id,
+      coalesce(places.name, checkins.place_id) as title,
+      'Checked in at a place'::text as description,
+      checkins.checked_in_at as occurred_at
+    from public.place_checkins as checkins
+    join followed_users on followed_users.following_id = checkins.user_id
+    left join public.profiles as profile on profile.user_id = checkins.user_id
+    left join public.places as places on places.id = checkins.place_id
+
+    union all
+
+    select
+      'badge:' || leaderboard.user_id::text || ':' || coalesce(badge->>'id', ''),
+      'badge'::text,
+      leaderboard.user_id,
+      profile.username,
+      coalesce(badge->>'id', ''),
+      coalesce(badge->>'name', badge->>'id', 'Achievement'),
+      coalesce(badge->>'description', 'Unlocked an achievement'),
+      coalesce(nullif(badge->>'earned_at', '')::timestamptz, leaderboard.updated_at)
+    from public.leaderboard as leaderboard
+    join followed_users on followed_users.following_id = leaderboard.user_id
+    join public.profiles as profile on profile.user_id = leaderboard.user_id
+    cross join lateral jsonb_array_elements(coalesce(leaderboard.badges, '[]'::jsonb)) as badge
+
+    union all
+
+    select
+      'suggestion:' || suggestions.id::text,
+      'suggestion'::text,
+      suggestions.user_id,
+      profile.username,
+      suggestions.id::text,
+      suggestions.title,
+      suggestions.description,
+      suggestions.created_at
+    from public.suggested_places as suggestions
+    join followed_users on followed_users.following_id = suggestions.user_id
+    join public.profiles as profile on profile.user_id = suggestions.user_id
+    where suggestions.status = 'approved'
+  )
+  select
+    activities.event_id,
+    activities.event_type,
+    activities.actor_id,
+    activities.actor_username,
+    activities.target_id,
+    activities.title,
+    activities.description,
+    activities.occurred_at
+  from activities
+  order by activities.occurred_at desc nulls last
+  limit greatest(1, least(coalesce(p_limit, 50), 100));
+end;
+$$;
+
+revoke all on function public.get_following_activity(integer) from public, anon;
+grant execute on function public.get_following_activity(integer) to authenticated;
 
 -- 3. Saved Places (per-user bookmarks synced to cloud)
 create table if not exists public.saved_places (
