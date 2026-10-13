@@ -127,11 +127,59 @@ class OfflineStorageService {
   }
 
   Future<void> cachePlaces(List<PlaceModel> places) async {
-    if (!_ready) return;
+    if (!_ready) await init();
+    if (!_ready) {
+      throw StateError('Offline storage is not available');
+    }
     final box = Hive.box(_placesBox);
     for (final p in places) {
       await box.put(p.id, jsonEncode(p.toJson()));
     }
+    await box.flush();
+  }
+
+  /// Permanently stores arbitrary image URLs (e.g. a tour cover) under
+  /// `offline_images/<folderId>`, and warms the shared image cache used by
+  /// CachedNetworkImage so the image renders while offline.
+  Future<({int ok, int failed})> prefetchExtraImages(
+    String folderId,
+    Iterable<String> urls,
+  ) async {
+    int ok = 0;
+    int failed = 0;
+    if (kIsWeb) return (ok: 0, failed: 0);
+    final Directory docs;
+    try {
+      docs = await getApplicationDocumentsDirectory();
+    } catch (e) {
+      debugPrint('OfflineStorageService.prefetchExtraImages: $e');
+      return (ok: 0, failed: urls.length);
+    }
+    final manager = DefaultCacheManager();
+    for (final url in urls.toSet()) {
+      final cleanUrl = url.trim();
+      if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+        continue;
+      }
+      try {
+        final dir = Directory(
+          '${docs.path}/offline_images/${_safeSegment(folderId)}',
+        );
+        if (!await dir.exists()) await dir.create(recursive: true);
+        final info = await manager.downloadFile(cleanUrl);
+        if (await info.file.exists()) {
+          await File('${dir.path}/${_imageFileName(cleanUrl)}')
+              .writeAsBytes(await info.file.readAsBytes(), flush: true);
+          ok++;
+        } else {
+          failed++;
+        }
+      } catch (e) {
+        debugPrint('OfflineStorageService.prefetchExtraImages: $cleanUrl: $e');
+        failed++;
+      }
+    }
+    return (ok: ok, failed: failed);
   }
 
   

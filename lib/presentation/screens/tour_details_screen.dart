@@ -10,6 +10,7 @@ import '../../data/models/itinerary_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/tour_provider.dart';
+import '../../logic/offline_provider.dart';
 import '../widgets/place_card.dart';
 import 'map_screen.dart';
 import 'paywall_screen.dart';
@@ -233,18 +234,34 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                       ? Icons.offline_pin_rounded
                       : Icons.download_for_offline_outlined,
                   iconColor: isSaved ? AppColors.ratingGold : Colors.white,
-                  onTap: () {
+                  onTap: () async {
                     HapticFeedback.mediumImpact();
-                    tourProvider.toggleTourSaved(tour);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isSaved
-                              ? context.tr('tour_removed_offline')
-                              : context.tr('tour_saved_offline'),
+                    final messenger = ScaffoldMessenger.of(context);
+                    final offline = context.read<OfflineProvider>();
+                    final savedMsg = context.tr('tour_saved_offline');
+                    final removedMsg = context.tr('tour_removed_offline');
+                    if (!isSaved) {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          duration: Duration(seconds: 2),
+                          content: Text('Downloading tour for offline use…'),
                         ),
-                      ),
-                    );
+                      );
+                    }
+                    final result = await tourProvider.toggleTourOffline(tour);
+                    await offline.init();
+                    messenger
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            result == null
+                                ? removedMsg
+                                : '$savedMsg (${result.ok} images'
+                                    '${result.failed > 0 ? ', ${result.failed} failed' : ''})',
+                          ),
+                        ),
+                      );
                   },
                 );
               },

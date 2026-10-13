@@ -64,15 +64,55 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> refreshUsernameStatus() async {
     if (!AppConfig.supabaseEnabled || _userId.isEmpty || _isGuest) return;
-    final profile = await Supabase.instance.client
-        .from('profiles')
-        .select('username')
-        .eq('user_id', _userId)
-        .maybeSingle();
-    _username = profile?['username'] as String? ?? '';
+    final cached = await _readCachedUsername(_userId);
+    try {
+      final profile = await Supabase.instance.client
+          .from('profiles')
+          .select('username')
+          .eq('user_id', _userId)
+          .maybeSingle();
+      final remote = (profile?['username'] as String?)?.trim() ?? '';
+      // Never downgrade a known username to '' because of a missing row.
+      _username = remote.isNotEmpty ? remote : cached;
+      await _persistCachedUsername(_userId);
+      notifyListeners();
+    } catch (error, stackTrace) {
+      debugPrint(
+        'AuthProvider.refreshUsernameStatus: network/profile fetch failed, '
+        'falling back to cache: $error\n$stackTrace',
+      );
+      if (cached.isNotEmpty) {
+        _username = cached;
+        notifyListeners();
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  /// Offline cache: username is stored per user id so an existing user is
+  /// never sent back to the "choose username" gate when the profile fetch
+  /// fails because the device is offline.
+  Future<String> _readCachedUsername(String userId) async {
+    if (userId.isEmpty) return '';
+    final prefs = await SharedPreferences.getInstance();
+    final perUser = prefs.getString('user_username_$userId') ?? '';
+    if (perUser.isNotEmpty) return perUser;
+    // Legacy single-key cache — only trust it if it belongs to this user.
+    if (prefs.getString('user_id') == userId) {
+      return prefs.getString('user_username') ?? '';
+    }
+    return '';
+  }
+
+  Future<void> _persistCachedUsername(String userId) async {
+    if (userId.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_username', _username);
-    notifyListeners();
+    await prefs.setString('user_id', userId);
+    if (_username.isNotEmpty) {
+      await prefs.setString('user_username_$userId', _username);
+    }
   }
 
   Future<String?> claimUsername(String value) async {
@@ -88,8 +128,7 @@ class AuthProvider extends ChangeNotifier {
       );
       if (result != true) return 'username_save_failed';
       _username = cleanUsername;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_username', _username);
+      await _persistCachedUsername(_userId);
       notifyListeners();
       return null;
     } on PostgrestException catch (error) {
@@ -207,6 +246,11 @@ class AuthProvider extends ChangeNotifier {
     _username = prefs.getString('user_username') ?? '';
     _userEmail = prefs.getString('user_email') ?? '';
     _userId = prefs.getString('user_id') ?? '';
+    if (_userId.isNotEmpty && !_isGuest) {
+      await _restoreCachedProStatus(_userId);
+      final cachedUsername = await _readCachedUsername(_userId);
+      if (cachedUsername.isNotEmpty) _username = cachedUsername;
+    }
     _isLoading = false;
     notifyListeners();
   }
@@ -264,7 +308,7 @@ class AuthProvider extends ChangeNotifier {
         (meta['name'] as String?) ??
         (user.email?.split('@').first) ??
         'Explorer';
-    _username = '';
+    _username = await _readCachedUsername(user.id);
     _userEmail = user.email ?? _userEmail;
     try {
       final profile = await Supabase.instance.client
@@ -272,12 +316,18 @@ class AuthProvider extends ChangeNotifier {
           .select('is_pro, subscription_tier, username')
           .eq('user_id', user.id)
           .maybeSingle();
-      _isPro = profile?['is_pro'] == true;
-      _subscriptionTier = profile?['subscription_tier'] as String?;
-      _username = profile?['username'] as String? ?? '';
-      await _persistCachedProStatus(user.id);
+      if (profile != null) {
+        _isPro = profile['is_pro'] == true;
+        _subscriptionTier = profile['subscription_tier'] as String?;
+        final remote = (profile['username'] as String?)?.trim() ?? '';
+        if (remote.isNotEmpty) _username = remote;
+        await _persistCachedProStatus(user.id);
+      }
+      await _persistCachedUsername(user.id);
     } catch (error, stackTrace) {
-      debugPrint('AuthProvider: failed to load Pro profile: $error\n$stackTrace');
+      // Offline / network failure: keep the cached username + Pro status.
+      debugPrint('AuthProvider: failed to load Pro profile (using cache): '
+          '$error\n$stackTrace');
     }
     notifyListeners();
     await _persistAuthSnapshot(

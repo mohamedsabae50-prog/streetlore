@@ -63,32 +63,30 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
       );
       final hint = _feedErrorHint(error);
       if (mounted) {
-        setState(() => _error = hint ?? context.tr('feed_load_failed'));
+        setState(() => _error = hint ?? '${context.tr('feed_load_failed')}\n$error');
       }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  /// Returns a short, actionable explanation when we recognise the cause.
-  /// Otherwise the caller falls back to the generic "Could not load the
-  /// activity feed" string.
+  /// Builds an on-screen diagnostic that ALWAYS includes the raw error so
+  /// the exact Postgrest code / message is visible on the phone (same
+  /// behaviour as the leaderboard screen).
   String? _feedErrorHint(Object error) {
     if (error is PostgrestException) {
-      // 42501 = insufficient_privilege (RLS denied). Most common cause
-      // after a missing migration: a feed table is missing a SELECT
-      // policy for the authenticated role.
-      if (error.code == '42501' || error.code == 'PGRST301') {
-        return '${context.tr('feed_load_failed')}\n'
-            '[Postgrest ${error.code}] ${error.message}';
+      final buffer = StringBuffer()
+        ..writeln(context.tr('feed_load_failed'))
+        ..writeln('[Postgrest ${error.code ?? '-'}] ${error.message}');
+      if (error.details != null && '${error.details}'.isNotEmpty) {
+        buffer.writeln('details: ${error.details}');
       }
-      // P0001 / 22023 are custom PL/pgSQL RAISE EXCEPTIONs the function
-      // uses for "Authentication required" / validation errors.
-      if (error.code == 'P0001' || error.code == '22023') {
-        return error.message;
+      if (error.hint != null && error.hint!.isNotEmpty) {
+        buffer.writeln('hint: ${error.hint}');
       }
+      return buffer.toString().trim();
     }
-    return null;
+    return '${context.tr('feed_load_failed')}\n$error';
   }
 
   @override

@@ -324,6 +324,61 @@ class TourProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Saves (or removes) a tour for offline use and, when saving, really
+  /// downloads its data to disk:
+  ///   * tour details + stops JSON  -> SharedPreferences (`saved_tours_data`)
+  ///   * every stop PlaceModel      -> Hive `offline_places` box
+  ///   * stop images + tour cover   -> `<docs>/offline_images/...` (permanent)
+  /// Returns `null` when the tour was removed, otherwise the image result.
+  Future<({int ok, int failed})?> toggleTourOffline(ItineraryModel tour) async {
+    final isExisting = _savedTours.any((t) => t.id == tour.id);
+    if (isExisting) {
+      _savedTours.removeWhere((t) => t.id == tour.id);
+      await _saveToursToStorage();
+      notifyListeners();
+      return null;
+    }
+    _savedTours.add(tour);
+    await _saveToursToStorage();
+    notifyListeners();
+    return downloadTourAssets(tour);
+  }
+
+  Future<({int ok, int failed})> downloadTourAssets(ItineraryModel tour) async {
+    final storage = OfflineStorageService.instance;
+    var ok = 0;
+    var failed = 0;
+    try {
+      final stops = tour.places.where((p) => p.id.isNotEmpty).toList();
+      if (stops.isNotEmpty) {
+        await storage.cachePlaces(stops);
+        final stopImages = await storage.prefetchImages(stops);
+        ok += stopImages.ok;
+        failed += stopImages.failed;
+      }
+      final coverUrls = <String>{
+        if (tour.imageUrl.isNotEmpty) tour.imageUrl,
+        if ((tour.coverImageUrl ?? '').isNotEmpty) tour.coverImageUrl!,
+      };
+      if (coverUrls.isNotEmpty) {
+        final cover = await storage.prefetchExtraImages(
+          'tour_${tour.id}',
+          coverUrls,
+        );
+        ok += cover.ok;
+        failed += cover.failed;
+      }
+      debugPrint(
+        'TourProvider: tour ${tour.id} saved offline '
+        '(${stops.length} stops, imgOk=$ok, imgFail=$failed)',
+      );
+    } catch (e, st) {
+      debugPrint('TourProvider.downloadTourAssets failed: $e\n$st');
+      failed++;
+    }
+    return (ok: ok, failed: failed);
+  }
+
   bool isSaved(String id) {
     return _savedTours.any((t) => t.id == id);
   }

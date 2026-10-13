@@ -64,6 +64,18 @@ class OfflineProvider extends ChangeNotifier {
   static OfflineProvider? _instance;
   OfflineProvider() {
     _instance = this;
+    // Storage is initialised in main() before providers are created, so the
+    // downloaded places are available immediately on an offline cold start.
+    if (_storage.isReady) {
+      try {
+        _packs = _storage.getAllPacks();
+        _cachedPlaces = _storage.getCachedPlaces();
+      } catch (e) {
+        debugPrint('OfflineProvider: hydrate failed: $e');
+      }
+    } else {
+      init();
+    }
   }
 
   static final List<OfflinePack> catalog = [
