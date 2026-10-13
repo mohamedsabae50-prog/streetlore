@@ -98,9 +98,14 @@ how to get there, photo tips, similar places in the same city or area,
 family-friendliness, safety, and accessibility.''';
   }
 
-  Future<void> start(PlaceModel place, {String locale = 'en'}) async {
+  Future<void> start(
+    PlaceModel place, {
+    required String sessionId,
+    String locale = 'en',
+  }) async {
     _currentPlace = place;
     _messages.clear();
+    _session = null;
     final bool canGoLive = AppConfig.geminiEnabled;
     if (!canGoLive) {
       debugPrint(
@@ -120,6 +125,7 @@ family-friendliness, safety, and accessibility.''';
     _session = _LiveSession(
       model: AppConfig.geminiModel,
       systemPrompt: _buildSystemPrompt(place),
+      sessionId: sessionId,
     );
     _messages.add(
       ChatMessage(
@@ -183,6 +189,7 @@ family-friendliness, safety, and accessibility.''';
     try {
       final reply = await _session!.sendMessage(
         contextualTurn,
+        logPrompt: userText,
         onChunk: onResponseChunk,
       );
       _messages.add(
@@ -451,6 +458,8 @@ $userText''';
 
   static Future<String> askLocalGuide(
     String userText, {
+    required String sessionId,
+    List<GeminiChatTurn> conversationHistory = const [],
     void Function(String response)? onResponseChunk,
   }) async {
     final system =
@@ -472,6 +481,9 @@ STRICT RULES:
         model: AppConfig.geminiModel,
         systemInstruction: system,
         userPrompt: userText,
+        sessionId: sessionId,
+        logPrompt: userText,
+        conversationHistory: conversationHistory,
         temperature: 0.7,
         maxOutputTokens: 800,
       )) {
@@ -491,13 +503,20 @@ STRICT RULES:
 }
 
 class _LiveSession {
-  _LiveSession({required this.model, required this.systemPrompt});
+  _LiveSession({
+    required this.model,
+    required this.systemPrompt,
+    required this.sessionId,
+  });
 
   final String model;
   final String systemPrompt;
+  final String sessionId;
+  final List<GeminiChatTurn> _history = [];
 
   Future<String> sendMessage(
     String userText, {
+    required String logPrompt,
     void Function(String response)? onChunk,
   }) async {
     final response = StringBuffer();
@@ -506,6 +525,9 @@ class _LiveSession {
         model: model,
         systemInstruction: systemPrompt,
         userPrompt: userText,
+        sessionId: sessionId,
+        logPrompt: logPrompt,
+        conversationHistory: _history,
         temperature: 0.7,
         maxOutputTokens: 1024,
       )) {
@@ -525,6 +547,9 @@ class _LiveSession {
         message: 'Gemini returned no text',
       );
     }
+    _history
+      ..add(GeminiChatTurn(role: 'user', text: userText))
+      ..add(GeminiChatTurn(role: 'model', text: text));
     return text;
   }
 }

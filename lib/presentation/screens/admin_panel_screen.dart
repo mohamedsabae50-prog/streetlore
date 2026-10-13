@@ -12,20 +12,6 @@ import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/place_provider.dart';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
 
@@ -35,6 +21,7 @@ class AdminPanelScreen extends StatefulWidget {
 
 class _AdminPanelScreenState extends State<AdminPanelScreen> {
   bool _showForm = false;
+  bool _showChatLogs = false;
 
   @override
   Widget build(BuildContext context) {
@@ -79,15 +66,209 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
         title: Text(context.tr('admin_title')),
         actions: [
           IconButton(
-            icon: Icon(_showForm ? Icons.list_rounded : Icons.add_rounded),
-            tooltip: _showForm
+            icon: Icon(
+              _showChatLogs ? Icons.place_outlined : Icons.forum_outlined,
+            ),
+            tooltip: _showChatLogs
                 ? context.tr('admin_view_list')
-                : context.tr('admin_add_new'),
-            onPressed: () => setState(() => _showForm = !_showForm),
+                : context.tr('admin_ai_chat_logs'),
+            onPressed: () => setState(() => _showChatLogs = !_showChatLogs),
           ),
+          if (!_showChatLogs)
+            IconButton(
+              icon: Icon(_showForm ? Icons.list_rounded : Icons.add_rounded),
+              tooltip: _showForm
+                  ? context.tr('admin_view_list')
+                  : context.tr('admin_add_new'),
+              onPressed: () => setState(() => _showForm = !_showForm),
+            ),
         ],
       ),
-      body: _showForm ? const _AddPlaceForm() : const _PlacesList(),
+      body: _showChatLogs
+          ? const _ChatLogsView()
+          : _showForm
+          ? const _AddPlaceForm()
+          : const _PlacesList(),
+    );
+  }
+}
+
+class _ChatLogsView extends StatefulWidget {
+  const _ChatLogsView();
+
+  @override
+  State<_ChatLogsView> createState() => _ChatLogsViewState();
+}
+
+class _ChatLogsViewState extends State<_ChatLogsView> {
+  final List<Map<String, dynamic>> _threads = [];
+  bool _loading = false;
+  bool _hasMore = false;
+  String? _error;
+  int _page = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPage(reset: true);
+  }
+
+  Future<void> _loadPage({bool reset = false}) async {
+    if (_loading) return;
+    if (reset) {
+      _page = 1;
+      _threads.clear();
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'admin-user-management',
+        body: {'action': 'chat_logs', 'page': _page, 'per_page': 30},
+      );
+      if (response.data is! Map) {
+        throw const FormatException('Chat log response was not an object.');
+      }
+      final data = Map<String, dynamic>.from(response.data as Map);
+      if (data['threads'] is! List || data['has_more'] is! bool) {
+        throw const FormatException(
+          'Chat log response is missing thread data.',
+        );
+      }
+      final threads = (data['threads'] as List)
+          .map((thread) => Map<String, dynamic>.from(thread as Map))
+          .toList(growable: false);
+      if (!mounted) return;
+      setState(() {
+        _threads.addAll(threads);
+        _hasMore = data['has_more'] as bool;
+        _page++;
+        _loading = false;
+      });
+    } catch (error, stackTrace) {
+      debugPrint('Admin chat log loading failed: $error\n$stackTrace');
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  String _formattedDate(Object? value) {
+    final date = DateTime.tryParse(value?.toString() ?? '');
+    return date?.toLocal().toString().substring(0, 16) ?? 'Unknown date';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_threads.isEmpty && _loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_threads.isEmpty && _error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_error!, textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: () => _loadPage(reset: true),
+              child: Text(context.tr('ai_quota_retry')),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_threads.isEmpty && !_loading) {
+      return Center(child: Text(context.tr('admin_ai_chat_empty')));
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => _loadPage(reset: true),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(12),
+        itemCount: _threads.length + (_hasMore || _loading ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == _threads.length) {
+            if (_error != null) {
+              return TextButton(
+                onPressed: _loadPage,
+                child: Text(
+                  context.tr('admin_ai_chat_retry_error', {'error': _error!}),
+                ),
+              );
+            }
+            if (_hasMore && !_loading) unawaited(_loadPage());
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          final thread = _threads[index];
+          final messages = (thread['messages'] as List)
+              .map((message) => Map<String, dynamic>.from(message as Map))
+              .toList(growable: false);
+          return Card(
+            clipBehavior: Clip.antiAlias,
+            child: ExpansionTile(
+              title: Text(
+                context.tr(
+                  messages.length == 1
+                      ? 'admin_ai_chat_exchange'
+                      : 'admin_ai_chat_exchanges',
+                  {'count': '${messages.length}'},
+                ),
+              ),
+              subtitle: Text(
+                '${thread['user_id']} · ${_formattedDate(thread['created_at'])}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              children: [
+                for (final message in messages)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          _formattedDate(message['created_at']),
+                          style: TextStyle(
+                            color: context.textSec,
+                            fontSize: 11,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          context.tr('admin_ai_chat_user'),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        SelectableText(
+                          message['user_prompt']?.toString() ?? '',
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          context.tr('admin_ai_chat_assistant'),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        SelectableText(
+                          message['ai_response']?.toString() ?? '',
+                        ),
+                        const Divider(height: 24),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -149,10 +330,7 @@ class _PlacesList extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         '${p.category} • ${p.address}',
-                        style: TextStyle(
-                          color: context.textSec,
-                          fontSize: 11,
-                        ),
+                        style: TextStyle(color: context.textSec, fontSize: 11),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -182,7 +360,9 @@ class _PlacesList extends StatelessWidget {
     final cc = c.toLowerCase();
     if (cc.contains('atm')) return Colors.green;
     if (cc.contains('hotel')) return Colors.purple;
-    if (cc.contains('restaurant') || cc.contains('food') || cc.contains('cafe')) {
+    if (cc.contains('restaurant') ||
+        cc.contains('food') ||
+        cc.contains('cafe')) {
       return Colors.orange;
     }
     if (cc.contains('museum') || cc.contains('historical')) return Colors.brown;
@@ -228,14 +408,11 @@ class _AddPlaceFormState extends State<_AddPlaceForm> {
   final _searchFocus = FocusNode();
   bool _submitting = false;
 
-  
   GeocodingResult? _picked;
   List<GeocodingResult> _searchResults = const [];
   bool _searching = false;
   Timer? _searchDebounce;
 
-  
-  
   static const List<MapEntry<String, String>> _categoryPresets = [
     MapEntry('ATM', '🏧'),
     MapEntry('Hotel', '🏨'),
@@ -249,9 +426,6 @@ class _AddPlaceFormState extends State<_AddPlaceForm> {
     MapEntry('Historical', '🏛️'),
   ];
 
-  
-  
-  
   void _onSearchChanged(String q) {
     _searchDebounce?.cancel();
     if (q.trim().length < 3) {
@@ -291,9 +465,7 @@ class _AddPlaceFormState extends State<_AddPlaceForm> {
     final lng = _picked!.lng;
     final category = _categoryCtrl.text.trim();
     final rating = double.tryParse(_ratingCtrl.text.trim()) ?? 4.5;
-    
-    
-    
+
     final address = _addressCtrl.text.trim().isNotEmpty
         ? _addressCtrl.text.trim()
         : _picked!.displayName;
@@ -326,8 +498,7 @@ class _AddPlaceFormState extends State<_AddPlaceForm> {
     try {
       await Supabase.instance.client.from('places').insert(payload);
       if (!mounted) return;
-      
-      
+
       await context.read<PlaceProvider>().refresh();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -404,7 +575,6 @@ class _AddPlaceFormState extends State<_AddPlaceForm> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -510,8 +680,7 @@ class _AddPlaceFormState extends State<_AddPlaceForm> {
             label: context.tr('admin_field_address'),
             hint: 'auto-filled from the search above; edit if needed',
             icon: Icons.place_outlined,
-            validator: (v) => null, 
-            
+            validator: (v) => null,
           ),
           const SizedBox(height: 12),
           _Field(
@@ -577,10 +746,6 @@ class _AddPlaceFormState extends State<_AddPlaceForm> {
   }
 }
 
-
-
-
-
 class _LocationSearchField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -614,10 +779,7 @@ class _LocationSearchField extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               context.tr('admin_location_search'),
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
             ),
           ],
         ),
@@ -645,9 +807,7 @@ class _LocationSearchField extends StatelessWidget {
                     icon: const Icon(Icons.close_rounded),
                     onPressed: onClear,
                   ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             isDense: true,
           ),
         ),
@@ -674,15 +834,11 @@ class _LocationSearchField extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 18,
-                          ),
+                          const Icon(Icons.location_on_outlined, size: 18),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   results[i].name ??
@@ -730,8 +886,10 @@ class _LocationSearchField extends StatelessWidget {
             ),
           ),
         ],
-        if (!searching && results.isEmpty && picked == null
-            && controller.text.trim().length >= 3) ...[
+        if (!searching &&
+            results.isEmpty &&
+            picked == null &&
+            controller.text.trim().length >= 3) ...[
           const SizedBox(height: 6),
           Text(
             context.tr('admin_location_no_results'),
@@ -770,9 +928,7 @@ class _Field extends StatelessWidget {
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon, size: 20),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         isDense: true,
       ),
       validator: validator,

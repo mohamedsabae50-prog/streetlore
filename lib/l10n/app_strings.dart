@@ -112,6 +112,45 @@ class AppStrings {
       'en': 'Ask about places, food, history…',
       'ar': 'اسأل عن أماكن، أكل، تاريخ…',
     },
+    'ai_quota_loading': {
+      'en': 'Loading AI quota…',
+      'ar': 'جارٍ تحميل رصيد الذكاء الاصطناعي…',
+    },
+    'ai_quota_unavailable': {
+      'en': 'AI quota unavailable',
+      'ar': 'رصيد الذكاء الاصطناعي غير متاح',
+    },
+    'ai_quota_remaining': {
+      'en': '{remaining} of {limit} AI calls remaining',
+      'ar': 'متبقي {remaining} من {limit} طلبات للذكاء الاصطناعي',
+    },
+    'ai_quota_reset_cairo': {
+      'en': 'Resets at midnight Cairo time',
+      'ar': 'يتجدد عند منتصف الليل بتوقيت القاهرة',
+    },
+    'ai_quota_retry': {'en': 'Retry', 'ar': 'إعادة المحاولة'},
+    'admin_ai_chat_logs': {
+      'en': 'AI Chat Logs',
+      'ar': 'سجل محادثات الذكاء الاصطناعي',
+    },
+    'admin_ai_chat_exchange': {
+      'en': '{count} AI exchange',
+      'ar': '{count} محادثة',
+    },
+    'admin_ai_chat_exchanges': {
+      'en': '{count} AI exchanges',
+      'ar': '{count} محادثات',
+    },
+    'admin_ai_chat_user': {'en': 'User', 'ar': 'المستخدم'},
+    'admin_ai_chat_assistant': {'en': 'AI', 'ar': 'الذكاء الاصطناعي'},
+    'admin_ai_chat_empty': {
+      'en': 'No AI chat sessions yet',
+      'ar': 'لا توجد محادثات ذكاء اصطناعي بعد',
+    },
+    'admin_ai_chat_retry_error': {
+      'en': 'Could not load more chat threads: {error}',
+      'ar': 'تعذر تحميل المزيد من المحادثات: {error}',
+    },
     'max_route_places': {
       'en': 'Max 5 places per route',
       'ar': 'أقصى عدد 5 أماكن في المسار',
@@ -147,10 +186,7 @@ class AppStrings {
       'en': 'Most travelled around the world',
       'ar': 'الأكثر تنقلًا حول العالم',
     },
-    'lb_city_title': {
-      'en': 'King of Alexandria',
-      'ar': 'ملك الإسكندرية',
-    },
+    'lb_city_title': {'en': 'King of Alexandria', 'ar': 'ملك الإسكندرية'},
     'lb_period_week': {'en': 'Weekly', 'ar': 'أسبوعي'},
     'lb_period_month': {'en': 'Monthly', 'ar': 'شهري'},
     'lb_period_all_time': {'en': 'All time', 'ar': 'طوال الوقت'},
@@ -171,18 +207,18 @@ class AppStrings {
       'en': '{v} visited · {r} reviews',
       'ar': '{v} زيارة · {r} تقييم',
     },
-    'username_title': {
-      'en': 'Choose your username',
-      'ar': 'اختر اسم المستخدم',
-    },
+    'username_title': {'en': 'Choose your username', 'ar': 'اختر اسم المستخدم'},
     'username_subtitle': {
       'en': 'This unique name helps other explorers find and follow you.',
-      'ar': 'يساعد هذا الاسم الفريد المستكشفين الآخرين في العثور عليك ومتابعتك.',
+      'ar':
+          'يساعد هذا الاسم الفريد المستكشفين الآخرين في العثور عليك ومتابعتك.',
     },
     'username_label': {'en': 'Username', 'ar': 'اسم المستخدم'},
     'username_requirements': {
-      'en': 'Use 3-20 letters, numbers, dots, underscores, or hyphens. Start with a letter or number.',
-      'ar': 'استخدم ٣ إلى ٢٠ حرفًا أو رقمًا أو نقطة أو شرطة سفلية أو واصلة، وابدأ بحرف أو رقم.',
+      'en':
+          'Use 3-20 letters, numbers, dots, underscores, or hyphens. Start with a letter or number.',
+      'ar':
+          'استخدم ٣ إلى ٢٠ حرفًا أو رقمًا أو نقطة أو شرطة سفلية أو واصلة، وابدأ بحرف أو رقم.',
     },
     'username_continue': {'en': 'Continue', 'ar': 'متابعة'},
     'username_taken': {
@@ -198,7 +234,8 @@ class AppStrings {
       'ar': 'تعذر حفظ اسم المستخدم. حاول مرة أخرى.',
     },
     'username_check_failed': {
-      'en': 'We could not verify your account profile. Check your connection and try again.',
+      'en':
+          'We could not verify your account profile. Check your connection and try again.',
       'ar': 'تعذر التحقق من ملفك الشخصي. تحقق من الاتصال وحاول مرة أخرى.',
     },
     'users_search_title': {'en': 'Search Users', 'ar': 'البحث عن مستخدمين'},
@@ -206,7 +243,10 @@ class AppStrings {
       'en': 'Find and follow other Streetlore explorers',
       'ar': 'اعثر على مستكشفي Streetlore الآخرين وتابعهم',
     },
-    'users_search_hint': {'en': 'Search usernames', 'ar': 'ابحث عن أسماء المستخدمين'},
+    'users_search_hint': {
+      'en': 'Search usernames',
+      'ar': 'ابحث عن أسماء المستخدمين',
+    },
     'users_search_min_length': {
       'en': 'Enter at least two characters to search.',
       'ar': 'أدخل حرفين على الأقل للبحث.',
@@ -232,8 +272,10 @@ class AppStrings {
     },
     'feed_title': {'en': 'Activity', 'ar': 'النشاط'},
     'feed_empty': {
-      'en': 'No recent activity yet. Follow explorers to see their check-ins, badges, and approved place suggestions.',
-      'ar': 'لا يوجد نشاط حديث بعد. تابع المستكشفين لرؤية زياراتهم وشاراتهم واقتراحات الأماكن المقبولة.',
+      'en':
+          'No recent activity yet. Follow explorers to see their check-ins, badges, and approved place suggestions.',
+      'ar':
+          'لا يوجد نشاط حديث بعد. تابع المستكشفين لرؤية زياراتهم وشاراتهم واقتراحات الأماكن المقبولة.',
     },
     'feed_load_failed': {
       'en': 'Could not load the activity feed. Please try again.',
@@ -241,10 +283,7 @@ class AppStrings {
     },
     'feed_action_checkin': {'en': 'checked in at', 'ar': 'زار'},
     'feed_action_badge': {'en': 'unlocked a badge', 'ar': 'حصل على شارة'},
-    'feed_action_suggestion': {
-      'en': 'suggested a place',
-      'ar': 'اقترح مكانًا',
-    },
+    'feed_action_suggestion': {'en': 'suggested a place', 'ar': 'اقترح مكانًا'},
     'report_title': {'en': 'Report content', 'ar': 'الإبلاغ عن محتوى'},
     'report_reason_prompt': {
       'en': 'Why are you reporting this?',
@@ -255,8 +294,7 @@ class AppStrings {
       'ar': 'محتوى غير لائق',
     },
     'report_reason_spam': {'en': 'Spam', 'ar': 'رسائل مزعجة'},
-    'report_reason_harassment': {'en': 'Harassment',
-      'ar': 'مضايقة'},
+    'report_reason_harassment': {'en': 'Harassment', 'ar': 'مضايقة'},
     'report_reason_false_info': {
       'en': 'False information',
       'ar': 'معلومات مضللة',

@@ -65,6 +65,24 @@ class SupabaseService {
     }
   }
 
+  Future<Map<String, dynamic>> fetchAiQuotaStatus() async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    final result = await client.rpc('get_my_ai_quota_status');
+    if (result is! Map) {
+      throw const FormatException('AI quota response was not an object.');
+    }
+    final status = Map<String, dynamic>.from(result);
+    if (status['daily_limit'] is! num ||
+        status['remaining'] is! num ||
+        status['next_reset_at'] is! String) {
+      throw const FormatException('AI quota response is missing required fields.');
+    }
+    return status;
+  }
+
   Stream<List<ChatMessage>>? streamMessages(String placeId) {
     if (_client == null) return null;
     try {

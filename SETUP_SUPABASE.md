@@ -23,7 +23,7 @@ You should see: `Success. No rows returned` — the tables, policies, view, and 
 
 For an existing database, apply `supabase/migrations/2026_10_10_tour_draft_status.sql` in the SQL Editor. It adds the `tours.status` column and updates `tours_with_places` to expose tour status and place image URLs.
 
-Apply `supabase/migrations/2026_10_11_admin_analytics.sql` after that migration to enable tour view counts and the protected Admin analytics RPC. AI guide usage reports the sum of current per-user 24-hour quota windows in `ai_quota`, not a lifetime total; check-ins and tour views are cumulative.
+Apply `supabase/migrations/2026_10_11_admin_analytics.sql` after that migration to enable tour view counts and the protected Admin analytics RPC. AI guide usage reports the current-day quota usage in `ai_quota`, not a lifetime total; check-ins and tour views are cumulative.
 
 Apply `supabase/migrations/2026_10_12_admin_checkins_by_place.sql` after the analytics migration to add the Top Places by Check-ins breakdown to the Admin dashboard.
 
@@ -147,12 +147,13 @@ All Flutter Gemini requests use the `ai-proxy` Edge Function; no Gemini credenti
 - `GEMINI_OAUTH_ACCESS_TOKEN` accepts a bearer access token, but these tokens expire and must be rotated.
 - `GEMINI_API_KEY` remains supported for standard Gemini API keys.
 
-Apply `supabase/migrations/2026_10_14_ai_quota_streaming.sql`, `supabase/migrations/2026_10_15_freemium_revenuecat.sql`, and then `supabase/migrations/2026_10_16_logic_fixes.sql` in the Supabase SQL Editor before deploying the proxy. The first migration installs the rolling 24-hour quota table and RPC; the second replaces the RPC with the one-argument signature used by `ai-proxy` and sets the quota to 3 requests per 24 hours for free users and 50 for users whose RevenueCat Pro entitlement has been synced to `profiles`. The third keeps expired windows from showing stale usage, reports only active windows in analytics, and ensures quota expiry is checked against the clock after acquiring the per-user row lock. A missing profile or an `is_pro` value other than `true` receives the free quota, so RevenueCat initialization or verification is not required for free-tier users. If only the first migration has been applied, the RPC signature does not match the Edge Function and quota requests fail with `quota_unavailable` (HTTP 503). Chat requests opt into Gemini Server-Sent Events for incremental rendering; other AI requests keep the regular JSON response.
+Apply the relevant migrations in timestamp order: `supabase/migrations/20261017000000_ai_quota_utc_calendar_day.sql`, `supabase/migrations/20261018000000_ai_chat_logs.sql`, `supabase/migrations/20261019000000_profile_subscription_tiers.sql`, then `supabase/migrations/20261028000000_chat_sessions_and_midnight_quota.sql`. The latest migration switches the quota boundary to midnight in `Africa/Cairo`, exposes the current quota and next Cairo reset time to the app, groups logged messages by chat session, and retains the 3-call free / 50-call Pro daily limits. Users with no profile or an `is_pro` value other than `true` receive the free quota. Chat requests include the full in-session transcript, and chat-log records carry the chat screen's session UUID.
 
 Deploy the proxy after setting the secret:
 
 ```powershell
 supabase functions deploy ai-proxy --no-verify-jwt --project-ref tbivoxyxclwjjspwsgvc
+supabase functions deploy admin-user-management --no-verify-jwt --project-ref tbivoxyxclwjjspwsgvc
 ```
 
 The function validates each Supabase access token itself, so requests must come from a signed-in user. Do not pass Google credentials to Flutter or `--dart-define`.

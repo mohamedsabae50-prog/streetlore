@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/ai_tour_guide_service.dart';
+import '../../core/services/gemini_rest_client.dart';
+import '../../core/widgets/ai_quota_banner.dart';
 import '../../l10n/app_strings.dart';
 
 class GeneralAITourGuideScreen extends StatefulWidget {
@@ -16,6 +19,9 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
   final FocusNode _focus = FocusNode();
+  final GlobalKey<AiQuotaBannerState> _quotaKey =
+      GlobalKey<AiQuotaBannerState>();
+  final String _sessionId = const Uuid().v4();
 
   late final String _welcomeText = context.tr('ai_guide_welcome_en');
 
@@ -40,6 +46,15 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   Future<void> _send() async {
     final text = _input.text.trim();
     if (text.isEmpty || _busy) return;
+    final history = _messages
+        .where((message) => message.text.isNotEmpty)
+        .map(
+          (message) => GeminiChatTurn(
+            role: message.role == _Role.user ? 'user' : 'model',
+            text: message.text,
+          ),
+        )
+        .toList(growable: false);
     setState(() {
       _messages.add(_Msg(role: _Role.user, text: text));
       _messages.add(const _Msg(role: _Role.bot, text: ''));
@@ -50,6 +65,8 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
     try {
       final reply = await AITourGuideService.askLocalGuide(
         text,
+        sessionId: _sessionId,
+        conversationHistory: history,
         onResponseChunk: (response) {
           if (!mounted) return;
           setState(() {
@@ -94,6 +111,8 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
         _busy = false;
       });
       _scrollToBottom();
+    } finally {
+      await _quotaKey.currentState?.refresh();
     }
   }
 
@@ -158,6 +177,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
                 ],
               ),
             ),
+          AiQuotaBanner(key: _quotaKey),
           _Composer(
             controller: _input,
             focusNode: _focus,

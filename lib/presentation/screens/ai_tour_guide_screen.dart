@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:uuid/uuid.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/ai_quota_banner.dart';
 import '../../core/services/ai_tour_guide_service.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
@@ -16,6 +18,9 @@ class AITourGuideScreen extends StatefulWidget {
 class _AITourGuideScreenState extends State<AITourGuideScreen> {
   final TextEditingController _inputCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
+  final GlobalKey<AiQuotaBannerState> _quotaKey =
+      GlobalKey<AiQuotaBannerState>();
+  final String _sessionId = const Uuid().v4();
   bool _started = false;
   bool _sending = false;
   String? _streamingReply;
@@ -28,7 +33,11 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
 
   Future<void> _bootstrap() async {
     final locale = Localizations.localeOf(context).languageCode;
-    await AITourGuideService.instance.start(widget.place, locale: locale);
+    await AITourGuideService.instance.start(
+      widget.place,
+      sessionId: _sessionId,
+      locale: locale,
+    );
     if (mounted) setState(() => _started = true);
   }
 
@@ -59,6 +68,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
         },
       );
     } finally {
+      await _quotaKey.currentState?.refresh();
       if (mounted) {
         setState(() {
           _sending = false;
@@ -123,6 +133,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : _buildChatList(),
           ),
+          AiQuotaBanner(key: _quotaKey),
           _buildInputBar(),
         ],
       ),

@@ -146,17 +146,98 @@ async function includeProStatus<T extends { id: string }>(users: T[]) {
 }
 
 async function listChatLogs(page: number, perPage: number) {
-  const from = (page - 1) * perPage;
-  const { data, error, count } = await admin
-    .from("ai_chat_logs")
-    .select("id, user_id, user_prompt, ai_response, created_at", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(from, from + perPage - 1);
-  if (error) throw error;
+  type ChatLog = {
+    id: string;
+    user_id: string;
+    session_id: string | null;
+    user_prompt: string;
+    ai_response: string;
+    created_at: string;
+  };
+  type ChatThread = {
+    id: string;
+    user_id: string;
+    session_id: string | null;
+    created_at: string;
+    last_message_at: string;
+    messages: ChatLog[];
+  };
 
+  const logs: ChatLog[] = [];
+  const batchSize = 1000;
+  for (let from = 0; ; from += batchSize) {
+    const { data, error } = await admin
+      .from("ai_chat_logs")
+      .select("id, user_id, session_id, user_prompt, ai_response, created_at")
+      .order("created_at", { ascending: true })
+      .range(from, from + batchSize - 1);
+    if (error) throw error;
+    logs.push(...(data ?? []) as ChatLog[]);
+    if (!data || data.length < batchSize) break;
+  }
+
+  const threads: ChatThread[] = [];
+  const sessionThreads = new Map<string, ChatThread>();
+  const previousLegacyThread = new Map<
+    string,
+    { thread: ChatThread; lastMessageTime: number }
+  >();
+  const legacySessionGapMs = 30 * 60 * 1000;
+
+  for (const log of logs) {
+    const timestamp = new Date(log.created_at).getTime();
+    let thread: ChatThread | undefined;
+    if (log.session_id) {
+      const sessionKey = `${log.user_id}:${log.session_id}`;
+      thread = sessionThreads.get(sessionKey);
+      if (!thread) {
+        thread = {
+          id: `session:${log.session_id}`,
+          user_id: log.user_id,
+          session_id: log.session_id,
+          created_at: log.created_at,
+          last_message_at: log.created_at,
+          messages: [],
+        };
+        sessionThreads.set(sessionKey, thread);
+        threads.push(thread);
+      }
+    } else {
+      const previous = previousLegacyThread.get(log.user_id);
+      if (
+        previous &&
+        timestamp - previous.lastMessageTime <= legacySessionGapMs
+      ) {
+        thread = previous.thread;
+      } else {
+        thread = {
+          id: `legacy:${log.id}`,
+          user_id: log.user_id,
+          session_id: null,
+          created_at: log.created_at,
+          last_message_at: log.created_at,
+          messages: [],
+        };
+        threads.push(thread);
+      }
+      previousLegacyThread.set(log.user_id, {
+        thread,
+        lastMessageTime: timestamp,
+      });
+    }
+    thread.messages.push(log);
+    thread.last_message_at = log.created_at;
+  }
+
+  threads.sort(
+    (left, right) =>
+      new Date(right.last_message_at).getTime() -
+      new Date(left.last_message_at).getTime(),
+  );
+  const from = (page - 1) * perPage;
   return {
-    logs: data ?? [],
-    has_more: (count ?? 0) > from + (data?.length ?? 0),
+    threads: threads.slice(from, from + perPage),
+    has_more: threads.length > from + perPage,
   };
 }
 

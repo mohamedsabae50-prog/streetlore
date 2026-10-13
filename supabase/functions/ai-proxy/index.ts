@@ -259,9 +259,11 @@ async function logInteraction(
   userId: string,
   prompt: string,
   response: string,
+  sessionId: string | null,
 ): Promise<void> {
   const { error } = await admin.from("ai_chat_logs").insert({
     user_id: userId,
+    session_id: sessionId,
     user_prompt: prompt,
     ai_response: response,
   });
@@ -302,9 +304,25 @@ serve(async (req: Request): Promise<Response> => {
   }
   const model = (body.model as string | undefined) ?? MODEL;
   const streaming = body.stream === true;
-  const prompt = promptFromBody(body);
+  const requestedSessionId = body.session_id;
+  if (
+    requestedSessionId !== undefined &&
+    (typeof requestedSessionId !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+        .test(requestedSessionId))
+  ) {
+    return json({ error: "invalid_session_id", code: "BAD_REQUEST" }, 400);
+  }
+  const sessionId = typeof requestedSessionId === "string"
+    ? requestedSessionId
+    : null;
+  const prompt = typeof body.log_prompt === "string"
+    ? body.log_prompt.trim()
+    : promptFromBody(body);
   delete body.model;
   delete body.stream;
+  delete body.session_id;
+  delete body.log_prompt;
 
   const endpoint = streaming ? "streamGenerateContent?alt=sse" : "generateContent";
   const url =
@@ -323,14 +341,14 @@ serve(async (req: Request): Promise<Response> => {
     console.error("ai-proxy: upstream authentication or fetch failed:", e);
     await logInteraction(userId, prompt, JSON.stringify({
       error: "upstream_unreachable",
-    }));
+    }), sessionId);
     return json({ error: "upstream_unreachable", code: "BAD_REQUEST" }, 502);
   }
 
   if (upstream.ok && streaming) {
     const responseForLogging = upstream.clone();
     const logging = responseForLogging.text().then((text) =>
-      logInteraction(userId, prompt, responseTextFromStream(text))
+      logInteraction(userId, prompt, responseTextFromStream(text), sessionId)
     ).catch((error) => {
       console.error("ai-proxy: failed to read streamed response for logging:", error);
     });
@@ -356,7 +374,7 @@ serve(async (req: Request): Promise<Response> => {
   const aiResponse = typeof parsed === "object" && parsed !== null
     ? responseText(parsed) || (upstream.ok ? "" : JSON.stringify(parsed))
     : "";
-  await logInteraction(userId, prompt, aiResponse);
+  await logInteraction(userId, prompt, aiResponse, sessionId);
   return new Response(JSON.stringify(parsed), {
     status: upstream.status,
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },

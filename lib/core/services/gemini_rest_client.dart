@@ -15,6 +15,9 @@ class GeminiRestClient {
     required String model,
     required String systemInstruction,
     required String userPrompt,
+    String? sessionId,
+    String? logPrompt,
+    List<GeminiChatTurn> conversationHistory = const [],
     double temperature = 0.7,
     int maxOutputTokens = 1024,
   }) async {
@@ -33,14 +36,9 @@ class GeminiRestClient {
                   {'text': systemInstruction},
                 ],
               },
-              'contents': [
-                {
-                  'role': 'user',
-                  'parts': [
-                    {'text': userPrompt},
-                  ],
-                },
-              ],
+              'contents': _contents(conversationHistory, userPrompt),
+              if (sessionId != null) 'session_id': sessionId,
+              if (logPrompt != null) 'log_prompt': logPrompt,
               'generationConfig': {
                 'temperature': temperature,
                 'maxOutputTokens': maxOutputTokens,
@@ -102,6 +100,9 @@ class GeminiRestClient {
     required String model,
     required String systemInstruction,
     required String userPrompt,
+    String? sessionId,
+    String? logPrompt,
+    List<GeminiChatTurn> conversationHistory = const [],
     double temperature = 0.7,
     int maxOutputTokens = 1024,
   }) async* {
@@ -121,14 +122,9 @@ class GeminiRestClient {
               {'text': systemInstruction},
             ],
           },
-          'contents': [
-            {
-              'role': 'user',
-              'parts': [
-                {'text': userPrompt},
-              ],
-            },
-          ],
+          'contents': _contents(conversationHistory, userPrompt),
+          if (sessionId != null) 'session_id': sessionId,
+          if (logPrompt != null) 'log_prompt': logPrompt,
           'generationConfig': {
             'temperature': temperature,
             'maxOutputTokens': maxOutputTokens,
@@ -164,6 +160,25 @@ class GeminiRestClient {
     }
   }
 
+  List<Map<String, dynamic>> _contents(
+    List<GeminiChatTurn> history,
+    String userPrompt,
+  ) => [
+    for (final turn in history)
+      {
+        'role': turn.role,
+        'parts': [
+          {'text': turn.text},
+        ],
+      },
+    {
+      'role': 'user',
+      'parts': [
+        {'text': userPrompt},
+      ],
+    },
+  ];
+
   String _textFromEvent(List<String> eventData) {
     if (eventData.isEmpty) return '';
     final data = jsonDecode(eventData.join('\n'));
@@ -195,6 +210,13 @@ class GeminiRestClient {
   }
 
   int statusCodeFor(Object error) => _statusCode(error.toString());
+}
+
+class GeminiChatTurn {
+  final String role;
+  final String text;
+
+  const GeminiChatTurn({required this.role, required this.text});
 }
 
 class GeminiResult {
