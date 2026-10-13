@@ -193,16 +193,47 @@ class SupabaseService {
     if (client == null) {
       throw StateError('Supabase is unavailable.');
     }
-    final result = await client.rpc(
-      'get_following_activity',
-      params: {'p_limit': limit},
-    );
-    if (result is! List) {
-      throw const FormatException('Activity feed response was not a list.');
+    final startedAt = DateTime.now();
+    try {
+      final result = await client.rpc(
+        'get_following_activity',
+        params: {'p_limit': limit},
+      );
+      if (result is! List) {
+        throw const FormatException('Activity feed response was not a list.');
+      }
+      return result
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList(growable: false);
+    } on PostgrestException catch (error, stackTrace) {
+      // Surface the exact PostgrestException code/message so the cause is
+      // obvious in adb logcat (and Sentry). Common failure: an RLS policy
+      // missing on one of the joined tables (place_checkins,
+      // suggested_places, leaderboard, profiles).
+      debugPrint(
+        'SupabaseService.fetchFollowingActivity failed: '
+        'code=${error.code} '
+        'message=${error.message} '
+        'details=${error.details} '
+        'hint=${error.hint} '
+        'elapsed=${DateTime.now().difference(startedAt).inMilliseconds}ms',
+      );
+      debugPrint('$stackTrace');
+      rethrow;
+    } on FormatException catch (error, stackTrace) {
+      debugPrint(
+        'SupabaseService.fetchFollowingActivity parse error: '
+        '${error.message}',
+      );
+      debugPrint('$stackTrace');
+      rethrow;
+    } catch (error, stackTrace) {
+      debugPrint(
+        'SupabaseService.fetchFollowingActivity unexpected error: '
+        '$error\n$stackTrace',
+      );
+      rethrow;
     }
-    return result
-        .map((row) => Map<String, dynamic>.from(row as Map))
-        .toList(growable: false);
   }
 
   Future<void> submitReport({

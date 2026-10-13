@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_service.dart';
@@ -48,11 +52,43 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           .fetchFollowingActivity();
       if (mounted) setState(() => _activities = activities);
     } catch (error, stackTrace) {
+      // Always log to the console with full detail. When Sentry is wired
+      // up (it is in main.dart) we also report the exception so it shows
+      // up in the Sentry dashboard with the Postgrest code/message.
       debugPrint('ActivityFeedScreen: load failed: $error\n$stackTrace');
-      if (mounted) setState(() => _error = context.tr('feed_load_failed'));
+      unawaited(
+        Sentry.captureException(error, stackTrace: stackTrace).catchError(
+          (_) => SentryId.empty(),
+        ),
+      );
+      final hint = _feedErrorHint(error);
+      if (mounted) {
+        setState(() => _error = hint ?? context.tr('feed_load_failed'));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  /// Returns a short, actionable explanation when we recognise the cause.
+  /// Otherwise the caller falls back to the generic "Could not load the
+  /// activity feed" string.
+  String? _feedErrorHint(Object error) {
+    if (error is PostgrestException) {
+      // 42501 = insufficient_privilege (RLS denied). Most common cause
+      // after a missing migration: a feed table is missing a SELECT
+      // policy for the authenticated role.
+      if (error.code == '42501' || error.code == 'PGRST301') {
+        return '${context.tr('feed_load_failed')}\n'
+            '[Postgrest ${error.code}] ${error.message}';
+      }
+      // P0001 / 22023 are custom PL/pgSQL RAISE EXCEPTIONs the function
+      // uses for "Authentication required" / validation errors.
+      if (error.code == 'P0001' || error.code == '22023') {
+        return error.message;
+      }
+    }
+    return null;
   }
 
   @override
