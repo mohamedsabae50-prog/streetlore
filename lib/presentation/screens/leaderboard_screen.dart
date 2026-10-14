@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../core/widgets/animated_counter.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/confetti_overlay.dart';
+import '../../data/achievement_catalog.dart';
 import '../../data/models/gamification_stats.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/gamification_provider.dart';
@@ -37,7 +37,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     List<CityLeaderboardEntry> entries,
     GamificationStats mine,
   ) {
-    final index = entries.indexWhere((entry) => entry.stats.userId == mine.userId);
+    final index = entries.indexWhere(
+      (entry) => entry.stats.userId == mine.userId,
+    );
     return index < 0 ? null : index + 1;
   }
 
@@ -63,134 +65,139 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       backgroundColor: context.bgColor,
       body: Stack(
         children: [
-          Consumer2<LeaderboardProvider, GamificationProvider>(
-            builder: (context, lb, g, _) {
-              final entries = lb.entries;
-              final myStats = g.stats;
-              final myRank = _computeMyRank(entries, myStats);
-              CityLeaderboardEntry? myStanding;
-              for (final entry in entries) {
-                if (entry.stats.userId == myStats.userId) {
-                  myStanding = entry;
-                  break;
+          SafeArea(
+            child: Consumer2<LeaderboardProvider, GamificationProvider>(
+              builder: (context, lb, g, _) {
+                final entries = lb.entries;
+                final myStats = g.stats;
+                final myRank = _computeMyRank(entries, myStats);
+                CityLeaderboardEntry? myStanding;
+                for (final entry in entries) {
+                  if (entry.stats.userId == myStats.userId) {
+                    myStanding = entry;
+                    break;
+                  }
                 }
-              }
-              if (myRank != null) {
-                WidgetsBinding.instance.addPostFrameCallback(
-                  (_) => _maybeCelebrate(myRank, myStats.level),
-                );
-              }
-              return CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  SliverAppBar(
-                    floating: true,
-                    backgroundColor: context.bgColor,
-                    elevation: 0,
-                    title: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.tr('lb_city_title'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.textSec,
+                if (myRank != null) {
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => _maybeCelebrate(myRank, myStats.level),
+                  );
+                }
+
+                return CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverAppBar(
+                      floating: true,
+                      backgroundColor: context.bgColor,
+                      elevation: 0,
+                      title: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.tr('lb_city_title'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: context.textSec,
+                            ),
                           ),
-                        ),
-                        Text(
-                          context.tr('lb_title'),
-                          style: AppTextStyles.screenTitle.copyWith(
-                            color: context.textPri,
+                          Text(
+                            context.tr('lb_title'),
+                            style: AppTextStyles.screenTitle.copyWith(
+                              color: context.textPri,
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 16),
+                          child: SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: AnimatedLottieIcon(
+                              animation: LottieAnimations.trophy,
+                              size: 40,
+                              color: AppColors.warning,
+                              secondaryColor: AppColors.goldLight,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    actions: [
-                      Padding(
-                        padding: const EdgeInsets.only(right: 16),
-                        child: SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: AnimatedLottieIcon(
-                            animation: LottieAnimations.trophy,
-                            size: 40,
-                            color: AppColors.warning,
-                            secondaryColor: AppColors.goldLight,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SliverToBoxAdapter(
-                    child: _MyCard(
-                      stats: myStats,
-                      rank: myRank,
-                      score: myStanding?.score,
-                      metric: lb.metric,
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: _LeaderboardFilters(provider: lb),
-                  ),
-                  if (lb.isLoading)
-                    const SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (lb.error != null)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                lb.error!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: context.textSec),
-                              ),
-                              const SizedBox(height: 12),
-                              OutlinedButton.icon(
-                                onPressed: () => lb.load(),
-                                icon: const Icon(Icons.refresh_rounded),
-                                label: Text(context.tr('lb_try_again')),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                  else if (entries.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(
-                        child: Text(
-                          context.tr('lb_empty'),
-                          style: TextStyle(color: context.textSec),
-                        ),
-                      ),
-                    )
-                  else
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, i) => FadeInUp(
-                          delay: Duration(milliseconds: 80 * i + 200),
-                          offsetY: 30,
-                          child: _Row(
-                            rank: i + 1,
-                            entry: entries[i],
-                            metric: lb.metric,
-                          ),
-                        ),
-                        childCount: entries.length,
+                    SliverToBoxAdapter(
+                      child: _MyCard(
+                        stats: myStats,
+                        rank: myRank,
+                        score: myStanding == null
+                            ? null
+                            : _metricValue(myStanding, lb.metric),
+                        metric: lb.metric,
                       ),
                     ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                ],
-              );
-            },
+                    SliverToBoxAdapter(
+                      child: _LeaderboardFilters(provider: lb),
+                    ),
+                    if (lb.isLoading)
+                      const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (lb.error != null)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  lb.error!,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: context.textSec),
+                                ),
+                                const SizedBox(height: 12),
+                                OutlinedButton.icon(
+                                  onPressed: () => lb.load(),
+                                  icon: const Icon(Icons.refresh_rounded),
+                                  label: Text(context.tr('lb_try_again')),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (entries.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Text(
+                            context.tr('lb_empty'),
+                            style: TextStyle(color: context.textSec),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, i) => FadeInUp(
+                            delay: Duration(milliseconds: 80 * i + 200),
+                            offsetY: 30,
+                            child: _Row(
+                              rank: i + 1,
+                              entry: entries[i],
+                              metric: lb.metric,
+                            ),
+                          ),
+                          childCount: entries.length,
+                        ),
+                      ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  ],
+                );
+              },
+            ),
           ),
 
           Positioned.fill(child: ConfettiOverlay(controller: _confetti)),
@@ -267,15 +274,39 @@ class _LeaderboardFilters extends StatelessWidget {
   }
 }
 
-String _metricLabel(LeaderboardMetric metric) {
+String _metricKey(LeaderboardMetric metric) {
   switch (metric) {
     case LeaderboardMetric.checkIns:
-      return 'check-ins';
+      return 'lb_stat_checkins';
     case LeaderboardMetric.longestStreak:
-      return 'day streak';
+      return 'lb_stat_streak';
     case LeaderboardMetric.hiddenGems:
-      return 'hidden gems';
+      return 'lb_stat_gems';
   }
+}
+
+String _metricLabel(BuildContext context, LeaderboardMetric metric) =>
+    context.tr(_metricKey(metric));
+
+int _metricValue(CityLeaderboardEntry entry, LeaderboardMetric metric) {
+  switch (metric) {
+    case LeaderboardMetric.checkIns:
+      return entry.checkIns;
+    case LeaderboardMetric.longestStreak:
+      return entry.longestStreak;
+    case LeaderboardMetric.hiddenGems:
+      return entry.hiddenGems;
+  }
+}
+
+String _badgeName(BuildContext context, Badge badge) {
+  final achievement = AchievementCatalog.byId(badge.id);
+  if (achievement != null) return context.tr(achievement.nameKey);
+  if (badge.id.startsWith('lvl_')) {
+    final level = AppStrings.level(context, badge.id.substring(4));
+    return context.tr('lb_badge_rank', {'level': level});
+  }
+  return context.tr(badge.name);
 }
 
 class _MyCard extends StatelessWidget {
@@ -356,7 +387,7 @@ class _MyCard extends StatelessWidget {
                               'p': '${stats.totalPoints}',
                               'l': AppStrings.level(context, stats.level),
                             })
-                          : '${score!} ${_metricLabel(metric)}',
+                          : '${score!} ${_metricLabel(context, metric)}',
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 12,
@@ -448,7 +479,7 @@ class _MyCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            b.name,
+                            _badgeName(context, b),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
@@ -488,11 +519,7 @@ class _Row extends StatelessWidget {
   final int rank;
   final CityLeaderboardEntry entry;
   final LeaderboardMetric metric;
-  const _Row({
-    required this.rank,
-    required this.entry,
-    required this.metric,
-  });
+  const _Row({required this.rank, required this.entry, required this.metric});
 
   @override
   Widget build(BuildContext context) {
@@ -582,11 +609,23 @@ class _Row extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
-                Text(
-                  '${entry.checkIns} check-ins · '
-                  '${entry.longestStreak} day streak · '
-                  '${entry.hiddenGems} hidden gems',
-                  style: TextStyle(color: context.textSec, fontSize: 12),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    _StatChip(
+                      value: entry.checkIns,
+                      label: context.tr('lb_stat_checkins'),
+                    ),
+                    _StatChip(
+                      value: entry.longestStreak,
+                      label: context.tr('lb_stat_streak'),
+                    ),
+                    _StatChip(
+                      value: entry.hiddenGems,
+                      label: context.tr('lb_stat_gems'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -594,8 +633,8 @@ class _Row extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              AnimatedCounter(
-                value: entry.score,
+              Text(
+                '${_metricValue(entry, metric)}',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
@@ -603,7 +642,7 @@ class _Row extends StatelessWidget {
                 ),
               ),
               Text(
-                _metricLabel(metric),
+                _metricLabel(context, metric),
                 style: TextStyle(color: context.textSec, fontSize: 11),
               ),
             ],
@@ -612,4 +651,36 @@ class _Row extends StatelessWidget {
       ),
     );
   }
+}
+
+class _StatChip extends StatelessWidget {
+  const _StatChip({required this.value, required this.label});
+
+  final int value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+    decoration: BoxDecoration(
+      color: context.bgAlt,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '$value',
+          textDirection: TextDirection.ltr,
+          style: TextStyle(
+            color: context.textPri,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(color: context.textSec, fontSize: 11)),
+      ],
+    ),
+  );
 }

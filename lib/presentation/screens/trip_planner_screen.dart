@@ -36,9 +36,11 @@ class TripPlannerScreen extends StatelessWidget {
           elevation: 0,
           iconTheme: IconThemeData(color: context.textPri),
           bottom: TabBar(
-            indicatorColor: AppColors.primary,
+            indicatorColor: context.isDark
+                ? AppColors.accentLight
+                : AppColors.accent,
             indicatorWeight: 3,
-            labelColor: AppColors.primary,
+            labelColor: context.isDark ? AppColors.accentLight : context.navSelected,
             unselectedLabelColor: context.textSec,
             labelStyle: const TextStyle(
               fontWeight: FontWeight.w800,
