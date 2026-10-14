@@ -162,7 +162,10 @@ class SupabaseService {
       throw const FormatException('User search response was not a list.');
     }
     return result
-        .map((row) => SocialUser.fromJson(Map<String, dynamic>.from(row as Map)))
+        .map(
+          (row) => SocialUser.fromJson(Map<String, dynamic>.from(row as Map)),
+        )
+        .where((user) => user.userId.isNotEmpty)
         .toList(growable: false);
   }
 

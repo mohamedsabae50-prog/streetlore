@@ -23,6 +23,34 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   bool _isLoading = false;
   String? _error;
   bool _searched = false;
+  final Map<String, bool> _following = {};
+  final Set<String> _updatingFollow = {};
+  int _requestGeneration = 0;
+  String? _requestedUserId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = context.watch<AuthProvider>();
+    final userId = auth.isLoggedIn && !auth.isGuest ? auth.userId : '';
+    if (_requestedUserId == userId) return;
+    _requestedUserId = userId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _requestedUserId != userId) return;
+      if (userId.isEmpty) {
+        ++_requestGeneration;
+        setState(() {
+          _users = const [];
+          _following.clear();
+          _isLoading = false;
+          _error = null;
+          _searched = false;
+        });
+      } else {
+        _search();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -32,32 +60,63 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
   Future<void> _search() async {
     final query = _queryController.text.trim();
-    if (query.length < 2) {
+    if (query.isNotEmpty && query.length < 2) {
+      ++_requestGeneration;
       setState(() {
-        _users = const [];
-        _searched = false;
+        _isLoading = false;
         _error = context.tr('users_search_min_length');
       });
       return;
     }
+    final generation = ++_requestGeneration;
     setState(() {
       _isLoading = true;
       _error = null;
-      _searched = true;
+      _searched = query.isNotEmpty;
     });
     try {
       final users = await SupabaseService.instance.searchUsers(query);
-      if (!mounted) return;
-      setState(() => _users = users);
+      if (!mounted || generation != _requestGeneration) return;
+      setState(() {
+        _users = users;
+        _following.clear();
+        for (final user in users) {
+          _following[user.userId] = user.isFollowing;
+        }
+      });
     } catch (error, stackTrace) {
       debugPrint('SearchUsersScreen: search failed: $error\n$stackTrace');
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
         _users = const [];
         _error = context.tr('users_search_failed');
       });
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && generation == _requestGeneration) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _toggleFollow(SocialUser user) async {
+    final auth = context.read<AuthProvider>();
+    final wasFollowing = _following[user.userId] ?? false;
+    setState(() => _updatingFollow.add(user.userId));
+    try {
+      if (wasFollowing) {
+        await SupabaseService.instance.unfollowUser(auth.userId, user.userId);
+      } else {
+        await SupabaseService.instance.followUser(auth.userId, user.userId);
+      }
+      if (mounted) setState(() => _following[user.userId] = !wasFollowing);
+    } catch (error, stackTrace) {
+      debugPrint('SearchUsersScreen: follow action failed: $error\n$stackTrace');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('follow_action_failed'))),
+      );
+    } finally {
+      if (mounted) setState(() => _updatingFollow.remove(user.userId));
     }
   }
 
@@ -96,6 +155,19 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                   ),
                 ),
                 if (_isLoading) const LinearProgressIndicator(),
+                if (!_searched && _users.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        context.tr('users_suggested_title'),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.all(16),
@@ -104,10 +176,16 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                       style: TextStyle(color: AppColors.error),
                     ),
                   )
-                else if (_searched && !_isLoading && _users.isEmpty)
+                else if (!_isLoading && _users.isEmpty)
                   Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Text(context.tr('users_search_empty')),
+                    child: Text(
+                      context.tr(
+                        _searched
+                            ? 'users_search_empty'
+                            : 'users_suggestions_empty',
+                      ),
+                    ),
                   ),
                 Expanded(
                   child: ListView.separated(
@@ -117,10 +195,40 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                       final user = _users[index];
                       return ListTile(
                         leading: CircleAvatar(
-                          child: Text(user.username.characters.first),
+                          child: Text(
+                            user.username.characters.isEmpty
+                                ? '?'
+                                : user.username.characters.first.toUpperCase(),
+                          ),
                         ),
-                        title: Text('@${user.username}'),
-                        trailing: const Icon(Icons.chevron_right_rounded),
+                        title: Text(
+                          user.displayName.isEmpty
+                              ? '@${user.username}'
+                              : user.displayName,
+                        ),
+                        subtitle: Text('@${user.username}'),
+                        trailing: OutlinedButton(
+                          onPressed:
+                              _updatingFollow.contains(user.userId) ||
+                                  !_following.containsKey(user.userId)
+                              ? null
+                              : () => _toggleFollow(user),
+                          child: _updatingFollow.contains(user.userId)
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  context.tr(
+                                    _following[user.userId] == true
+                                        ? 'unfollow_user'
+                                        : 'follow_user',
+                                  ),
+                                ),
+                        ),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => UserProfileScreen(user: user),

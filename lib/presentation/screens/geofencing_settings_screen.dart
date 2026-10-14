@@ -14,7 +14,7 @@ import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/geofence_provider.dart';
 import '../../logic/place_provider.dart';
-import 'privacy_policy_screen.dart';
+import 'legal_document_screen.dart';
 
 class GeofencingSettingsScreen extends StatefulWidget {
   const GeofencingSettingsScreen({super.key});
@@ -93,7 +93,9 @@ class _GeofencingSettingsScreenState extends State<GeofencingSettingsScreen> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(
-                builder: (_) => const PrivacyPolicyScreen(),
+                builder: (_) => const LegalDocumentScreen(
+                  document: LegalDocument.privacy,
+                ),
               ),
             ),
           ),
@@ -188,7 +190,9 @@ class _GeofencingSettingsScreenState extends State<GeofencingSettingsScreen> {
                                 dialogContext,
                               ).push(
                                 MaterialPageRoute<void>(
-                                  builder: (_) => const PrivacyPolicyScreen(),
+                                  builder: (_) => const LegalDocumentScreen(
+                                    document: LegalDocument.privacy,
+                                  ),
                                 ),
                               ),
                               icon: const Icon(Icons.privacy_tip_outlined),

@@ -23,13 +23,12 @@ import '../../logic/streak_provider.dart';
 import '../../l10n/app_strings.dart';
 import 'login_screen.dart';
 import 'emergency_screen.dart';
-import 'map_view_screen.dart';
 import 'currency_converter_screen.dart';
 import 'journal_screen.dart';
 import 'prayer_times_screen.dart';
 import 'achievements_screen.dart';
 import 'admin_panel_screen.dart';
-import 'privacy_policy_screen.dart';
+import 'legal_document_screen.dart';
 import 'paywall_screen.dart';
 import 'suggest_place_screen.dart';
 import 'search_users_screen.dart';
@@ -96,7 +95,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextButton.icon(
               onPressed: () => Navigator.of(dialogContext).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const PrivacyPolicyScreen(),
+                  builder: (_) => const LegalDocumentScreen(
+                    document: LegalDocument.privacy,
+                  ),
                 ),
               ),
               icon: const Icon(Icons.privacy_tip_outlined),
@@ -1068,22 +1069,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         _Div(),
                         _ActionTile(
-                          icon: Icons.map_rounded,
-                          title: context.tr('map_view'),
-                          subtitle: context.tr('map_view_sub'),
-                          color: const Color(0xFF3B82F6),
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const MapViewScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        _Div(),
-                        _ActionTile(
                           icon: Icons.people_alt_rounded,
                           title: context.tr('users_search_title'),
                           subtitle: context.tr('users_search_subtitle'),
@@ -1101,8 +1086,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _Div(),
                         _ActionTile(
                           icon: Icons.add_location_alt_rounded,
-                          title: 'Suggest a Hidden Gem',
-                          subtitle: 'Share a special place with our team',
+                          title: context.tr('suggest_hidden_gem'),
+                          subtitle: context.tr('suggest_hidden_gem_subtitle'),
                           color: const Color(0xFF10B981),
                           onTap: () {
                             HapticFeedback.lightImpact();
@@ -1282,7 +1267,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         title: Text(context.tr('terms_of_service_title')),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => _showLegalComingSoon(context),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => const LegalDocumentScreen(
+                                document: LegalDocument.terms,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       _Div(),
                       ListTile(
@@ -1297,7 +1292,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute<void>(
-                              builder: (_) => const PrivacyPolicyScreen(),
+                              builder: (_) => const LegalDocumentScreen(
+                                document: LegalDocument.privacy,
+                              ),
                             ),
                           );
                         },
@@ -1398,12 +1395,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
-  }
-
-  void _showLegalComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.tr('legal_coming_soon'))));
   }
 
   Future<void> _confirmDeleteAccount(BuildContext context) async {

@@ -7,9 +7,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_service.dart';
+import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import 'login_screen.dart';
+import 'place_details_screen.dart';
 
 class ActivityFeedScreen extends StatefulWidget {
   const ActivityFeedScreen({super.key});
@@ -164,28 +166,54 @@ class _ActivityCard extends StatelessWidget {
     final occurredAt = DateTime.tryParse(
       activity['occurred_at'] as String? ?? '',
     );
+    final place = _activityPlace(activity);
+    final locale = Localizations.localeOf(context).languageCode;
+    final placeName = locale == 'ar'
+        ? (activity['place_name_ar'] as String?) ??
+              (activity['place_name'] as String?) ??
+              (activity['title'] as String?) ??
+              ''
+        : (activity['place_name'] as String?) ??
+              (activity['title'] as String?) ??
+              '';
+    final actorName =
+        (activity['actor_display_name'] as String?)?.trim().isNotEmpty == true
+        ? (activity['actor_display_name'] as String).trim()
+        : '@${activity['actor_username'] ?? 'explorer'}';
+    final timestamp = occurredAt == null
+        ? null
+        : '${MaterialLocalizations.of(context).formatMediumDate(occurredAt)} '
+              '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(occurredAt))}';
     return Card(
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-          child: Icon(icon, color: AppColors.primary),
+        onTap: place == null
+            ? null
+            : () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => PlaceDetailsScreen(place: place),
+                ),
+              ),
+        leading: _activityThumbnail(
+          activity['place_image_url'] as String?,
+          icon,
         ),
         title: Text(
-          '@${activity['actor_username'] ?? ''} $action',
+          '$actorName $action',
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              (activity['title'] as String?) ?? '',
+              placeName,
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
-            if ((activity['description'] as String?)?.isNotEmpty ?? false)
+            if (type != 'checkin' &&
+                ((activity['description'] as String?)?.isNotEmpty ?? false))
               Text(activity['description'] as String),
-            if (occurredAt != null)
+            if (timestamp != null)
               Text(
-                MaterialLocalizations.of(context).formatMediumDate(occurredAt),
+                timestamp,
                 style: TextStyle(color: context.textSec, fontSize: 12),
               ),
           ],
@@ -194,6 +222,48 @@ class _ActivityCard extends StatelessWidget {
       ),
     );
   }
+
+  PlaceModel? _activityPlace(Map<String, dynamic> activity) {
+    final id = activity['place_id']?.toString() ?? '';
+    final lat = activity['place_lat'];
+    final lng = activity['place_lng'];
+    if (id.isEmpty || lat is! num || lng is! num) return null;
+    return PlaceModel(
+      id: id,
+      nameEn:
+          (activity['place_name'] as String?) ??
+          (activity['title'] as String?) ??
+          '',
+      nameAr: activity['place_name_ar'] as String?,
+      descriptionEn: '',
+      imageUrl: (activity['place_image_url'] as String?) ?? '',
+      rating: 0,
+      lat: lat.toDouble(),
+      lng: lng.toDouble(),
+    );
+  }
+
+  Widget _activityThumbnail(String? imageUrl, IconData icon) {
+    final url = imageUrl?.trim() ?? '';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.network(
+          url,
+          width: 54,
+          height: 54,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _fallbackThumbnail(icon),
+        ),
+      );
+    }
+    return _fallbackThumbnail(icon);
+  }
+
+  Widget _fallbackThumbnail(IconData icon) => CircleAvatar(
+    backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+    child: Icon(icon, color: AppColors.primary),
+  );
 }
 
 class _FeedMessage extends StatelessWidget {

@@ -248,6 +248,22 @@ class AppStrings {
       'ar': 'تعذر التحقق من ملفك الشخصي. تحقق من الاتصال وحاول مرة أخرى.',
     },
     'users_search_title': {'en': 'Search Users', 'ar': 'البحث عن مستخدمين'},
+    'users_suggested_title': {
+      'en': 'Suggested explorers',
+      'ar': 'مستكشفون مقترحون',
+    },
+    'users_suggestions_empty': {
+      'en': 'No explorers are available yet.',
+      'ar': 'لا يوجد مستكشفون متاحون بعد.',
+    },
+    'suggest_hidden_gem': {
+      'en': 'Suggest a Hidden Gem',
+      'ar': 'اقترح جوهرة مخفية',
+    },
+    'suggest_hidden_gem_subtitle': {
+      'en': 'Share a special place with our team',
+      'ar': 'شارك مكاناً مميزاً مع فريقنا',
+    },
     'users_search_subtitle': {
       'en': 'Find and follow other Streetlore explorers',
       'ar': 'اعثر على مستكشفي Streetlore الآخرين وتابعهم',
@@ -290,7 +306,7 @@ class AppStrings {
       'en': 'Could not load the activity feed. Please try again.',
       'ar': 'تعذر تحميل موجز النشاط. حاول مرة أخرى.',
     },
-    'feed_action_checkin': {'en': 'checked in at', 'ar': 'زار'},
+    'feed_action_checkin': {'en': 'visited', 'ar': 'زار'},
     'feed_action_badge': {'en': 'unlocked a badge', 'ar': 'حصل على شارة'},
     'feed_action_suggestion': {'en': 'suggested a place', 'ar': 'اقترح مكانًا'},
     'report_title': {'en': 'Report content', 'ar': 'الإبلاغ عن محتوى'},
