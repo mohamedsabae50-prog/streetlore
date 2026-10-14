@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
@@ -96,6 +97,32 @@ class OfflineStorageService {
     return File('$path/$zoom/$x/$y.png');
   }
 
+  Future<LatLng?> getCurrentLocationForOfflineRoute() async {
+    if (kIsWeb) return null;
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission != LocationPermission.whileInUse &&
+          permission != LocationPermission.always) {
+        return null;
+      }
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) {
+        return LatLng(lastKnown.latitude, lastKnown.longitude);
+      }
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low,
+        timeLimit: const Duration(seconds: 3),
+      );
+      return LatLng(position.latitude, position.longitude);
+    } catch (error) {
+      debugPrint('OfflineStorageService: could not read route origin: $error');
+      return null;
+    }
+  }
+
+  String entityRouteCacheKey(String entityType, String entityId) =>
+      'cached_${entityType}_route_${_safeSegment(entityId)}';
+
   Future<({int cached, int failed})> prefetchMapTiles(
     Iterable<LatLng> locations, {
     double radiusMeters = 1500,
@@ -121,8 +148,7 @@ class OfflineStorageService {
         final latitudeDelta = radiusMeters / 111320;
         final longitudeDelta =
             radiusMeters /
-            (111320 *
-                math.cos(location.latitude * 0.017453292519943295).abs());
+            (111320 * math.cos(location.latitude * 0.017453292519943295).abs());
         final minX = _longitudeToTileX(
           location.longitude - longitudeDelta,
           tileCount,
@@ -150,8 +176,78 @@ class OfflineStorageService {
       }
     }
 
+    return _downloadTiles(tiles.values);
+  }
+
+  Future<({int cached, int failed})> prefetchAlexandriaOverview() async {
+    if (kIsWeb) return (cached: 0, failed: 0);
+    if (_tileDirectoryPath == null) await init();
+    if (_tileDirectoryPath == null) {
+      throw StateError('Map tile storage is not available');
+    }
+    const minLatitude = 31.11;
+    const maxLatitude = 31.30;
+    const minLongitude = 29.82;
+    const maxLongitude = 30.08;
+    final tiles = <String, (int zoom, int x, int y)>{};
+    for (var zoom = 10; zoom <= 13; zoom++) {
+      final tileCount = 1 << zoom;
+      final minX = _longitudeToTileX(minLongitude, tileCount);
+      final maxX = _longitudeToTileX(maxLongitude, tileCount);
+      final minY = _latitudeToTileY(maxLatitude, tileCount);
+      final maxY = _latitudeToTileY(minLatitude, tileCount);
+      for (var x = minX; x <= maxX; x++) {
+        for (var y = minY; y <= maxY; y++) {
+          tiles['$zoom/$x/$y'] = (zoom, x, y);
+        }
+      }
+    }
+    return _downloadTiles(tiles.values);
+  }
+
+  Future<({int cached, int failed})> prefetchOfflineRouteCoverage(
+    String routeKey,
+    List<LatLng> routeLocations,
+  ) async {
+    await prefetchAlexandriaOverview();
+    await prefetchRouteGeometry(routeKey, routeLocations);
+    final roadGeometry = await getCachedRouteGeometry(routeKey);
+    final route = roadGeometry ?? routeLocations;
+    final stride = math.max(1, (route.length / 50).ceil());
+    final sampledPoints = <LatLng>[];
+    for (var index = 0; index < route.length; index += stride) {
+      sampledPoints.add(route[index]);
+    }
+    if (route.isNotEmpty && sampledPoints.last != route.last) {
+      sampledPoints.add(route.last);
+    }
+    final corridor = await prefetchMapTiles(
+      sampledPoints,
+      radiusMeters: 300,
+      minZoom: 13,
+      maxZoom: 15,
+    );
+    final endpoints = route.isEmpty
+        ? routeLocations
+        : <LatLng>[route.first, route.last];
+    final closeUps = await prefetchMapTiles(
+      endpoints,
+      radiusMeters: 300,
+      minZoom: 16,
+      maxZoom: 16,
+    );
+    return (
+      cached: corridor.cached + closeUps.cached,
+      failed: corridor.failed + closeUps.failed,
+    );
+  }
+
+  Future<({int cached, int failed})> _downloadTiles(
+    Iterable<(int, int, int)> requestedTiles,
+  ) async {
+    final tiles = requestedTiles.toList(growable: false);
     final pending = <(int, int, int)>[];
-    for (final tile in tiles.values) {
+    for (final tile in tiles) {
       final file = getTileFile(tile.$1, tile.$2, tile.$3)!;
       if (!await file.exists()) pending.add(tile);
     }
@@ -312,9 +408,7 @@ class OfflineStorageService {
       final points = (decoded['coordinates'] as List)
           .whereType<List>()
           .where((coordinate) => coordinate.length >= 2)
-          .where(
-            (coordinate) => coordinate[0] is num && coordinate[1] is num,
-          )
+          .where((coordinate) => coordinate[0] is num && coordinate[1] is num)
           .map(
             (coordinate) => LatLng(
               (coordinate[1] as num).toDouble(),
@@ -335,12 +429,7 @@ class OfflineStorageService {
   int _latitudeToTileY(double latitude, int tileCount) {
     final radians = latitude * 0.017453292519943295;
     final mercator =
-        (1 -
-            math.log(
-                  math.tan(radians) + 1 / math.cos(radians),
-                ) /
-                math.pi) /
-        2;
+        (1 - math.log(math.tan(radians) + 1 / math.cos(radians)) / math.pi) / 2;
     return (mercator * tileCount).floor();
   }
 
@@ -444,8 +533,9 @@ class OfflineStorageService {
         if (!await dir.exists()) await dir.create(recursive: true);
         final info = await manager.downloadFile(cleanUrl);
         if (await info.file.exists()) {
-          await File('${dir.path}/${_imageFileName(cleanUrl)}')
-              .writeAsBytes(await info.file.readAsBytes(), flush: true);
+          await File(
+            '${dir.path}/${_imageFileName(cleanUrl)}',
+          ).writeAsBytes(await info.file.readAsBytes(), flush: true);
           ok++;
         } else {
           failed++;
@@ -458,8 +548,6 @@ class OfflineStorageService {
     return (ok: ok, failed: failed);
   }
 
-  
-  
   Future<Box<dynamic>> get boxForPlaces async {
     if (!_ready) {
       await init();
@@ -467,15 +555,10 @@ class OfflineStorageService {
     return Hive.box(_placesBox);
   }
 
-  
-  
-  
-  
   Future<({int ok, int failed})> prefetchImages(
     List<PlaceModel> places, {
     Map<String, List<String>> additionalImageUrls = const {},
-  }
-  ) async {
+  }) async {
     int ok = 0;
     int failed = 0;
     if (kIsWeb) {
@@ -485,19 +568,14 @@ class OfflineStorageService {
     try {
       docs = await getApplicationDocumentsDirectory();
     } catch (e) {
-      debugPrint(
-        'OfflineStorageService.prefetchImages: docs dir failed: $e',
-      );
+      debugPrint('OfflineStorageService.prefetchImages: docs dir failed: $e');
     }
     if (docs == null) {
       return (ok: 0, failed: places.length);
     }
     final manager = DefaultCacheManager();
     for (final p in places) {
-      final imageUrls = {
-        ...p.officialImages,
-        ...?additionalImageUrls[p.id],
-      };
+      final imageUrls = {...p.officialImages, ...?additionalImageUrls[p.id]};
       for (final url in imageUrls) {
         final cleanUrl = url.trim();
         if (cleanUrl.isEmpty ||
@@ -512,9 +590,7 @@ class OfflineStorageService {
           if (!await dir.exists()) {
             await dir.create(recursive: true);
           }
-          final target = File(
-            '${dir.path}/${_imageFileName(cleanUrl)}',
-          );
+          final target = File('${dir.path}/${_imageFileName(cleanUrl)}');
           // Keep permanent copies outside the evictable image cache.
           final info = await manager.downloadFile(cleanUrl);
           if (await info.file.exists()) {

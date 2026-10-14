@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/checkin_location_service.dart';
+import '../../core/services/offline_storage_service.dart';
 import '../../core/services/app_review_service.dart';
 import '../../core/widgets/app_image.dart';
 import '../../core/widgets/confetti_overlay.dart';
@@ -164,6 +165,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
         builder: (context) => MapScreen(
           destinationLat: widget.place.lat,
           destinationLng: widget.place.lng,
+          cachedRouteKey: OfflineStorageService.instance.entityRouteCacheKey(
+            'place',
+            widget.place.id,
+          ),
           placeName: widget.place.localizedName(
             context.read<LocaleProvider>().locale.languageCode,
           ),

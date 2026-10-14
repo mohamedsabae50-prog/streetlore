@@ -21,6 +21,123 @@ class SupabaseService {
   SupabaseClient? get clientOrNull => _client;
   bool get isLive => _client != null;
 
+  static Map<String, dynamic> normalizeAiChatLogsResponse(Object? response) {
+    final envelope = response is Map
+        ? Map<String, dynamic>.fromEntries(
+            response.entries
+                .where((entry) => entry.key is String)
+                .map((entry) => MapEntry(entry.key as String, entry.value)),
+          )
+        : <String, dynamic>{};
+    final rawItems = response is List
+        ? response
+        : envelope['threads'] is List
+        ? envelope['threads']
+        : envelope['sessions'] is List
+        ? envelope['sessions']
+        : envelope['logs'] is List
+        ? envelope['logs']
+        : envelope['items'] is List
+        ? envelope['items']
+        : const <dynamic>[];
+
+    final items = (rawItems as List).whereType<Map>().map((item) {
+      return Map<String, dynamic>.fromEntries(
+        item.entries
+            .where((entry) => entry.key is String)
+            .map((entry) => MapEntry(entry.key as String, entry.value)),
+      );
+    }).toList(growable: false);
+    final containsThreads = items.any(
+      (item) => item['messages'] is List,
+    );
+    final threads = <Map<String, dynamic>>[];
+    if (containsThreads) {
+      for (final item in items) {
+        final rawMessages = item['messages'];
+        if (rawMessages is! List) continue;
+        final messages = rawMessages
+            .whereType<Map>()
+            .map((message) => _normalizeAiChatLog(
+                  Map<String, dynamic>.fromEntries(
+                    message.entries
+                        .where((entry) => entry.key is String)
+                        .map(
+                          (entry) =>
+                              MapEntry(entry.key as String, entry.value),
+                        ),
+                  ),
+                ))
+            .toList(growable: false);
+        if (messages.isEmpty) continue;
+        threads.add({
+          ...item,
+          'user_id': item['user_id']?.toString() ?? '',
+          'created_at': _normalizeIsoDate(item['created_at']) ??
+              messages.first['created_at'],
+          'messages': messages,
+        });
+      }
+    } else {
+      final grouped = <String, List<Map<String, dynamic>>>{};
+      for (var index = 0; index < items.length; index++) {
+        final log = _normalizeAiChatLog(items[index], index: index);
+        final sessionId = log['session_id'] as String?;
+        final key = sessionId == null || sessionId.isEmpty
+            ? 'legacy:${log['id']}'
+            : '${log['user_id']}:$sessionId';
+        grouped.putIfAbsent(key, () => <Map<String, dynamic>>[]).add(log);
+      }
+      for (final entry in grouped.entries) {
+        final messages = entry.value;
+        threads.add({
+          'id': entry.key,
+          'user_id': messages.first['user_id'],
+          'session_id': messages.first['session_id'],
+          'created_at': messages.first['created_at'],
+          'last_message_at': messages.last['created_at'],
+          'messages': messages,
+        });
+      }
+      threads.sort(
+        (left, right) => (right['last_message_at'] as String)
+            .compareTo(left['last_message_at'] as String),
+      );
+    }
+
+    return {
+      'threads': threads,
+      'has_more': envelope['has_more'] == true,
+    };
+  }
+
+  static Map<String, dynamic> _normalizeAiChatLog(
+    Map<String, dynamic> log, {
+    int index = 0,
+  }) {
+    final rawId = log['id'] ?? log['log_id'] ?? index;
+    final rawSessionId = log['session_id'] ?? log['sessionId'];
+    return {
+      ...log,
+      'id': rawId.toString(),
+      'user_id': (log['user_id'] ?? log['userId'] ?? '').toString(),
+      'session_id': rawSessionId?.toString(),
+      'user_prompt':
+          (log['user_prompt'] ?? log['prompt'] ?? log['user_message'] ?? '')
+              .toString(),
+      'ai_response':
+          (log['ai_response'] ?? log['response'] ?? log['assistant_message'] ?? '')
+              .toString(),
+      'created_at':
+          _normalizeIsoDate(log['created_at'] ?? log['timestamp']) ?? '',
+    };
+  }
+
+  static String? _normalizeIsoDate(Object? value) {
+    final parsed = DateTime.tryParse(value?.toString() ?? '');
+    return parsed?.toUtc().toIso8601String();
+  }
+
   Future<void> init() async {
     if (_initialised) return;
     _initialised = true;

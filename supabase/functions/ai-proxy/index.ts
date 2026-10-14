@@ -325,24 +325,66 @@ serve(async (req: Request): Promise<Response> => {
   delete body.log_prompt;
 
   const endpoint = streaming ? "streamGenerateContent?alt=sse" : "generateContent";
-  const url =
-    `${GEMINI_ENDPOINT_BASE}/${encodeURIComponent(model)}:${endpoint}`;
-  let upstream: Response;
-  try {
-    upstream = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...await geminiAuthHeaders(),
-      },
-      body: JSON.stringify(body),
-    });
-  } catch (e) {
-    console.error("ai-proxy: upstream authentication or fetch failed:", e);
-    await logInteraction(userId, prompt, JSON.stringify({
-      error: "upstream_unreachable",
-    }), sessionId);
-    return json({ error: "upstream_unreachable", code: "BAD_REQUEST" }, 502);
+  const models = [...new Set([
+    model,
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+  ])];
+  let upstream: Response | null = null;
+  let selectedModel = model;
+  let fetchFailure: unknown;
+  for (let index = 0; index < models.length; index++) {
+    selectedModel = models[index];
+    const url =
+      `${GEMINI_ENDPOINT_BASE}/${encodeURIComponent(selectedModel)}:${endpoint}`;
+    try {
+      upstream = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...await geminiAuthHeaders(),
+        },
+        body: JSON.stringify(body),
+      });
+    } catch (error) {
+      fetchFailure = error;
+      console.error(`ai-proxy: fetch failed for ${selectedModel}:`, error);
+      if (index < models.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        continue;
+      }
+      break;
+    }
+    if (upstream.ok || ![429, 500, 503].includes(upstream.status)) break;
+    if (index < models.length - 1) {
+      console.warn(
+        `ai-proxy: model ${selectedModel} returned ${upstream.status}; trying fallback`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+
+  if (!upstream) {
+    console.error("ai-proxy: all upstream requests failed:", fetchFailure);
+    await logInteraction(userId, prompt, "AI service temporarily unavailable.", sessionId);
+    return json({
+      error: "ai_unavailable",
+      code: "UPSTREAM_UNAVAILABLE",
+      message: "The AI guide is temporarily unavailable. Please try again.",
+    }, 503);
+  }
+  if (!upstream.ok && [429, 500, 503].includes(upstream.status)) {
+    console.error(
+      `ai-proxy: all models unavailable; last model ${selectedModel} returned ${upstream.status}`,
+    );
+    await logInteraction(userId, prompt, "AI service temporarily unavailable.", sessionId);
+    return json({
+      error: "ai_unavailable",
+      code: "UPSTREAM_UNAVAILABLE",
+      message: "The AI guide is temporarily unavailable. Please try again.",
+    }, 503);
   }
 
   if (upstream.ok && streaming) {

@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/geocoding_service.dart';
+import '../../core/services/supabase_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
@@ -128,22 +129,12 @@ class _ChatLogsViewState extends State<_ChatLogsView> {
         'admin-user-management',
         body: {'action': 'chat_logs', 'page': _page, 'per_page': 30},
       );
-      if (response.data is! Map) {
-        throw const FormatException('Chat log response was not an object.');
-      }
-      final data = Map<String, dynamic>.from(response.data as Map);
-      if (data['threads'] is! List || data['has_more'] is! bool) {
-        throw const FormatException(
-          'Chat log response is missing thread data.',
-        );
-      }
-      final threads = (data['threads'] as List)
-          .map((thread) => Map<String, dynamic>.from(thread as Map))
-          .toList(growable: false);
+      final data = SupabaseService.normalizeAiChatLogsResponse(response.data);
+      final threads = data['threads'] as List<Map<String, dynamic>>;
       if (!mounted) return;
       setState(() {
         _threads.addAll(threads);
-        _hasMore = data['has_more'] as bool;
+        _hasMore = data['has_more'] == true;
         _page++;
         _loading = false;
       });

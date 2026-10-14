@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/offline_storage_service.dart';
 import '../../core/services/social_share_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/itinerary_model.dart';
@@ -117,6 +118,10 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
         builder: (context) => MapScreen(
           destinationLat: firstPlace.lat,
           destinationLng: firstPlace.lng,
+          cachedRouteKey: OfflineStorageService.instance.entityRouteCacheKey(
+            'tour',
+            tour.id,
+          ),
           placeName: tour.localizedTitle(locale),
           waypoints: tour.places
               .map(

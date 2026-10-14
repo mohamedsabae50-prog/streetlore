@@ -1042,6 +1042,10 @@ class AppStrings {
           'Offline guidance: showing a straight-line route to your destination.',
       'ar': 'إرشاد دون اتصال: يظهر المسار المباشر إلى وجهتك.',
     },
+    'map_cached_road_route': {
+      'en': 'Offline map: showing the cached road route to your destination.',
+      'ar': 'خريطة دون اتصال: يظهر مسار الطريق المحفوظ إلى وجهتك.',
+    },
     'map_straight_line_distance': {
       'en': '{distance} away · bearing {bearing}°',
       'ar': 'يبعد {distance} · الاتجاه {bearing}°',

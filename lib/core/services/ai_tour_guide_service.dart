@@ -204,8 +204,8 @@ family-friendliness, safety, and accessibility.''';
           e.statusCode == 429 &&
           e.message.contains('AI_DAILY_LIMIT_EXCEEDED');
       final reply = isDailyLimit
-          ? aiDailyLimitMessage
-          : _offlineErrorReply(userText, e);
+          ? _localizedDailyLimit(userText)
+          : _offlineErrorReply(userText);
       onResponseChunk?.call(reply);
       _messages.add(
         ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()),
@@ -216,60 +216,19 @@ family-friendliness, safety, and accessibility.''';
     }
   }
 
-  String _offlineErrorReply(String userText, Object error) {
+  String _offlineErrorReply(String userText) {
     final isArabic = userText.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
-    final errBrief = _summarizeError(error);
     final offline = _offlineAnswer(userText, _currentPlace!);
     return isArabic
-        ? '⚠️ Gemini API: $errBrief\n\n(إجابة محلية بدون نت)\n\n$offline'
-        : '⚠️ Gemini API: $errBrief\n\n(Local offline answer — API call failed)\n\n$offline';
+        ? 'تعذر الاتصال بالمساعد الذكي الآن. إليك إجابة محلية دون اتصال:\n\n$offline'
+        : 'The AI guide is temporarily unavailable. Here is an offline answer:\n\n$offline';
   }
 
-  String _summarizeError(Object e) {
-    if (e is GeminiApiException) {
-      var code = e.statusCode;
-
-      if (code == 599) {
-        final m = RegExp(r'\(Error:\s*(\d{3})\)').firstMatch(e.message);
-        if (m != null) {
-          code = int.tryParse(m.group(1) ?? '') ?? 599;
-        }
-      }
-      if (code == 0) return 'Network error: ${e.message}';
-      if (code == 400) {
-        return 'Bad request (400): ${_trim(e.message)} — likely invalid API '
-            'key or unsupported model name. Check '
-            'the `ai-proxy` Edge Function secrets and `geminiModel`.';
-      }
-      if (code == 401 || code == 403) {
-        return 'Auth denied ($code): ${_trim(e.message)} — API key lacks '
-            'permission. Enable the Generative Language API for your key '
-            'at https://aistudio.google.com/apikey';
-      }
-      if (code == 404) {
-        return 'Model not found (404): ${_trim(e.message)} — '
-            '`AppConfig.geminiModel` is unavailable through the AI proxy.';
-      }
-      if (code == 429) {
-        return 'Rate limited (429): ${_trim(e.message)}';
-      }
-      return 'HTTP $code: ${_trim(e.message)}';
-    }
-    final s = e.toString();
-    if (s.contains('SocketException') || s.contains('Failed host lookup')) {
-      return 'No internet / DNS failed.';
-    }
-    if (s.contains('TimeoutException')) {
-      return 'Request timed out.';
-    }
-    return _trim(s);
-  }
-
-  String _trim(String s) {
-    final firstLine = s.split('\n').first;
-    return firstLine.length > 220
-        ? '${firstLine.substring(0, 220)}...'
-        : firstLine;
+  String _localizedDailyLimit(String userText) {
+    final isArabic = userText.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
+    return isArabic
+        ? 'لقد وصلت إلى الحد اليومي لاستخدام المساعد. حاول مرة أخرى غداً.'
+        : aiDailyLimitMessage;
   }
 
   String _buildContextualUserPrompt(String userText) {

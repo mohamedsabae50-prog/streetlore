@@ -235,8 +235,22 @@ async function listChatLogs(page: number, perPage: number) {
       new Date(left.last_message_at).getTime(),
   );
   const from = (page - 1) * perPage;
+  const pageThreads = threads.slice(from, from + perPage);
+  const pageLogs = pageThreads.flatMap((thread) =>
+    thread.messages.map((log) => ({
+      ...log,
+      id: String(log.id),
+      user_id: String(log.user_id),
+      session_id: log.session_id == null ? null : String(log.session_id),
+      user_prompt: String(log.user_prompt ?? ""),
+      ai_response: String(log.ai_response ?? ""),
+      created_at: new Date(log.created_at).toISOString(),
+    }))
+  );
   return {
-    threads: threads.slice(from, from + perPage),
+    threads: pageThreads,
+    logs: pageLogs,
+    items: pageLogs,
     has_more: threads.length > from + perPage,
   };
 }

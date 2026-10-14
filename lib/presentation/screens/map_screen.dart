@@ -102,6 +102,7 @@ class MapScreen extends StatefulWidget {
   final String placeName;
 
   final List<PlaceWaypoint>? waypoints;
+  final String? cachedRouteKey;
 
   const MapScreen({
     super.key,
@@ -109,6 +110,7 @@ class MapScreen extends StatefulWidget {
     required this.destinationLng,
     required this.placeName,
     this.waypoints,
+    this.cachedRouteKey,
   });
 
   @override
@@ -123,6 +125,7 @@ class _MapScreenState extends State<MapScreen> {
   List<LatLng> _routePoints = [];
   final bool _isLoading = false;
   bool _routeUnavailable = true;
+  bool _usingCachedRoadRoute = false;
 
   StreamSubscription<Position>? _positionSub;
   final MapController _mapController = MapController();
@@ -253,12 +256,24 @@ class _MapScreenState extends State<MapScreen> {
         .map((waypoint) => LatLng(waypoint.lat, waypoint.lng))
         .toList(growable: false);
     final storage = OfflineStorageService.instance;
-    final cachedRoute = waypointPoints.length < 2
-        ? null
-        : await storage.getCachedRouteGeometry(
-            storage.routeCacheKey(waypointPoints),
-          );
+    final cachedRoute =
+        (widget.cachedRouteKey == null
+            ? null
+            : await storage.getCachedRouteGeometry(widget.cachedRouteKey!)) ??
+        (waypointPoints.length < 2
+            ? null
+            : await storage.getCachedRouteGeometry(
+                storage.routeCacheKey(waypointPoints),
+              ));
     if (!mounted) return;
+    final cachedRoadRoute = cachedRoute == null
+        ? null
+        : <LatLng>[
+            if (_currentLocation != null &&
+                _distanceMeters(_currentLocation!, cachedRoute.first) > 5)
+              _currentLocation!,
+            ...cachedRoute,
+          ];
 
     final coords = <String>[];
     if (_currentLocation != null) {
@@ -277,18 +292,22 @@ class _MapScreenState extends State<MapScreen> {
       if (!mounted) return;
       setState(() {
         _routePoints =
-            cachedRoute ??
+            cachedRoadRoute ??
             [
               if (_currentLocation != null) _currentLocation!,
               ...waypointPoints,
             ];
-        _routeUnavailable = true;
+        _routeUnavailable = cachedRoadRoute == null;
+        _usingCachedRoadRoute = cachedRoadRoute != null;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _fitToRoute();
       });
       return;
     }
 
     final fallbackRoute =
-        cachedRoute ??
+        cachedRoadRoute ??
         [
           if (_currentLocation != null) _currentLocation!,
           ...waypointPoints,
@@ -296,7 +315,8 @@ class _MapScreenState extends State<MapScreen> {
     if (mounted) {
       setState(() {
         _routePoints = fallbackRoute;
-        _routeUnavailable = true;
+        _routeUnavailable = cachedRoadRoute == null;
+        _usingCachedRoadRoute = cachedRoadRoute != null;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _fitToRoute();
@@ -349,6 +369,7 @@ class _MapScreenState extends State<MapScreen> {
                   setState(() {
                     _routePoints = newRoutePoints;
                     _routeUnavailable = false;
+                    _usingCachedRoadRoute = false;
                   });
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (mounted) _fitToRoute();
@@ -368,7 +389,8 @@ class _MapScreenState extends State<MapScreen> {
       if (!mounted) return;
       setState(() {
         _routePoints = fallbackRoute;
-        _routeUnavailable = true;
+        _routeUnavailable = cachedRoadRoute == null;
+        _usingCachedRoadRoute = cachedRoadRoute != null;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _fitToRoute();
@@ -536,7 +558,7 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   ),
                 ),
-                if (_routeUnavailable)
+                if (_routeUnavailable || _usingCachedRoadRoute)
                   Positioned(
                     top: 78,
                     left: 12,
@@ -550,7 +572,11 @@ class _MapScreenState extends State<MapScreen> {
                           vertical: 9,
                         ),
                         child: Text(
-                          context.tr('map_offline_fallback'),
+                          context.tr(
+                            _usingCachedRoadRoute
+                                ? 'map_cached_road_route'
+                                : 'map_offline_fallback',
+                          ),
                           style: const TextStyle(color: Colors.black87),
                         ),
                       ),
@@ -615,6 +641,11 @@ class _MapScreenState extends State<MapScreen> {
       final bounds = LatLngBounds.fromPoints(_routePoints);
       _mapController.fitCamera(
         CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(48)),
+      );
+      final camera = _mapController.camera;
+      _mapController.move(
+        camera.center,
+        camera.zoom.clamp(11.0, 16.0).toDouble(),
       );
     } catch (e) {
       debugPrint('Fit route error: $e');

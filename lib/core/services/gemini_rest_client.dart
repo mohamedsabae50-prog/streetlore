@@ -9,7 +9,12 @@ class GeminiRestClient {
   static final GeminiRestClient instance = GeminiRestClient._();
 
   static const Duration _timeout = Duration(seconds: 45);
-  static const List<String> _modelFallbackOrder = ['gemini-2.5-flash-lite'];
+  static const List<String> _modelFallbackOrder = [
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+  ];
 
   Future<GeminiResult> generateContent({
     required String model,
@@ -83,7 +88,16 @@ class GeminiRestClient {
           errorBody: error.toString(),
           raw: null,
         );
-        if (status == 404 && modelToTry != models.last) continue;
+        final shouldFallback =
+            status == 404 || status == 429 || status == 500 || status == 503;
+        if (shouldFallback &&
+            modelToTry != models.last &&
+            !error.toString().contains('AI_DAILY_LIMIT_EXCEEDED') &&
+            !error.toString().contains('AI_QUOTA_EXCEEDED') &&
+            !error.toString().contains('UPSTREAM_UNAVAILABLE')) {
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+          continue;
+        }
         return result;
       }
     }
@@ -154,7 +168,16 @@ class GeminiRestClient {
           'Streaming proxy call failed (model=$modelToTry, status=$status): '
           '$error',
         );
-        if (status == 404 && i < models.length - 1) continue;
+        final shouldFallback =
+            status == 404 || status == 429 || status == 500 || status == 503;
+        if (shouldFallback &&
+            i < models.length - 1 &&
+            !error.toString().contains('AI_DAILY_LIMIT_EXCEEDED') &&
+            !error.toString().contains('AI_QUOTA_EXCEEDED') &&
+            !error.toString().contains('UPSTREAM_UNAVAILABLE')) {
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+          continue;
+        }
         rethrow;
       }
     }

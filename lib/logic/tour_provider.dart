@@ -364,16 +364,27 @@ class TourProvider extends ChangeNotifier {
       final stops = tour.places.where((p) => p.id.isNotEmpty).toList();
       if (stops.isNotEmpty) {
         await storage.cachePlaces(stops);
+        final routeOrigin =
+            await storage.getCurrentLocationForOfflineRoute() ??
+            const LatLng(31.2001, 29.9187);
+        final routePoints = <LatLng>[
+          routeOrigin,
+          ...stops.map((place) => LatLng(place.lat, place.lng)),
+        ];
+        await storage.prefetchOfflineRouteCoverage(
+          storage.entityRouteCacheKey('tour', tour.id),
+          routePoints,
+        );
         await storage.prefetchMapTiles(
           stops.map((place) => LatLng(place.lat, place.lng)),
         );
-        final routePoints = stops
+        final stopRoutePoints = stops
             .map((place) => LatLng(place.lat, place.lng))
             .toList(growable: false);
-        if (routePoints.length > 1) {
+        if (stopRoutePoints.length > 1) {
           await storage.prefetchRouteGeometry(
-            storage.routeCacheKey(routePoints),
-            routePoints,
+            storage.routeCacheKey(stopRoutePoints),
+            stopRoutePoints,
           );
         }
         final stopImages = await storage.prefetchImages(stops);
