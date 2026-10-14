@@ -7,10 +7,10 @@ import 'offline_storage_service.dart';
 class OfflineTileProvider extends NetworkTileProvider {
   OfflineTileProvider()
     : super(
-        headers: const {
+        headers: Map<String, String>.from({
           'User-Agent':
               'StreetloreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)',
-        },
+        }),
       );
 
   @override
