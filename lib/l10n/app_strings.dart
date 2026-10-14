@@ -294,6 +294,18 @@ class AppStrings {
       'ar': 'سجّل الدخول للعثور على مستكشفين آخرين ومتابعتهم.',
     },
     'user_profile_title': {'en': 'Explorer Profile', 'ar': 'ملف المستكشف'},
+    'profile_visited_places': {
+      'en': 'Places visited',
+      'ar': 'الأماكن التي زارها',
+    },
+    'profile_no_visits': {
+      'en': 'No check-ins yet.',
+      'ar': 'لا توجد زيارات مسجلة بعد.',
+    },
+    'profile_visits_failed': {
+      'en': 'Could not load visited places. Please try again.',
+      'ar': 'تعذر تحميل الأماكن التي تمت زيارتها. حاول مرة أخرى.',
+    },
     'follow_user': {'en': 'Follow', 'ar': 'متابعة'},
     'unfollow_user': {'en': 'Unfollow', 'ar': 'إلغاء المتابعة'},
     'follow_action_failed': {

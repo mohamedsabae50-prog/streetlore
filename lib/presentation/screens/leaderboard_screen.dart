@@ -12,6 +12,8 @@ import '../../data/models/gamification_stats.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/gamification_provider.dart';
 import '../../logic/leaderboard_provider.dart';
+import '../../core/services/supabase_service.dart';
+import 'user_profile_screen.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -534,122 +536,144 @@ class _Row extends StatelessWidget {
       } catch (_) {}
     }
     final isTop3 = rank <= 3;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isTop3
-              ? AppColors.warning.withValues(alpha: 0.4)
-              : context.hintColor.withValues(alpha: 0.3),
-        ),
-        boxShadow: isTop3
-            ? [
-                BoxShadow(
-                  color: AppColors.warning.withValues(alpha: 0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: isTop3
-                  ? AppColors.warning.withValues(alpha: 0.18)
-                  : context.hintColor.withValues(alpha: 0.18),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: isTop3
-                ? Icon(
-                    [
-                      Icons.emoji_events_rounded,
-                      Icons.military_tech_rounded,
-                      Icons.workspace_premium_rounded,
-                    ][rank - 1],
-                    color: AppColors.warning,
-                    size: 20,
-                  )
-                : Text(
-                    '$rank',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: context.textSec,
-                    ),
-                  ),
+    return InkWell(
+      onTap: () => _openProfile(context),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isTop3
+                ? AppColors.warning.withValues(alpha: 0.4)
+                : context.hintColor.withValues(alpha: 0.3),
           ),
-          const SizedBox(width: 12),
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: avatarColor ?? AppColors.primary,
-            child: Text(
-              stats.userName.isNotEmpty ? stats.userName[0].toUpperCase() : '?',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
+          boxShadow: isTop3
+              ? [
+                  BoxShadow(
+                    color: AppColors.warning.withValues(alpha: 0.1),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isTop3
+                    ? AppColors.warning.withValues(alpha: 0.18)
+                    : context.hintColor.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: isTop3
+                  ? Icon(
+                      [
+                        Icons.emoji_events_rounded,
+                        Icons.military_tech_rounded,
+                        Icons.workspace_premium_rounded,
+                      ][rank - 1],
+                      color: AppColors.warning,
+                      size: 20,
+                    )
+                  : Text(
+                      '$rank',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: context.textSec,
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 12),
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: avatarColor ?? AppColors.primary,
+              child: Text(
+                stats.userName.isNotEmpty
+                    ? stats.userName[0].toUpperCase()
+                    : '?',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    stats.userName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      _StatChip(
+                        value: entry.checkIns,
+                        label: context.tr('lb_stat_checkins'),
+                      ),
+                      _StatChip(
+                        value: entry.longestStreak,
+                        label: context.tr('lb_stat_streak'),
+                      ),
+                      _StatChip(
+                        value: entry.hiddenGems,
+                        label: context.tr('lb_stat_gems'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  stats.userName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
+                  '${_metricValue(entry, metric)}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: context.textPri,
                   ),
                 ),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: [
-                    _StatChip(
-                      value: entry.checkIns,
-                      label: context.tr('lb_stat_checkins'),
-                    ),
-                    _StatChip(
-                      value: entry.longestStreak,
-                      label: context.tr('lb_stat_streak'),
-                    ),
-                    _StatChip(
-                      value: entry.hiddenGems,
-                      label: context.tr('lb_stat_gems'),
-                    ),
-                  ],
+                Text(
+                  _metricLabel(context, metric),
+                  style: TextStyle(color: context.textSec, fontSize: 11),
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${_metricValue(entry, metric)}',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: context.textPri,
-                ),
-              ),
-              Text(
-                _metricLabel(context, metric),
-                style: TextStyle(color: context.textSec, fontSize: 11),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _openProfile(BuildContext context) async {
+    try {
+      final user = await SupabaseService.instance.getSocialUser(
+        entry.stats.userId,
+      );
+      if (user == null || !context.mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => UserProfileScreen(user: user),
+        ),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('LeaderboardScreen: profile load failed: $error\n$stackTrace');
+    }
   }
 }
 

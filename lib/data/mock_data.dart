@@ -104,8 +104,10 @@ class MockData {
 
   static bool isOpenNow(String openHours, {DateTime? now}) {
     final clean = openHours.trim();
-    if (RegExp(r'^(?:open\s*)?24\s*hours?$', caseSensitive: false)
-        .hasMatch(clean)) {
+    if (RegExp(
+      r'^(?:open\s*)?24\s*hours?$',
+      caseSensitive: false,
+    ).hasMatch(clean)) {
       return true;
     }
 
@@ -382,32 +384,6 @@ const List<PlaceModel> fallbackPlaces = [
     isHiddenGem: false,
   ),
   PlaceModel(
-    id: 'fallback_corniche',
-    nameEn: 'Alexandria Corniche',
-    nameAr: 'كورنيش الإسكندرية',
-    descriptionEn:
-        'A scenic waterfront promenade along the Mediterranean Sea stretching about 15 km. Perfect for sunset walks with stunning views.',
-    descriptionAr:
-        'كورنيش الإسكندرية ممشى ساحلي خلاب يمتد على طول البحر المتوسط. من أجمل الكورنيشات في مصر، مثالي لجلسات الغروب والتنزه مع الأسرة.',
-    imageUrl:
-        'https://upload.wikimedia.org/wikipedia/commons/7/71/Egypt%2C_Alexandria%2C_The_Corniche_of_Alexandria.jpg',
-    rating: 4.7,
-    category: 'Streets',
-    categoryAr: 'شوارع',
-    lat: 31.2460,
-    lng: 29.9660,
-    address: 'Corniche, Alexandria',
-    addressAr: 'الكورنيش، الإسكندرية',
-    openHours: 'Open 24 hours',
-    reviewCount: 3200,
-    priceLevel: PriceLevel.free,
-    priceNote: 'Free',
-    priceNoteAr: 'مجاني',
-    priceLocalEgp: 0,
-    priceForeignerEgp: 0,
-    isHiddenGem: false,
-  ),
-  PlaceModel(
     id: 'fallback_montaza',
     nameEn: 'Montaza Palace Gardens',
     nameAr: 'حدائق المنتزه',
@@ -445,7 +421,7 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'مسجد العطارين أحد المساجد التاريخية العريقة في قلب الإسكندرية القديمة. يعود تاريخه للعصر المملوكي ويتميز بزخارفه الإسلامية الرائعة وروحانيته العالية.',
     imageUrl:
-        'https://upload.wikimedia.org/wikipedia/commons/5/5c/AlexAttarinOutside.jpg',
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/AlexAttarinOutside.jpg/1280px-AlexAttarinOutside.jpg',
     rating: 4.3,
     category: 'Mosques',
     categoryAr: 'مساجد',
@@ -492,6 +468,98 @@ const List<PlaceModel> fallbackPlaces = [
   _fallbackGraecoRomanMuseum,
   _fallbackRomanAmphitheatre,
   _fallbackStanleyBridge,
+  PlaceModel(
+    id: 'alex_royal_jewelry_museum',
+    nameEn: 'Royal Jewelry Museum',
+    nameAr: 'متحف المجوهرات الملكية',
+    descriptionEn:
+        'A former royal palace in Zizinia displaying the jewelry, ceremonial objects and personal collections of Egypt’s Muhammad Ali dynasty.',
+    descriptionAr:
+        'قصر ملكي سابق في زيزينيا يعرض مجوهرات ومقتنيات أسرة محمد علي، إلى جانب القاعات المزخرفة التي تشكل جزءاً من تجربة الزيارة.',
+    imageUrl:
+        'https://upload.wikimedia.org/wikipedia/commons/f/f6/AlexRoyalJewelleryMusLeft.jpg',
+    rating: 4.6,
+    category: 'Culture',
+    categoryAr: 'ثقافة',
+    lat: 31.2494,
+    lng: 29.9665,
+    address: '27 Ahmed Yehia Pasha Street, Zizinia, Alexandria',
+    addressAr: '٢٧ شارع أحمد يحيى باشا، زيزينيا، الإسكندرية',
+    openHours: '9:00 AM - 5:00 PM',
+    priceLevel: PriceLevel.cheap,
+    priceNote: 'Paid museum admission; verify current ticket prices',
+    priceNoteAr: 'دخول بتذكرة؛ يُرجى التحقق من الأسعار الحالية',
+  ),
+  PlaceModel(
+    id: 'alex_cavafy_museum',
+    nameEn: 'Cavafy Museum',
+    nameAr: 'متحف كفافيس',
+    descriptionEn:
+        'The preserved Alexandria apartment of Greek poet Constantine P. Cavafy, presented with archival material and objects tracing his life and literary work in the city.',
+    descriptionAr:
+        'شقة الشاعر اليوناني قسطنطين كفافيس المحفوظة في الإسكندرية، وتضم مقتنيات ووثائق تستعرض حياته وأعماله الأدبية وصلته بالمدينة.',
+    imageUrl:
+        'https://upload.wikimedia.org/wikipedia/commons/4/47/AlexCavafyMuseum.jpg',
+    imageUrls: [
+      'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9b/AlexCavafyHouse.jpg/1280px-AlexCavafyHouse.jpg',
+      'https://upload.wikimedia.org/wikipedia/commons/8/80/Cavafy_entrance.jpg',
+    ],
+    rating: 4.5,
+    category: 'Culture',
+    categoryAr: 'ثقافة',
+    lat: 31.1984,
+    lng: 29.9018,
+    address: '4 Sharm El Sheikh Street, Alexandria',
+    addressAr: '٤ شارع شرم الشيخ، الإسكندرية',
+    openHours: 'Check current visiting hours before visiting',
+    priceLevel: PriceLevel.cheap,
+    priceNote: 'Paid admission; verify current visiting details',
+    priceNoteAr: 'دخول بتذكرة؛ يُرجى التحقق من مواعيد الزيارة',
+  ),
+  PlaceModel(
+    id: 'alex_nabi_daniel_mosque',
+    nameEn: 'Nabi Daniel Mosque',
+    nameAr: 'مسجد النبي دانيال',
+    descriptionEn:
+        'A landmark historic mosque in central Alexandria, known for its distinctive Ottoman-era architecture and long-standing place in the city’s religious and urban history.',
+    descriptionAr:
+        'مسجد تاريخي بارز في وسط الإسكندرية، يشتهر بعمارة تعود إلى العصر العثماني ومكانته الراسخة في التاريخ الديني والعمراني للمدينة.',
+    imageUrl:
+        'https://upload.wikimedia.org/wikipedia/commons/5/59/Nabi_Daniel_Mosque.JPG',
+    rating: 4.5,
+    category: 'Mosques',
+    categoryAr: 'مساجد',
+    lat: 31.1981,
+    lng: 29.9017,
+    address: 'Nabi Daniel Street, central Alexandria',
+    addressAr: 'شارع النبي دانيال، وسط الإسكندرية',
+    openHours: '9:00 AM - 5:00 PM',
+    priceLevel: PriceLevel.free,
+    priceNote: 'Free entry; respect prayer times',
+    priceNoteAr: 'الدخول مجاني؛ يُرجى مراعاة أوقات الصلاة',
+  ),
+  PlaceModel(
+    id: 'alex_sayed_darwish_theatre',
+    nameEn: 'Sayed Darwish Theatre (Alexandria Opera House)',
+    nameAr: 'مسرح سيد درويش (دار أوبرا الإسكندرية)',
+    descriptionEn:
+        'Alexandria’s historic opera house, opened in 1921 and named for Egyptian composer Sayed Darwish. The restored Italianate theatre remains an active venue for opera, concerts and cultural performances.',
+    descriptionAr:
+        'دار أوبرا الإسكندرية التاريخية، افتُتحت عام ١٩٢١ وسُمّيت باسم الموسيقار المصري سيد درويش. لا يزال المسرح الإيطالي الطراز يستضيف الأوبرا والحفلات والعروض الثقافية.',
+    imageUrl:
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Sayed_Darwish_Theatre_in_Alexandria%2C_76.JPG/1280px-Sayed_Darwish_Theatre_in_Alexandria%2C_76.JPG',
+    rating: 4.6,
+    category: 'Culture',
+    categoryAr: 'ثقافة',
+    lat: 31.1995,
+    lng: 29.9038,
+    address: 'Fouad Street, Alexandria',
+    addressAr: 'شارع فؤاد، الإسكندرية',
+    openHours: 'Performance schedule varies; check the theatre programme',
+    priceLevel: PriceLevel.moderate,
+    priceNote: 'Ticketed performances; prices and schedule vary',
+    priceNoteAr: 'العروض بتذاكر؛ تختلف الأسعار والمواعيد',
+  ),
 ];
 
 const List<ItineraryModel> _seedTours = fallbackTours;
@@ -617,39 +685,14 @@ const List<ItineraryModel> fallbackTours = [
     title: 'Coastal Alexandria',
     titleAr: 'إسكندرية الساحل',
     description:
-        'Experience the beauty of the Mediterranean — sandy beaches, the stunning Corniche, and the lush Montaza gardens.',
+        'Explore the royal gardens and historic palaces on Alexandria’s Mediterranean coast.',
     descriptionAr:
-        'استمتع بجمال البحر المتوسط — الشواطئ الرملية والكورنيش الخلاب وحدائق المنتزه الوارفة.',
+        'استكشف الحدائق الملكية والقصور التاريخية على ساحل الإسكندرية.',
     duration: '4 Hours',
     durationAr: '4 ساعات',
     imageUrl:
-        'https://upload.wikimedia.org/wikipedia/commons/7/71/Egypt%2C_Alexandria%2C_The_Corniche_of_Alexandria.jpg',
+        'https://upload.wikimedia.org/wikipedia/commons/b/b6/Montaza_Palace_Gardens.png',
     places: [
-      PlaceModel(
-        id: 'fallback_corniche',
-        nameEn: 'Alexandria Corniche',
-        nameAr: 'كورنيش الإسكندرية',
-        descriptionEn:
-            'A scenic 15 km waterfront promenade along the Mediterranean — perfect for sunset walks.',
-        descriptionAr:
-            'كورنيش الإسكندرية ممشى ساحلي خلاب يمتد على طول البحر المتوسط. من أجمل الكورنيشات في مصر، مثالي لجلسات الغروب والتنزه مع الأسرة.',
-        imageUrl:
-            'https://upload.wikimedia.org/wikipedia/commons/7/71/Egypt%2C_Alexandria%2C_The_Corniche_of_Alexandria.jpg',
-        rating: 4.7,
-        category: 'Streets',
-        categoryAr: 'شوارع',
-        lat: 31.2460,
-        lng: 29.9660,
-        address: 'Corniche, Alexandria',
-        addressAr: 'الكورنيش، الإسكندرية',
-        openHours: 'Open 24 hours',
-        reviewCount: 3200,
-        priceLevel: PriceLevel.free,
-        priceNote: 'Free',
-        priceNoteAr: 'مجاني',
-        priceLocalEgp: 0,
-        priceForeignerEgp: 0,
-      ),
       PlaceModel(
         id: 'fallback_montaza',
         nameEn: 'Montaza Palace Gardens',
@@ -688,7 +731,7 @@ const List<ItineraryModel> fallbackTours = [
     duration: '3 Hours',
     durationAr: '3 ساعات',
     imageUrl:
-        'https://upload.wikimedia.org/wikipedia/commons/5/5c/AlexAttarinOutside.jpg',
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/AlexAttarinOutside.jpg/1280px-AlexAttarinOutside.jpg',
     places: [
       PlaceModel(
         id: 'fallback_attarine',
@@ -699,7 +742,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'مسجد العطارين أحد المساجد التاريخية العريقة في قلب الإسكندرية القديمة. يعود تاريخه للعصر المملوكي ويتميز بزخارفه الإسلامية الرائعة وروحانيته العالية.',
         imageUrl:
-            'https://upload.wikimedia.org/wikipedia/commons/5/5c/AlexAttarinOutside.jpg',
+            'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/AlexAttarinOutside.jpg/1280px-AlexAttarinOutside.jpg',
         rating: 4.3,
         category: 'Mosques',
         categoryAr: 'مساجد',
@@ -789,9 +832,9 @@ const List<ItineraryModel> fallbackTours = [
     title: 'Alexandria City Highlights',
     titleAr: 'أبرز معالم الإسكندرية',
     description:
-        'Pair the city’s best-known museum and library with its historic waterfront and gardens.',
+        'Visit Alexandria’s museums, library and cultural landmarks.',
     descriptionAr:
-        'اجمع بين أشهر متاحف المدينة ومكتبتها التاريخية وكورنيشها وحدائقها.',
+        'زر متاحف الإسكندرية ومكتبتها ومعالمها الثقافية.',
     duration: '5 Hours',
     durationAr: '5 ساعات',
     imageUrl: _stanleyBridgeImageUrl,

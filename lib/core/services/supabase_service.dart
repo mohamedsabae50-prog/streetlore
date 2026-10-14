@@ -278,11 +278,60 @@ class SupabaseService {
     if (result is! List) {
       throw const FormatException('User search response was not a list.');
     }
+    final currentUserId = client.auth.currentUser?.id;
     return result
         .map(
           (row) => SocialUser.fromJson(Map<String, dynamic>.from(row as Map)),
         )
-        .where((user) => user.userId.isNotEmpty)
+        .where((user) {
+          final username = user.username.trim();
+          return user.userId.isNotEmpty &&
+              user.userId != currentUserId &&
+              username.isNotEmpty &&
+              !username.toLowerCase().startsWith('explorer') &&
+              user.displayName.trim().toLowerCase() != 'explorer';
+        })
+        .toList(growable: false);
+  }
+
+  Future<SocialUser?> getSocialUser(String userId) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    final result = await client.rpc(
+      'get_public_profile',
+      params: {'target_user_id': userId},
+    );
+    if (result is! Map) {
+      throw const FormatException('Public profile response was not an object.');
+    }
+    final user = SocialUser.fromJson(Map<String, dynamic>.from(result));
+    if (user.userId.isEmpty ||
+        user.username.isEmpty ||
+        user.username.toLowerCase().startsWith('explorer') ||
+        user.displayName.trim().toLowerCase() == 'explorer') {
+      return null;
+    }
+    return user;
+  }
+
+  Future<List<Map<String, dynamic>>> getUserVisitedPlaces(
+    String targetUserId,
+  ) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    final result = await client.rpc(
+      'get_user_visited_places',
+      params: {'target_user_id': targetUserId},
+    );
+    if (result is! List) {
+      throw const FormatException('Visited places response was not a list.');
+    }
+    return result
+        .map((row) => Map<String, dynamic>.from(row as Map))
         .toList(growable: false);
   }
 

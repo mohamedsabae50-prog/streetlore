@@ -13,7 +13,7 @@ class SocialUser {
 
   factory SocialUser.fromJson(Map<String, dynamic> json) => SocialUser(
     userId: json['user_id']?.toString() ?? '',
-    username: json['username']?.toString() ?? 'explorer',
+    username: json['username']?.toString().trim() ?? '',
     displayName: json['display_name']?.toString() ?? '',
     isFollowing: json['is_following'] == true,
   );

@@ -22,12 +22,16 @@ class OfflineStorageService {
   static const _reviewsBox = 'offline_reviews';
   static const _apiResponsesBox = 'offline_api_responses';
   static const syncQueueBox = 'sync_queue';
-  static const _tileTemplate = 'https://tile.openstreetmap.org';
+  static const _tileTemplates = [
+    'https://a.tile.openstreetmap.fr/hot',
+    'https://tile.openstreetmap.org',
+  ];
   static const _tileUserAgent =
       'StreetloreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)';
 
   bool _ready = false;
   String? _tileDirectoryPath;
+  String? _legacyTileDirectoryPath;
   String? _routeDirectoryPath;
 
   Future<void> init() async {
@@ -80,10 +84,14 @@ class OfflineStorageService {
 
   Future<void> _initializeTileDirectory(Directory documentsDirectory) async {
     final directory = Directory(
-      '${documentsDirectory.path}/offline_map_tiles_v2',
+      '${documentsDirectory.path}/offline_map_tiles_v3',
     );
     await directory.create(recursive: true);
     _tileDirectoryPath = directory.path;
+    final legacyDirectory = Directory(
+      '${documentsDirectory.path}/offline_map_tiles_v2',
+    );
+    _legacyTileDirectoryPath = legacyDirectory.path;
     final routeDirectory = Directory(
       '${documentsDirectory.path}/offline_map_routes_v1',
     );
@@ -94,7 +102,16 @@ class OfflineStorageService {
   File? getTileFile(int zoom, int x, int y) {
     final path = _tileDirectoryPath;
     if (path == null || kIsWeb) return null;
-    return File('$path/$zoom/$x/$y.png');
+    return File('$path${Platform.pathSeparator}${zoom}_${x}_$y.png');
+  }
+
+  File? getLegacyTileFile(int zoom, int x, int y) {
+    final path = _legacyTileDirectoryPath;
+    if (path == null || kIsWeb) return null;
+    return File(
+      '$path${Platform.pathSeparator}$zoom'
+      '${Platform.pathSeparator}$x${Platform.pathSeparator}$y.png',
+    );
   }
 
   Future<LatLng?> getCurrentLocationForOfflineRoute() async {
@@ -190,7 +207,7 @@ class OfflineStorageService {
     const minLongitude = 29.82;
     const maxLongitude = 30.08;
     final tiles = <String, (int zoom, int x, int y)>{};
-    for (var zoom = 10; zoom <= 13; zoom++) {
+    for (var zoom = 11; zoom <= 13; zoom++) {
       final tileCount = 1 << zoom;
       final minX = _longitudeToTileX(minLongitude, tileCount);
       final maxX = _longitudeToTileX(maxLongitude, tileCount);
@@ -249,48 +266,50 @@ class OfflineStorageService {
     final pending = <(int, int, int)>[];
     for (final tile in tiles) {
       final file = getTileFile(tile.$1, tile.$2, tile.$3)!;
-      if (!await file.exists()) pending.add(tile);
+      if (!await file.exists() || await file.length() <= 100) {
+        pending.add(tile);
+      }
     }
 
     var cached = 0;
     var failed = 0;
     final client = http.Client();
     try {
-      for (var offset = 0; offset < pending.length; offset += 4) {
-        final batch = pending.skip(offset).take(4);
-        final results = await Future.wait(
-          batch.map((tile) async {
-            final file = getTileFile(tile.$1, tile.$2, tile.$3)!;
-            try {
-              await file.parent.create(recursive: true);
-              final response = await client
-                  .get(
-                    Uri.parse(
-                      '$_tileTemplate/${tile.$1}/${tile.$2}/${tile.$3}.png',
-                    ),
-                    headers: const {'User-Agent': _tileUserAgent},
-                  )
-                  .timeout(const Duration(seconds: 4));
-              if (!_isPngTile(response)) {
-                throw HttpException(
-                  'Map tile request returned ${response.statusCode}',
-                );
-              }
-              await file.writeAsBytes(response.bodyBytes, flush: true);
-              return true;
-            } catch (error) {
-              debugPrint(
-                'OfflineStorageService.prefetchMapTiles '
-                '${tile.$1}/${tile.$2}/${tile.$3} failed: $error',
+      for (var index = 0; index < pending.length; index++) {
+        final tile = pending[index];
+        final file = getTileFile(tile.$1, tile.$2, tile.$3)!;
+        var downloaded = false;
+        for (final template in _tileTemplates) {
+          try {
+            final response = await client
+                .get(
+                  Uri.parse('$template/${tile.$1}/${tile.$2}/${tile.$3}.png'),
+                  headers: const {'User-Agent': _tileUserAgent},
+                )
+                .timeout(const Duration(seconds: 5));
+            if (!_isPngTile(response)) {
+              throw HttpException(
+                'Map tile request returned ${response.statusCode}',
               );
-              return false;
             }
-          }),
-        );
-        cached += results.where((result) => result).length;
-        failed += results.where((result) => !result).length;
-        if (offset + 4 < pending.length) {
-          await Future<void>.delayed(const Duration(milliseconds: 250));
+            await file.parent.create(recursive: true);
+            await file.writeAsBytes(response.bodyBytes, flush: true);
+            downloaded = true;
+            break;
+          } on Exception catch (error) {
+            debugPrint(
+              'OfflineStorageService.prefetchMapTiles '
+              '$template ${tile.$1}/${tile.$2}/${tile.$3} failed: $error',
+            );
+          }
+        }
+        if (downloaded) {
+          cached++;
+        } else {
+          failed++;
+        }
+        if (index + 1 < pending.length) {
+          await Future<void>.delayed(const Duration(milliseconds: 150));
         }
       }
     } finally {

@@ -344,12 +344,13 @@ class TourProvider extends ChangeNotifier {
       notifyListeners();
       return null;
     }
-    _savedTours.add(tour);
     _downloadingTourIds.add(tour.id);
     notifyListeners();
     try {
+      final result = await downloadTourAssets(tour);
+      _savedTours.add(tour);
       await _saveToursToStorage();
-      return await downloadTourAssets(tour);
+      return result;
     } finally {
       _downloadingTourIds.remove(tour.id);
       notifyListeners();

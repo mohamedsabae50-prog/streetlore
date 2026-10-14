@@ -12,6 +12,7 @@ import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import 'login_screen.dart';
 import 'place_details_screen.dart';
+import 'user_profile_screen.dart';
 
 class ActivityFeedScreen extends StatefulWidget {
   const ActivityFeedScreen({super.key});
@@ -59,13 +60,16 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
       // up in the Sentry dashboard with the Postgrest code/message.
       debugPrint('ActivityFeedScreen: load failed: $error\n$stackTrace');
       unawaited(
-        Sentry.captureException(error, stackTrace: stackTrace).catchError(
-          (_) => SentryId.empty(),
-        ),
+        Sentry.captureException(
+          error,
+          stackTrace: stackTrace,
+        ).catchError((_) => SentryId.empty()),
       );
       final hint = _feedErrorHint(error);
       if (mounted) {
-        setState(() => _error = hint ?? '${context.tr('feed_load_failed')}\n$error');
+        setState(
+          () => _error = hint ?? '${context.tr('feed_load_failed')}\n$error',
+        );
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -197,9 +201,21 @@ class _ActivityCard extends StatelessWidget {
           activity['place_image_url'] as String?,
           icon,
         ),
-        title: Text(
-          '$actorName $action',
-          style: const TextStyle(fontWeight: FontWeight.w700),
+        title: Wrap(
+          spacing: 4,
+          children: [
+            InkWell(
+              onTap: () => _openActorProfile(context),
+              child: Text(
+                actorName,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            Text(action, style: const TextStyle(fontWeight: FontWeight.w700)),
+          ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,6 +237,22 @@ class _ActivityCard extends StatelessWidget {
         isThreeLine: true,
       ),
     );
+  }
+
+  Future<void> _openActorProfile(BuildContext context) async {
+    final userId = activity['actor_id']?.toString() ?? '';
+    if (userId.isEmpty) return;
+    try {
+      final user = await SupabaseService.instance.getSocialUser(userId);
+      if (user == null || !context.mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => UserProfileScreen(user: user)),
+      );
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ActivityFeedScreen: profile load failed: $error\n$stackTrace',
+      );
+    }
   }
 
   PlaceModel? _activityPlace(Map<String, dynamic> activity) {
@@ -279,7 +311,11 @@ class _FeedMessage extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.dynamic_feed_rounded, size: 56, color: AppColors.primary),
+          const Icon(
+            Icons.dynamic_feed_rounded,
+            size: 56,
+            color: AppColors.primary,
+          ),
           const SizedBox(height: 14),
           Text(text, textAlign: TextAlign.center),
           if (action != null) ...[const SizedBox(height: 16), action!],
