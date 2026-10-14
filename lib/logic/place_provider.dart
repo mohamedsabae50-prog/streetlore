@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants/city_coordinates.dart';
 import '../core/services/offline_storage_service.dart';
 import '../core/services/supabase_service.dart';
+import '../core/widgets/image_defaults.dart';
 import '../data/mock_data.dart' show MockData, fallbackPlaces;
 import '../data/models/map_seed.dart';
 import '../data/models/place_model.dart';
@@ -60,7 +61,7 @@ class PlaceProvider extends ChangeNotifier {
           table: 'places',
           callback: (payload) {
             final row = Map<String, dynamic>.from(payload.newRecord);
-            final updated = placeModelFromSupabaseRow(row);
+            final updated = _placeFromSupabase(row);
             if (!_hasValidCoords(updated.lat, updated.lng)) return;
 
             final index = _places.indexWhere((place) => place.id == updated.id);
@@ -104,16 +105,14 @@ class PlaceProvider extends ChangeNotifier {
           .select('user_id')
           .eq('user_id', effectiveUserId)
           .count();
-      _remoteSavedCount =
-          (savedRes as dynamic).count as int? ?? 0;
+      _remoteSavedCount = (savedRes as dynamic).count as int? ?? 0;
 
       final checkinRes = await _client
           .from('place_checkins')
           .select('user_id')
           .eq('user_id', effectiveUserId)
           .count();
-      _remoteCheckinCount =
-          (checkinRes as dynamic).count as int? ?? 0;
+      _remoteCheckinCount = (checkinRes as dynamic).count as int? ?? 0;
 
       debugPrint(
         'PlaceProvider.fetchRemoteCounts: user=$effectiveUserId '
@@ -159,24 +158,9 @@ class PlaceProvider extends ChangeNotifier {
     if (!force && _places.isNotEmpty) return;
 
     final storage = OfflineStorageService.instance;
-    final cachedSeed = OfflineProvider.cachedFallback;
     if (_places.isEmpty) {
-      final cachedRows = storage.getCachedApiRows('supabase_places');
-      if (cachedRows != null && cachedRows.isNotEmpty) {
-        try {
-          final cached = _filterInvalidCoords(
-            cachedRows.map(_placeFromSupabase).toList(growable: false),
-          );
-          if (cached.isNotEmpty) _places = cached;
-        } catch (e) {
-          debugPrint('PlaceProvider.loadPlaces: cached response invalid: $e');
-        }
-      }
-      if (_places.isEmpty && cachedSeed.isNotEmpty) {
-        _places = cachedSeed;
-      } else if (_places.isEmpty) {
-        _places = List<PlaceModel>.from(fallbackPlaces);
-      }
+      _places = List<PlaceModel>.from(fallbackPlaces);
+      mergeSeedHotels();
       notifyListeners();
     }
 
@@ -189,14 +173,12 @@ class PlaceProvider extends ChangeNotifier {
           .select()
           .order('display_order', ascending: true)
           .order('id', ascending: true)
-          .timeout(const Duration(seconds: 3));
+          .timeout(const Duration(seconds: 20));
       final rows = (res as List<dynamic>)
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList(growable: false);
       await storage.cacheApiRows('supabase_places', rows);
-      final list = rows
-          .map(_placeFromSupabase)
-          .toList();
+      final list = rows.map(_placeFromSupabase).toList();
 
       final filtered = _filterInvalidCoords(list);
       if (filtered.length != list.length) {
@@ -219,11 +201,18 @@ class PlaceProvider extends ChangeNotifier {
       }
     } catch (e) {
       _error = 'Failed to load places: $e';
-      final cached = OfflineProvider.cachedFallback;
-      if (cached.isNotEmpty) {
-        _places = cached;
-      } else if (_places.isEmpty) {
-        _places = List<PlaceModel>.from(fallbackPlaces);
+      final cachedRows = storage.getCachedApiRows('supabase_places');
+      if (cachedRows != null && cachedRows.isNotEmpty) {
+        try {
+          final cached = _filterInvalidCoords(
+            cachedRows.map(_placeFromSupabase).toList(growable: false),
+          );
+          if (cached.isNotEmpty) _places = cached;
+        } catch (cacheError) {
+          debugPrint(
+            'PlaceProvider.loadPlaces: cached response invalid: $cacheError',
+          );
+        }
       }
     } finally {
       _loading = false;
@@ -280,7 +269,22 @@ class PlaceProvider extends ChangeNotifier {
   }
 
   PlaceModel _placeFromSupabase(Map<String, dynamic> json) {
-    final model = placeModelFromSupabaseRow(json);
+    final imageUrl = json['image_url']?.toString().trim() ?? '';
+    final category = json['category']?.toString() ?? 'General';
+    final imageUrls = (json['image_urls'] as List<dynamic>? ?? const [])
+        .whereType<String>()
+        .where((url) => url.trim().isNotEmpty)
+        .where((url) => !url.toLowerCase().contains('wikimedia.org'))
+        .toList(growable: false);
+    final normalized = <String, dynamic>{
+      ...json,
+      'image_url':
+          imageUrl.isEmpty || imageUrl.toLowerCase().contains('wikimedia.org')
+          ? imageFallbackUrlForCategory(category)
+          : imageUrl,
+      'image_urls': imageUrls,
+    };
+    final model = placeModelFromSupabaseRow(normalized);
 
     if (!_hasValidCoords(model.lat, model.lng)) {
       debugPrint(
@@ -497,7 +501,6 @@ class PlaceProvider extends ChangeNotifier {
     }
     return result;
   }
-
 }
 
 PlaceModel placeModelFromSupabaseRow(Map<String, dynamic> json) {
@@ -513,13 +516,11 @@ PlaceModel placeModelFromSupabaseRow(Map<String, dynamic> json) {
   return PlaceModel(
     id: (json['id'] ?? '').toString(),
     nameEn: (json['name_en'] ?? json['name'] ?? '').toString(),
-    nameAr:
-        json['name_ar']?.toString() ?? json['nameAr']?.toString(),
-    descriptionEn:
-        (json['description_en'] ?? json['description'] ?? '').toString(),
+    nameAr: json['name_ar']?.toString() ?? json['nameAr']?.toString(),
+    descriptionEn: (json['description_en'] ?? json['description'] ?? '')
+        .toString(),
     descriptionAr:
-        json['description_ar']?.toString() ??
-        json['descriptionAr']?.toString(),
+        json['description_ar']?.toString() ?? json['descriptionAr']?.toString(),
     imageUrl: (json['image_url'] ?? '').toString(),
     imageUrls: urls,
     rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
@@ -529,8 +530,7 @@ PlaceModel placeModelFromSupabaseRow(Map<String, dynamic> json) {
     lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
     lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
     address: (json['address'] ?? 'Alexandria, Egypt').toString(),
-    addressAr:
-        json['address_ar']?.toString() ?? json['addressAr']?.toString(),
+    addressAr: json['address_ar']?.toString() ?? json['addressAr']?.toString(),
     openHours: (json['open_hours'] ?? '9:00 AM - 6:00 PM').toString(),
     reviewCount: (json['review_count'] as int?) ?? 0,
     priceLevel: _priceLevelFromStringShared(json['price_level']?.toString()),

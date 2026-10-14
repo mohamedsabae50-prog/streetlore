@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
+import 'image_defaults.dart';
 
 class RobustImage extends StatefulWidget {
   final String imageUrl;
@@ -14,6 +15,7 @@ class RobustImage extends StatefulWidget {
   final double fallbackIconSize;
   final int? memCacheWidth;
   final int? memCacheHeight;
+  final String? fallbackImageUrl;
 
   const RobustImage({
     super.key,
@@ -25,6 +27,7 @@ class RobustImage extends StatefulWidget {
     this.fallbackIconSize = 40,
     this.memCacheWidth,
     this.memCacheHeight,
+    this.fallbackImageUrl,
   });
 
   @override
@@ -48,7 +51,8 @@ class _RobustImageState extends State<RobustImage> {
   @override
   void didUpdateWidget(RobustImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.imageUrl != widget.imageUrl) {
+    if (oldWidget.imageUrl != widget.imageUrl ||
+        oldWidget.fallbackImageUrl != widget.fallbackImageUrl) {
       _future = _load();
     }
   }
@@ -60,32 +64,27 @@ class _RobustImageState extends State<RobustImage> {
   
   
   Future<Uint8List?> _load() async {
-    try {
-      final cached = await OfflineImageCache.instance.read(widget.imageUrl);
-      if (cached != null) {
-        return cached;
-      }
-    } catch (_) {}
-    try {
-      final res = await _client.get(
-        Uri.parse(widget.imageUrl),
-        headers: const {
-          'User-Agent':
-              'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36',
-        },
-      );
-      if (res.statusCode == 200) {
-        
-        
-        
-        
-        OfflineImageCache.instance.write(widget.imageUrl, res.bodyBytes);
-        return res.bodyBytes;
-      }
-      return null;
-    } catch (_) {
-      return null;
+    final urls = <String>[
+      widget.imageUrl,
+      if (widget.fallbackImageUrl != null &&
+          widget.fallbackImageUrl!.isNotEmpty &&
+          widget.fallbackImageUrl != widget.imageUrl)
+        widget.fallbackImageUrl!,
+    ];
+    for (final url in urls) {
+      try {
+        final cached = await OfflineImageCache.instance.read(url);
+        if (cached != null) return cached;
+      } catch (_) {}
+      try {
+        final response = await _client.get(Uri.parse(url));
+        if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+          await OfflineImageCache.instance.write(url, response.bodyBytes);
+          return response.bodyBytes;
+        }
+      } catch (_) {}
     }
+    return null;
   }
 
   @override
@@ -168,7 +167,11 @@ class OfflineImageCache {
   
   Future<void> write(String url, Uint8List bytes) async {
     try {
-      await _manager.putFile(url, bytes);
+      await _manager.putFile(
+        url,
+        bytes,
+        fileExtension: url.toLowerCase().contains('.png') ? 'png' : 'jpg',
+      );
     } catch (_) {
       
     }
@@ -178,8 +181,7 @@ class OfflineImageCache {
 class _UserAgentClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
-    request.headers['User-Agent'] =
-        'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36';
+    request.headers.addAll(streetloreImageHeaders);
     return request.send();
   }
 }

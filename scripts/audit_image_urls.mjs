@@ -92,6 +92,9 @@ const liveRows = [
     image_urls: [],
   })),
 ];
+const missingImageRows = liveRows
+  .filter((row) => ![row.image_url, ...(row.image_urls ?? [])]
+    .some((url) => typeof url === 'string' && url.trim() !== ''));
 for (const row of liveRows) {
   for (const url of [row.image_url, ...(row.image_urls ?? [])]) {
     if (url) add(url, `supabase:${row.kind}:${row.id}:${row.name}`);
@@ -168,12 +171,14 @@ await mkdir(path.dirname(output), { recursive: true });
 await writeFile(output, `${JSON.stringify({
   checkedAt: new Date().toISOString(),
   livePlaceAndTourRows: liveRows.length,
+  liveRowsMissingImages: missingImageRows,
   uniqueImageUrls: results.length,
   broken,
   historicalFailures,
   results,
 }, null, 2)}\n`);
 console.log(`Checked ${results.length} URLs from ${liveRows.length} live rows.`);
+console.log(`Live rows without any image: ${missingImageRows.length}.`);
 console.log(
   `Broken active image URLs: ${broken.length}; ` +
   `historical migration references: ${historicalFailures.length}. ` +

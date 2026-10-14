@@ -324,19 +324,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                       PlaceImageCarousel(
                         images: place.officialImages,
                         placeId: place.id,
+                        fallbackCategory: place.category,
                         height: double.infinity,
                         fit: BoxFit.cover,
                         heroTag: 'place-image-${place.id}',
-                        errorWidget: Container(
-                          color: Colors.white12,
-                          child: const Center(
-                            child: Icon(
-                              Icons.broken_image_rounded,
-                              color: Colors.white38,
-                              size: 60,
-                            ),
-                          ),
-                        ),
                       ),
                       Container(
                         decoration: const BoxDecoration(

@@ -12,6 +12,7 @@ class ShimmerImage extends StatelessWidget {
   final IconData fallbackIcon;
   final Color? fallbackColor;
   final double fallbackIconSize;
+  final String? fallbackImageUrl;
 
   const ShimmerImage({
     super.key,
@@ -21,6 +22,7 @@ class ShimmerImage extends StatelessWidget {
     this.fallbackIcon = Icons.image_outlined,
     this.fallbackColor,
     this.fallbackIconSize = 40,
+    this.fallbackImageUrl,
   });
 
   @override
@@ -32,6 +34,7 @@ class ShimmerImage extends StatelessWidget {
       fallbackIcon: fallbackIcon,
       fallbackColor: fallbackColor,
       fallbackIconSize: fallbackIconSize,
+      fallbackImageUrl: fallbackImageUrl,
     );
   }
 }

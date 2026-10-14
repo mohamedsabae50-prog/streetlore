@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/image_defaults.dart';
 import '../../core/services/geofencing_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
@@ -385,25 +386,15 @@ class _PlaceToggle extends StatelessWidget {
                   fit: BoxFit.cover,
                   memCacheWidth: 100,
                   memCacheHeight: 100,
-                  httpHeaders: const {
-                    'User-Agent':
-                        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
-                  },
+                  httpHeaders: streetloreImageHeaders,
                   placeholder: (_, __) =>
                       Container(width: 50, height: 50, color: context.bgAlt),
-                  errorWidget: (context, url, error) => Container(
-                    color: const Color(0xFF1C2433),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.image_rounded,
-                          color: Colors.white30,
-                          size: 36,
-                        ),
-                      ],
-                    ),
-                  ),
+                  errorWidget: (context, url, error) =>
+                      CategoryImageFallback(
+                        category: place.category,
+                        width: 50,
+                        height: 50,
+                      ),
                 ),
               ),
               const SizedBox(width: 12),

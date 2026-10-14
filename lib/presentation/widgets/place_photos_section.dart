@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/offline_storage_service.dart';
+import '../../core/widgets/image_defaults.dart';
 import '../../core/widgets/app_image.dart';
 import '../../core/services/social_share_service.dart';
 import '../../data/models/place_photo.dart';
@@ -50,9 +51,9 @@ class PlacePhotosSection extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Photo upload failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Photo upload failed: $e')));
     }
   }
 
@@ -102,11 +103,13 @@ class PlacePhotosSection extends StatelessWidget {
         footer: context.tr('share_card_footer'),
       );
     } catch (error, stackTrace) {
-      debugPrint('PlacePhotosSection: could not share photo: $error\n$stackTrace');
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('share_failed'))),
+      debugPrint(
+        'PlacePhotosSection: could not share photo: $error\n$stackTrace',
       );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('share_failed'))));
     }
   }
 
@@ -160,35 +163,35 @@ class PlacePhotosSection extends StatelessWidget {
                     GestureDetector(
                       onTap: () => _addPhoto(context),
                       child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.add_a_photo_rounded,
-                            color: Colors.white,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            context.tr('add'),
-                            style: const TextStyle(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.add_a_photo_rounded,
                               color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              context.tr('add'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -276,10 +279,7 @@ class PlacePhotosSection extends StatelessWidget {
               precacheImage(
                 CachedNetworkImageProvider(
                   next,
-                  headers: const {
-                    'User-Agent':
-                        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
-                  },
+                  headers: streetloreImageHeaders,
                 ),
                 context,
               );
@@ -288,6 +288,7 @@ class PlacePhotosSection extends StatelessWidget {
           return _PhotoCard(
             photo: photo,
             placeId: place.id,
+            fallbackCategory: place.category,
             canDelete: context.read<AuthProvider>().owns(photo.userId),
             onShare: () => _sharePhoto(context, photo),
             onLike: () {
@@ -308,6 +309,7 @@ class PlacePhotosSection extends StatelessWidget {
 class _PhotoCard extends StatelessWidget {
   final PlacePhoto photo;
   final String placeId;
+  final String fallbackCategory;
   final bool canDelete;
   final VoidCallback onShare;
   final VoidCallback onLike;
@@ -315,6 +317,7 @@ class _PhotoCard extends StatelessWidget {
   const _PhotoCard({
     required this.photo,
     required this.placeId,
+    required this.fallbackCategory,
     required this.canDelete,
     required this.onShare,
     required this.onLike,
@@ -337,8 +340,7 @@ class _PhotoCard extends StatelessWidget {
                 return Image.file(
                   file,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      _networkPhotoImage(),
+                  errorBuilder: (_, __, ___) => _networkPhotoImage(),
                 );
               }
               return _networkPhotoImage();
@@ -347,7 +349,8 @@ class _PhotoCard extends StatelessWidget {
         : AppImage(
             source: photo.imageUrl,
             fit: BoxFit.cover,
-            fallbackIcon: Icons.broken_image_rounded,
+            fallbackIcon: imageFallbackIconForCategory(fallbackCategory),
+            fallbackImageUrl: imageFallbackUrlForCategory(fallbackCategory),
             memCacheWidth: 320,
           );
     return Container(
@@ -484,7 +487,8 @@ class _PhotoCard extends StatelessWidget {
   Widget _networkPhotoImage() => AppImage(
     source: photo.imageUrl,
     fit: BoxFit.cover,
-    fallbackIcon: Icons.broken_image_rounded,
+    fallbackIcon: imageFallbackIconForCategory(fallbackCategory),
+    fallbackImageUrl: imageFallbackUrlForCategory(fallbackCategory),
     memCacheWidth: 320,
   );
 }

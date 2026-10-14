@@ -6,6 +6,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/image_defaults.dart';
 import '../../core/services/supabase_service.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
@@ -200,6 +201,7 @@ class _ActivityCard extends StatelessWidget {
         leading: _activityThumbnail(
           activity['place_image_url'] as String?,
           icon,
+          activity['place_category']?.toString(),
         ),
         title: Wrap(
           spacing: 4,
@@ -275,7 +277,11 @@ class _ActivityCard extends StatelessWidget {
     );
   }
 
-  Widget _activityThumbnail(String? imageUrl, IconData icon) {
+  Widget _activityThumbnail(
+    String? imageUrl,
+    IconData icon,
+    String? category,
+  ) {
     final url = imageUrl?.trim() ?? '';
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return ClipRRect(
@@ -285,17 +291,19 @@ class _ActivityCard extends StatelessWidget {
           width: 54,
           height: 54,
           fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _fallbackThumbnail(icon),
+          headers: streetloreImageHeaders,
+          errorBuilder: (_, _, _) =>
+              CategoryImageFallback(category: category, width: 54, height: 54),
         ),
       );
     }
-    return _fallbackThumbnail(icon);
+    return CategoryImageFallback(
+      category: category,
+      width: 54,
+      height: 54,
+    );
   }
 
-  Widget _fallbackThumbnail(IconData icon) => CircleAvatar(
-    backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-    child: Icon(icon, color: AppColors.primary),
-  );
 }
 
 class _FeedMessage extends StatelessWidget {

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/image_defaults.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../core/services/social_share_service.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -323,31 +324,13 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                             fit: BoxFit.cover,
                             memCacheWidth: 1080,
                             memCacheHeight: 1080,
-                            httpHeaders: const {
-                              'User-Agent':
-                                  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
-                            },
+                            httpHeaders: streetloreImageHeaders,
                             placeholder: (_, __) =>
                                 Container(color: AppColors.primaryLight),
-                            errorWidget: (context, url, error) => Container(
-                              color: const Color(0xFF1C2433),
-                              alignment: Alignment.center,
-                              child: const Icon(
-                                Icons.image_rounded,
-                                color: Colors.white30,
-                                size: 36,
-                              ),
-                            ),
+                            errorWidget: (context, url, error) =>
+                                CategoryImageFallback(category: 'historical'),
                           )
-                        : Container(
-                            color: const Color(0xFF1C2433),
-                            alignment: Alignment.center,
-                            child: const Icon(
-                              Icons.image_rounded,
-                              color: Colors.white30,
-                              size: 36,
-                            ),
-                          ),
+                        : CategoryImageFallback(category: 'historical'),
                   ),
                   Container(
                     decoration: const BoxDecoration(

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/image_defaults.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../data/models/place_model.dart';
 import '../../logic/locale_provider.dart';
@@ -62,6 +63,7 @@ class FeaturedCard extends StatelessWidget {
                   fallbackIcon: Icons.image_not_supported_rounded,
                   fallbackColor: Colors.white38,
                   fallbackIconSize: 40,
+                  fallbackImageUrl: imageFallbackUrlForCategory(place.category),
                 ),
               ),
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/image_defaults.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
@@ -219,25 +220,18 @@ class _PlaceCard extends StatelessWidget {
                       fit: BoxFit.cover,
                       memCacheWidth: 120,
                       memCacheHeight: 120,
-                      httpHeaders: const {
-                        'User-Agent':
-                            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
-                      },
+                      httpHeaders: streetloreImageHeaders,
                       placeholder: (_, __) => Container(
                         width: 60,
                         height: 60,
                         color: context.bgAlt,
                       ),
-                      errorWidget: (context, url, error) => Container(
-                        width: 60,
-                        height: 60,
-                        color: const Color(0xFF1C2433),
-                        child: const Icon(
-                          Icons.image_rounded,
-                          color: Colors.white30,
-                          size: 36,
-                        ),
-                      ),
+                      errorWidget: (context, url, error) =>
+                          CategoryImageFallback(
+                            category: place.category,
+                            width: 60,
+                            height: 60,
+                          ),
                     ),
                     if (isVisited)
                       Positioned.fill(

@@ -278,19 +278,10 @@ class SupabaseService {
     if (result is! List) {
       throw const FormatException('User search response was not a list.');
     }
-    final currentUserId = client.auth.currentUser?.id;
     return result
         .map(
           (row) => SocialUser.fromJson(Map<String, dynamic>.from(row as Map)),
         )
-        .where((user) {
-          final username = user.username.trim();
-          return user.userId.isNotEmpty &&
-              user.userId != currentUserId &&
-              username.isNotEmpty &&
-              !username.toLowerCase().startsWith('explorer') &&
-              user.displayName.trim().toLowerCase() != 'explorer';
-        })
         .toList(growable: false);
   }
 
@@ -307,10 +298,7 @@ class SupabaseService {
       throw const FormatException('Public profile response was not an object.');
     }
     final user = SocialUser.fromJson(Map<String, dynamic>.from(result));
-    if (user.userId.isEmpty ||
-        user.username.isEmpty ||
-        user.username.toLowerCase().startsWith('explorer') ||
-        user.displayName.trim().toLowerCase() == 'explorer') {
+    if (user.userId.isEmpty) {
       return null;
     }
     return user;

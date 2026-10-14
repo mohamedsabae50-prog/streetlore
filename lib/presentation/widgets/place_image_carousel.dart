@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../core/services/offline_storage_service.dart';
+import '../../core/widgets/image_defaults.dart';
 
 /// A swipable horizontal image carousel for places with multiple
 /// official images. Falls back to a single static image when
@@ -10,6 +11,7 @@ import '../../core/services/offline_storage_service.dart';
 class PlaceImageCarousel extends StatefulWidget {
   final List<String> images;
   final String? placeId;
+  final String? fallbackCategory;
   final BoxFit fit;
   final double height;
   final BorderRadius? borderRadius;
@@ -25,6 +27,7 @@ class PlaceImageCarousel extends StatefulWidget {
     super.key,
     required this.images,
     this.placeId,
+    this.fallbackCategory,
     this.fit = BoxFit.cover,
     this.height = 320,
     this.borderRadius,
@@ -164,18 +167,13 @@ class _PlaceImageCarouselState extends State<PlaceImageCarousel> {
     final networkImage = CachedNetworkImage(
       imageUrl: url,
       fit: widget.fit,
+      httpHeaders: streetloreImageHeaders,
       placeholder: (_, __) => Container(color: Colors.black12),
       errorWidget: (_, __, ___) =>
           widget.errorWidget ??
-          Container(
-            color: Colors.black12,
-            child: const Center(
-              child: Icon(
-                Icons.broken_image_rounded,
-                color: Colors.white38,
-                size: 60,
-              ),
-            ),
+          CategoryImageFallback(
+            category: widget.fallbackCategory,
+            fit: widget.fit,
           ),
     );
     Widget img = networkImage;
@@ -203,18 +201,10 @@ class _PlaceImageCarouselState extends State<PlaceImageCarousel> {
   }
 
   Widget _placeholder() {
-    return SizedBox(
-      width: double.infinity,
-      height: widget.height,
-      child: Container(
-        color: Colors.black12,
-        child: const Center(
-          child: Icon(
-            Icons.image_not_supported_rounded,
-            color: Colors.white38,
-            size: 48,
-          ),
-        ),
+    return _wrap(
+      child: CategoryImageFallback(
+        category: widget.fallbackCategory,
+        fit: widget.fit,
       ),
     );
   }

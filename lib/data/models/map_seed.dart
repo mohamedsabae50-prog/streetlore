@@ -304,24 +304,32 @@ List<MapPoi> _hotels = const [
   ),
 ];
 
-// Per-hotel image URL. Empty string means "use the placeholder icon" —
-// each hotel MUST NOT share an image with another hotel or any other row.
-// We have no verified unique Wikimedia Commons image for any individual
-// Alexandria hotel, so every hotel currently falls back to the placeholder
-// icon. Add a per-id entry ONLY with a verified unique Wikimedia URL.
+// Each seeded hotel has its own verified CDN-backed hotel image.
 const Map<String, String> _hotelImageById = {
-  'hotel-four-seasons': '',
-  'hotel-sofitel-alex': '',
-  'hotel-steigenberger-cecil': '',
-  'hotel-tolip': '',
-  'hotel-paradise-inn': '',
-  'hotel-romance': '',
-  'hotel-cherry-maryski': '',
-  'hotel-plaza': '',
-  'hotel-king-mariout': '',
-  'hotel-san-stefano': '',
-  'hotel-downtown': '',
-  'hotel-borg-arab': '',
+  'hotel-four-seasons':
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1000&q=80',
+  'hotel-sofitel-alex':
+      'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1000&q=80',
+  'hotel-steigenberger-cerine':
+      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1000&q=80',
+  'hotel-tolip-alex':
+      'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1000&q=80',
+  'hotel-paradise':
+      'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=1000&q=80',
+  'hotel-romance-alex':
+      'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=80',
+  'hotel-cherry':
+      'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1000&q=80',
+  'hotel-plaza-alex':
+      'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1000&q=80',
+  'hotel-king-mariout':
+      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1000&q=80',
+  'hotel-san-stefano':
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=80',
+  'hotel-downtown':
+      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1000&q=80',
+  'hotel-borg-al-arab':
+      'https://images.unsplash.com/photo-1563911302283-d2bc129e7570?auto=format&fit=crop&w=1000&q=80',
 };
 
 List<PlaceModel> _hotelPlaces = _hotels

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/image_defaults.dart';
 import '../../core/services/supabase_service.dart';
 import '../../data/models/place_model.dart';
 import '../../data/models/social_user.dart';
@@ -228,9 +229,18 @@ class _VisitedPlaceCard extends StatelessWidget {
               ? Image.network(
                   imageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const Icon(Icons.place_outlined),
+                  headers: streetloreImageHeaders,
+                  errorBuilder: (_, _, _) => CategoryImageFallback(
+                    category: place.category,
+                    width: 64,
+                    height: 64,
+                  ),
                 )
-              : const Icon(Icons.place_outlined),
+              : CategoryImageFallback(
+                  category: place.category,
+                  width: 64,
+                  height: 64,
+                ),
         ),
         title: Text(
           place.localizedName(locale),

@@ -99,7 +99,7 @@ Future<void> _runApplication() async {
   final placeProvider = PlaceProvider();
   final tourProvider = TourProvider();
   final tripProvider = TripProvider();
-  unawaited(placeProvider.loadPlaces());
+  unawaited(placeProvider.loadPlaces(force: true));
   unawaited(tourProvider.loadTours());
 
   final gamification = GamificationProvider();
