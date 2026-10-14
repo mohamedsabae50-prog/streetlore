@@ -881,20 +881,27 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                         final cached = offline.isCached(
                                           place.id,
                                         );
+                                        final downloading = offline
+                                            .isDownloadingPlace(place.id);
                                         return _QuickAction(
                                           icon: cached
                                               ? Icons.cloud_done_rounded
                                               : Icons.cloud_download_outlined,
-                                          label: cached
+                                          label: downloading
+                                              ? context.tr('downloading_offline')
+                                              : cached
                                               ? context.tr('downloaded')
                                               : context.tr('download_offline'),
-                                          color: cached
+                                          color: downloading
+                                              ? context.quickActionPurple
+                                              : cached
                                               ? context.quickActionSuccess
                                               : context.quickActionPurple,
                                           backgroundColor: cached
                                               ? context.quickActionSuccessBg
                                               : context.quickActionPurpleBg,
-                                          onTap: () async {
+                                          isLoading: downloading,
+                                          onTap: downloading ? null : () async {
                                             if (!context
                                                 .read<AuthProvider>()
                                                 .isPro) {
@@ -1168,13 +1175,15 @@ class _QuickAction extends StatelessWidget {
   final String label;
   final Color color;
   final Color? backgroundColor;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final bool isLoading;
   const _QuickAction({
     required this.icon,
     required this.label,
     required this.color,
     this.backgroundColor,
     required this.onTap,
+    this.isLoading = false,
   });
 
   @override
@@ -1188,7 +1197,16 @@ class _QuickAction extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 24),
+            child: isLoading
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: color,
+                    ),
+                  )
+                : Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 6),
           Text(

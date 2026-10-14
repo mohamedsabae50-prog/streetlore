@@ -189,10 +189,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.streetlore.app',
-                subdomains: const ['a', 'b', 'c', 'd'],
                 maxNativeZoom: 17,
                 tileProvider: OfflineTileProvider(),
               ),
@@ -348,6 +346,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         ),
                       ),
                 ],
+              ),
+              const SimpleAttributionWidget(
+                source: Text('OpenStreetMap contributors'),
+                alignment: Alignment.bottomRight,
               ),
             ],
           ),

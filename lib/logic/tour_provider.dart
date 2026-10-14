@@ -23,6 +23,10 @@ class TourProvider extends ChangeNotifier {
 
   List<ItineraryModel> _savedTours = [];
   List<ItineraryModel> get savedTours => _savedTours;
+  final Set<String> _downloadingTourIds = <String>{};
+
+  bool isDownloadingTour(String tourId) =>
+      _downloadingTourIds.contains(tourId);
 
   final Set<String> _checkedInPlaceIds = <String>{};
   String? _checkInUserId;
@@ -332,6 +336,7 @@ class TourProvider extends ChangeNotifier {
   ///   * stop images + tour cover   -> `<docs>/offline_images/...` (permanent)
   /// Returns `null` when the tour was removed, otherwise the image result.
   Future<({int ok, int failed})?> toggleTourOffline(ItineraryModel tour) async {
+    if (isDownloadingTour(tour.id)) return (ok: 0, failed: 0);
     final isExisting = _savedTours.any((t) => t.id == tour.id);
     if (isExisting) {
       _savedTours.removeWhere((t) => t.id == tour.id);
@@ -340,9 +345,15 @@ class TourProvider extends ChangeNotifier {
       return null;
     }
     _savedTours.add(tour);
-    await _saveToursToStorage();
+    _downloadingTourIds.add(tour.id);
     notifyListeners();
-    return downloadTourAssets(tour);
+    try {
+      await _saveToursToStorage();
+      return await downloadTourAssets(tour);
+    } finally {
+      _downloadingTourIds.remove(tour.id);
+      notifyListeners();
+    }
   }
 
   Future<({int ok, int failed})> downloadTourAssets(ItineraryModel tour) async {
@@ -356,6 +367,15 @@ class TourProvider extends ChangeNotifier {
         await storage.prefetchMapTiles(
           stops.map((place) => LatLng(place.lat, place.lng)),
         );
+        final routePoints = stops
+            .map((place) => LatLng(place.lat, place.lng))
+            .toList(growable: false);
+        if (routePoints.length > 1) {
+          await storage.prefetchRouteGeometry(
+            storage.routeCacheKey(routePoints),
+            routePoints,
+          );
+        }
         final stopImages = await storage.prefetchImages(stops);
         ok += stopImages.ok;
         failed += stopImages.failed;

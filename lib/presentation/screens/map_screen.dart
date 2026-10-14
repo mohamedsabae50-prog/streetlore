@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/offline_tile_provider.dart';
+import '../../core/services/offline_storage_service.dart';
 import '../../l10n/app_strings.dart';
 
 final Uint8List _kTransparentPng = Uint8List.fromList(<int>[
@@ -248,6 +249,16 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _getRoute() async {
     final List<PlaceWaypoint> waypoints = _effectiveWaypoints;
     if (_currentLocation == null && waypoints.isEmpty) return;
+    final waypointPoints = waypoints
+        .map((waypoint) => LatLng(waypoint.lat, waypoint.lng))
+        .toList(growable: false);
+    final storage = OfflineStorageService.instance;
+    final cachedRoute = waypointPoints.length < 2
+        ? null
+        : await storage.getCachedRouteGeometry(
+            storage.routeCacheKey(waypointPoints),
+          );
+    if (!mounted) return;
 
     final coords = <String>[];
     if (_currentLocation != null) {
@@ -265,19 +276,23 @@ class _MapScreenState extends State<MapScreen> {
     if (coords.length < 2) {
       if (!mounted) return;
       setState(() {
-        _routePoints = [
-          if (_currentLocation != null) _currentLocation!,
-          ...waypoints.map((waypoint) => LatLng(waypoint.lat, waypoint.lng)),
-        ];
+        _routePoints =
+            cachedRoute ??
+            [
+              if (_currentLocation != null) _currentLocation!,
+              ...waypointPoints,
+            ];
         _routeUnavailable = true;
       });
       return;
     }
 
-    final fallbackRoute = [
-      _currentLocation!,
-      ...waypoints.map((waypoint) => LatLng(waypoint.lat, waypoint.lng)),
-    ];
+    final fallbackRoute =
+        cachedRoute ??
+        [
+          if (_currentLocation != null) _currentLocation!,
+          ...waypointPoints,
+        ];
     if (mounted) {
       setState(() {
         _routePoints = fallbackRoute;
@@ -295,7 +310,13 @@ class _MapScreenState extends State<MapScreen> {
 
     try {
       final response = await http
-          .get(url, headers: const {'User-Agent': 'com.streetlore.app/1.0'})
+          .get(
+            url,
+            headers: const {
+              'User-Agent':
+                  'StreetloreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)',
+            },
+          )
           .timeout(const Duration(seconds: 3));
       if (!mounted) return;
 
@@ -414,10 +435,8 @@ class _MapScreenState extends State<MapScreen> {
     final List<Widget> mapChildren = [];
     mapChildren.add(
       TileLayer(
-        urlTemplate:
-            'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         userAgentPackageName: 'com.streetlore.app',
-        subdomains: const ['a', 'b', 'c', 'd'],
         keepBuffer: 8,
         maxNativeZoom: 17,
         tileProvider: OfflineTileProvider(),
@@ -548,7 +567,7 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                     color: Colors.white.withValues(alpha: 0.7),
                     child: const Text(
-                      '© OpenStreetMap © CARTO',
+                      '© OpenStreetMap contributors',
                       style: TextStyle(fontSize: 11, color: Colors.black87),
                       textAlign: TextAlign.center,
                     ),

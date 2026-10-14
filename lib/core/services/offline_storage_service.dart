@@ -21,11 +21,13 @@ class OfflineStorageService {
   static const _reviewsBox = 'offline_reviews';
   static const _apiResponsesBox = 'offline_api_responses';
   static const syncQueueBox = 'sync_queue';
-  static const _tileTemplate =
-      'https://a.basemaps.cartocdn.com/rastertiles/voyager';
+  static const _tileTemplate = 'https://tile.openstreetmap.org';
+  static const _tileUserAgent =
+      'StreetloreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)';
 
   bool _ready = false;
   String? _tileDirectoryPath;
+  String? _routeDirectoryPath;
 
   Future<void> init() async {
     if (_ready) return;
@@ -76,9 +78,16 @@ class OfflineStorageService {
   bool get isReady => _ready;
 
   Future<void> _initializeTileDirectory(Directory documentsDirectory) async {
-    final directory = Directory('${documentsDirectory.path}/offline_map_tiles');
+    final directory = Directory(
+      '${documentsDirectory.path}/offline_map_tiles_v2',
+    );
     await directory.create(recursive: true);
     _tileDirectoryPath = directory.path;
+    final routeDirectory = Directory(
+      '${documentsDirectory.path}/offline_map_routes_v1',
+    );
+    await routeDirectory.create(recursive: true);
+    _routeDirectoryPath = routeDirectory.path;
   }
 
   File? getTileFile(int zoom, int x, int y) {
@@ -90,8 +99,8 @@ class OfflineStorageService {
   Future<({int cached, int failed})> prefetchMapTiles(
     Iterable<LatLng> locations, {
     double radiusMeters = 1500,
-    int minZoom = 13,
-    int maxZoom = 17,
+    int minZoom = 12,
+    int maxZoom = 16,
   }) async {
     if (kIsWeb) return (cached: 0, failed: 0);
     if (_tileDirectoryPath == null) await init();
@@ -151,8 +160,8 @@ class OfflineStorageService {
     var failed = 0;
     final client = http.Client();
     try {
-      for (var offset = 0; offset < pending.length; offset += 8) {
-        final batch = pending.skip(offset).take(8);
+      for (var offset = 0; offset < pending.length; offset += 4) {
+        final batch = pending.skip(offset).take(4);
         final results = await Future.wait(
           batch.map((tile) async {
             final file = getTileFile(tile.$1, tile.$2, tile.$3)!;
@@ -160,11 +169,13 @@ class OfflineStorageService {
               await file.parent.create(recursive: true);
               final response = await client
                   .get(
-                    Uri.parse('$_tileTemplate/${tile.$1}/${tile.$2}/${tile.$3}.png'),
-                    headers: const {'User-Agent': 'com.streetlore.app/1.0'},
+                    Uri.parse(
+                      '$_tileTemplate/${tile.$1}/${tile.$2}/${tile.$3}.png',
+                    ),
+                    headers: const {'User-Agent': _tileUserAgent},
                   )
                   .timeout(const Duration(seconds: 4));
-              if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+              if (!_isPngTile(response)) {
                 throw HttpException(
                   'Map tile request returned ${response.statusCode}',
                 );
@@ -182,6 +193,9 @@ class OfflineStorageService {
         );
         cached += results.where((result) => result).length;
         failed += results.where((result) => !result).length;
+        if (offset + 4 < pending.length) {
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+        }
       }
     } finally {
       client.close();
@@ -195,6 +209,128 @@ class OfflineStorageService {
 
   int _longitudeToTileX(double longitude, int tileCount) =>
       ((longitude + 180) / 360 * tileCount).floor();
+
+  bool _isPngTile(http.Response response) {
+    final bytes = response.bodyBytes;
+    return response.statusCode == 200 &&
+        bytes.length >= 24 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4e &&
+        bytes[3] == 0x47 &&
+        bytes[4] == 0x0d &&
+        bytes[5] == 0x0a &&
+        bytes[6] == 0x1a &&
+        bytes[7] == 0x0a &&
+        bytes[12] == 0x49 &&
+        bytes[13] == 0x48 &&
+        bytes[14] == 0x44 &&
+        bytes[15] == 0x52 &&
+        bytes[16] == 0 &&
+        bytes[17] == 0 &&
+        bytes[18] == 1 &&
+        bytes[19] == 0 &&
+        bytes[20] == 0 &&
+        bytes[21] == 1 &&
+        bytes[22] == 0 &&
+        bytes[23] == 0;
+  }
+
+  String routeCacheKey(Iterable<LatLng> locations) {
+    final coordinates = locations
+        .map(
+          (point) =>
+              '${point.longitude.toStringAsFixed(6)},'
+              '${point.latitude.toStringAsFixed(6)}',
+        )
+        .join(';');
+    return 'route_${_stableHash(coordinates)}';
+  }
+
+  Future<bool> prefetchRouteGeometry(
+    String routeKey,
+    List<LatLng> locations,
+  ) async {
+    if (kIsWeb || locations.length < 2) return false;
+    if (_routeDirectoryPath == null) await init();
+    final directory = _routeDirectoryPath;
+    if (directory == null) {
+      throw StateError('Offline route storage is not available');
+    }
+    final file = File('$directory/${_safeSegment(routeKey)}.json');
+    if (await file.exists()) return true;
+
+    final coordinates = locations
+        .map((point) => '${point.longitude},${point.latitude}')
+        .join(';');
+    final uri = Uri.parse(
+      'https://router.project-osrm.org/route/v1/driving/'
+      '$coordinates?geometries=geojson&overview=full',
+    );
+    try {
+      final response = await http
+          .get(uri, headers: const {'User-Agent': _tileUserAgent})
+          .timeout(const Duration(seconds: 6));
+      if (response.statusCode != 200) {
+        throw HttpException(
+          'OSRM route request returned ${response.statusCode}',
+        );
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map ||
+          decoded['routes'] is! List ||
+          (decoded['routes'] as List).isEmpty) {
+        throw const FormatException('OSRM response did not contain a route');
+      }
+      final route = (decoded['routes'] as List).first;
+      if (route is! Map || route['geometry'] is! Map) {
+        throw const FormatException('OSRM route geometry was missing');
+      }
+      await file.writeAsString(jsonEncode(route['geometry']), flush: true);
+      return true;
+    } catch (error, stackTrace) {
+      debugPrint(
+        'OfflineStorageService.prefetchRouteGeometry($routeKey) '
+        'failed: $error\n$stackTrace',
+      );
+      return false;
+    }
+  }
+
+  Future<List<LatLng>?> getCachedRouteGeometry(String routeKey) async {
+    if (kIsWeb) return null;
+    if (_routeDirectoryPath == null) await init();
+    final directory = _routeDirectoryPath;
+    if (directory == null) return null;
+    try {
+      final file = File('$directory/${_safeSegment(routeKey)}.json');
+      if (!await file.exists()) return null;
+      final decoded = jsonDecode(await file.readAsString());
+      if (decoded is! Map || decoded['coordinates'] is! List) {
+        throw const FormatException('Cached OSRM geometry was invalid');
+      }
+      final points = (decoded['coordinates'] as List)
+          .whereType<List>()
+          .where((coordinate) => coordinate.length >= 2)
+          .where(
+            (coordinate) => coordinate[0] is num && coordinate[1] is num,
+          )
+          .map(
+            (coordinate) => LatLng(
+              (coordinate[1] as num).toDouble(),
+              (coordinate[0] as num).toDouble(),
+            ),
+          )
+          .toList(growable: false);
+      return points.isEmpty ? null : points;
+    } catch (error, stackTrace) {
+      debugPrint(
+        'OfflineStorageService.getCachedRouteGeometry($routeKey) '
+        'failed: $error\n$stackTrace',
+      );
+      return null;
+    }
+  }
 
   int _latitudeToTileY(double latitude, int tileCount) {
     final radians = latitude * 0.017453292519943295;

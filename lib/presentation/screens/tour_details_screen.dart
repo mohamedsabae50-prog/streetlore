@@ -229,40 +229,56 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
             child: Consumer<TourProvider>(
               builder: (context, tourProvider, child) {
                 final isSaved = tourProvider.isSaved(tour.id);
+                final downloading = tourProvider.isDownloadingTour(tour.id);
                 return _GlassButton(
                   icon: isSaved
                       ? Icons.offline_pin_rounded
                       : Icons.download_for_offline_outlined,
-                  iconColor: isSaved ? AppColors.ratingGold : Colors.white,
-                  onTap: () async {
-                    HapticFeedback.mediumImpact();
-                    final messenger = ScaffoldMessenger.of(context);
-                    final offline = context.read<OfflineProvider>();
-                    final savedMsg = context.tr('tour_saved_offline');
-                    final removedMsg = context.tr('tour_removed_offline');
-                    if (!isSaved) {
-                      messenger.showSnackBar(
-                        SnackBar(
-                          duration: const Duration(seconds: 2),
-                          content: Text(context.tr('downloading_tour_offline')),
-                        ),
-                      );
-                    }
-                    final result = await tourProvider.toggleTourOffline(tour);
-                    await offline.init();
-                    messenger
-                      ..hideCurrentSnackBar()
-                      ..showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            result == null
-                                ? removedMsg
-                                : '$savedMsg (${result.ok} images'
-                                    '${result.failed > 0 ? ', ${result.failed} failed' : ''})',
-                          ),
-                        ),
-                      );
-                  },
+                  iconColor: downloading
+                      ? Colors.white
+                      : isSaved
+                      ? context.quickActionSuccess
+                      : Colors.white,
+                  isLoading: downloading,
+                  loadingLabel: context.tr('downloading_offline'),
+                  label: isSaved && !downloading
+                      ? context.tr('downloaded')
+                      : null,
+                  onTap: downloading
+                      ? null
+                      : () async {
+                          HapticFeedback.mediumImpact();
+                          final messenger = ScaffoldMessenger.of(context);
+                          final offline = context.read<OfflineProvider>();
+                          final savedMsg = context.tr('tour_saved_offline');
+                          final removedMsg = context.tr('tour_removed_offline');
+                          if (!isSaved) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                duration: const Duration(seconds: 2),
+                                content: Text(
+                                  context.tr('downloading_tour_offline'),
+                                ),
+                              ),
+                            );
+                          }
+                          final result = await tourProvider.toggleTourOffline(
+                            tour,
+                          );
+                          await offline.init();
+                          messenger
+                            ..hideCurrentSnackBar()
+                            ..showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  result == null
+                                      ? removedMsg
+                                      : '$savedMsg (${result.ok} images'
+                                            '${result.failed > 0 ? ', ${result.failed} failed' : ''})',
+                                ),
+                              ),
+                            );
+                        },
                 );
               },
             ),
@@ -772,23 +788,67 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
 class _GlassButton extends StatelessWidget {
   final IconData icon;
   final Color? iconColor;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final bool isLoading;
+  final String? loadingLabel;
+  final String? label;
 
-  const _GlassButton({required this.icon, this.iconColor, required this.onTap});
+  const _GlassButton({
+    required this.icon,
+    this.iconColor,
+    required this.onTap,
+    this.isLoading = false,
+    this.loadingLabel,
+    this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 40,
+        width: isLoading
+            ? 156
+            : label != null
+            ? 116
+            : 40,
         height: 40,
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.35),
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
-        child: Icon(icon, color: iconColor ?? Colors.white, size: 20),
+        child: isLoading || label != null
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isLoading)
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: iconColor ?? Colors.white,
+                      ),
+                    )
+                  else
+                    Icon(icon, color: iconColor ?? Colors.white, size: 17),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      isLoading ? loadingLabel ?? '' : label ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: iconColor ?? Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Icon(icon, color: iconColor ?? Colors.white, size: 20),
       ),
     );
   }

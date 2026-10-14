@@ -37,6 +37,7 @@ class AppStrings {
       'ar': 'حمّل للوضع دون اتصال',
     },
     'downloaded': {'en': 'Downloaded', 'ar': 'تم التحميل'},
+    'downloading_offline': {'en': 'Downloading...', 'ar': 'جاري التحميل...'},
     'download_failed': {
       'en': 'Offline download failed. Please try again.',
       'ar': 'تعذر التحميل للاستخدام دون اتصال. حاول مرة أخرى.',

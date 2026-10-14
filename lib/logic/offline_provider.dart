@@ -28,17 +28,8 @@ class DownloadEmpty extends DownloadResult {
   const DownloadEmpty(this.pack);
 }
 
-
-
-
-
-
-typedef DownloadProgress = void Function(
-  int done,
-  int total, {
-  int imageOk,
-  int imageFail,
-});
+typedef DownloadProgress =
+    void Function(int done, int total, {int imageOk, int imageFail});
 
 class OfflineProvider extends ChangeNotifier {
   final OfflineStorageService _storage = OfflineStorageService.instance;
@@ -48,15 +39,15 @@ class OfflineProvider extends ChangeNotifier {
   List<OfflinePack> get packs => List.unmodifiable(_packs);
   List<PlaceModel> get cachedPlaces => List.unmodifiable(_cachedPlaces);
 
-  
   bool _downloading = false;
   bool get isDownloading => _downloading;
   String? _downloadingPackId;
   String? get downloadingPackId => _downloadingPackId;
+  final Set<String> _downloadingPlaceIds = <String>{};
 
-  
-  
-  
+  bool isDownloadingPlace(String placeId) =>
+      _downloadingPlaceIds.contains(placeId);
+
   static List<PlaceModel> get cachedFallback {
     final i = _instance;
     return i == null ? const [] : List.unmodifiable(i._cachedPlaces);
@@ -126,13 +117,6 @@ class OfflineProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  
-  
-  
-  
-  
-  
-  
   Future<List<PlaceModel>> pullAllPlacesFromSupabase() async {
     if (!AppConfig.supabaseEnabled) {
       debugPrint(
@@ -151,8 +135,7 @@ class OfflineProvider extends ChangeNotifier {
           .map((row) {
             try {
               final m = Map<String, dynamic>.from(row as Map);
-              
-              
+
               return placeModelFromSupabaseRow(m);
             } catch (e) {
               debugPrint(
@@ -168,16 +151,11 @@ class OfflineProvider extends ChangeNotifier {
       );
       return list;
     } catch (e, st) {
-      debugPrint(
-        'OfflineProvider.pullAllPlacesFromSupabase: failed: $e\n$st',
-      );
+      debugPrint('OfflineProvider.pullAllPlacesFromSupabase: failed: $e\n$st');
       return const [];
     }
   }
 
-  
-  
-  
   static PlaceModel? findCachedPlace(String id) {
     final i = _instance;
     if (i == null) return null;
@@ -187,24 +165,27 @@ class OfflineProvider extends ChangeNotifier {
     return null;
   }
 
-  
-  bool isCached(String placeId) =>
-      _cachedPlaces.any((p) => p.id == placeId);
+  bool isCached(String placeId) => _cachedPlaces.any((p) => p.id == placeId);
 
-  
-  
-  
-  
-  
-  
-  
   Future<DownloadResult> downloadSinglePlace(
     PlaceModel place, {
     List<String> additionalImageUrls = const [],
   }) async {
+    if (!_downloadingPlaceIds.add(place.id)) {
+      return DownloadEmpty(
+        OfflinePack(
+          id: 'single_${place.id}',
+          name: place.nameEn,
+          description: 'A download for this place is already in progress.',
+          placeIds: const [],
+          categories: const [],
+          sizeMb: 0,
+          coverEmoji: '📥',
+        ),
+      );
+    }
+    notifyListeners();
     try {
-      
-      
       await _storage.cachePlaces([place]);
       await _storage.prefetchMapTiles([LatLng(place.lat, place.lng)]);
       final imgResult = await _storage.prefetchImages(
@@ -236,15 +217,16 @@ class OfflineProvider extends ChangeNotifier {
           coverEmoji: '📥',
         ),
       );
+    } finally {
+      _downloadingPlaceIds.remove(place.id);
+      notifyListeners();
     }
   }
 
-  
-  
   Future<void> removeCachedPlace(String placeId) async {
     final i = _instance;
     if (i == null) return;
-    
+
     await i._storage.removeCachedPlace(placeId);
     _cachedPlaces = _storage.getCachedPlaces();
     notifyListeners();
@@ -256,8 +238,6 @@ class OfflineProvider extends ChangeNotifier {
     DownloadProgress? onProgress,
   }) async {
     if (_downloading) {
-      
-      
       return DownloadEmpty(pack);
     }
     _downloading = true;
@@ -281,17 +261,10 @@ class OfflineProvider extends ChangeNotifier {
         return DownloadEmpty(pack);
       }
 
-      
-      
       onProgress?.call(0, places.length, imageOk: 0, imageFail: 0);
       for (var i = 0; i < places.length; i++) {
         await _storage.cachePlaces([places[i]]);
-        onProgress?.call(
-          i + 1,
-          places.length,
-          imageOk: 0,
-          imageFail: 0,
-        );
+        onProgress?.call(i + 1, places.length, imageOk: 0, imageFail: 0);
       }
 
       await _storage.prefetchMapTiles(
@@ -305,12 +278,7 @@ class OfflineProvider extends ChangeNotifier {
         final result = await _storage.prefetchImages([places[i]]);
         imageOk += result.ok;
         imageFail += result.failed;
-        onProgress?.call(
-          total,
-          total,
-          imageOk: imageOk,
-          imageFail: imageFail,
-        );
+        onProgress?.call(total, total, imageOk: imageOk, imageFail: imageFail);
       }
 
       final updated = pack.copyWith(downloadedAt: DateTime.now());

@@ -5,6 +5,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'offline_storage_service.dart';
 
 class OfflineTileProvider extends NetworkTileProvider {
+  OfflineTileProvider()
+    : super(
+        headers: const {
+          'User-Agent':
+              'StreetloreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)',
+        },
+      );
+
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
     final cachedFile = OfflineStorageService.instance.getTileFile(
