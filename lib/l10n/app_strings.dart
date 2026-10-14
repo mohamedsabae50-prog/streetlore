@@ -36,6 +36,15 @@ class AppStrings {
       'en': 'Download for Offline',
       'ar': 'حمّل للوضع دون اتصال',
     },
+    'downloaded': {'en': 'Downloaded', 'ar': 'تم التحميل'},
+    'download_failed': {
+      'en': 'Offline download failed. Please try again.',
+      'ar': 'تعذر التحميل للاستخدام دون اتصال. حاول مرة أخرى.',
+    },
+    'downloading_tour_offline': {
+      'en': 'Downloading tour for offline use…',
+      'ar': 'جارٍ تحميل الجولة للاستخدام دون اتصال…',
+    },
     'removed_offline': {
       'en': 'Removed from offline',
       'ar': 'تمت الإزالة من الوضع دون اتصال',
@@ -1006,6 +1015,15 @@ class AppStrings {
     'map_err_offline': {
       'en': 'Check your internet connection.',
       'ar': 'تأكد من اتصالك بالإنترنت.',
+    },
+    'map_offline_fallback': {
+      'en':
+          'Offline guidance: showing a straight-line route to your destination.',
+      'ar': 'إرشاد دون اتصال: يظهر المسار المباشر إلى وجهتك.',
+    },
+    'map_straight_line_distance': {
+      'en': '{distance} away · bearing {bearing}°',
+      'ar': 'يبعد {distance} · الاتجاه {bearing}°',
     },
     'map_open_details': {'en': 'Open details', 'ar': 'افتح التفاصيل'},
     'map_close': {'en': 'Close', 'ar': 'إغلاق'},

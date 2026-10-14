@@ -242,9 +242,9 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                     final removedMsg = context.tr('tour_removed_offline');
                     if (!isSaved) {
                       messenger.showSnackBar(
-                        const SnackBar(
-                          duration: Duration(seconds: 2),
-                          content: Text('Downloading tour for offline use…'),
+                        SnackBar(
+                          duration: const Duration(seconds: 2),
+                          content: Text(context.tr('downloading_tour_offline')),
                         ),
                       );
                     }

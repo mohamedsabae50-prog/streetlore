@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/config/app_config.dart';
@@ -205,7 +206,7 @@ class OfflineProvider extends ChangeNotifier {
       
       
       await _storage.cachePlaces([place]);
-      
+      await _storage.prefetchMapTiles([LatLng(place.lat, place.lng)]);
       final imgResult = await _storage.prefetchImages(
         [place],
         additionalImageUrls: {place.id: additionalImageUrls},
@@ -293,8 +294,10 @@ class OfflineProvider extends ChangeNotifier {
         );
       }
 
-      
-      
+      await _storage.prefetchMapTiles(
+        places.map((place) => LatLng(place.lat, place.lng)),
+      );
+
       int imageOk = 0;
       int imageFail = 0;
       final total = places.length;

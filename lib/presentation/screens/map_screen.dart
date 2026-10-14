@@ -11,6 +11,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/offline_tile_provider.dart';
+import '../../l10n/app_strings.dart';
 
 final Uint8List _kTransparentPng = Uint8List.fromList(<int>[
   0x89,
@@ -118,7 +120,8 @@ class _MapScreenState extends State<MapScreen> {
 
   LatLng? _currentLocation;
   List<LatLng> _routePoints = [];
-  bool _isLoading = true;
+  final bool _isLoading = false;
+  bool _routeUnavailable = true;
 
   StreamSubscription<Position>? _positionSub;
   final MapController _mapController = MapController();
@@ -142,6 +145,9 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    _routePoints = _effectiveWaypoints
+        .map((waypoint) => LatLng(waypoint.lat, waypoint.lng))
+        .toList(growable: false);
     _initializeMap();
   }
 
@@ -154,10 +160,6 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _initializeMap() async {
     if (kIsWeb) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
       return;
     }
     try {
@@ -197,13 +199,7 @@ class _MapScreenState extends State<MapScreen> {
 
     if (!mounted) return;
 
-    await _getRoute();
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    unawaited(_getRoute());
   }
 
   void _onPositionUpdate(Position position) {
@@ -269,13 +265,27 @@ class _MapScreenState extends State<MapScreen> {
     if (coords.length < 2) {
       if (!mounted) return;
       setState(() {
-        final List<LatLng> fallbackRoute = [];
-        for (var i = 0; i < waypoints.length; i++) {
-          fallbackRoute.add(LatLng(waypoints[i].lat, waypoints[i].lng));
-        }
-        _routePoints = fallbackRoute;
+        _routePoints = [
+          if (_currentLocation != null) _currentLocation!,
+          ...waypoints.map((waypoint) => LatLng(waypoint.lat, waypoint.lng)),
+        ];
+        _routeUnavailable = true;
       });
       return;
+    }
+
+    final fallbackRoute = [
+      _currentLocation!,
+      ...waypoints.map((waypoint) => LatLng(waypoint.lat, waypoint.lng)),
+    ];
+    if (mounted) {
+      setState(() {
+        _routePoints = fallbackRoute;
+        _routeUnavailable = true;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _fitToRoute();
+      });
     }
 
     final url = Uri.parse(
@@ -286,7 +296,7 @@ class _MapScreenState extends State<MapScreen> {
     try {
       final response = await http
           .get(url, headers: const {'User-Agent': 'com.streetlore.app/1.0'})
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 3));
       if (!mounted) return;
 
       if (response.statusCode == 200) {
@@ -317,6 +327,10 @@ class _MapScreenState extends State<MapScreen> {
                   }
                   setState(() {
                     _routePoints = newRoutePoints;
+                    _routeUnavailable = false;
+                  });
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _fitToRoute();
                   });
                   return;
                 }
@@ -332,23 +346,17 @@ class _MapScreenState extends State<MapScreen> {
       debugPrint('OSRM Error: $e');
       if (!mounted) return;
       setState(() {
-        final List<LatLng> fallbackRoute = [];
-        for (var i = 0; i < waypoints.length; i++) {
-          fallbackRoute.add(LatLng(waypoints[i].lat, waypoints[i].lng));
-        }
         _routePoints = fallbackRoute;
+        _routeUnavailable = true;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _fitToRoute();
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<String> tileUrls = [
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    ];
-    final List<String> tileSubdomains = ['', 'a', 'b', 'c', 'd'];
     final List<PlaceWaypoint> waypoints = _effectiveWaypoints;
 
     final List<Marker> markerList = [];
@@ -406,15 +414,13 @@ class _MapScreenState extends State<MapScreen> {
     final List<Widget> mapChildren = [];
     mapChildren.add(
       TileLayer(
-        urlTemplate: tileUrls[0],
-        fallbackUrl: tileUrls.length > 1
-            ? tileUrls.sublist(1).join('||')
-            : null,
+        urlTemplate:
+            'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
         userAgentPackageName: 'com.streetlore.app',
-        subdomains: tileSubdomains,
+        subdomains: const ['a', 'b', 'c', 'd'],
         keepBuffer: 8,
-        maxNativeZoom: 19,
-        tileProvider: NetworkTileProvider(),
+        maxNativeZoom: 17,
+        tileProvider: OfflineTileProvider(),
         errorTileCallback: (tile, error, stackTrace) {
           debugPrint('MapScreen tile ERROR: $error');
         },
@@ -453,9 +459,9 @@ class _MapScreenState extends State<MapScreen> {
                             : const LatLng(31.2001, 29.9187)),
                     initialZoom: waypoints.length > 1 ? 12.0 : 14.0,
                     minZoom: 3.0,
-                    maxZoom: 18.0,
+                    maxZoom: 17.0,
                     onMapReady: () {
-                      if (waypoints.length > 1 && _routePoints.length > 1) {
+                      if (_routePoints.length > 1) {
                         _fitToRoute();
                       } else if (_currentLocation != null) {
                         _centerOnUser(force: true);
@@ -471,6 +477,66 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   children: mapChildren,
                 ),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  right: 12,
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            waypoints.isEmpty
+                                ? widget.placeName
+                                : waypoints.first.name,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          if (_currentLocation != null &&
+                              waypoints.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              _directionSummary(
+                                _currentLocation!,
+                                LatLng(
+                                  waypoints.first.lat,
+                                  waypoints.first.lng,
+                                ),
+                                context,
+                              ),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (_routeUnavailable)
+                  Positioned(
+                    top: 78,
+                    left: 12,
+                    right: 12,
+                    child: Material(
+                      color: Colors.amber.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 9,
+                        ),
+                        child: Text(
+                          context.tr('map_offline_fallback'),
+                          style: const TextStyle(color: Colors.black87),
+                        ),
+                      ),
+                    ),
+                  ),
                 Positioned(
                   left: 0,
                   right: 0,
@@ -491,6 +557,37 @@ class _MapScreenState extends State<MapScreen> {
               ],
             ),
     );
+  }
+
+  String _directionSummary(
+    LatLng origin,
+    LatLng destination,
+    BuildContext context,
+  ) {
+    final distance = _distanceMeters(origin, destination);
+    final bearing =
+        (math.atan2(
+                  math.sin(_deg2rad(destination.longitude - origin.longitude)) *
+                      math.cos(_deg2rad(destination.latitude)),
+                  math.cos(_deg2rad(origin.latitude)) *
+                          math.sin(_deg2rad(destination.latitude)) -
+                      math.sin(_deg2rad(origin.latitude)) *
+                          math.cos(_deg2rad(destination.latitude)) *
+                          math.cos(
+                            _deg2rad(destination.longitude - origin.longitude),
+                          ),
+                ) *
+                180 /
+                math.pi +
+            360) %
+        360;
+    final distanceText = distance >= 1000
+        ? '${(distance / 1000).toStringAsFixed(1)} km'
+        : '${distance.round()} m';
+    return context.tr('map_straight_line_distance', {
+      'distance': distanceText,
+      'bearing': bearing.round().toString(),
+    });
   }
 
   void _fitToRoute() {

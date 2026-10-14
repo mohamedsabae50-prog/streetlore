@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../data/models/map_poi.dart';
 import '../../data/models/map_seed.dart';
 import '../../data/models/place_model.dart';
+import '../../core/services/offline_tile_provider.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
 import '_atm_sheet.dart';
@@ -188,9 +189,12 @@ class _MapViewScreenState extends State<MapViewScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate:
+                    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.streetlore.app',
-                maxZoom: 19,
+                subdomains: const ['a', 'b', 'c', 'd'],
+                maxNativeZoom: 17,
+                tileProvider: OfflineTileProvider(),
               ),
               MarkerLayer(
                 markers: [

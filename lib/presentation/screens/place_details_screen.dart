@@ -946,9 +946,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                         ? context.tr(
                                                             'downloaded',
                                                           )
-                                                        : 'Offline '
-                                                              'download '
-                                                              'failed',
+                                                        : context.tr(
+                                                            'download_failed',
+                                                          ),
                                                   ),
                                                 ),
                                               );

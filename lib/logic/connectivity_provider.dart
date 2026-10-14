@@ -72,7 +72,7 @@ class ConnectivityProvider extends ChangeNotifier with WidgetsBindingObserver {
     try {
       await _httpClient
           .get(Uri.parse('${AppConfig.supabaseUrl}/auth/v1/health'))
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 2));
       return true;
     } on SocketException {
       return false;

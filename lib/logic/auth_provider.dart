@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -218,25 +219,17 @@ class AuthProvider extends ChangeNotifier {
     _hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
 
     if (AppConfig.supabaseEnabled) {
-      
-      
-      
-      
-      
-      Session? session = Supabase.instance.client.auth.currentSession;
-      session ??= await _tryRefresh();
-      session ??= await _waitForInitialSession();
-      if (session == null) {
-        final restored = await restoreFromPrefsSnapshot();
+      try {
+        final restored = await _loadSupabaseSession().timeout(
+          const Duration(seconds: 3),
+        );
         if (restored) {
-          session = Supabase.instance.client.auth.currentSession;
+          _isLoading = false;
+          notifyListeners();
+          return;
         }
-      }
-      if (session?.user != null) {
-        await _syncFromSupabase();
-        _isLoading = false;
-        notifyListeners();
-        return;
+      } on TimeoutException {
+        debugPrint('AuthProvider: Supabase startup exceeded 3 seconds');
       }
     }
 
@@ -255,9 +248,43 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> _loadSupabaseSession() async {
+    Session? session = Supabase.instance.client.auth.currentSession;
+    if (session == null) {
+      try {
+        final connectivity = await Connectivity().checkConnectivity().timeout(
+          const Duration(milliseconds: 500),
+        );
+        final hasNetwork = connectivity.any(
+          (result) => result != ConnectivityResult.none,
+        );
+        if (hasNetwork) {
+          session = await _tryRefresh();
+          session ??= await _waitForInitialSession();
+          if (session == null) {
+            final restored = await restoreFromPrefsSnapshot();
+            if (restored) {
+              session = Supabase.instance.client.auth.currentSession;
+            }
+          }
+        }
+      } catch (error, stackTrace) {
+        debugPrint(
+          'AuthProvider: startup connectivity check failed: '
+          '$error\n$stackTrace',
+        );
+      }
+    }
+    if (session?.user == null) return false;
+    await _syncFromSupabase();
+    return true;
+  }
+
   Future<Session?> _tryRefresh() async {
     try {
-      final r = await Supabase.instance.client.auth.refreshSession();
+      final r = await Supabase.instance.client.auth
+          .refreshSession()
+          .timeout(const Duration(milliseconds: 1800));
       return r.session;
     } catch (e) {
       debugPrint('AuthProvider._tryRefresh: $e');
@@ -279,7 +306,7 @@ class AuthProvider extends ChangeNotifier {
       }
     });
     try {
-      return await completer.future.timeout(const Duration(seconds: 5));
+      return await completer.future.timeout(const Duration(seconds: 1));
     } on TimeoutException {
       if (!completer.isCompleted) completer.complete(null);
       await sub.cancel();
@@ -315,7 +342,8 @@ class AuthProvider extends ChangeNotifier {
           .from('profiles')
           .select('is_pro, subscription_tier, username')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 2));
       if (profile != null) {
         _isPro = profile['is_pro'] == true;
         _subscriptionTier = profile['subscription_tier'] as String?;
@@ -545,7 +573,8 @@ class AuthProvider extends ChangeNotifier {
     if (access == null || refresh == null) return false;
     try {
       final res = await Supabase.instance.client.auth
-          .setSession(access); 
+          .setSession(access)
+          .timeout(const Duration(seconds: 1));
       
       return res.session != null;
     } catch (e) {

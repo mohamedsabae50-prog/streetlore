@@ -189,7 +189,7 @@ class PlaceProvider extends ChangeNotifier {
           .select()
           .order('display_order', ascending: true)
           .order('id', ascending: true)
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 3));
       final rows = (res as List<dynamic>)
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList(growable: false);

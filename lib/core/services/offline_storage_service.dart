@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../data/models/offline_pack.dart';
@@ -18,8 +21,11 @@ class OfflineStorageService {
   static const _reviewsBox = 'offline_reviews';
   static const _apiResponsesBox = 'offline_api_responses';
   static const syncQueueBox = 'sync_queue';
+  static const _tileTemplate =
+      'https://a.basemaps.cartocdn.com/rastertiles/voyager';
 
   bool _ready = false;
+  String? _tileDirectoryPath;
 
   Future<void> init() async {
     if (_ready) return;
@@ -40,6 +46,7 @@ class OfflineStorageService {
     }
     try {
       final dir = await getApplicationDocumentsDirectory();
+      await _initializeTileDirectory(dir);
       Hive.init(dir.path);
       await Hive.openBox(_packsBox);
       await Hive.openBox(_placesBox);
@@ -67,6 +74,139 @@ class OfflineStorageService {
   }
 
   bool get isReady => _ready;
+
+  Future<void> _initializeTileDirectory(Directory documentsDirectory) async {
+    final directory = Directory('${documentsDirectory.path}/offline_map_tiles');
+    await directory.create(recursive: true);
+    _tileDirectoryPath = directory.path;
+  }
+
+  File? getTileFile(int zoom, int x, int y) {
+    final path = _tileDirectoryPath;
+    if (path == null || kIsWeb) return null;
+    return File('$path/$zoom/$x/$y.png');
+  }
+
+  Future<({int cached, int failed})> prefetchMapTiles(
+    Iterable<LatLng> locations, {
+    double radiusMeters = 1500,
+    int minZoom = 13,
+    int maxZoom = 17,
+  }) async {
+    if (kIsWeb) return (cached: 0, failed: 0);
+    if (_tileDirectoryPath == null) await init();
+    if (_tileDirectoryPath == null) {
+      throw StateError('Map tile storage is not available');
+    }
+
+    final tiles = <String, (int zoom, int x, int y)>{};
+    for (final location in locations) {
+      if (!location.latitude.isFinite ||
+          !location.longitude.isFinite ||
+          location.latitude < -85.0511 ||
+          location.latitude > 85.0511) {
+        continue;
+      }
+      for (var zoom = minZoom; zoom <= maxZoom; zoom++) {
+        final tileCount = 1 << zoom;
+        final latitudeDelta = radiusMeters / 111320;
+        final longitudeDelta =
+            radiusMeters /
+            (111320 *
+                math.cos(location.latitude * 0.017453292519943295).abs());
+        final minX = _longitudeToTileX(
+          location.longitude - longitudeDelta,
+          tileCount,
+        );
+        final maxX = _longitudeToTileX(
+          location.longitude + longitudeDelta,
+          tileCount,
+        );
+        final minY = _latitudeToTileY(
+          location.latitude + latitudeDelta,
+          tileCount,
+        );
+        final maxY = _latitudeToTileY(
+          location.latitude - latitudeDelta,
+          tileCount,
+        );
+        for (var x = minX; x <= maxX; x++) {
+          for (var y = minY; y <= maxY; y++) {
+            if (x < 0 || x >= tileCount || y < 0 || y >= tileCount) {
+              continue;
+            }
+            tiles['$zoom/$x/$y'] = (zoom, x, y);
+          }
+        }
+      }
+    }
+
+    final pending = <(int, int, int)>[];
+    for (final tile in tiles.values) {
+      final file = getTileFile(tile.$1, tile.$2, tile.$3)!;
+      if (!await file.exists()) pending.add(tile);
+    }
+
+    var cached = 0;
+    var failed = 0;
+    final client = http.Client();
+    try {
+      for (var offset = 0; offset < pending.length; offset += 8) {
+        final batch = pending.skip(offset).take(8);
+        final results = await Future.wait(
+          batch.map((tile) async {
+            final file = getTileFile(tile.$1, tile.$2, tile.$3)!;
+            try {
+              await file.parent.create(recursive: true);
+              final response = await client
+                  .get(
+                    Uri.parse('$_tileTemplate/${tile.$1}/${tile.$2}/${tile.$3}.png'),
+                    headers: const {'User-Agent': 'com.streetlore.app/1.0'},
+                  )
+                  .timeout(const Duration(seconds: 4));
+              if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+                throw HttpException(
+                  'Map tile request returned ${response.statusCode}',
+                );
+              }
+              await file.writeAsBytes(response.bodyBytes, flush: true);
+              return true;
+            } catch (error) {
+              debugPrint(
+                'OfflineStorageService.prefetchMapTiles '
+                '${tile.$1}/${tile.$2}/${tile.$3} failed: $error',
+              );
+              return false;
+            }
+          }),
+        );
+        cached += results.where((result) => result).length;
+        failed += results.where((result) => !result).length;
+      }
+    } finally {
+      client.close();
+    }
+    debugPrint(
+      'OfflineStorageService.prefetchMapTiles: '
+      '$cached cached, $failed failed, ${tiles.length} total tiles',
+    );
+    return (cached: cached, failed: failed);
+  }
+
+  int _longitudeToTileX(double longitude, int tileCount) =>
+      ((longitude + 180) / 360 * tileCount).floor();
+
+  int _latitudeToTileY(double latitude, int tileCount) {
+    final radians = latitude * 0.017453292519943295;
+    final mercator =
+        (1 -
+            math.log(
+                  math.tan(radians) + 1 / math.cos(radians),
+                ) /
+                math.pi) /
+        2;
+    return (mercator * tileCount).floor();
+  }
 
   Future<void> cacheApiRows(String key, List<dynamic> rows) async {
     if (!_ready) return;

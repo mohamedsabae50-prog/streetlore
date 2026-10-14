@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/services/offline_storage_service.dart';
@@ -100,7 +101,7 @@ class TourProvider extends ChangeNotifier {
           .select()
           .eq('status', 'published')
           .order('id')
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 3));
       final rows = (res as List<dynamic>)
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList(growable: false);
@@ -352,6 +353,9 @@ class TourProvider extends ChangeNotifier {
       final stops = tour.places.where((p) => p.id.isNotEmpty).toList();
       if (stops.isNotEmpty) {
         await storage.cachePlaces(stops);
+        await storage.prefetchMapTiles(
+          stops.map((place) => LatLng(place.lat, place.lng)),
+        );
         final stopImages = await storage.prefetchImages(stops);
         ok += stopImages.ok;
         failed += stopImages.failed;
