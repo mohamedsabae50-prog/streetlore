@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants/city_coordinates.dart';
 import '../core/services/offline_storage_service.dart';
 import '../core/services/supabase_service.dart';
-import '../core/widgets/image_defaults.dart';
 import '../data/mock_data.dart' show MockData, fallbackPlaces;
 import '../data/models/map_seed.dart';
 import '../data/models/place_model.dart';
@@ -269,22 +268,7 @@ class PlaceProvider extends ChangeNotifier {
   }
 
   PlaceModel _placeFromSupabase(Map<String, dynamic> json) {
-    final imageUrl = json['image_url']?.toString().trim() ?? '';
-    final category = json['category']?.toString() ?? 'General';
-    final imageUrls = (json['image_urls'] as List<dynamic>? ?? const [])
-        .whereType<String>()
-        .where((url) => url.trim().isNotEmpty)
-        .where((url) => !url.toLowerCase().contains('wikimedia.org'))
-        .toList(growable: false);
-    final normalized = <String, dynamic>{
-      ...json,
-      'image_url':
-          imageUrl.isEmpty || imageUrl.toLowerCase().contains('wikimedia.org')
-          ? imageFallbackUrlForCategory(category)
-          : imageUrl,
-      'image_urls': imageUrls,
-    };
-    final model = placeModelFromSupabaseRow(normalized);
+    final model = placeModelFromSupabaseRow(json);
 
     if (!_hasValidCoords(model.lat, model.lng)) {
       debugPrint(

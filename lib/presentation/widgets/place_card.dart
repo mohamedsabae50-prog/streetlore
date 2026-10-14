@@ -7,7 +7,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/best_time_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_stars.dart';
-import '../../core/widgets/image_defaults.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
@@ -80,9 +79,6 @@ class _PlaceCardState extends State<PlaceCard> {
                 fallbackIcon: Icons.broken_image_rounded,
                 fallbackColor: AppColors.textHint,
                 fallbackIconSize: 32,
-                fallbackImageUrl: imageFallbackUrlForCategory(
-                  widget.place.category,
-                ),
               ),
               Container(
                 decoration: const BoxDecoration(

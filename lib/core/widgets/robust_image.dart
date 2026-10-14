@@ -15,7 +15,6 @@ class RobustImage extends StatefulWidget {
   final double fallbackIconSize;
   final int? memCacheWidth;
   final int? memCacheHeight;
-  final String? fallbackImageUrl;
 
   const RobustImage({
     super.key,
@@ -27,7 +26,6 @@ class RobustImage extends StatefulWidget {
     this.fallbackIconSize = 40,
     this.memCacheWidth,
     this.memCacheHeight,
-    this.fallbackImageUrl,
   });
 
   @override
@@ -51,8 +49,7 @@ class _RobustImageState extends State<RobustImage> {
   @override
   void didUpdateWidget(RobustImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.imageUrl != widget.imageUrl ||
-        oldWidget.fallbackImageUrl != widget.fallbackImageUrl) {
+    if (oldWidget.imageUrl != widget.imageUrl) {
       _future = _load();
     }
   }
@@ -64,25 +61,18 @@ class _RobustImageState extends State<RobustImage> {
   
   
   Future<Uint8List?> _load() async {
-    final urls = <String>[
-      widget.imageUrl,
-      if (widget.fallbackImageUrl != null &&
-          widget.fallbackImageUrl!.isNotEmpty &&
-          widget.fallbackImageUrl != widget.imageUrl)
-        widget.fallbackImageUrl!,
-    ];
-    for (final url in urls) {
-      try {
-        final cached = await OfflineImageCache.instance.read(url);
-        if (cached != null) return cached;
-      } catch (_) {}
-      try {
-        final response = await _client.get(Uri.parse(url));
-        if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
-          await OfflineImageCache.instance.write(url, response.bodyBytes);
-          return response.bodyBytes;
-        }
-      } catch (_) {}
+    try {
+      final cached = await OfflineImageCache.instance.read(widget.imageUrl);
+      if (cached != null) return cached;
+    } catch (_) {}
+    try {
+      final response = await _client.get(Uri.parse(widget.imageUrl));
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        await OfflineImageCache.instance.write(widget.imageUrl, response.bodyBytes);
+        return response.bodyBytes;
+      }
+    } catch (_) {
+      return null;
     }
     return null;
   }

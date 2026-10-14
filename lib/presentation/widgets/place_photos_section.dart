@@ -350,7 +350,6 @@ class _PhotoCard extends StatelessWidget {
             source: photo.imageUrl,
             fit: BoxFit.cover,
             fallbackIcon: imageFallbackIconForCategory(fallbackCategory),
-            fallbackImageUrl: imageFallbackUrlForCategory(fallbackCategory),
             memCacheWidth: 320,
           );
     return Container(
@@ -488,7 +487,6 @@ class _PhotoCard extends StatelessWidget {
     source: photo.imageUrl,
     fit: BoxFit.cover,
     fallbackIcon: imageFallbackIconForCategory(fallbackCategory),
-    fallbackImageUrl: imageFallbackUrlForCategory(fallbackCategory),
     memCacheWidth: 320,
   );
 }

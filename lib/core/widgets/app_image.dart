@@ -12,7 +12,6 @@ class AppImage extends StatelessWidget {
   final IconData fallbackIcon;
   final double fallbackIconSize;
   final Color? fallbackColor;
-  final String? fallbackImageUrl;
 
   final int? memCacheWidth;
   final int? memCacheHeight;
@@ -26,7 +25,6 @@ class AppImage extends StatelessWidget {
     this.fallbackIcon = Icons.broken_image_rounded,
     this.fallbackIconSize = 32,
     this.fallbackColor,
-    this.fallbackImageUrl,
     this.memCacheWidth,
     this.memCacheHeight,
   });
@@ -74,7 +72,6 @@ class AppImage extends StatelessWidget {
           fallbackIcon: fallbackIcon,
           fallbackColor: fallbackColor,
           fallbackIconSize: fallbackIconSize,
-          fallbackImageUrl: fallbackImageUrl,
         ),
       );
     }
@@ -82,21 +79,6 @@ class AppImage extends StatelessWidget {
   }
 
   Widget _fallback() {
-    final fallbackImageUrl = this.fallbackImageUrl;
-    if (fallbackImageUrl != null && fallbackImageUrl.isNotEmpty) {
-      return SizedBox(
-        width: width,
-        height: height,
-        child: ShimmerImage(
-          imageUrl: '',
-          fallbackImageUrl: fallbackImageUrl,
-          fit: fit,
-          fallbackIcon: fallbackIcon,
-          fallbackColor: fallbackColor,
-          fallbackIconSize: fallbackIconSize,
-        ),
-      );
-    }
     return Container(
       width: width,
       height: height,
