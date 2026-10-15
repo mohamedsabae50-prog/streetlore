@@ -9,7 +9,6 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_stars.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
-import '../../logic/place_photos_provider.dart';
 import 'place_image_carousel.dart';
 
 class PlaceCard extends StatefulWidget {
@@ -60,31 +59,20 @@ class _PlaceCardState extends State<PlaceCard> {
   }
 
   Widget _buildImage() {
-    return Consumer<PlacePhotosProvider>(
-      builder: (context, photos, _) {
-        final images = <String>{
-          ...widget.place.officialImages,
-          ...photos
-              .photosFor(widget.place.id)
-              .map((photo) => photo.imageUrl.trim())
-              .where((url) => url.isNotEmpty),
-        }.toList(growable: false);
-        return SizedBox(
-          width: 115,
-          height: 130,
-          child: PlaceImageCarousel(
-            images: images,
-            placeId: widget.place.id,
-            fallbackCategory: widget.place.category,
-            height: 130,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              bottomLeft: Radius.circular(20),
-            ),
-            heroTag: 'place-image-${widget.place.id}',
-          ),
-        );
-      },
+    return SizedBox(
+      width: 115,
+      height: 130,
+      child: PlaceImageCarousel(
+        images: widget.place.officialImages,
+        placeId: widget.place.id,
+        fallbackCategory: widget.place.category,
+        height: 130,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          bottomLeft: Radius.circular(20),
+        ),
+        heroTag: 'place-image-${widget.place.id}',
+      ),
     );
   }
 

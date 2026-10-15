@@ -119,7 +119,10 @@ class PlacePhotosSection extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
       child: Consumer<PlacePhotosProvider>(
         builder: (context, provider, _) {
-          final photos = provider.photosFor(place.id);
+          final photos = provider.photosFor(
+            place.id,
+            officialImageUrls: place.officialImages,
+          );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

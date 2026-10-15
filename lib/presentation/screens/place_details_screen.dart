@@ -321,24 +321,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Consumer<PlacePhotosProvider>(
-                        builder: (context, photos, _) {
-                          final images = <String>{
-                            ...place.officialImages,
-                            ...photos
-                                .photosFor(place.id)
-                                .map((photo) => photo.imageUrl.trim())
-                                .where((url) => url.isNotEmpty),
-                          }.toList(growable: false);
-                          return PlaceImageCarousel(
-                            images: images,
-                            placeId: place.id,
-                            fallbackCategory: place.category,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                            heroTag: 'place-image-${place.id}',
-                          );
-                        },
+                      PlaceImageCarousel(
+                        images: place.officialImages,
+                        placeId: place.id,
+                        fallbackCategory: place.category,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        heroTag: 'place-image-${place.id}',
                       ),
                       Container(
                         decoration: const BoxDecoration(
@@ -944,7 +933,12 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                             .read<
                                                               PlacePhotosProvider
                                                             >()
-                                                            .photosFor(place.id)
+                                                            .photosFor(
+                                                              place.id,
+                                                              officialImageUrls:
+                                                                  place
+                                                                      .officialImages,
+                                                            )
                                                             .map(
                                                               (photo) => photo
                                                                   .imageUrl,

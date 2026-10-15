@@ -24,10 +24,29 @@ class PlacePhotosProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<PlacePhoto> photosFor(String placeId) =>
-      List.unmodifiable(_byPlace[placeId] ?? const []);
+  List<PlacePhoto> photosFor(
+    String placeId, {
+    Iterable<String> officialImageUrls = const <String>[],
+  }) {
+    final officialUrls = officialImageUrls
+        .map((url) => url.trim())
+        .where((url) => url.isNotEmpty)
+        .toSet();
+    return List.unmodifiable(
+      (_byPlace[placeId] ?? const <PlacePhoto>[]).where((photo) {
+        final userName = photo.userName.trim().toLowerCase();
+        final isAdminPlaceholder = const {
+          'admin',
+          'streetlore',
+          'streetlore admin',
+        }.contains(userName);
+        return !isAdminPlaceholder &&
+            !officialUrls.contains(photo.imageUrl.trim());
+      }),
+    );
+  }
 
-  int totalFor(String placeId) => _byPlace[placeId]?.length ?? 0;
+  int totalFor(String placeId) => photosFor(placeId).length;
 
   PlacePhotosProvider() {
     _initialize();
