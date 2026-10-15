@@ -170,7 +170,7 @@ const PlaceModel _fallbackNationalMuseum = PlaceModel(
   descriptionAr:
       'قصر إيطالي الطراز شُيّد عام 1926، ويضم آثاراً من العصور الفرعونية واليونانية والرومانية والقبطية والإسلامية.',
   imageUrl:
-      'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/11.jpg",
   rating: 4.6,
   category: 'Culture',
   categoryAr: 'ثقافة',
@@ -196,7 +196,7 @@ const PlaceModel _fallbackGraecoRomanMuseum = PlaceModel(
   descriptionAr:
       'متحف مُجدّد يضم آلاف القطع الأثرية من العصرين البطلمي والروماني في الإسكندرية.',
   imageUrl:
-      'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/43.jpg",
   rating: 4.7,
   category: 'Culture',
   categoryAr: 'ثقافة',
@@ -213,9 +213,6 @@ const PlaceModel _fallbackGraecoRomanMuseum = PlaceModel(
   priceForeignerEgp: 100,
 );
 
-const _romanAmphitheatreImageUrl =
-    'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1000&q=80';
-
 const PlaceModel _fallbackRomanAmphitheatre = PlaceModel(
   id: 'fallback_roman_amphitheatre',
   nameEn: 'Roman Amphitheatre (Kom el-Dikka)',
@@ -224,10 +221,8 @@ const PlaceModel _fallbackRomanAmphitheatre = PlaceModel(
       'A Roman theatre with thirteen tiers of marble seating, discovered during excavations in central Alexandria.',
   descriptionAr:
       'مسرح روماني يضم ثلاثة عشر صفاً من المدرجات الرخامية، اكتُشف خلال أعمال التنقيب في وسط الإسكندرية.',
-  imageUrl: _romanAmphitheatreImageUrl,
-  imageUrls: [
-    'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1000&q=80',
-  ],
+  imageUrl: "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/9.jpg",
+  imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/9.jpg"],
   rating: 4.5,
   category: 'Historical',
   categoryAr: 'تاريخي',
@@ -244,9 +239,6 @@ const PlaceModel _fallbackRomanAmphitheatre = PlaceModel(
   priceForeignerEgp: 80,
 );
 
-const _stanleyBridgeImageUrl =
-    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80';
-
 const PlaceModel _fallbackStanleyBridge = PlaceModel(
   id: 'fallback_stanley_bridge',
   nameEn: 'Stanley Bridge & Corniche',
@@ -255,7 +247,7 @@ const PlaceModel _fallbackStanleyBridge = PlaceModel(
       'Alexandria’s landmark bridge, with its white arches spanning Stanley Bay along the Mediterranean Corniche.',
   descriptionAr:
       'جسر الإسكندرية الشهير بأقواسه البيضاء الممتدة فوق خليج ستانلي على كورنيش البحر المتوسط.',
-  imageUrl: _stanleyBridgeImageUrl,
+  imageUrl: "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/8.jpg",
   rating: 4.6,
   category: 'Nature',
   categoryAr: 'طبيعة',
@@ -282,10 +274,8 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'قلعة قايتباي هي حصن دفاعي يعود للقرن الخامس عشر الميلادي، مبني على أنقاض منارة الإسكندرية القديمة، إحدى عجائب الدنيا السبع. تقع على شاطئ البحر المتوسط وتتميز بمعمارها الأيوبي الرائع.',
     imageUrl:
-        'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1000&q=80',
-    imageUrls: [
-      'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1000&q=80',
-    ],
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/p_1784811618524.jpg",
+    imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/p_1784811618524.jpg"],
     rating: 4.7,
     category: 'Historical',
     categoryAr: 'تاريخي',
@@ -311,10 +301,8 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'مكتبة الإسكندرية الجديدة صرح ثقافي ضخم على شاطئ البحر المتوسط، تجسيد معاصر للمكتبة الأسطورية التي كانت مركزاً للعلوم والمعرفة في العالم القديم. تضم مليوني كتاب ومتاحف وقاعات عروض.',
     imageUrl:
-        'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?auto=format&fit=crop&w=1000&q=80',
-    imageUrls: [
-      'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?auto=format&fit=crop&w=1000&q=80',
-    ],
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/2.jpg",
+    imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/2.jpg"],
     rating: 4.8,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -340,7 +328,7 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'عمود بومبي عمود ضخم من الجرانيت يعود للعصر الروماني، يبلغ ارتفاعه 30 متراً، وهو أعلى عمود انتصار خارج روما. أُقيم عام 297 م تكريماً للإمبراطور دقلديانوس.',
     imageUrl:
-        'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1000&q=80',
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/7.jpg",
     rating: 4.5,
     category: 'Historical',
     categoryAr: 'تاريخي',
@@ -366,7 +354,7 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'مقابر كوم الشقافة من أبرز المواقع الأثرية في الإسكندرية، تُعد إحدى عجائب الدنيا السبع في العصر الوسيط. متاهة متعددة الطوابق تمزج بين الفن الروماني والمصري القديم.',
     imageUrl:
-        'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1000&q=80',
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/4.jpg",
     rating: 4.6,
     category: 'Historical',
     categoryAr: 'تاريخي',
@@ -392,10 +380,8 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'حدائق المنتزه الملكية خضراء غناء تحيط بقصر المنتزه التاريخي الذي بناه الخديوي عباس. واحة طبيعية خلابة تطل على البحر المتوسط وتجمع بين الجمال والتاريخ.',
     imageUrl:
-        'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80',
-    imageUrls: [
-      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80',
-    ],
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/3.jpg",
+    imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/3.jpg"],
     rating: 4.5,
     category: 'Nature',
     categoryAr: 'طبيعة',
@@ -421,7 +407,7 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'مسجد العطارين أحد المساجد التاريخية العريقة في قلب الإسكندرية القديمة. يعود تاريخه للعصر المملوكي ويتميز بزخارفه الإسلامية الرائعة وروحانيته العالية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=1000&q=80',
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/50.jpg",
     rating: 4.3,
     category: 'Mosques',
     categoryAr: 'مساجد',
@@ -447,7 +433,7 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'كاتدرائية القديس مرقس الأرثوذكسية مقر البابا الكوبي التاريخي في الإسكندرية. تجمع بين الإرث الكنسي الأصيل والعمارة الحديثة في قلب مدينة الإسكندرية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&fit=crop&w=1000&q=80',
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/40.jpg",
     rating: 4.6,
     category: 'Churches',
     categoryAr: 'كنائس',
@@ -477,7 +463,7 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'قصر ملكي سابق في زيزينيا يعرض مجوهرات ومقتنيات أسرة محمد علي، إلى جانب القاعات المزخرفة التي تشكل جزءاً من تجربة الزيارة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?auto=format&fit=crop&w=1000&q=80',
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/44.jpg",
     rating: 4.6,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -499,11 +485,8 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'شقة الشاعر اليوناني قسطنطين كفافيس المحفوظة في الإسكندرية، وتضم مقتنيات ووثائق تستعرض حياته وأعماله الأدبية وصلته بالمدينة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?auto=format&fit=crop&w=1000&q=80',
-    imageUrls: [
-      'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?auto=format&fit=crop&w=1000&q=80',
-    ],
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/46.jpg",
+    imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/46.jpg"],
     rating: 4.5,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -525,7 +508,7 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'مسجد تاريخي بارز في وسط الإسكندرية، يشتهر بعمارة تعود إلى العصر العثماني ومكانته الراسخة في التاريخ الديني والعمراني للمدينة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=1000&q=80',
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_nabi_daniel_mosque.jpg",
     rating: 4.5,
     category: 'Mosques',
     categoryAr: 'مساجد',
@@ -547,7 +530,7 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'دار أوبرا الإسكندرية التاريخية، افتُتحت عام ١٩٢١ وسُمّيت باسم الموسيقار المصري سيد درويش. لا يزال المسرح الإيطالي الطراز يستضيف الأوبرا والحفلات والعروض الثقافية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?auto=format&fit=crop&w=1000&q=80',
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/47.jpg",
     rating: 4.6,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -576,7 +559,7 @@ const List<ItineraryModel> fallbackTours = [
     duration: 'Full Day',
     durationAr: 'يوم كامل',
     imageUrl:
-        'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1000&q=80',
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/tours/tour_historical.jpg",
     places: [
       PlaceModel(
         id: 'fallback_qaitbay',
@@ -587,7 +570,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'قلعة قايتباي هي حصن دفاعي يعود للقرن الخامس عشر الميلادي، مبني على أنقاض منارة الإسكندرية القديمة، إحدى عجائب الدنيا السبع. تقع على شاطئ البحر المتوسط وتتميز بمعمارها الأيوبي الرائع.',
         imageUrl:
-            'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1000&q=80',
+            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/p_1784811618524.jpg",
         rating: 4.7,
         category: 'Historical',
         categoryAr: 'تاريخي',
@@ -612,7 +595,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'عمود بومبي عمود ضخم من الجرانيت يعود للعصر الروماني، يبلغ ارتفاعه 30 متراً، وهو أعلى عمود انتصار خارج روما. أُقيم عام 297 م تكريماً للإمبراطور دقلديانوس.',
         imageUrl:
-            'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1000&q=80',
+            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/7.jpg",
         rating: 4.5,
         category: 'Historical',
         categoryAr: 'تاريخي',
@@ -637,7 +620,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'مقابر كوم الشقافة من أبرز المواقع الأثرية في الإسكندرية، تُعد إحدى عجائب الدنيا السبع في العصر الوسيط. متاهة متعددة الطوابق تمزج بين الفن الروماني والمصري القديم.',
         imageUrl:
-            'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1000&q=80',
+            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/4.jpg",
         rating: 4.6,
         category: 'Historical',
         categoryAr: 'تاريخي',
@@ -662,7 +645,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'مكتبة الإسكندرية الجديدة صرح ثقافي ضخم على شاطئ البحر المتوسط، تجسيد معاصر للمكتبة الأسطورية التي كانت مركزاً للعلوم والمعرفة في العالم القديم. تضم مليوني كتاب ومتاحف وقاعات عروض.',
         imageUrl:
-            'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?auto=format&fit=crop&w=1000&q=80',
+            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/2.jpg",
         rating: 4.8,
         category: 'Culture',
         categoryAr: 'ثقافة',
@@ -691,7 +674,7 @@ const List<ItineraryModel> fallbackTours = [
     duration: '4 Hours',
     durationAr: '4 ساعات',
     imageUrl:
-        'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80',
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/tours/tour_coastal.jpg",
     places: [
       PlaceModel(
         id: 'fallback_montaza',
@@ -702,7 +685,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'حدائق المنتزه الملكية خضراء غناء تحيط بقصر المنتزه التاريخي الذي بناه الخديوي عباس. واحة طبيعية خلابة تطل على البحر المتوسط وتجمع بين الجمال والتاريخ.',
         imageUrl:
-            'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80',
+            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/3.jpg",
         rating: 4.5,
         category: 'Nature',
         categoryAr: 'طبيعة',
@@ -731,7 +714,7 @@ const List<ItineraryModel> fallbackTours = [
     duration: '3 Hours',
     durationAr: '3 ساعات',
     imageUrl:
-        'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=1000&q=80',
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/tours/tour_spiritual.jpg",
     places: [
       PlaceModel(
         id: 'fallback_attarine',
@@ -742,7 +725,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'مسجد العطارين أحد المساجد التاريخية العريقة في قلب الإسكندرية القديمة. يعود تاريخه للعصر المملوكي ويتميز بزخارفه الإسلامية الرائعة وروحانيته العالية.',
         imageUrl:
-            'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=1000&q=80',
+            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/50.jpg",
         rating: 4.3,
         category: 'Mosques',
         categoryAr: 'مساجد',
@@ -768,7 +751,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'كاتدرائية القديس مرقس الأرثوذكسية مقر البابا الكوبي التاريخي في الإسكندرية. تجمع بين الإرث الكنسي الأصيل والعمارة الحديثة في قلب مدينة الإسكندرية.',
         imageUrl:
-            'https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&fit=crop&w=1000&q=80',
+            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/40.jpg",
         rating: 4.6,
         category: 'Churches',
         categoryAr: 'كنائس',
@@ -796,7 +779,7 @@ const List<ItineraryModel> fallbackTours = [
         'اكتشف تاريخ الإسكندرية الروماني من خلال مقتنيات المتاحف والمسرح الروماني والعمود الأثري والمقابر القديمة.',
     duration: '4 Hours',
     durationAr: '4 ساعات',
-    imageUrl: _romanAmphitheatreImageUrl,
+    imageUrl: "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/tours/tour_roman_alexandria.jpg",
     places: [
       _fallbackGraecoRomanMuseum,
       _fallbackRomanAmphitheatre,
@@ -809,7 +792,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'عمود روماني ضخم من الجرانيت الأحمر أُقيم عام 297م في منطقة السيرابيوم.',
         imageUrl:
-            'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1000&q=80',
+            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/7.jpg",
         rating: 4.5,
         category: 'Historical',
         categoryAr: 'تاريخي',
@@ -837,7 +820,7 @@ const List<ItineraryModel> fallbackTours = [
         'زر متاحف الإسكندرية ومكتبتها ومعالمها الثقافية.',
     duration: '5 Hours',
     durationAr: '5 ساعات',
-    imageUrl: _stanleyBridgeImageUrl,
+    imageUrl: "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/tours/tour_city_highlights.jpg",
     places: [
       _fallbackNationalMuseum,
       _fallbackStanleyBridge,
@@ -850,7 +833,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'مكتبة ومركز ثقافي حديث على ساحل البحر المتوسط في الإسكندرية.',
         imageUrl:
-            'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?auto=format&fit=crop&w=1000&q=80',
+            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/2.jpg",
         rating: 4.8,
         category: 'Culture',
         categoryAr: 'ثقافة',

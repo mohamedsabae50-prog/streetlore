@@ -304,32 +304,32 @@ List<MapPoi> _hotels = const [
   ),
 ];
 
-// Each seeded hotel has its own verified CDN-backed hotel image.
+// Each seeded hotel has its own image hosted in public Supabase Storage.
 const Map<String, String> _hotelImageById = {
   'hotel-four-seasons':
-      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-four-seasons.jpg",
   'hotel-sofitel-alex':
-      'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-sofitel-alex.jpg",
   'hotel-steigenberger-cerine':
-      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-steigenberger-cerine.jpg",
   'hotel-tolip-alex':
-      'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-tolip-alex.jpg",
   'hotel-paradise':
-      'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-paradise.jpg",
   'hotel-romance-alex':
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-romance-alex.jpg",
   'hotel-cherry':
-      'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-cherry.jpg",
   'hotel-plaza-alex':
-      'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-plaza-alex.jpg",
   'hotel-king-mariout':
-      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-king-mariout.jpg",
   'hotel-san-stefano':
-      'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-san-stefano.jpg",
   'hotel-downtown':
-      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-downtown.jpg",
   'hotel-borg-al-arab':
-      'https://images.unsplash.com/photo-1563911302283-d2bc129e7570?auto=format&fit=crop&w=1000&q=80',
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/hotels/hotel-borg-al-arab.jpg",
 };
 
 List<PlaceModel> _hotelPlaces = _hotels

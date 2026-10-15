@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,6 +7,45 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const reportPath = path.join(root, 'reports', 'authentic_place_images.csv');
 const dryRun = process.argv.includes('--dry-run');
+function parseCsvRow(line) {
+  const values = [];
+  let value = '';
+  let quoted = false;
+  for (let index = 0; index < line.length; index++) {
+    const char = line[index];
+    if (char === '"' && quoted && line[index + 1] === '"') {
+      value += '"';
+      index++;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === ',' && !quoted) {
+      values.push(value);
+      value = '';
+    } else {
+      value += char;
+    }
+  }
+  values.push(value);
+  return values;
+}
+const priorReportText = await readFile(reportPath, 'utf8').catch((error) => {
+  if (error.code === 'ENOENT') return '';
+  throw error;
+});
+const priorAttributions = new Map();
+if (priorReportText) {
+  const [headerLine, ...reportLines] = priorReportText.trimEnd().split(/\r?\n/);
+  const header = parseCsvRow(headerLine);
+  for (const line of reportLines) {
+    const values = parseCsvRow(line);
+    const record = Object.fromEntries(header.map((key, index) =>
+      [key, values[index] ?? ''],
+    ));
+    if (record.kind && record.id) {
+      priorAttributions.set(`${record.kind}:${record.id}`, record);
+    }
+  }
+}
 const appConfig = await readFile(
   path.join(root, 'lib', 'core', 'config', 'app_config.dart'),
   'utf8',
@@ -21,6 +61,35 @@ const userAgent =
 const headers = { apikey: anonKey, Authorization: `Bearer ${anonKey}` };
 const aliasesById = new Map([
   ['p_1784811618524', ['Citadel of Qaitbay', 'قلعة قايتباي']],
+  ['26', ['El Maamoura Beach Alexandria', 'Maamoura Beach Alexandria', 'شاطئ المعمورة الإسكندرية']],
+  ['25', ['Agami Beach Alexandria', 'Agamy Beach Alexandria', 'شاطئ العجمي الإسكندرية']],
+  ['27', ['Roman Cisterns Alexandria', 'Roman cisterns Kom el-Dikka', 'الخزانات الرومانية الإسكندرية']],
+  ['29', ['Alexandria Cotton Exchange', 'Bourse d Alexandria', 'بورصة القطن الإسكندرية']],
+  ['36', ['Shatby Mosque Alexandria', 'Shatibi Mosque', 'مسجد الشاطبي الإسكندرية']],
+  ['41', ['Jesuit Church Alexandria Egypt', 'Jesuit Church Cleopatra Alexandria', 'كنيسة اليسوعيين الإسكندرية']],
+  ['6ea681a0-6bb4-43df-a3de-1d0f94f8f665', ['Saint Mina Cathedral Alexandria', 'Saint Mina Church Mariout Alexandria', 'كاتدرائية مارمينا الإسكندرية']],
+  ['14', ['Abu Qir Alexandria beach', 'Abu Qir waterfront Alexandria', 'أبو قير الإسكندرية']],
+  ['d88d4a5d-b3b0-4579-bef3-728e41843095', ['Stanley Cafe Alexandria', 'Stanley Café Alexandria Egypt', 'مقهى ستانلي الإسكندرية']],
+  ['f54cbabc-3bd6-4af2-96d8-542544dde62e', ['Lighthouse of Alexandria underwater ruins', 'Pharos of Alexandria submerged ruins', 'منارة الإسكندرية الغارقة']],
+  ['22', ['Kadoura Seafood Restaurant Alexandria', 'Kadoura Fish Restaurant Alexandria', 'مطعم قدورة الإسكندرية']],
+  ['43591966-e37f-4f6a-967c-d94a1a012d16', ['Cafe Riche Alexandria Egypt', 'Café Riche Alexandria Egypt', 'مقهى ريش الإسكندرية']],
+  ['33', ['Souq El Gumrok Alexandria', 'El Gomrok market Alexandria', 'سوق الجمرك الإسكندرية']],
+  ['5', ['El Nozha Botanical Garden Alexandria', 'Nozha Garden Alexandria', 'حديقة النزهة النباتية الإسكندرية']],
+  ['21', ['Zephyrion Restaurant Alexandria', 'Zephyrium Restaurant Alexandria', 'مطعم زيفريون الإسكندرية']],
+  ['13', ['El Attarin Bazaar Alexandria', 'Attarine Souq Alexandria', 'سوق العطارين الإسكندرية']],
+  ['45', ['Mahmoud Said Museum Alexandria', 'Villa Ambron museum Mahmoud Said Alexandria', 'متحف محمود سعيد الإسكندرية']],
+  ['19', ['Trianon Cafe Alexandria', 'Trianon Café Alexandria Egypt', 'مقهى تريانون الإسكندرية']],
+  ['58', ['Shatby Necropolis Alexandria', 'Shatby tombs Alexandria', 'جبانة الشاطبي الإسكندرية']],
+  ['6', ['Anfushi Fish Market Alexandria', 'Anfushi market Alexandria', 'سوق السمك الأنفوشي الإسكندرية']],
+  ['hotel-sofitel-alex', ['Sofitel Cecil Alexandria', 'Cecil Hotel Alexandria Egypt', 'فندق سيسيل الإسكندرية']],
+  ['hotel-steigenberger-cerine', ['Steigenberger Cecil Alexandria', 'Cecil Hotel Alexandria', 'فندق سيسيل الإسكندرية']],
+  ['hotel-tolip-alex', ['Tolip Hotel Alexandria Egypt', 'Tolip Alexandria Hotel', 'فندق توليب الإسكندرية']],
+  ['hotel-paradise', ['Paradise Inn Windsor Palace Alexandria', 'Windsor Palace Hotel Alexandria', 'فندق ويندسور بالاس الإسكندرية']],
+  ['hotel-romance-alex', ['Romance Alexandria Hotel', 'Romance Hotel Montazah Alexandria', 'فندق رومانس الإسكندرية']],
+  ['hotel-plaza-alex', ['Plaza Hotel Alexandria Egypt', 'Plaza Hotel Alexandria Egypt Stanley', 'فندق بلازا الإسكندرية']],
+  ['hotel-king-mariout', ['King Mariout Hotel Alexandria Egypt', 'King Mariout resort Alexandria', 'فندق كينج مريوط الإسكندرية']],
+  ['hotel-san-stefano', ['San Stefano Grand Plaza Alexandria Egypt', 'San Stefano Hotel Alexandria Egypt', 'فندق سان ستيفانو الإسكندرية']],
+  ['hotel-borg-al-arab', ['Borg El Arab Airport Hotel Alexandria', 'Borg El Arab Hotel Alexandria Egypt', 'فندق برج العرب مطار الإسكندرية']],
   ['17', ['Anfushi tombs', 'Tombs of Anfushi', 'مقابر الأنفوشي']],
   ['13', ['El-Atarin Bazaar Alexandria', 'Souq El-Attarin', 'سوق العطارين']],
   ['13cf4401-ce36-4560-9398-fb81cbf0f28c', ['Misr Station Alexandria', 'Alexandria Misr railway station', 'محطة مصر الإسكندرية']],
@@ -74,6 +143,101 @@ const aliasesById = new Map([
   ['2', ['Bibliotheca Alexandrina Egypt', 'مكتبة الإسكندرية']],
   ['8', ['Stanley Bridge Alexandria', 'كوبري ستانلي الإسكندرية']],
 ]);
+const EXPLICIT_COMMONS_QUERIES = new Map([
+  ['23', ['Abou Ashraf International Fish Alexandria', 'Abu Ashraf Seafood Alexandria Egypt', 'أبو أشرف للمأكولات البحرية الإسكندرية']],
+  ['6', ['Anfushi Fish Market Alexandria Egypt', 'Anfoushi fish market Alexandria', 'سوق السمك الأنفوشي الإسكندرية']],
+  ['43591966-e37f-4f6a-967c-d94a1a012d16', ['Cafe Riche Alexandria Egypt', 'Café Riche Alexandria restaurant', 'مقهى ريتش الإسكندرية']],
+  ['58', ['Chatby Tombs Alexandria Egypt', 'Shatbi Necropolis Alexandria', 'جبانة الشاطبي الإسكندرية']],
+  ['13', ['Attarine district Alexandria Egypt', 'Hay al Attarin Alexandria', 'سوق العطارين الإسكندرية']],
+  ['29', ['Alexandria Cotton Exchange building Egypt', 'Alexandria Bourse building', 'بورصة القطن الإسكندرية']],
+  ['26', ['El Maamoura beach Alexandria Egypt', 'Maamoura Beach Egypt', 'شاطئ المعمورة الإسكندرية']],
+  ['5', ['Nozha Botanical Garden Alexandria Egypt', 'El Nozha Garden Alexandria', 'حدائق النزهة الإسكندرية']],
+  ['20', ['Elite restaurant Safeya Zaghloul Street Alexandria', 'Elite Cafe Alexandria Egypt', 'إيليت كافيه الإسكندرية']],
+  ['41', ['Jesuit Church Cleopatra Alexandria Egypt', 'Sacred Heart Church Alexandria Egypt', 'كنيسة اليسوعيين كليوباترا الإسكندرية']],
+  ['22', ['Kadoura Seafood Restaurant Alexandria Egypt', 'Kadoura fish restaurant Alexandria', 'مطعم قدورة الإسكندرية']],
+  ['f54cbabc-3bd6-4af2-96d8-542544dde62e', ['Pharos of Alexandria submerged ruins Egypt', 'underwater Lighthouse of Alexandria ruins', 'منارة الإسكندرية الغارقة']],
+  ['45', ['Mahmoud Said Museum Villa Ambron Alexandria Egypt', 'Mahmoud Said Museum Alexandria', 'متحف محمود سعيد الإسكندرية']],
+  ['v155_pastroudi', ['Pastroudi Restaurant Alexandria Egypt', 'Pastroudi cafe Alexandria', 'مطعم باسترودي الإسكندرية']],
+  ['27', ['Roman cisterns Kom el Dikka Alexandria Egypt', 'Roman Cisterns Alexandria', 'الخزانات الرومانية كوم الدكة الإسكندرية']],
+  ['36', ['Shatibi Mosque Alexandria Egypt', 'Shatby Mosque Alexandria', 'مسجد الشاطبي الإسكندرية']],
+  ['33', ['Gomrok market Alexandria Egypt', 'El Gomrok souq Alexandria', 'سوق الجمرك الإسكندرية']],
+  ['d88d4a5d-b3b0-4579-bef3-728e41843095', ['Stanley Cafe Alexandria Egypt', 'Stanley Espresso Bar Alexandria', 'مقهى ستانلي الإسكندرية']],
+  ['19', ['Trianon restaurant Alexandria Egypt', 'Trianon Cafe Alexandria Egypt', 'تريانون كافيه الإسكندرية']],
+  ['v155_zephyrion', ['Zephyrion Restaurant Alexandria Egypt', 'Zephyrium Restaurant Alexandria', 'مطعم زيفيريون الإسكندرية']],
+  ['hotel-king-mariout', ['King Mariout Hotel Alexandria Egypt', 'King Mariout resort Alexandria Egypt', 'فندق كينج مريوط الإسكندرية']],
+  ['hotel-borg-al-arab', ['Borg El Arab Airport Hotel Alexandria Egypt', 'Borg El Arab Hotel Egypt', 'فندق برج العرب مطار الإسكندرية']],
+]);
+const EXPLICIT_COMMONS_SCENE_QUERIES = new Map([
+  ['14', ['Seafood restaurants in Alexandria Egypt', 'Abu Qir coast Alexandria Egypt']],
+  ['19', ['Cafes in Alexandria Egypt', 'Restaurants in Alexandria Egypt']],
+  ['21', ['Seafood restaurants in Alexandria Egypt', 'Abu Qir coast Alexandria Egypt']],
+  ['22', ['Seafood restaurants in Alexandria Egypt', 'Fish restaurants in Alexandria Egypt']],
+  ['23', ['Seafood restaurants in Alexandria Egypt', 'Fish restaurants in Alexandria Egypt']],
+  ['25', ['Beaches of Alexandria Egypt', 'Agami beach Alexandria Egypt']],
+  ['26', ['Beaches of Alexandria Egypt', 'Maamoura beach Alexandria Egypt']],
+  ['27', ['Roman ruins in Alexandria Egypt', 'Roman cisterns Alexandria Egypt']],
+  ['33', ['Markets in Alexandria Egypt', 'Souqs in Alexandria Egypt']],
+  ['36', ['Mosques in Alexandria Egypt', 'Shatby mosque Alexandria Egypt']],
+  ['40', ['Coptic churches in Alexandria Egypt', 'Cathedrals in Alexandria Egypt']],
+  ['41', ['Churches in Alexandria Egypt', 'Cleopatra church Alexandria Egypt']],
+  ['43591966-e37f-4f6a-967c-d94a1a012d16', ['Cafes in Alexandria Egypt', 'Restaurants in Alexandria Egypt']],
+  ['45', ['Mahmoud Said Museum Alexandria Egypt', 'Museums in Alexandria Egypt']],
+  ['5', ['Gardens in Alexandria Egypt', 'Botanical gardens Alexandria Egypt']],
+  ['6', ['Fish market in Alexandria Egypt', 'Anfushi market Alexandria Egypt']],
+  ['6ea681a0-6bb4-43df-a3de-1d0f94f8f665', ['Churches in Mariout Alexandria Egypt', 'Saint Mina Cathedral Alexandria Egypt']],
+  ['d88d4a5d-b3b0-4579-bef3-728e41843095', ['Cafes in Alexandria Egypt', 'Stanley Alexandria Egypt']],
+  ['f54cbabc-3bd6-4af2-96d8-542544dde62e', ['Pharos of Alexandria Egypt', 'Lighthouse of Alexandria Egypt']],
+  ['v155_abu_ashraf', ['Seafood restaurants in Alexandria Egypt', 'Fish restaurants in Alexandria Egypt']],
+  ['v155_pastroudi', ['Cafes in Alexandria Egypt', 'Restaurants in Alexandria Egypt']],
+  ['v155_zephyrion', ['Seafood restaurants in Alexandria Egypt', 'Abu Qir coast Alexandria Egypt']],
+  ['hotel-romance-alex', ['Hotels in Montaza Alexandria Egypt', 'Hotels in Alexandria Egypt']],
+  ['hotel-plaza-alex', ['Hotels in Sporting Alexandria Egypt', 'Hotels in Alexandria Egypt']],
+  ['hotel-king-mariout', ['Hotels in King Mariout Egypt', 'Hotels in Alexandria Egypt']],
+  ['hotel-downtown', ['Hotels in Roushdy Alexandria Egypt', 'Hotels in Alexandria Egypt']],
+  ['hotel-borg-al-arab', [
+    'Hotels in Borg El Arab Egypt',
+    'Hotels in Alexandria Egypt',
+    'Borg El Arab International Airport Egypt',
+    'Alexandria International Airport Egypt',
+  ]],
+  ['t3', ['Food in Alexandria Egypt', 'Restaurants in Alexandria Egypt']],
+  ['t5', ['Beaches of Alexandria Egypt', 'Alexandria coast Egypt']],
+]);
+const EXPLICIT_GEO_EVIDENCE = new Map([
+  ['14', ['seafood', 'fish', 'restaurant', 'coast', 'beach']],
+  ['19', ['cafe', 'coffee', 'restaurant']],
+  ['21', ['seafood', 'fish', 'restaurant', 'coast', 'beach']],
+  ['22', ['seafood', 'fish', 'restaurant']],
+  ['23', ['seafood', 'fish', 'restaurant']],
+  ['25', ['beach', 'coast', 'shore']],
+  ['26', ['beach', 'coast', 'shore']],
+  ['27', ['cistern', 'roman', 'archaeological', 'ruins']],
+  ['33', ['market', 'bazaar', 'souq']],
+  ['36', ['mosque', 'masjid']],
+  ['40', ['church', 'cathedral', 'coptic']],
+  ['41', ['church', 'jesuit', 'sacred heart']],
+  ['43591966-e37f-4f6a-967c-d94a1a012d16', ['cafe', 'coffee', 'restaurant']],
+  ['45', ['museum', 'villa', 'mahmoud said']],
+  ['5', ['garden', 'botanical', 'plants']],
+  ['6', ['market', 'fish']],
+  ['6ea681a0-6bb4-43df-a3de-1d0f94f8f665', ['church', 'cathedral', 'coptic']],
+  ['58', ['tomb', 'necropolis', 'archaeological']],
+  ['13', ['market', 'bazaar', 'attarin', 'attarine']],
+  ['29', ['exchange', 'bourse', 'cotton']],
+  ['20', ['cafe', 'coffee', 'restaurant']],
+  ['f54cbabc-3bd6-4af2-96d8-542544dde62e', ['underwater', 'submerged', 'pharos', 'lighthouse', 'ruins']],
+  ['v155_pastroudi', ['cafe', 'coffee', 'restaurant']],
+  ['d88d4a5d-b3b0-4579-bef3-728e41843095', ['cafe', 'coffee', 'restaurant']],
+  ['v155_zephyrion', ['seafood', 'fish', 'restaurant']],
+  ['v155_abu_ashraf', ['seafood', 'fish', 'restaurant']],
+  ['hotel-romance-alex', ['hotel', 'resort', 'accommodation']],
+  ['hotel-plaza-alex', ['hotel', 'accommodation']],
+  ['hotel-king-mariout', ['hotel', 'resort', 'accommodation']],
+  ['hotel-downtown', ['hotel', 'accommodation']],
+  ['hotel-borg-al-arab', ['hotel', 'resort', 'airport']],
+  ['t3', ['food', 'restaurant', 'market']],
+  ['t5', ['beach', 'coast', 'sea']],
+]);
 
 const extraAliasesByName = new Map([
   ['citadel of qaitbay', ['Citadel of Qaitbay', 'قلعة قايتباي']],
@@ -94,6 +258,7 @@ const extraAliasesByName = new Map([
 
 function normalize(value) {
   return value
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
@@ -120,15 +285,52 @@ function decodeHtml(value = '') {
     .trim();
 }
 
+let commonsQueue = Promise.resolve();
+let lastCommonsRequestAt = 0;
 async function requestJson(url) {
-  const response = await fetch(url, {
-    headers: { 'User-Agent': userAgent, Accept: 'application/json' },
-    signal: AbortSignal.timeout(20000),
-  });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} from ${new URL(url).hostname}`);
+  const parsedUrl = new URL(url);
+  const isWikimedia = /(?:^|\.)wikipedia\.org$|(?:^|\.)wikimedia\.org$/.test(
+    parsedUrl.hostname,
+  );
+  let releaseQueue;
+  if (isWikimedia) {
+    const previous = commonsQueue;
+    commonsQueue = new Promise((resolve) => {
+      releaseQueue = resolve;
+    });
+    await previous;
+    const waitMs = 500 - (Date.now() - lastCommonsRequestAt);
+    if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
-  return response.json();
+  try {
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      const response = await fetch(parsedUrl, {
+        headers: { 'User-Agent': userAgent, Accept: 'application/json' },
+        signal: AbortSignal.timeout(20000),
+      });
+      if (response.ok) {
+        if (isWikimedia) lastCommonsRequestAt = Date.now();
+        return response.json();
+      }
+      const retryable = response.status === 429 || response.status >= 500;
+      if (!retryable || attempt === 4) {
+        throw new Error(
+          `HTTP ${response.status} from ${parsedUrl.hostname}`,
+        );
+      }
+      const retryAfter = Number(response.headers.get('retry-after'));
+      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+        ? retryAfter * 1000
+        : attempt * 2000;
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+    throw new Error(`Request retries exhausted for ${parsedUrl.hostname}.`);
+  } finally {
+    if (isWikimedia) {
+      lastCommonsRequestAt = Date.now();
+      releaseQueue();
+    }
+  }
 }
 
 async function readRows(table, select, query = '') {
@@ -245,12 +447,15 @@ const [mockSource, mapSeedSource] = await Promise.all([
   readFile(mapSeedPath, 'utf8'),
 ]);
 const mockModels = parseConstructors(mockSource, 'PlaceModel');
+const mockTours = parseConstructors(mockSource, 'ItineraryModel');
 const hotelRegion = mapSeedSource.match(/List<MapPoi> _hotels\s*=\s*const\s*\[([\s\S]*?)\n\];/)?.[1];
 if (!hotelRegion) throw new Error('Could not parse hotel seed records.');
 const hotels = [...hotelRegion.matchAll(/MapPoi\(\s*([\s\S]*?)\n\s*\),/g)]
   .map((match) => ({
     id: match[1].match(/\bid:\s*'([^']+)'/)?.[1],
     name: match[1].match(/\bname:\s*'([^']+)'/)?.[1],
+    lat: Number(match[1].match(/\blat:\s*([\d.]+)/)?.[1]),
+    lng: Number(match[1].match(/\blng:\s*([\d.]+)/)?.[1]),
   }))
   .filter((hotel) => hotel.id && hotel.name);
 if (hotels.length !== 12) {
@@ -270,7 +475,10 @@ const placeTargets = places.map((row) => ({
   nameAr: row.name_ar || '',
   category: row.category || '',
   kind: 'place',
-  aliases: aliasesById.get(String(row.id)) ?? [],
+  aliases: [
+    ...(EXPLICIT_COMMONS_QUERIES.get(String(row.id)) ?? []),
+    ...(aliasesById.get(String(row.id)) ?? []),
+  ],
   row,
 }));
 
@@ -298,11 +506,64 @@ const hotelTargets = hotels.map((hotel) => ({
   nameAr: '',
   category: 'Hotels',
   kind: 'hotel',
-  aliases: [],
+  aliases: [
+    ...(EXPLICIT_COMMONS_QUERIES.get(hotel.id) ?? []),
+    ...(aliasesById.get(hotel.id) ?? []),
+  ],
+  lat: hotel.lat,
+  lng: hotel.lng,
   hotel,
 }));
+const tourTargets = tours.map((tour) => {
+  const linkedPlaces = (tourLinks.get(String(tour.id)) ?? [])
+    .map((id) => places.find((place) => String(place.id) === id))
+    .filter(Boolean);
+  return {
+    id: String(tour.id),
+    name: tour.title,
+    nameAr: tour.title_ar || '',
+    category: tour.category || '',
+    kind: 'tour',
+    aliases: [
+      `${tour.title} Alexandria Egypt`,
+      ...linkedPlaces.flatMap((place) => [
+        place.name_en || place.name,
+        place.name_ar,
+      ].filter(Boolean)),
+    ],
+    row: tour,
+    linkedPlaces,
+  };
+});
+const mockTourTargets = mockTours
+  .filter((tour) => !tours.some((row) =>
+    String(row.id) === tour.id ||
+    normalize(row.title) === normalize(tour.name),
+  ))
+  .map((tour) => {
+    const linkedPlaces = parseConstructors(tour.text, 'PlaceModel');
+    return {
+      id: tour.id,
+      name: tour.name,
+      nameAr: '',
+      category: '',
+      kind: 'mock_tour',
+      aliases: [
+        `${tour.name} Alexandria Egypt`,
+        ...linkedPlaces.map((place) => place.name),
+      ],
+      linkedPlaces,
+      model: tour,
+    };
+  });
 const targetIdentities = new Set();
-for (const target of [...placeTargets, ...seedPlaceTargets, ...hotelTargets]) {
+for (const target of [
+  ...placeTargets,
+  ...seedPlaceTargets,
+  ...hotelTargets,
+  ...tourTargets,
+  ...mockTourTargets,
+]) {
   const identity = `${target.kind}:${target.id}`;
   if (targetIdentities.has(identity)) {
     throw new Error(`Duplicate image target ${identity}.`);
@@ -330,29 +591,33 @@ function identifyingVariants(target) {
     .map((tokens) => tokens.join(' ')))];
 }
 
-function cityEvidence(text) {
+function hasForeignLocationEvidence(text) {
   const normalized = normalize(text);
-  if (/\bvirginia\b|\bcanada\b|\busa\b|\bunited states\b|\bontario\b/.test(normalized)) {
-    return false;
-  }
+  return /\bvirginia\b|\bcanada\b|\busa\b|\bunited states\b|\bontario\b|\blos angeles\b|\bcalifornia\b|\bbarcelona\b|\bspain\b|\btunisia\b|\btunis\b/.test(normalized);
+}
+
+function cityEvidence(text) {
+  if (hasForeignLocationEvidence(text)) return false;
+  const normalized = normalize(text);
   return /\balexandria\b|\begypt\b/.test(normalized) ||
     /الإسكندرية|اسكندرية|مصر/.test(text);
 }
 
-function scoreMatch(target, identityText) {
+function scoreMatch(target, identityText, evidenceText = identityText) {
   const normalizedText = normalize(identityText);
+  const normalizedEvidence = normalize(evidenceText);
   let best = 0;
   for (const variant of identifyingVariants(target)) {
     const tokens = variant.split(' ');
     const nameWords = tokens.filter((token) => requiredPlaceTypeWords.has(token));
-    const missingType = nameWords.some((token) => !normalizedText.includes(token));
+    const missingType = nameWords.some((token) =>
+      !normalizedEvidence.includes(token),
+    );
     const distinctiveTokens = tokens.filter((token) => !requiredPlaceTypeWords.has(token));
     const requiredTokens = distinctiveTokens.length > 0 ? distinctiveTokens : tokens;
     const matching = requiredTokens.filter((token) => normalizedText.includes(token));
     const score = matching.length / requiredTokens.length;
-    const minimumMatch = requiredTokens.length === 1
-      ? 1
-      : Math.ceil(requiredTokens.length * 0.67);
+    const minimumMatch = requiredTokens.length;
     if (matching.length >= minimumMatch && !missingType) {
       best = Math.max(best, score);
     }
@@ -360,18 +625,96 @@ function scoreMatch(target, identityText) {
   return best;
 }
 
+function candidateHasKnownMismatch(target, identityText, evidenceText = identityText) {
+  const normalized = normalize(`${identityText} ${evidenceText}`);
+  if (hasForeignLocationEvidence(normalized)) return true;
+  if (target.id === 'hotel-plaza-alex' &&
+      /\bfour seasons\b|\bsan stefano\b|\bsanstefano\b/.test(normalized)) {
+    return true;
+  }
+  if (target.id === 'hotel-king-mariout' &&
+      /\bcecil\b|\ble metropole\b/.test(normalized)) {
+    return true;
+  }
+  if (target.id === 'hotel-borg-al-arab' &&
+      /\bsea sandwich\b/.test(normalized)) {
+    return true;
+  }
+  if (target.kind === 'tour' && target.id === 't3' &&
+      /\bzoo\b|\bmonkey\b|\bmacaque\b|\banimal\b|\bwildlife\b/.test(normalized)) {
+    return true;
+  }
+  return false;
+}
+
+function candidateIdentityMatches(target, identityText, evidenceText) {
+  const normalizedIdentity = normalize(identityText);
+  if (candidateHasKnownMismatch(target, identityText, evidenceText)) {
+    return false;
+  }
+  if (target.id === '29' &&
+      /\bcherif pacha street\b.*\bexchange\b/.test(normalizedIdentity)) {
+    return 0.75;
+  }
+  if (target.id === 'hotel-tolip-alex' &&
+      /\bsunset at alex\b/.test(normalizedIdentity) &&
+      /\btolip hotel on stanley beach\b/.test(normalize(evidenceText))) {
+    return 0.75;
+  }
+  if (target.id === 'hotel-plaza-alex' &&
+      /\bfour seasons\b|\bsan stefano\b|\bsanstefano\b/.test(normalizedIdentity)) {
+    return false;
+  }
+  if (target.id === 'hotel-downtown' &&
+      !/\bdowntown hotel\b|\bhotel downtown\b/.test(normalize(evidenceText))) {
+    return false;
+  }
+  if (target.id === 'hotel-san-stefano' &&
+      !/\bsan stefano\b|\bsanstefano\b|\bgrand plaza\b/.test(normalizedIdentity)) {
+    return false;
+  }
+  if (target.id === 'hotel-borg-al-arab' &&
+      /\bsea sandwich\b/.test(normalizedIdentity)) {
+    return false;
+  }
+  return scoreMatch(target, identityText, evidenceText);
+}
+
 function cleanMetadata(imageInfo) {
   const metadata = imageInfo.extmetadata ?? {};
   const value = (key) => decodeHtml(metadata[key]?.value ?? '');
+  const coordinate = (key) => {
+    const raw = value(key).trim();
+    if (!raw) return null;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
   return {
     objectName: value('ObjectName'),
     description: value('ImageDescription'),
     categories: value('Categories'),
+    latitude: coordinate('GPSLatitude'),
+    longitude: coordinate('GPSLongitude'),
     artist: value('Artist') || value('Credit') || 'Unknown',
     license: value('LicenseShortName') || value('UsageTerms') || 'Unknown',
     licenseUrl: value('LicenseUrl'),
     attribution: value('Attribution'),
   };
+}
+
+function distanceMeters(lat1, lng1, lat2, lng2) {
+  const radians = (degrees) => degrees * Math.PI / 180;
+  const deltaLat = radians(lat2 - lat1);
+  const deltaLng = radians(lng2 - lng1);
+  const a = Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(radians(lat1)) * Math.cos(radians(lat2)) *
+    Math.sin(deltaLng / 2) ** 2;
+  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function hasRedistributableLicense(license) {
+  return /^(?:public domain(?:\b|$)|pd(?:[-\s]|$)|cc0(?:\b|$)|cc by(?:-sa)?(?:\s|$))/i
+    .test(license.trim());
 }
 
 async function commonsCandidates(target, searchTerm) {
@@ -395,20 +738,212 @@ async function commonsCandidates(target, searchTerm) {
       const info = page.imageinfo?.[0];
       if (!info || !/^image\/jpeg$/i.test(info.mime ?? '')) return null;
       const metadata = cleanMetadata(info);
+      if (!hasRedistributableLicense(metadata.license)) return null;
       const verificationText = [
         page.title,
         metadata.objectName,
         metadata.description,
         metadata.categories,
       ].join(' ');
-      const matchScore = scoreMatch(
+      if (candidateHasKnownMismatch(
         target,
         [page.title, metadata.objectName].join(' '),
+        verificationText,
+      )) {
+        return null;
+      }
+      if (target.id === 'hotel-san-stefano' &&
+          /\bfour seasons\b/i.test(verificationText)) {
+        return null;
+      }
+      const matchScore = candidateIdentityMatches(
+        target,
+        [page.title, metadata.objectName].join(' '),
+        verificationText,
       );
-      if (!matchScore || !cityEvidence(verificationText)) return null;
+      const sceneTerms = EXPLICIT_GEO_EVIDENCE.get(String(target.id)) ?? [];
+      const sceneMatch = sceneTerms.some((term) =>
+        normalize(verificationText).includes(normalize(term)),
+      );
+      const targetLat = Number(target.row?.lat ?? target.lat);
+      const targetLng = Number(target.row?.lng ?? target.lng);
+      const nearbyHotelMatch = target.kind === 'hotel' &&
+        Number.isFinite(targetLat) && Number.isFinite(targetLng) &&
+        Number.isFinite(metadata.latitude) &&
+        Number.isFinite(metadata.longitude) &&
+        distanceMeters(targetLat, targetLng, metadata.latitude, metadata.longitude) <= 10000 &&
+        /\bhotel\b/.test(normalize(verificationText));
+      if ((!matchScore && !(sceneMatch && (target.kind !== 'hotel' || nearbyHotelMatch))) ||
+          !cityEvidence(verificationText)) {
+        return null;
+      }
+      const verifiedScore = matchScore || 0.4;
       return {
         sourceFileTitle: page.title,
-        sourceUrl: info.url,
+        sourceUrl: info.thumburl ?? info.url,
+        sourcePageUrl: info.descriptionurl,
+        width: info.width ?? 0,
+        height: info.height ?? 0,
+        mime: info.mime,
+        metadata,
+        matchScore: verifiedScore,
+        sourceKey: `commons:${page.pageid}`,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.matchScore - a.matchScore || b.width - a.width);
+}
+
+const run3FileTitles = new Map([
+  ['49', 'File:Nabi Daniel Mosque Tomb II.jpg'],
+  ['52', 'File:Alexandria - Antoniades Garden - btv1b10114345n (1 of 2).jpg'],
+  ['47', 'File:Sayed Darwish Theatre in Alexandria,.JPG'],
+  ['7', "File:Alexandria, Pompey's pillar, 19th century pictures, 1870, photo 1 of 2 - Archivio fotografico Museo Egizio, Turin Album1 050.jpg"],
+  ['8', 'File:Stanley Bridge in the city of Alexandria , Egypt . 6.JPG'],
+  ['9', 'File:المسرح الروماني. منطقة كوم الدكة. الإسكندرية.jpg'],
+  ['a118abcb-13b2-4db3-89b6-dfe2fb2abe2f', 'File:Bibliotheca Alexandrina – Manuscript Museum 28.jpg'],
+  ['ec216324-1277-4649-a631-91be397eeeac', 'File:Greek Club, Shatby, Alexandria 02.jpg'],
+  ['2', 'File:مكتبة الإسكندرية الجديدة.jpg'],
+  ['3', 'File:حدائق قصر المنتزه الاسكندرية.jpg'],
+  ['34', 'File:Qaed Ibrahim Mosque in Alexandria in 2021 from north-east.jpg'],
+  ['42', "File:St. Catherine's Cathedral, Alexandria 18 relics of Saint Sabina.jpg"],
+  ['43', 'File:من مقتنيات المتحف اليوناني الروماني بالإسكندرية.jpg'],
+  ['10', 'File:من داخل مسجد المرسي أبو العباس.jpg'],
+  ['40', "en Wikipedia: Saint Mark's Coptic Orthodox Cathedral"],
+  ['17', 'File:AlexAnfushiTombs.jpg'],
+  ['50', 'File:75 Alexandria. - Attarine Mosque. - btv1b10114850q (1 of 2).jpg'],
+  ['51', 'File:Macaca radiata in Alexandria Zoo, 2015.jpg'],
+  ['16', 'File:Shallalat gardens 2.JPG'],
+  ['18', 'File:Eliyahu Hanavi Synagogue (Alexandria) 02.jpg'],
+  ['hotel-four-seasons', 'File:Alexandria sea and the four seasons hotel.jpg'],
+  ['hotel-sofitel-alex', 'File:Sofitel Alexandria.JPG'],
+  ['hotel-steigenberger-cerine', 'File:Cecil Hotel - Alexandria 02.jpg'],
+  ['hotel-tolip-alex', 'File:Sunset at Alex.jpg'],
+  ['hotel-paradise', 'File:Windsor Palace Hotel.jpg'],
+  ['hotel-cherry', 'File:Cherry Maryski Hotel lobby.jpg'],
+  ['hotel-san-stefano', 'File:Sanstefano-1.jpg'],
+  ['hotel-downtown', 'File:Hotels-Downtown Alexandria.jpg'],
+  ['hotel-borg-al-arab', 'File:Alexandria International Airport (Egypt).jpg'],
+]);
+
+async function commonsFileCandidate(target, fileTitle) {
+  const url = new URL('https://commons.wikimedia.org/w/api.php');
+  url.search = new URLSearchParams({
+    action: 'query',
+    titles: fileTitle,
+    prop: 'imageinfo',
+    iiprop: 'url|size|mime|extmetadata',
+    iiurlwidth: '1600',
+    format: 'json',
+  });
+  const json = await requestJson(url);
+  const page = Object.values(json.query?.pages ?? {})[0];
+  const info = page?.imageinfo?.[0];
+  if (!page || !info || !/^image\/jpeg$/i.test(info.mime ?? '')) return null;
+  const metadata = cleanMetadata(info);
+  if (!hasRedistributableLicense(metadata.license)) return null;
+  const verificationText = [
+    page.title,
+    metadata.objectName,
+    metadata.description,
+    metadata.categories,
+  ].join(' ');
+  const matchScore = candidateIdentityMatches(
+    target,
+    [page.title, metadata.objectName].join(' '),
+    verificationText,
+  );
+  const sceneTerms = EXPLICIT_GEO_EVIDENCE.get(String(target.id)) ?? [];
+  const sceneMatch = sceneTerms.some((term) =>
+    normalize(verificationText).includes(normalize(term)),
+  );
+  if ((!matchScore && !sceneMatch) || !cityEvidence(verificationText)) return null;
+  return {
+    sourceFileTitle: page.title,
+    sourceUrl: info.thumburl ?? info.url,
+    sourcePageUrl: info.descriptionurl,
+    width: info.width ?? 0,
+    height: info.height ?? 0,
+    mime: info.mime,
+    metadata,
+    matchScore: matchScore || 0.4,
+    sourceKey: `commons:${page.pageid}`,
+  };
+}
+
+async function commonsGeoCandidates(target) {
+  const linkedPlace = target.linkedPlaces?.find((place) =>
+    Number.isFinite(Number(place.lat)) &&
+    Number.isFinite(Number(place.lng)),
+  );
+  const lat = Number(target.row?.lat ?? target.lat ?? linkedPlace?.lat);
+  const lng = Number(target.row?.lng ?? target.lng ?? linkedPlace?.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return [];
+  const maxDistance = target.kind === 'hotel' ? 10000 : 500;
+  const url = new URL('https://commons.wikimedia.org/w/api.php');
+  url.search = new URLSearchParams({
+    action: 'query',
+    generator: 'geosearch',
+    ggscoord: `${lat}|${lng}`,
+    ggsradius: String(maxDistance),
+    ggslimit: '50',
+    ggsnamespace: '6',
+    prop: 'imageinfo|coordinates',
+    iiprop: 'url|size|mime|extmetadata',
+    iiurlwidth: '1600',
+    coprop: 'type|name',
+    format: 'json',
+  });
+  const json = await requestJson(url);
+  return Object.values(json.query?.pages ?? {})
+    .map((page) => {
+      const info = page.imageinfo?.[0];
+      const coordinates = page.coordinates?.[0];
+      const distance = coordinates
+        ? distanceMeters(lat, lng, coordinates.lat, coordinates.lon)
+        : null;
+      if (!info || !/^image\/jpeg$/i.test(info.mime ?? '') ||
+          !Number.isFinite(distance) || distance > maxDistance) {
+        return null;
+      }
+      const metadata = cleanMetadata(info);
+      if (!hasRedistributableLicense(metadata.license)) return null;
+      const verificationText = [
+        page.title,
+        metadata.objectName,
+        metadata.description,
+        metadata.categories,
+      ].join(' ');
+      if (candidateHasKnownMismatch(
+        target,
+        [page.title, metadata.objectName].join(' '),
+        verificationText,
+      )) {
+        return null;
+      }
+      const identityScore = candidateIdentityMatches(
+        target,
+        [page.title, metadata.objectName].join(' '),
+        verificationText,
+      );
+      const sceneEvidence = EXPLICIT_GEO_EVIDENCE.get(String(target.id));
+      const normalizedEvidence = normalize(verificationText);
+      const locallyVerified = distance <= 500 &&
+        sceneEvidence?.some((term) =>
+          normalizedEvidence.includes(normalize(term)),
+        );
+      const nearbyHotelVerified = target.kind === 'hotel' &&
+        distance <= maxDistance && /\bhotel\b/.test(normalizedEvidence);
+      if (hasForeignLocationEvidence(verificationText)) return null;
+      if ((!identityScore || !cityEvidence(verificationText)) &&
+          !locallyVerified && !nearbyHotelVerified) {
+        return null;
+      }
+      const matchScore = identityScore ||
+        (nearbyHotelVerified ? 0.5 : locallyVerified ? 0.5 : 0);
+      return {
+        sourceFileTitle: page.title,
+        sourceUrl: info.thumburl ?? info.url,
         sourcePageUrl: info.descriptionurl,
         width: info.width ?? 0,
         height: info.height ?? 0,
@@ -451,7 +986,11 @@ async function wikipediaCandidates(target, language) {
         continue;
       }
       const metadataText = `${summary.title} ${summary.description} ${summary.extract}`;
-      const matchScore = scoreMatch(target, summary.title);
+      const matchScore = candidateIdentityMatches(
+        target,
+        summary.title,
+        metadataText,
+      );
       if (!matchScore) continue;
       candidates.push({
         sourceFileTitle: `${language} Wikipedia: ${summary.title}`,
@@ -550,7 +1089,16 @@ async function ogImageCandidates(target) {
           } catch {
             // Ignore HEAD failures (some hosts block them).
           }
-          const matchScore = scoreMatch(target, finalUrl) * 0.7;
+          const pageTitle =
+            body.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '';
+          const pageDescription = body.match(
+            /<meta[^>]+(?:property|name)=["'](?:og:title|og:description|description)["'][^>]+content=["']([^"']*)["']/i,
+          )?.[1] ?? '';
+          const pageIdentity = `${finalUrl} ${pageTitle}`;
+          const pageEvidence = `${pageIdentity} ${pageDescription} ${body.slice(0, 5000)}`;
+          const matchScore =
+            candidateIdentityMatches(target, pageIdentity, pageEvidence) *
+            0.7;
           if (!matchScore) continue;
           results.push({
             sourceFileTitle: `OpenGraph: ${new URL(finalUrl).hostname}`,
@@ -645,12 +1193,14 @@ async function webImageCandidates(target) {
 }
 
 async function downloadCandidate(candidate) {
-  const response = await fetch(candidate.sourceUrl, {
-    headers: { 'User-Agent': userAgent },
-    redirect: 'follow',
-    signal: AbortSignal.timeout(30000),
-  });
-  if (!response.ok) throw new Error(`Image source HTTP ${response.status}`);
+  const response = await fetchWithRetry(
+    candidate.sourceUrl,
+    {
+      headers: { 'User-Agent': userAgent },
+      redirect: 'follow',
+    },
+    `Download ${candidate.sourceFileTitle}`,
+  );
   const mime = (response.headers.get('content-type') ?? '').split(';')[0].trim();
   if (mime !== 'image/jpeg') throw new Error(`Expected JPEG, received ${mime || 'unknown type'}`);
   const bytes = Buffer.from(await response.arrayBuffer());
@@ -664,17 +1214,495 @@ async function downloadCandidate(candidate) {
 }
 
 const usedSources = new Set();
+const usedImageHashes = new Map();
 const resolved = new Map();
 const failures = [];
-const discoveryTargets = [...placeTargets, ...seedPlaceTargets, ...hotelTargets];
+const discoveryTargets = [
+  ...placeTargets,
+  ...seedPlaceTargets,
+  ...hotelTargets,
+  ...tourTargets,
+  ...mockTourTargets,
+];
+const finalUrls = new Map();
+let adminHeaders;
+
+function imageSha256(bytes) {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+async function downloadUniqueCandidate(candidate) {
+  if (!hasRedistributableLicense(candidate.metadata?.license ?? '')) {
+    throw new Error(
+      `Source license does not permit redistribution: ${candidate.sourceFileTitle}`,
+    );
+  }
+  const bytes = await downloadCandidate(candidate);
+  const hash = imageSha256(bytes);
+  if (usedImageHashes.has(hash)) {
+    throw new Error(`Duplicate image binary already assigned to ${usedImageHashes.get(hash)}.`);
+  }
+  return bytes;
+}
+
+if (!dryRun) {
+  let serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) {
+    const command = process.platform === 'win32'
+      ? `${process.env.ComSpec ?? 'cmd.exe'} /d /s /c "supabase projects api-keys --reveal --project-ref ${projectRef} --output json"`
+      : `supabase projects api-keys --reveal --project-ref ${projectRef} --output json`;
+    const output = execSync(command, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      windowsHide: true,
+      maxBuffer: 2 * 1024 * 1024,
+    });
+    const jsonStart = output.search(/[\[{]/);
+    const keys = JSON.parse(output.slice(jsonStart));
+    serviceRoleKey = keys.find(
+      (key) => key.name === 'service_role' && key.type === 'legacy',
+    )?.api_key;
+  }
+  if (!serviceRoleKey) {
+    throw new Error('The Supabase service-role key was not available.');
+  }
+  adminHeaders = {
+    apikey: serviceRoleKey,
+    Authorization: 'Bearer ' + serviceRoleKey,
+  };
+}
+
+async function fetchWithRetry(url, options, label, attempts = 4) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(15000),
+      });
+      if (response.ok) return response;
+      lastError = new Error(`${label}: HTTP ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+    if (attempt < attempts) {
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+    }
+  }
+  throw new Error(`${label} failed after ${attempts} attempts: ${String(lastError)}`);
+}
+
+function publicStorageUrl(objectPath) {
+  return `${supabaseUrl}/storage/v1/object/public/place-images/${objectPath
+    .split('/')
+    .map(encodeURIComponent)
+    .join('/')}`;
+}
+
+async function uploadAndSaveTarget(target, item) {
+  const objectPath = target.kind === 'hotel'
+    ? `hotels/${target.id}.jpg`
+    : target.kind === 'tour' || target.kind === 'mock_tour'
+      ? `tours/${target.id}.jpg`
+      : `${target.id}.jpg`;
+  const storageUrl = `${supabaseUrl}/storage/v1/object/place-images/${objectPath
+    .split('/')
+    .map(encodeURIComponent)
+    .join('/')}`;
+  const imageUrl = publicStorageUrl(objectPath);
+  try {
+    const upload = await fetchWithRetry(
+      storageUrl,
+      {
+        method: 'POST',
+        headers: {
+          ...adminHeaders,
+          'Content-Type': 'image/jpeg',
+          'x-upsert': 'true',
+        },
+        body: item.imageBytes,
+      },
+      `Upload ${objectPath}`,
+    );
+    await upload.arrayBuffer();
+  } catch (uploadError) {
+    let head;
+    try {
+      head = await fetch(imageUrl, {
+        method: 'HEAD',
+        signal: AbortSignal.timeout(15000),
+      });
+    } catch (probeError) {
+      throw new Error(
+        `Upload failed and stored object could not be checked: ` +
+        `${String(uploadError)}; ${String(probeError)}`,
+      );
+    }
+    if (!head.ok || head.headers.get('content-type') !== 'image/jpeg') {
+      throw new Error(
+        `Upload failed and ${objectPath} was not confirmed in Storage: ` +
+        `${String(uploadError)}.`,
+      );
+    }
+    const stored = await fetchWithRetry(
+      imageUrl,
+      {},
+      `Verify uploaded ${objectPath}`,
+    );
+    const storedBytes = Buffer.from(await stored.arrayBuffer());
+    if (imageSha256(storedBytes) !== imageSha256(item.imageBytes)) {
+      throw new Error(
+        `Uploaded ${objectPath} does not match the source image binary.`,
+      );
+    }
+  }
+
+  if (target.kind === 'place') {
+    const update = await fetchWithRetry(
+      `${supabaseUrl}/rest/v1/places?id=eq.${encodeURIComponent(target.id)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          ...adminHeaders,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify({ image_url: imageUrl, image_urls: [imageUrl] }),
+      },
+      `Update place ${target.id}`,
+    );
+    const rows = await update.json();
+    if (rows.length !== 1 || rows[0].image_url !== imageUrl) {
+      throw new Error(`Place ${target.id} update was not confirmed.`);
+    }
+    target.row.image_url = imageUrl;
+    target.row.image_urls = [imageUrl];
+    await updateMockPlaceImages(target, imageUrl);
+  } else if (target.kind === 'tour') {
+    const update = await fetchWithRetry(
+      `${supabaseUrl}/rest/v1/tours?id=eq.${encodeURIComponent(target.id)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          ...adminHeaders,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify({ image_url: imageUrl }),
+      },
+      `Update tour ${target.id}`,
+    );
+    const rows = await update.json();
+    if (rows.length !== 1 || rows[0].image_url !== imageUrl) {
+      throw new Error(`Tour ${target.id} update was not confirmed.`);
+    }
+  } else if (target.kind === 'hotel') {
+    await updateHotelImage(target.id, imageUrl);
+  } else if (target.kind === 'mock_place') {
+    await updateMockPlaceImages(target, imageUrl);
+  } else if (target.kind === 'mock_tour') {
+    await updateMockTourImage(target, imageUrl);
+  }
+  finalUrls.set(`${target.kind}:${target.id}`, imageUrl);
+  console.log(`SAVED ${target.kind}:${target.id} ${imageUrl}`);
+}
+
+async function updateMockTourImage(target, imageUrl) {
+  let source = await readFile(mockSourcePath, 'utf8');
+  const currentTours = parseConstructors(source, 'ItineraryModel');
+  const matching = currentTours.filter((tour) =>
+    normalize(tour.name) === normalize(target.name),
+  );
+  for (const tour of matching.sort((a, b) => b.start - a.start)) {
+    const image = parseImageUrl(tour.text);
+    if (!image) continue;
+    const start = tour.start + image.start;
+    const end = tour.start + image.end;
+    source = source.slice(0, start) + JSON.stringify(imageUrl) +
+      source.slice(end);
+  }
+  if (matching.length) await writeFile(mockSourcePath, source, 'utf8');
+}
+
+async function updateMockPlaceImages(target, imageUrl) {
+  let source = await readFile(mockSourcePath, 'utf8');
+  const currentModels = parseConstructors(source, 'PlaceModel');
+  const matching = currentModels.filter((model) =>
+    normalize(model.name) === normalize(target.name),
+  );
+  for (const model of matching.sort((a, b) => b.start - a.start)) {
+    const image = parseImageUrl(model.text);
+    const edits = [];
+    if (image) {
+      edits.push({
+        start: model.start + image.start,
+        end: model.start + image.end,
+        value: JSON.stringify(imageUrl),
+      });
+    }
+    const imageUrls = /\bimageUrls:\s*\[[\s\S]*?\]/.exec(model.text);
+    if (imageUrls) {
+      const open = imageUrls[0].indexOf('[');
+      edits.push({
+        start: model.start + imageUrls.index + open,
+        end: model.start + imageUrls.index + imageUrls[0].length,
+        value: imageUrl ? `[${JSON.stringify(imageUrl)}]` : '[]',
+      });
+    }
+    for (const edit of edits.sort((a, b) => b.start - a.start)) {
+      source = source.slice(0, edit.start) + edit.value + source.slice(edit.end);
+    }
+  }
+  if (matching.length) await writeFile(mockSourcePath, source, 'utf8');
+}
+
+async function updateHotelImage(hotelId, imageUrl) {
+  const source = await readFile(mapSeedPath, 'utf8');
+  const entryPattern = new RegExp(
+    `('${hotelId}'\\s*:\\s*)(?:'[^']*'|"[^"]*")`,
+  );
+  if (!entryPattern.test(source)) {
+    throw new Error(`Hotel image entry not found for ${hotelId}.`);
+  }
+  await writeFile(
+    mapSeedPath,
+    source.replace(entryPattern, `$1${JSON.stringify(imageUrl)}`),
+    'utf8',
+  );
+}
+
+async function clearUnverifiedImage(target, expectedUrl, objectPath, existing) {
+  const storageImageIsInvalid = Boolean(
+    existing?.ok || existing?.status === 400 || existing?.status === 404,
+  );
+  if (target.kind === 'place' &&
+      (target.row.image_url !== expectedUrl || storageImageIsInvalid)) {
+    const update = await fetchWithRetry(
+      `${supabaseUrl}/rest/v1/places?id=eq.${encodeURIComponent(target.id)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          ...adminHeaders,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify({ image_url: '', image_urls: [] }),
+      },
+      `Clear unverifiable place image ${target.id}`,
+    );
+    const rows = await update.json();
+    if (rows.length !== 1 || rows[0].image_url !== '') {
+      throw new Error(`Place ${target.id} image clear was not confirmed.`);
+    }
+    target.row.image_url = '';
+    target.row.image_urls = [];
+  } else if (target.kind === 'tour' &&
+      (target.row.image_url !== expectedUrl || storageImageIsInvalid)) {
+    const update = await fetchWithRetry(
+      `${supabaseUrl}/rest/v1/tours?id=eq.${encodeURIComponent(target.id)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          ...adminHeaders,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify({ image_url: '' }),
+      },
+      `Clear unverifiable tour image ${target.id}`,
+    );
+    const rows = await update.json();
+    if (rows.length !== 1 || rows[0].image_url !== '') {
+      throw new Error(`Tour ${target.id} image clear was not confirmed.`);
+    }
+    target.row.image_url = '';
+  }
+
+  if (target.kind === 'place' || target.kind === 'mock_place') {
+    await updateMockPlaceImages(target, '');
+  } else if (target.kind === 'tour' || target.kind === 'mock_tour') {
+    await updateMockTourImage(target, '');
+  } else if (target.kind === 'hotel') {
+    await updateHotelImage(target.id, '');
+  }
+
+  if (existing?.ok) {
+    const removal = await fetchWithRetry(
+      `${supabaseUrl}/storage/v1/object/place-images`,
+      {
+        method: 'DELETE',
+        headers: {
+          ...adminHeaders,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prefixes: [objectPath] }),
+      },
+      `Remove unverifiable image ${objectPath}`,
+    );
+    if (!removal.ok) {
+      throw new Error(
+        `Could not remove unverifiable image ${objectPath}: HTTP ${removal.status}.`,
+      );
+    }
+  }
+}
+
 for (let index = 0; index < discoveryTargets.length; index++) {
   const target = discoveryTargets[index];
   const identity = `${target.kind}:${target.id}`;
+  const objectPath = target.kind === 'hotel'
+    ? `hotels/${target.id}.jpg`
+    : target.kind === 'tour'
+      ? `tours/${target.id}.jpg`
+      : `${target.id}.jpg`;
+  const expectedUrl = publicStorageUrl(objectPath);
+  const discoveryErrors = [];
+  let existing;
+  let reusedExisting = false;
+  try {
+    if (!dryRun) {
+      try {
+        existing = await fetch(expectedUrl, {
+          method: 'HEAD',
+          signal: AbortSignal.timeout(15000),
+        });
+      } catch (error) {
+        discoveryErrors.push(`Storage resume check: ${String(error)}`);
+      }
+      if (existing?.ok) {
+        const contentType = existing.headers.get('content-type') ?? '';
+        const contentLength = Number(existing.headers.get('content-length') ?? 0);
+        if (contentType === 'image/jpeg' && contentLength >= 5000) {
+          const image = await fetchWithRetry(
+            expectedUrl,
+            {},
+            `Read existing ${objectPath}`,
+          );
+          const bytes = Buffer.from(await image.arrayBuffer());
+          if (bytes.length >= 5000 && bytes.length <= 20 * 1024 * 1024 &&
+              bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+            const hash = imageSha256(bytes);
+            const prior = priorAttributions.get(identity);
+            const priorTitle = prior?.source_file_title ?? '';
+            const priorLicense = prior?.license ?? '';
+            const priorSourceMatches = Boolean(
+              priorTitle &&
+              priorTitle !== 'Previously uploaded verified image' &&
+              hasRedistributableLicense(priorLicense) &&
+              !(target.id === 'hotel-san-stefano' &&
+                /\bfour seasons\b/i.test(priorTitle)) &&
+              candidateIdentityMatches(target, priorTitle, priorTitle),
+            );
+            if (!usedImageHashes.has(hash) && priorSourceMatches) {
+              if (target.kind === 'place' &&
+                  (target.row.image_url !== expectedUrl ||
+                   JSON.stringify(target.row.image_urls ?? []) !==
+                     JSON.stringify([expectedUrl]))) {
+                const update = await fetchWithRetry(
+                  `${supabaseUrl}/rest/v1/places?id=eq.${encodeURIComponent(target.id)}`,
+                  {
+                    method: 'PATCH',
+                    headers: {
+                      ...adminHeaders,
+                      'Content-Type': 'application/json',
+                      Prefer: 'return=representation',
+                    },
+                    body: JSON.stringify({
+                      image_url: expectedUrl,
+                      image_urls: [expectedUrl],
+                    }),
+                  },
+                  `Resume place ${target.id}`,
+                );
+                const rows = await update.json();
+                if (rows.length !== 1 || rows[0].image_url !== expectedUrl) {
+                  throw new Error(`Place ${target.id} resume update was not confirmed.`);
+                }
+                target.row.image_url = expectedUrl;
+                target.row.image_urls = [expectedUrl];
+              } else if (target.kind === 'tour' &&
+                  target.row.image_url !== expectedUrl) {
+                const update = await fetchWithRetry(
+                  `${supabaseUrl}/rest/v1/tours?id=eq.${encodeURIComponent(target.id)}`,
+                  {
+                    method: 'PATCH',
+                    headers: {
+                      ...adminHeaders,
+                      'Content-Type': 'application/json',
+                      Prefer: 'return=representation',
+                    },
+                    body: JSON.stringify({ image_url: expectedUrl }),
+                  },
+                  `Resume tour ${target.id}`,
+                );
+                const rows = await update.json();
+                if (rows.length !== 1 || rows[0].image_url !== expectedUrl) {
+                  throw new Error(`Tour ${target.id} resume update was not confirmed.`);
+                }
+              }
+              if (target.kind === 'place' || target.kind === 'mock_place') {
+                await updateMockPlaceImages(target, expectedUrl);
+              } else if (target.kind === 'hotel' &&
+                  !(await readFile(mapSeedPath, 'utf8')).includes(expectedUrl)) {
+                await updateHotelImage(target.id, expectedUrl);
+              } else if (target.kind === 'tour' || target.kind === 'mock_tour') {
+                await updateMockTourImage(target, expectedUrl);
+              }
+              usedImageHashes.set(hash, identity);
+              resolved.set(identity, {
+                ...target,
+                sourceFileTitle: priorTitle,
+                sourceUrl: expectedUrl,
+                sourcePageUrl: prior?.source_page_url || expectedUrl,
+                imageBytes: bytes,
+                width: 0,
+                height: 0,
+                metadata: {
+                  objectName: target.name,
+                  description: 'Previously uploaded image in the project Storage bucket.',
+                  categories: '',
+                  artist: prior?.artist || '',
+                  license: prior?.license || '',
+                  licenseUrl: '',
+                  attribution: '',
+                },
+                storagePath: objectPath,
+              });
+              finalUrls.set(identity, expectedUrl);
+              usedSources.add(expectedUrl);
+              reusedExisting = true;
+              console.log(`RESUME ${index + 1}/${discoveryTargets.length} ${identity}`);
+              continue;
+            }
+            console.log(
+              `REPLACING EXISTING ${identity}; ` +
+              `${usedImageHashes.has(hash) ? 'duplicate binary' : 'source verification failed'}.`,
+            );
+          }
+        }
+      } else if (existing && existing.status !== 400 && existing.status !== 404) {
+        discoveryErrors.push(
+          `Storage resume check returned HTTP ${existing.status}.`,
+        );
+      }
+      if (!reusedExisting) {
+        await clearUnverifiedImage(target, expectedUrl, objectPath, existing);
+      }
+    }
   const terms = target.aliases?.length
     ? target.aliases
     : [`${target.name} Alexandria Egypt`, `${target.name} ${target.nameAr}`];
   let candidates = [];
-  const discoveryErrors = [];
+  const run3Title = run3FileTitles.get(String(target.id));
+  if (run3Title?.startsWith('File:')) {
+    try {
+      const candidate = await commonsFileCandidate(target, run3Title);
+      if (candidate) candidates.push(candidate);
+      else discoveryErrors.push(`Run 3 source did not pass exact-title verification: ${run3Title}`);
+    } catch (error) {
+      discoveryErrors.push(`Run 3 source lookup: ${String(error)}`);
+    }
+  }
   for (const term of terms.slice(0, 4)) {
     try {
       candidates.push(...await commonsCandidates(target, term));
@@ -688,7 +1716,7 @@ for (let index = 0; index < discoveryTargets.length; index++) {
   for (const candidate of candidates) {
     if (usedSources.has(candidate.sourceKey)) continue;
     try {
-      const candidateBytes = await downloadCandidate(candidate);
+      const candidateBytes = await downloadUniqueCandidate(candidate);
       selected = candidate;
       bytes = candidateBytes;
       break;
@@ -697,13 +1725,33 @@ for (let index = 0; index < discoveryTargets.length; index++) {
     }
   }
   if (!selected) {
-    for (const language of ['en', 'ar']) {
+    try {
+      const geo = await commonsGeoCandidates(target);
+      for (const candidate of geo) {
+        if (usedSources.has(candidate.sourceKey)) continue;
+        try {
+          const candidateBytes = await downloadUniqueCandidate(candidate);
+          selected = candidate;
+          bytes = candidateBytes;
+          break;
+        } catch {
+          continue;
+        }
+      }
+    } catch (error) {
+      discoveryErrors.push(`Commons nearby geotagged files: ${String(error)}`);
+    }
+  }
+  if (!selected) {
+    const sceneQueries =
+      EXPLICIT_COMMONS_SCENE_QUERIES.get(String(target.id)) ?? [];
+    for (const term of sceneQueries) {
       try {
-        const pages = await wikipediaCandidates(target, language);
-        for (const candidate of pages) {
+        const sceneCandidates = await commonsCandidates(target, term);
+        for (const candidate of sceneCandidates) {
           if (usedSources.has(candidate.sourceKey)) continue;
           try {
-            const candidateBytes = await downloadCandidate(candidate);
+            const candidateBytes = await downloadUniqueCandidate(candidate);
             selected = candidate;
             bytes = candidateBytes;
             break;
@@ -712,47 +1760,9 @@ for (let index = 0; index < discoveryTargets.length; index++) {
           }
         }
       } catch (error) {
-        discoveryErrors.push(`${language} Wikipedia: ${String(error)}`);
+        discoveryErrors.push(`Commons scene search (${term}): ${String(error)}`);
       }
       if (selected) break;
-    }
-  }
-  if (!selected) {
-    // Tier 1: official website og:image / twitter:image fallback.
-    try {
-      const og = await ogImageCandidates(target);
-      for (const candidate of og) {
-        if (usedSources.has(candidate.sourceKey)) continue;
-        try {
-          const candidateBytes = await downloadCandidate(candidate);
-          selected = candidate;
-          bytes = candidateBytes;
-          break;
-        } catch {
-          continue;
-        }
-      }
-    } catch (error) {
-      discoveryErrors.push(`og:image: ${String(error)}`);
-    }
-  }
-  if (!selected) {
-    // Tier 3: general web image search fallback.
-    try {
-      const web = await webImageCandidates(target);
-      for (const candidate of web) {
-        if (usedSources.has(candidate.sourceKey)) continue;
-        try {
-          const candidateBytes = await downloadCandidate(candidate);
-          selected = candidate;
-          bytes = candidateBytes;
-          break;
-        } catch {
-          continue;
-        }
-      }
-    } catch (error) {
-      discoveryErrors.push(`web: ${String(error)}`);
     }
   }
   if (!selected) {
@@ -768,7 +1778,12 @@ for (let index = 0; index < discoveryTargets.length; index++) {
     console.log(`UNVERIFIED ${index + 1}/${discoveryTargets.length} ${target.kind} ${target.id}: ${target.name}`);
     continue;
   }
-  usedSources.add(selected.sourceKey);
+  const hash = imageSha256(bytes);
+  if (usedImageHashes.has(hash)) {
+    throw new Error(
+      `Duplicate image binary already assigned to ${usedImageHashes.get(hash)}.`,
+    );
+  }
   const item = {
     ...target,
     sourceFileTitle: selected.sourceFileTitle,
@@ -779,12 +1794,30 @@ for (let index = 0; index < discoveryTargets.length; index++) {
     height: selected.height,
     metadata: selected.metadata,
     matchScore: selected.matchScore,
-    storagePath: `${target.id}.jpg`,
+    storagePath: target.kind === 'hotel'
+      ? `hotels/${target.id}.jpg`
+      : target.kind === 'tour' || target.kind === 'mock_tour'
+        ? `tours/${target.id}.jpg`
+        : `${target.id}.jpg`,
   };
+  if (!dryRun) await uploadAndSaveTarget(target, item);
+  usedImageHashes.set(hash, identity);
+  usedSources.add(selected.sourceKey);
   resolved.set(identity, item);
   console.log(
     `VERIFIED ${index + 1}/${discoveryTargets.length} ${target.kind} ${target.id}: ${item.sourceFileTitle}`,
   );
+  } catch (error) {
+    failures.push({
+      id: target.id,
+      name: target.name,
+      kind: target.kind,
+      error: String(error),
+    });
+    console.error(
+      `FAILED ${index + 1}/${discoveryTargets.length} ${identity}: ${String(error)}`,
+    );
+  }
 }
 
 function csv(value) {
@@ -816,20 +1849,6 @@ async function writeCsvReport(finalUrls = new Map()) {
       item?.metadata.artist ?? '',
     ].map(csv).join(','));
   }
-  for (const tour of tours) {
-    const [placeId] = tourLinks.get(String(tour.id)) ?? [];
-    const source = resolved.get(`place:${placeId}`);
-    lines.push([
-      'tour',
-      tour.id,
-      tour.title,
-      source?.sourceFileTitle ?? '',
-      source?.sourcePageUrl ?? '',
-      finalUrls.get(`tour:${tour.id}`) ?? '',
-      source?.metadata.license ?? '',
-      source?.metadata.artist ?? '',
-    ].map(csv).join(','));
-  }
   await mkdir(path.dirname(reportPath), { recursive: true });
   await writeFile(reportPath, lines.join('\n') + '\n', 'utf8');
 }
@@ -837,13 +1856,15 @@ async function writeCsvReport(finalUrls = new Map()) {
 if (failures.length) {
   await writeCsvReport();
   console.error(
-    `${failures.length} image targets failed strict authenticity verification; no storage or database changes were made.`,
+    `${failures.length} image targets failed strict authenticity verification. ` +
+    `The ${resolved.size} successful targets were saved incrementally.`,
   );
   for (const failure of failures) {
     console.error(`${failure.kind}:${failure.id} ${failure.name}: ${failure.error}`);
   }
   process.exitCode = 1;
-} else if (dryRun) {
+}
+if (dryRun) {
   await writeCsvReport();
   console.log(
     `Dry run passed: ${places.length} places, ${tours.length} tours, ` +
@@ -881,35 +1902,33 @@ if (failures.length) {
     apikey: serviceRoleKey,
     Authorization: `Bearer ${serviceRoleKey}`,
   };
-  const finalUrls = new Map();
-
   async function uploadObject(objectPath, item) {
     const url = `${supabaseUrl}/storage/v1/object/place-images/${objectPath
       .split('/')
       .map(encodeURIComponent)
       .join('/')}`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        ...adminHeaders,
-        'Content-Type': 'image/jpeg',
-        'x-upsert': 'true',
+    const response = await fetchWithRetry(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          ...adminHeaders,
+          'Content-Type': 'image/jpeg',
+          'x-upsert': 'true',
+        },
+        body: item.imageBytes,
       },
-      body: item.imageBytes,
-      signal: AbortSignal.timeout(60000),
-    });
-    if (!response.ok) {
-      throw new Error(`Storage upload failed for ${objectPath}: ${response.status} ${await response.text()}`);
-    }
-    return `${supabaseUrl}/storage/v1/object/public/place-images/${objectPath
-      .split('/')
-      .map(encodeURIComponent)
-      .join('/')}`;
+      `Upload ${objectPath}`,
+    );
+    await response.arrayBuffer();
+    return publicStorageUrl(objectPath);
   }
 
   for (const target of discoveryTargets) {
     const identity = `${target.kind}:${target.id}`;
     const item = resolved.get(identity);
+    if (!item) continue; // skip UNVERIFIED targets so we can still upload the rest
+    if (finalUrls.has(identity)) continue;
     const objectPath = target.kind === 'hotel'
       ? `hotels/${item.storagePath}`
       : item.storagePath;
@@ -917,6 +1936,11 @@ if (failures.length) {
   }
   for (const place of places) {
     const imageUrl = finalUrls.get(`place:${place.id}`);
+    if (!imageUrl ||
+        (place.image_url === imageUrl &&
+         JSON.stringify(place.image_urls ?? []) === JSON.stringify([imageUrl]))) {
+      continue;
+    }
     const response = await fetch(
       `${supabaseUrl}/rest/v1/places?id=eq.${encodeURIComponent(place.id)}`,
       {
@@ -935,142 +1959,113 @@ if (failures.length) {
     }
   }
   for (const tour of tours) {
-    const [placeId] = tourLinks.get(String(tour.id)) ?? [];
-    const source = resolved.get(`place:${placeId}`);
-    if (!source) {
-      throw new Error(`Tour ${tour.id} has no verified linked destination image.`);
-    }
-    const target = {
-      ...source,
-      imageBytes: source.imageBytes,
-      storagePath: `tours/${tour.id}.jpg`,
-    };
-    const imageUrl = await uploadObject(target.storagePath, target);
-    finalUrls.set(`tour:${tour.id}`, imageUrl);
-    const response = await fetch(
-      `${supabaseUrl}/rest/v1/tours?id=eq.${encodeURIComponent(tour.id)}`,
-      {
-        method: 'PATCH',
-        headers: {
-          ...adminHeaders,
-          'Content-Type': 'application/json',
-          Prefer: 'return=minimal',
-        },
-        body: JSON.stringify({ image_url: imageUrl }),
-        signal: AbortSignal.timeout(30000),
-      },
-    );
-    if (!response.ok) {
-      throw new Error(`Could not update tour ${tour.id}: ${response.status} ${await response.text()}`);
-    }
-  }
-
-  const mockUrls = new Map();
-  for (const model of mockModels) {
-    const dbMatch = liveNames.get(normalize(model.name));
-    const identity = dbMatch
-      ? `place:${dbMatch.id}`
-      : `mock_place:${model.id}`;
-    const url = finalUrls.get(identity);
-    if (!url) throw new Error(`No verified URL for mock place ${model.id} (${model.name}).`);
-    mockUrls.set(model.id, url);
-  }
-
-  function imageEdits(models, urls, kind) {
-    const changes = [];
-    for (const model of models) {
-      let url = urls.get(model.id);
-      if (kind === 'tour') {
-        const placeModels = parseConstructors(model.text, 'PlaceModel');
-        const linked = placeModels.map((place) => urls.get(place.id)).find(Boolean);
-        url = linked;
-      }
-      if (!url) throw new Error(`Missing ${kind} image for ${model.id} (${model.name}).`);
-      const image = parseImageUrl(model.text);
-      if (!image) throw new Error(`No imageUrl field in ${kind} ${model.id}.`);
-      changes.push({
-        start: model.start + image.start,
-        end: model.start + image.end,
-        value: JSON.stringify(url),
+    if (!finalUrls.has(`tour:${tour.id}`) &&
+        !failures.some((failure) =>
+          failure.kind === 'tour' && failure.id === String(tour.id),
+        )) {
+      failures.push({
+        id: String(tour.id),
+        name: tour.title,
+        kind: 'tour',
+        error: 'No distinct, verified tour image was uploaded.',
       });
     }
-    return changes;
   }
 
-  const localTours = parseConstructors(mockSource, 'ItineraryModel');
-  const tourUrls = new Map();
+  let updatedMockSource = await readFile(mockSourcePath, 'utf8');
+  const localTours = parseConstructors(updatedMockSource, 'ItineraryModel');
+  const tourImageEdits = [];
   for (const tour of localTours) {
-    const placeModels = parseConstructors(tour.text, 'PlaceModel');
-    const localUrl = placeModels
-      .map((place) => mockUrls.get(place.id))
-      .find(Boolean);
-    if (!localUrl) {
-      throw new Error(`Local tour ${tour.id} has no linked place with a verified image.`);
-    }
-    tourUrls.set(tour.id, localUrl);
+    const databaseTour = tours.find((row) =>
+      String(row.id) === tour.id ||
+      normalize(row.title) === normalize(tour.name),
+    );
+    const imageUrl = databaseTour
+      ? finalUrls.get(`tour:${databaseTour.id}`)
+      : finalUrls.get(`mock_tour:${tour.id}`);
+    if (!imageUrl) continue;
+    const image = parseImageUrl(tour.text);
+    if (!image) continue;
+    tourImageEdits.push({
+      start: tour.start + image.start,
+      end: tour.start + image.end,
+      value: JSON.stringify(imageUrl),
+    });
   }
-  const allEdits = [
-    ...imageEdits(mockModels, mockUrls, 'mock place'),
-    ...imageEdits(localTours, tourUrls, 'tour'),
-  ];
-  let updatedMockSource = mockSource;
-  for (const change of allEdits.sort((a, b) => b.start - a.start)) {
-    updatedMockSource = updatedMockSource.slice(0, change.start) +
-      change.value +
-      updatedMockSource.slice(change.end);
+  for (const edit of tourImageEdits.sort((a, b) => b.start - a.start)) {
+    updatedMockSource = updatedMockSource.slice(0, edit.start) +
+      edit.value +
+      updatedMockSource.slice(edit.end);
+  }
+  if (tourImageEdits.length) {
+    await writeFile(mockSourcePath, updatedMockSource, 'utf8');
   }
 
-  let updatedMapSeed = mapSeedSource;
-  for (const hotel of hotels) {
-    const url = finalUrls.get(`hotel:${hotel.id}`);
-    const entryPattern = new RegExp(
-      `('${hotel.id}'\\s*:\\s*)'[^']*'`,
-    );
-    if (!entryPattern.test(updatedMapSeed)) {
-      throw new Error(`Hotel image entry not found for ${hotel.id}.`);
-    }
-    updatedMapSeed = updatedMapSeed.replace(
-      entryPattern,
-      `$1${JSON.stringify(url)}`,
-    );
-  }
-  await Promise.all([
-    writeFile(mockSourcePath, updatedMockSource, 'utf8'),
-    writeFile(mapSeedPath, updatedMapSeed, 'utf8'),
+  const [placesResponse, toursResponse] = await Promise.all([
+    fetch(
+      `${supabaseUrl}/rest/v1/places?select=id,name_en,image_url,image_urls&limit=1000`,
+      { headers: adminHeaders, signal: AbortSignal.timeout(30000) },
+    ),
+    fetch(
+      `${supabaseUrl}/rest/v1/tours?select=id,title,image_url&limit=1000`,
+      { headers: adminHeaders, signal: AbortSignal.timeout(30000) },
+    ),
   ]);
-
-  const checkResponse = await fetch(
-    `${supabaseUrl}/rest/v1/places?select=id,name_en,image_url,image_urls&limit=1000`,
-    { headers: adminHeaders, signal: AbortSignal.timeout(30000) },
-  );
-  if (!checkResponse.ok) {
-    throw new Error(`Could not verify final place rows: ${checkResponse.status}`);
+  if (!placesResponse.ok || !toursResponse.ok) {
+    throw new Error(
+      `Could not verify final rows: places=${placesResponse.status}, tours=${toursResponse.status}.`,
+    );
   }
-  const finalPlaces = await checkResponse.json();
+  const [finalPlaces, finalTours] = await Promise.all([
+    placesResponse.json(),
+    toursResponse.json(),
+  ]);
+  const storagePrefix =
+    `${supabaseUrl}/storage/v1/object/public/place-images/`;
+  const rowsMissingStorageImages = [...finalPlaces, ...finalTours]
+    .filter((row) =>
+      typeof row.image_url !== 'string' ||
+      !row.image_url.startsWith(storagePrefix),
+    );
   const duplicateUrls = new Map();
-  for (const place of finalPlaces) {
-    const ids = duplicateUrls.get(place.image_url) ?? [];
-    ids.push(String(place.id));
-    duplicateUrls.set(place.image_url, ids);
+  for (const row of [...finalPlaces, ...finalTours]) {
+    const ids = duplicateUrls.get(row.image_url) ?? [];
+    ids.push(String(row.id));
+    duplicateUrls.set(row.image_url, ids);
   }
   const duplicates = [...duplicateUrls]
     .filter(([, ids]) => ids.length > 1)
     .map(([url, ids]) => ({ url, ids }));
-  if (finalPlaces.length !== 61 || duplicates.length > 0) {
-    throw new Error(
-      `Uniqueness hard gate failed: rows=${finalPlaces.length}; duplicate URLs=${duplicates.length}.`,
+  const assignedUrls = [...finalUrls.values()];
+  const duplicateAssignedUrls =
+    assignedUrls.length !== new Set(assignedUrls).size;
+  const expectedTargets = discoveryTargets.length;
+  const gateFailed =
+    finalPlaces.length !== 61 ||
+    finalTours.length !== 12 ||
+    rowsMissingStorageImages.length > 0 ||
+    duplicates.length > 0 ||
+    duplicateAssignedUrls ||
+    usedImageHashes.size !== expectedTargets ||
+    resolved.size !== expectedTargets ||
+    failures.length > 0;
+  if (gateFailed) {
+    console.error(
+      `Image sync gates failed: places=${finalPlaces.length}/61, ` +
+      `tours=${finalTours.length}/12, missingStorage=${rowsMissingStorageImages.length}, ` +
+      `duplicateUrls=${duplicates.length}, ` +
+      `uniqueHashes=${usedImageHashes.size}/${expectedTargets}, ` +
+      `resolved=${resolved.size}/${expectedTargets}, failures=${failures.length}.`,
     );
+    process.exitCode = 1;
   }
   await writeCsvReport(finalUrls);
-  console.log('id | name_en | source_file_title | final_image_url');
-  for (const place of finalPlaces) {
-    const item = resolved.get(`place:${place.id}`);
+  if (!gateFailed) {
     console.log(
-      `${place.id} | ${place.name_en} | ${item.sourceFileTitle} | ${place.image_url}`,
+      `PASS: ${finalPlaces.length} places and ${finalTours.length} tours use ` +
+      `${usedImageHashes.size} distinct image binaries; ${hotelTargets.length} ` +
+      `hotel seeds and ${mockTourTargets.length} local tours are included. ` +
+      `Attribution report: ${path.relative(root, reportPath)}`,
     );
   }
-  console.log(
-    `PASS: ${finalPlaces.length} places have distinct authentic image URLs. ` +
-    `Attribution report: ${path.relative(root, reportPath)}`,
-  );
 }
