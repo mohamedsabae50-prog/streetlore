@@ -7,9 +7,10 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/best_time_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_stars.dart';
-import '../../core/widgets/shimmer_image.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
+import '../../logic/place_photos_provider.dart';
+import 'place_image_carousel.dart';
 
 class PlaceCard extends StatefulWidget {
   final PlaceModel place;
@@ -59,52 +60,32 @@ class _PlaceCardState extends State<PlaceCard> {
   }
 
   Widget _buildImage() {
-    return Hero(
-      tag: 'place-image-${widget.place.id}',
-      flightShuttleBuilder: _imageFlight,
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          bottomLeft: Radius.circular(20),
-        ),
-        child: SizedBox(
+    return Consumer<PlacePhotosProvider>(
+      builder: (context, photos, _) {
+        final images = <String>{
+          ...widget.place.officialImages,
+          ...photos
+              .photosFor(widget.place.id)
+              .map((photo) => photo.imageUrl.trim())
+              .where((url) => url.isNotEmpty),
+        }.toList(growable: false);
+        return SizedBox(
           width: 115,
           height: 130,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              ShimmerImage(
-                imageUrl: widget.place.imageUrl,
-                fit: BoxFit.cover,
-                fallbackIcon: Icons.broken_image_rounded,
-                fallbackColor: AppColors.textHint,
-                fallbackIconSize: 32,
-              ),
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [Colors.transparent, Color(0x220F172A)],
-                  ),
-                ),
-              ),
-            ],
+          child: PlaceImageCarousel(
+            images: images,
+            placeId: widget.place.id,
+            fallbackCategory: widget.place.category,
+            height: 130,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              bottomLeft: Radius.circular(20),
+            ),
+            heroTag: 'place-image-${widget.place.id}',
           ),
-        ),
-      ),
+        );
+      },
     );
-  }
-
-  Widget _imageFlight(
-    BuildContext flightContext,
-    Animation<double> animation,
-    HeroFlightDirection flightDirection,
-    BuildContext fromHeroContext,
-    BuildContext toHeroContext,
-  ) {
-    final toHero = toHeroContext.widget as Hero;
-    return Material(color: Colors.transparent, child: toHero.child);
   }
 
   Widget _nameFlight(
@@ -156,9 +137,7 @@ class _PlaceCardState extends State<PlaceCard> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      widget.place
-                          .localizedCategory(localeCode)
-                          .toUpperCase(),
+                      widget.place.localizedCategory(localeCode).toUpperCase(),
                       style: TextStyle(
                         color: AppColors.primary,
                         fontSize: 9,

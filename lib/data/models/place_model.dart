@@ -125,10 +125,13 @@ class PlaceModel {
   /// or pre-migration places still render correctly).
   List<String> get officialImages {
     final list = <String>[];
-    for (final u in imageUrls) {
-      if (u.isNotEmpty) list.add(u);
+    final seen = <String>{};
+    for (final value in [imageUrl, ...imageUrls]) {
+      final url = value.trim();
+      if (url.isNotEmpty && seen.add(url)) {
+        list.add(url);
+      }
     }
-    if (list.isEmpty && imageUrl.isNotEmpty) list.add(imageUrl);
     return list;
   }
 
@@ -211,7 +214,8 @@ class PlaceModel {
         (k, v) => MapEntry(k.toString(), (v is num ? v.toInt() : 0)),
       );
     }
-    final urlsRaw = json['image_urls'] ?? json['imageUrls'] ?? json['image_url'];
+    final urlsRaw =
+        json['image_urls'] ?? json['imageUrls'] ?? json['image_url'];
     List<String> urls = const <String>[];
     if (urlsRaw is List) {
       urls = urlsRaw
@@ -226,11 +230,11 @@ class PlaceModel {
       id: _stringValue(json, ['id'], fallback: ''),
       nameEn: _stringValue(json, ['name_en', 'name', 'nameEn'], fallback: ''),
       nameAr: _stringValue(json, ['name_ar', 'nameAr']),
-      descriptionEn: _stringValue(
-        json,
-        ['description_en', 'description', 'descriptionEn'],
-        fallback: '',
-      ),
+      descriptionEn: _stringValue(json, [
+        'description_en',
+        'description',
+        'descriptionEn',
+      ], fallback: ''),
       descriptionAr: _stringValue(json, ['description_ar', 'descriptionAr']),
       imageUrl: _stringValue(json, ['imageUrl', 'image_url'], fallback: ''),
       imageUrls: urls,
@@ -241,29 +245,37 @@ class PlaceModel {
       lng: _doubleValue(json, ['lng'], fallback: 0.0),
       address: _stringValue(json, ['address'], fallback: 'Alexandria, Egypt'),
       addressAr: _stringValue(json, ['address_ar', 'addressAr']),
-      openHours: _stringValue(json, ['openHours', 'open_hours'], fallback: '9:00 AM - 6:00 PM'),
-      reviewCount: _intValue(json, ['reviewCount', 'review_count'], fallback: 0),
+      openHours: _stringValue(json, [
+        'openHours',
+        'open_hours',
+      ], fallback: '9:00 AM - 6:00 PM'),
+      reviewCount: _intValue(json, [
+        'reviewCount',
+        'review_count',
+      ], fallback: 0),
       priceLevel: PriceLevel.fromName(
         _stringValue(json, ['priceLevel', 'price_level']),
       ),
       priceNote: _stringValue(json, ['priceNote', 'price_note'], fallback: ''),
       priceNoteAr: _stringValue(json, ['price_note_ar', 'priceNoteAr']),
-      isHiddenGem: _boolValue(json, ['isHiddenGem', 'is_hidden_gem'], fallback: false),
+      isHiddenGem: _boolValue(json, [
+        'isHiddenGem',
+        'is_hidden_gem',
+      ], fallback: false),
       priceLocalEgp: _intValue(json, ['priceLocalEgp', 'price_local_egp']),
-      priceForeignerEgp: _intValue(
-        json,
-        ['priceForeignerEgp', 'price_foreigner_egp'],
-      ),
+      priceForeignerEgp: _intValue(json, [
+        'priceForeignerEgp',
+        'price_foreigner_egp',
+      ]),
       displayOrder: _intValue(json, ['display_order'], fallback: 999),
       bestTimeOverride: bestTimeOverride,
       bestTimeNote: _stringValue(json, ['best_time_note']),
       bestTimeToVisit: _stringValue(json, ['best_time_to_visit']),
       isIndoor: _boolValue(json, ['is_indoor'], fallback: false),
-      enableChat: _boolValue(
-        json,
-        ['enable_chat', 'is_chat_enabled'],
-        fallback: true,
-      ),
+      enableChat: _boolValue(json, [
+        'enable_chat',
+        'is_chat_enabled',
+      ], fallback: true),
       enableGallery: _boolValue(json, ['enable_gallery'], fallback: true),
     );
   }

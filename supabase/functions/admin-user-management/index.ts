@@ -4,7 +4,14 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const ADMIN_EMAIL = "mohamedsabae50@gmail.com";
+const ADMIN_EMAILS = new Set([
+  "mohamedsabae50@gmail.com",
+  "hackty65@gmail.com",
+]);
+
+function isProtectedAdmin(email: string | undefined): boolean {
+  return ADMIN_EMAILS.has((email ?? "").toLowerCase().trim());
+}
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error(
@@ -55,7 +62,7 @@ function displayName(user: {
 async function requireAdmin(token: string) {
   const { data, error } = await admin.auth.getUser(token);
   if (error || !data.user) return null;
-  if ((data.user.email ?? "").toLowerCase().trim() === ADMIN_EMAIL) {
+  if (isProtectedAdmin(data.user.email)) {
     return data.user;
   }
 
@@ -87,7 +94,7 @@ async function listUsers(query: string, page: number, perPage: number) {
     });
     if (error) throw error;
     const users = data.users
-      .filter((user) => (user.email ?? "").toLowerCase() !== ADMIN_EMAIL)
+      .filter((user) => !isProtectedAdmin(user.email))
       .map((user) => ({
         id: user.id,
         email: user.email ?? "",
@@ -111,7 +118,7 @@ async function listUsers(query: string, page: number, perPage: number) {
     });
     if (error) throw error;
     for (const user of data.users) {
-      if ((user.email ?? "").toLowerCase() === ADMIN_EMAIL) continue;
+      if (isProtectedAdmin(user.email)) continue;
       const name = displayName(user);
       const email = user.email ?? "";
       if (
@@ -406,7 +413,7 @@ serve(async (req: Request): Promise<Response> => {
     if (targetError || !target.user) {
       return json({ error: "user_not_found" }, 404);
     }
-    if ((target.user.email ?? "").toLowerCase().trim() === ADMIN_EMAIL) {
+    if (isProtectedAdmin(target.user.email)) {
       return json({ error: "cannot_change_admin_account" }, 400);
     }
 
@@ -459,7 +466,7 @@ serve(async (req: Request): Promise<Response> => {
     if (targetError || !target.user) {
       return json({ error: "user_not_found" }, 404);
     }
-    if ((target.user.email ?? "").toLowerCase().trim() === ADMIN_EMAIL) {
+    if (isProtectedAdmin(target.user.email)) {
       return json({ error: "cannot_delete_admin_account" }, 400);
     }
 

@@ -321,13 +321,24 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      PlaceImageCarousel(
-                        images: place.officialImages,
-                        placeId: place.id,
-                        fallbackCategory: place.category,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        heroTag: 'place-image-${place.id}',
+                      Consumer<PlacePhotosProvider>(
+                        builder: (context, photos, _) {
+                          final images = <String>{
+                            ...place.officialImages,
+                            ...photos
+                                .photosFor(place.id)
+                                .map((photo) => photo.imageUrl.trim())
+                                .where((url) => url.isNotEmpty),
+                          }.toList(growable: false);
+                          return PlaceImageCarousel(
+                            images: images,
+                            placeId: place.id,
+                            fallbackCategory: place.category,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            heroTag: 'place-image-${place.id}',
+                          );
+                        },
                       ),
                       Container(
                         decoration: const BoxDecoration(
@@ -884,7 +895,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                               ? Icons.cloud_done_rounded
                                               : Icons.cloud_download_outlined,
                                           label: downloading
-                                              ? context.tr('downloading_offline')
+                                              ? context.tr(
+                                                  'downloading_offline',
+                                                )
                                               : cached
                                               ? context.tr('downloaded')
                                               : context.tr('download_offline'),
@@ -897,66 +910,76 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                               ? context.quickActionSuccessBg
                                               : context.quickActionPurpleBg,
                                           isLoading: downloading,
-                                          onTap: downloading ? null : () async {
-                                            if (!context
-                                                .read<AuthProvider>()
-                                                .isPro) {
-                                              return;
-                                            }
-                                            HapticFeedback.lightImpact();
-                                            if (cached) {
-                                              await offline.removeCachedPlace(
-                                                place.id,
-                                              );
-                                              if (!context.mounted) return;
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    context.tr(
-                                                      'removed_offline',
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            } else {
-                                              final additionalImageUrls =
-                                                  context
-                                                      .read<
-                                                        PlacePhotosProvider
-                                                      >()
-                                                      .photosFor(place.id)
-                                                      .map(
-                                                        (photo) =>
-                                                            photo.imageUrl,
-                                                      )
-                                                      .toList(growable: false);
-                                              final result = await offline
-                                                  .downloadSinglePlace(
-                                                    place,
-                                                    additionalImageUrls:
-                                                        additionalImageUrls,
-                                                  );
-                                              if (!context.mounted) return;
-                                              final ok = result is DownloadOk;
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    ok
-                                                        ? context.tr(
-                                                            'downloaded',
-                                                          )
-                                                        : context.tr(
-                                                            'download_failed',
+                                          onTap: downloading
+                                              ? null
+                                              : () async {
+                                                  if (!context
+                                                      .read<AuthProvider>()
+                                                      .isPro) {
+                                                    return;
+                                                  }
+                                                  HapticFeedback.lightImpact();
+                                                  if (cached) {
+                                                    await offline
+                                                        .removeCachedPlace(
+                                                          place.id,
+                                                        );
+                                                    if (!context.mounted) {
+                                                      return;
+                                                    }
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          context.tr(
+                                                            'removed_offline',
                                                           ),
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                          },
+                                                        ),
+                                                      ),
+                                                    );
+                                                  } else {
+                                                    final additionalImageUrls =
+                                                        context
+                                                            .read<
+                                                              PlacePhotosProvider
+                                                            >()
+                                                            .photosFor(place.id)
+                                                            .map(
+                                                              (photo) => photo
+                                                                  .imageUrl,
+                                                            )
+                                                            .toList(
+                                                              growable: false,
+                                                            );
+                                                    final result = await offline
+                                                        .downloadSinglePlace(
+                                                          place,
+                                                          additionalImageUrls:
+                                                              additionalImageUrls,
+                                                        );
+                                                    if (!context.mounted) {
+                                                      return;
+                                                    }
+                                                    final ok =
+                                                        result is DownloadOk;
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          ok
+                                                              ? context.tr(
+                                                                  'downloaded',
+                                                                )
+                                                              : context.tr(
+                                                                  'download_failed',
+                                                                ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                },
                                         );
                                       },
                                     ),
