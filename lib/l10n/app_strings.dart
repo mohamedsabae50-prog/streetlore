@@ -511,6 +511,16 @@ class AppStrings {
     },
     'cancel': {'en': 'Cancel', 'ar': 'إلغاء'},
     'no_saved_tours': {'en': 'No Saved Tours', 'ar': 'لا توجد جولات محفوظة'},
+    'no_visited_places': {'en': 'No Visited Places', 'ar': 'لا توجد أماكن تمت زيارتها'},
+    'empty_visited_places_sub': {
+      'en': 'Places you check in at will appear here.',
+      'ar': 'ستظهر هنا الأماكن التي تسجل زيارتها.',
+    },
+    'no_visited_tours': {'en': 'No Visited Tours', 'ar': 'لا توجد جولات تمت زيارتها'},
+    'empty_visited_tours_sub': {
+      'en': 'Tours you complete will appear here.',
+      'ar': 'ستظهر هنا الجولات التي تكملها.',
+    },
     'browse_tours': {'en': 'Browse Tours', 'ar': 'تصفح الجولات'},
     'switch_tours': {
       'en': 'Switch to the Tours tab to discover tours!',
@@ -1120,23 +1130,42 @@ class AppStrings {
       'ar': 'شارات برو حصرية',
     },
     'pro_benefits_title': {'en': 'Included with Pro', 'ar': 'مزايا برو'},
-    'pro_weekly': {'en': 'Weekly Subscription', 'ar': 'اشتراك أسبوعي'},
+    'pro_weekly': {'en': 'Explorer Pass', 'ar': 'باقة المستكشف'},
     'pro_weekly_description': {
       'en': 'Pro access for one week',
       'ar': 'وصول برو لمدة أسبوع',
     },
-    'pro_monthly': {'en': 'Monthly Subscription', 'ar': 'اشتراك شهري'},
+    'pro_weekly_badge': {'en': 'WEEKLY PLAN', 'ar': 'باقة أسبوعية'},
+    'pro_weekly_price': {'en': '49 EGP / week', 'ar': '49 جنيهًا مصريًا / أسبوع'},
+    'pro_weekly_usd_price': {'en': r'$1.99 / week', 'ar': r'$1.99 / أسبوع'},
+    'pro_monthly': {'en': 'Monthly Pro Plan', 'ar': 'اشتراك برو شهري'},
     'pro_monthly_description': {
       'en': 'Perfect for short trips',
       'ar': 'مثالي للرحلات القصيرة',
     },
-    'pro_lifetime': {'en': 'Lifetime Access', 'ar': 'وصول مدى الحياة'},
-    'pro_lifetime_description': {
-      'en': 'Pay once, explore forever',
-      'ar': 'ادفع مرة واحدة واستكشف إلى الأبد',
+    'pro_monthly_badge': {'en': 'MOST POPULAR', 'ar': 'الأكثر شيوعًا'},
+    'pro_monthly_price': {'en': '99 EGP / month', 'ar': '99 جنيهًا مصريًا / شهر'},
+    'pro_monthly_usd_price': {'en': r'$3.99 / month', 'ar': r'$3.99 / شهر'},
+    'pro_annual': {'en': 'Annual Pro Plan', 'ar': 'اشتراك برو سنوي'},
+    'pro_annual_description': {
+      'en': 'One year of complete Pro access',
+      'ar': 'عام كامل من مزايا برو',
     },
-    'pro_best_value': {'en': 'BEST VALUE', 'ar': 'أفضل قيمة'},
-    'pro_one_time': {'en': 'ONE-TIME', 'ar': 'مرة واحدة'},
+    'pro_annual_badge': {
+      'en': 'BEST VALUE · SAVE 40%',
+      'ar': 'أفضل قيمة · وفّر ٤٠٪',
+    },
+    'pro_annual_price': {'en': '699 EGP / year', 'ar': '699 جنيهًا مصريًا / سنة'},
+    'pro_annual_usd_price': {'en': r'$24.99 / year', 'ar': r'$24.99 / سنة'},
+    'pro_annual_monthly_equivalent': {
+      'en': 'Equivalent to ~58 EGP / month',
+      'ar': 'ما يعادل نحو 58 جنيهًا مصريًا / شهر',
+    },
+    'pro_includes_free': {
+      'en': 'Everything in Free, plus:',
+      'ar': 'كل مزايا الخطة المجانية، بالإضافة إلى:',
+    },
+    'pro_subscribe': {'en': 'Choose this plan', 'ar': 'اختر هذه الخطة'},
     'pro_store_note': {
       'en': 'Secure purchase through the App Store or Google Play.',
       'ar': 'شراء آمن عبر App Store أو Google Play.',

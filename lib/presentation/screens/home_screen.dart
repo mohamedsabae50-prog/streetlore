@@ -26,6 +26,7 @@ import 'achievements_screen.dart';
 import 'walking_routes_screen.dart';
 import 'general_ai_tour_guide_screen.dart';
 import 'paywall_screen.dart';
+import 'saved_tours_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -885,6 +886,17 @@ class _QuickAccessGrid extends StatelessWidget {
                 style: AppTextStyles.sectionTitle.copyWith(
                   color: context.textPri,
                 ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SavedToursScreen(),
+                  ),
+                ),
+                icon: const Icon(Icons.bookmarks_outlined, size: 18),
+                label: Text(context.tr('saved_title')),
               ),
             ],
           ),

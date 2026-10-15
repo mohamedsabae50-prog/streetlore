@@ -347,10 +347,6 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       ),
                 ],
               ),
-              const SimpleAttributionWidget(
-                source: Text('OpenStreetMap contributors'),
-                alignment: Alignment.bottomRight,
-              ),
             ],
           ),
           SafeArea(

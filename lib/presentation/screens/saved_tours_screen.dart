@@ -6,12 +6,12 @@ import '../../core/theme/app_text_styles.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/tour_provider.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/trip_provider.dart';
 import '../../l10n/app_strings.dart';
 import '../widgets/place_card.dart';
 import '../widgets/tour_card.dart';
 import 'place_details_screen.dart';
 import 'tour_details_screen.dart';
-import 'paywall_screen.dart';
 
 class SavedToursScreen extends StatefulWidget {
   const SavedToursScreen({super.key});
@@ -23,6 +23,7 @@ class SavedToursScreen extends StatefulWidget {
 class _SavedToursScreenState extends State<SavedToursScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
+  bool _showVisited = false;
 
   @override
   void initState() {
@@ -38,7 +39,6 @@ class _SavedToursScreenState extends State<SavedToursScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isPro = context.watch<AuthProvider>().isPro;
     return Scaffold(
       backgroundColor: context.bgColor,
       body: SafeArea(
@@ -58,7 +58,7 @@ class _SavedToursScreenState extends State<SavedToursScreen>
                         style: TextStyle(fontSize: 12, color: context.textSec),
                       ),
                       Text(
-                        context.tr('saved_title'),
+                        context.tr(_showVisited ? 'visited' : 'saved_title'),
                         style: AppTextStyles.screenTitle.copyWith(
                           color: context.textPri,
                         ),
@@ -66,6 +66,15 @@ class _SavedToursScreenState extends State<SavedToursScreen>
                     ],
                   ),
                 ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+              child: _SavedVisitedToggle(
+                showVisited: _showVisited,
+                onChanged: (showVisited) {
+                  setState(() => _showVisited = showVisited);
+                },
               ),
             ),
             Padding(
@@ -81,21 +90,7 @@ class _SavedToursScreenState extends State<SavedToursScreen>
                 ),
                 child: TabBar(
                   controller: _tabCtrl,
-                  physics: isPro
-                      ? const BouncingScrollPhysics()
-                      : const NeverScrollableScrollPhysics(),
-                  onTap: (index) {
-                    if (index != 1 || context.read<AuthProvider>().isPro) {
-                      return;
-                    }
-                    _tabCtrl.animateTo(0);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => const PaywallScreen(),
-                      ),
-                    );
-                  },
+                  physics: const BouncingScrollPhysics(),
                   indicator: BoxDecoration(
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(22),
@@ -123,12 +118,14 @@ class _SavedToursScreenState extends State<SavedToursScreen>
             Expanded(
               child: TabBarView(
                 controller: _tabCtrl,
-                physics: isPro
-                    ? const BouncingScrollPhysics()
-                    : const NeverScrollableScrollPhysics(),
+                physics: const BouncingScrollPhysics(),
                 children: [
-                  const _SavedPlacesTab(),
-                  isPro ? const _SavedToursTab() : const _SavedToursLockedTab(),
+                  _showVisited
+                      ? const _VisitedPlacesTab()
+                      : const _SavedPlacesTab(),
+                  _showVisited
+                      ? const _VisitedToursTab()
+                      : const _SavedToursTab(),
                 ],
               ),
             ),
@@ -139,42 +136,68 @@ class _SavedToursScreenState extends State<SavedToursScreen>
   }
 }
 
-class _SavedToursLockedTab extends StatelessWidget {
-  const _SavedToursLockedTab();
+class _SavedVisitedToggle extends StatelessWidget {
+  final bool showVisited;
+  final ValueChanged<bool> onChanged;
+
+  const _SavedVisitedToggle({
+    required this.showVisited,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.lock_rounded,
-              size: 48,
-              color: AppColors.ratingGold,
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: context.textSec.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        children: [
+          _toggleOption(
+            context,
+            label: context.tr('saved_title'),
+            selected: !showVisited,
+            onTap: () => onChanged(false),
+          ),
+          _toggleOption(
+            context,
+            label: context.tr('visited'),
+            selected: showVisited,
+            onTap: () => onChanged(true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _toggleOption(
+    BuildContext context, {
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: selected ? AppColors.primaryGradient : null,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : context.textSec,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 14),
-            Text(
-              context.tr('tour_pro_locked'),
-              textAlign: TextAlign.center,
-              style: TextStyle(color: context.textSec, fontSize: 14),
-            ),
-            const SizedBox(height: 18),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const PaywallScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.workspace_premium_rounded),
-              label: Text(context.tr('pro_title')),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -372,6 +395,117 @@ class _SavedPlacesTab extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _VisitedPlacesTab extends StatelessWidget {
+  const _VisitedPlacesTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer2<TripProvider, PlaceProvider>(
+      builder: (context, tripProvider, placeProvider, _) {
+        final isPro = context.watch<AuthProvider>().isPro;
+        final places = placeProvider.places
+            .where(
+              (place) =>
+                  tripProvider.isVisited(place.id) &&
+                  (isPro || !place.isHiddenGem),
+            )
+            .toList();
+
+        if (places.isEmpty) {
+          return _EmptyState(
+            icon: Icons.place_outlined,
+            title: context.tr('no_visited_places'),
+            subtitle: context.tr('empty_visited_places_sub'),
+            actionLabel: context.tr('discover_places'),
+            onAction: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(context.tr('switch_explore'))),
+              );
+            },
+          );
+        }
+
+        return ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(top: 8),
+          itemCount: places.length,
+          itemBuilder: (context, index) {
+            final place = places[index];
+            return FadeInUp(
+              delay: Duration(milliseconds: 80 * index + 200),
+              offsetY: 24,
+              child: PlaceCard(
+                place: place,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => PlaceDetailsScreen(place: place),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _VisitedToursTab extends StatelessWidget {
+  const _VisitedToursTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<TourProvider>(
+      builder: (context, tourProvider, _) {
+        final tours = tourProvider.tours
+            .where((tour) => tourProvider.isTourVisited(tour.id))
+            .toList();
+
+        if (tours.isEmpty) {
+          return _EmptyState(
+            icon: Icons.map_outlined,
+            title: context.tr('no_visited_tours'),
+            subtitle: context.tr('empty_visited_tours_sub'),
+            actionLabel: context.tr('browse_tours'),
+            onAction: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(context.tr('switch_tours'))),
+              );
+            },
+          );
+        }
+
+        return ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(top: 8),
+          itemCount: tours.length,
+          itemBuilder: (context, index) {
+            final tour = tours[index];
+            return FadeInUp(
+              delay: Duration(milliseconds: 80 * index + 200),
+              offsetY: 24,
+              child: TourCard(
+                tour: tour,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => TourDetailsScreen(tour: tour),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

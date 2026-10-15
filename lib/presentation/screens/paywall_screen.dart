@@ -18,7 +18,7 @@ class PaywallScreen extends StatefulWidget {
 class _PaywallScreenState extends State<PaywallScreen> {
   Package? _weeklyPackage;
   Package? _monthlyPackage;
-  Package? _lifetimePackage;
+  Package? _annualPackage;
   bool _loading = false;
   bool _loadingPackages = false;
   bool _restoring = false;
@@ -43,7 +43,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
       setState(() {
         _weeklyPackage = _packageOf(packages, PackageType.weekly);
         _monthlyPackage = _packageOf(packages, PackageType.monthly);
-        _lifetimePackage = _packageOf(packages, PackageType.lifetime);
+        _annualPackage = _packageOf(packages, PackageType.annual);
       });
     } catch (error, stackTrace) {
       debugPrint(
@@ -138,7 +138,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
       final package = switch (type) {
         PackageType.weekly => _weeklyPackage,
         PackageType.monthly => _monthlyPackage,
-        PackageType.lifetime => _lifetimePackage,
+        PackageType.annual => _annualPackage,
         _ => null,
       };
       if (package == null) {
@@ -259,78 +259,42 @@ class _PaywallScreenState extends State<PaywallScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: context.cardColor,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: context.borderColor),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.tr('pro_benefits_title'),
-                    style: TextStyle(
-                      color: context.textPri,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  for (var i = 0; i < benefits.length; i++) ...[
-                    if (i > 0) const SizedBox(height: 13),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          color: AppColors.success,
-                          size: 21,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            benefits[i],
-                            style: TextStyle(
-                              color: context.textPri,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 26),
             _planCard(
               type: PackageType.weekly,
               title: context.tr('pro_weekly'),
               description: context.tr('pro_weekly_description'),
-              package: _weeklyPackage,
+              price: context.tr('pro_weekly_price'),
+              usdPrice: context.tr('pro_weekly_usd_price'),
               icon: Icons.calendar_view_week_rounded,
               accent: AppColors.primary,
+              badge: context.tr('pro_weekly_badge'),
+              benefits: benefits,
             ),
             const SizedBox(height: 14),
             _planCard(
               type: PackageType.monthly,
               title: context.tr('pro_monthly'),
               description: context.tr('pro_monthly_description'),
-              package: _monthlyPackage,
+              price: context.tr('pro_monthly_price'),
+              usdPrice: context.tr('pro_monthly_usd_price'),
               icon: Icons.calendar_month_rounded,
               accent: AppColors.primary,
+              badge: context.tr('pro_monthly_badge'),
+              benefits: benefits,
             ),
             const SizedBox(height: 14),
             _planCard(
-              type: PackageType.lifetime,
-              title: context.tr('pro_lifetime'),
-              description: context.tr('pro_lifetime_description'),
-              package: _lifetimePackage,
-              icon: Icons.all_inclusive_rounded,
+              type: PackageType.annual,
+              title: context.tr('pro_annual'),
+              description: context.tr('pro_annual_description'),
+              price: context.tr('pro_annual_price'),
+              usdPrice: context.tr('pro_annual_usd_price'),
+              priceNote: context.tr('pro_annual_monthly_equivalent'),
+              icon: Icons.calendar_month_rounded,
               accent: const Color(0xFF8B5CF6),
-              badge: context.tr('pro_one_time'),
+              badge: context.tr('pro_annual_badge'),
+              benefits: benefits,
+              featured: true,
             ),
             const SizedBox(height: 12),
             Text(
@@ -362,16 +326,22 @@ class _PaywallScreenState extends State<PaywallScreen> {
     required PackageType type,
     required String title,
     required String description,
-    required Package? package,
+    required String price,
+    required String usdPrice,
     required IconData icon,
     required Color accent,
+    required List<String> benefits,
+    String? priceNote,
     String? badge,
     bool featured = false,
   }) {
     final isConfigured = RevenueCatService.instance.isConfigured;
     final isLoading = _loading || _loadingPackages || _restoring;
     final label = isConfigured
-        ? _packageLabel(title, package)
+        ? Text(
+            context.tr('pro_subscribe'),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          )
         : Text(
             context.tr('pro_coming_soon'),
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
@@ -427,42 +397,103 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        color: context.textSec,
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                    ),
                   ],
                 ),
               ),
-              if (badge != null) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    badge,
-                    style: TextStyle(
-                      color: accent,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 5),
+          Text(
+            description,
+            style: TextStyle(
+              color: context.textSec,
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+          if (badge != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                badge,
+                style: TextStyle(
+                  color: accent,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+          Text(
+            price,
+            style: TextStyle(
+              color: context.textPri,
+              fontSize: 25,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          Text(
+            usdPrice,
+            style: TextStyle(
+              color: context.textSec,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (priceNote != null) ...[
+            const SizedBox(height: 3),
+            Text(
+              priceNote,
+              style: TextStyle(
+                color: context.textSec,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+          Text(
+            context.tr('pro_includes_free'),
+            style: TextStyle(
+              color: context.textPri,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final benefit in benefits) ...[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColors.success,
+                    size: 17,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      benefit,
+                      style: TextStyle(
+                        color: context.textPri,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -492,15 +523,6 @@ class _PaywallScreenState extends State<PaywallScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _packageLabel(String label, Package? package) {
-    final price = package?.storeProduct.priceString;
-    return Text(
-      price == null ? label : '$label · $price',
-      textAlign: TextAlign.center,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
     );
   }
 }

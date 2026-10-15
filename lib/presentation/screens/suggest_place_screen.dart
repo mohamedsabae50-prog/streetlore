@@ -332,11 +332,6 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
                             ),
                           ],
                         ),
-                      RichAttributionWidget(
-                        attributions: [
-                          TextSourceAttribution('© OpenStreetMap contributors'),
-                        ],
-                      ),
                     ],
                   ),
                 ),

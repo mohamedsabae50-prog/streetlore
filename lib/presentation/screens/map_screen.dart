@@ -582,23 +582,6 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ),
                   ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    color: Colors.white.withValues(alpha: 0.7),
-                    child: const Text(
-                      '© OpenStreetMap contributors',
-                      style: TextStyle(fontSize: 11, color: Colors.black87),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
               ],
             ),
     );

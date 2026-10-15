@@ -12,7 +12,6 @@ import '../../logic/streak_provider.dart';
 import '../../logic/place_photos_provider.dart';
 import 'home_screen.dart';
 import 'tours_screen.dart';
-import 'saved_tours_screen.dart';
 import 'profile_screen.dart';
 import 'choose_username_screen.dart';
 import 'activity_feed_screen.dart';
@@ -35,7 +34,6 @@ class _MainNavigationState extends State<MainNavigation>
   final List<Widget> _screens = const [
     HomeScreen(),
     ToursScreen(),
-    SavedToursScreen(),
     ActivityFeedScreen(),
     ProfileScreen(),
   ];
@@ -50,11 +48,6 @@ class _MainNavigationState extends State<MainNavigation>
       icon: Icons.map_outlined,
       activeIcon: Icons.map_rounded,
       label: 'nav_tours',
-    ),
-    _NavItem(
-      icon: Icons.bookmark_outline_rounded,
-      activeIcon: Icons.bookmark_rounded,
-      label: 'nav_saved',
     ),
     _NavItem(
       icon: Icons.dynamic_feed_outlined,
