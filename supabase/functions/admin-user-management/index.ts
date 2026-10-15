@@ -4,8 +4,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const ADMIN_EMAIL = (Deno.env.get("ADMIN_EMAIL") ??
-  "mohamedsabae50@gmail.com").toLowerCase().trim();
+const ADMIN_EMAIL = "mohamedsabae50@gmail.com";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error(
@@ -56,8 +55,27 @@ function displayName(user: {
 async function requireAdmin(token: string) {
   const { data, error } = await admin.auth.getUser(token);
   if (error || !data.user) return null;
-  if ((data.user.email ?? "").toLowerCase().trim() !== ADMIN_EMAIL) return null;
-  return data.user;
+  if ((data.user.email ?? "").toLowerCase().trim() === ADMIN_EMAIL) {
+    return data.user;
+  }
+
+  const { data: adminRecord, error: adminError } = await admin
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+  if (adminError) throw adminError;
+  if (adminRecord) return data.user;
+
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select("is_admin")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+  if (profileError) throw profileError;
+  if (profile?.is_admin === true) return data.user;
+
+  return null;
 }
 
 async function listUsers(query: string, page: number, perPage: number) {
@@ -326,7 +344,13 @@ serve(async (req: Request): Promise<Response> => {
 
   const token = bearer(req);
   if (!token) return json({ error: "missing_bearer" }, 401);
-  const caller = await requireAdmin(token);
+  let caller: Awaited<ReturnType<typeof requireAdmin>>;
+  try {
+    caller = await requireAdmin(token);
+  } catch (error) {
+    console.error("admin-user-management: admin verification failed:", error);
+    return json({ error: "admin_verification_failed" }, 500);
+  }
   if (!caller) return json({ error: "forbidden" }, 403);
 
   let body: Record<string, unknown>;

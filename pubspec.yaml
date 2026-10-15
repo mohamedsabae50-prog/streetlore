@@ -1,7 +1,7 @@
 name: streetlore
 description: Discover the unseen stories of your city with Streetlore.
 publish_to: 'none'
-version: 2.1.9+209
+version: 2.1.10+210
 
 environment:
   sdk: ^3.12.0
