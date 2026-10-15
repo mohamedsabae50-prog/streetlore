@@ -167,6 +167,7 @@ class _PlaceImageCarouselState extends State<PlaceImageCarousel> {
     final networkImage = CachedNetworkImage(
       imageUrl: url,
       fit: widget.fit,
+      memCacheWidth: 1200,
       httpHeaders: streetloreImageHeaders,
       placeholder: (_, __) => Container(color: Colors.black12),
       errorWidget: (_, __, ___) =>
@@ -187,6 +188,7 @@ class _PlaceImageCarouselState extends State<PlaceImageCarousel> {
             return Image.file(
               file,
               fit: widget.fit,
+              cacheWidth: 1200,
               errorBuilder: (_, __, ___) => networkImage,
             );
           }

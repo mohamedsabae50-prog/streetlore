@@ -36,6 +36,7 @@ Future<void> main() async {
   await SentryFlutter.init((options) {
     // An empty DSN keeps the app runnable until a project DSN is configured.
     options.dsn = sentryDsn == 'YOUR_SENTRY_DSN_HERE' ? '' : sentryDsn;
+    options.enableTombstone = true;
   }, appRunner: _runApplication);
 }
 
@@ -221,9 +222,33 @@ class StreetloreApp extends StatefulWidget {
   State<StreetloreApp> createState() => _StreetloreAppState();
 }
 
-class _StreetloreAppState extends State<StreetloreApp> {
+class _StreetloreAppState extends State<StreetloreApp>
+    with WidgetsBindingObserver {
   final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   bool _offlineNoticeShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final imageCache = PaintingBinding.instance.imageCache;
+    imageCache.maximumSize = 80;
+    imageCache.maximumSizeBytes = 60 << 20;
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    final imageCache = PaintingBinding.instance.imageCache;
+    imageCache.clear();
+    imageCache.clearLiveImages();
+    super.didHaveMemoryPressure();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   void _updateOfflineNotice(bool shouldShow, String message) {
     if (!shouldShow) {

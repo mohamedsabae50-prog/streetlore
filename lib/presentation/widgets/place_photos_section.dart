@@ -280,6 +280,7 @@ class PlacePhotosSection extends StatelessWidget {
                 CachedNetworkImageProvider(
                   next,
                   headers: streetloreImageHeaders,
+                  maxWidth: 600,
                 ),
                 context,
               );

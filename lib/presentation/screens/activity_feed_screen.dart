@@ -290,6 +290,8 @@ class _ActivityCard extends StatelessWidget {
           url,
           width: 54,
           height: 54,
+          cacheWidth: 108,
+          cacheHeight: 108,
           fit: BoxFit.cover,
           headers: streetloreImageHeaders,
           errorBuilder: (_, _, _) =>

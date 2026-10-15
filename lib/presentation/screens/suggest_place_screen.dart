@@ -27,6 +27,16 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  static const _categories = [
+    'Historical',
+    'Culture',
+    'Nature',
+    'Food',
+    'Shopping',
+    'Churches',
+    'Mosques',
+  ];
+  String _selectedCategory = 'Culture';
   final _mapController = MapController();
   LatLng? _selectedLocation;
   Uint8List? _imageBytes;
@@ -149,6 +159,7 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
         'user_id': user.id,
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
+        'category': _selectedCategory,
         'lat': location.latitude,
         'lng': location.longitude,
         'image_url': imageUrl,
@@ -228,6 +239,30 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
                 validator: (value) => value == null || value.trim().isEmpty
                     ? 'Add a short description.'
                     : null,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedCategory,
+                decoration: _decoration(
+                  context,
+                  label: 'Category',
+                  icon: Icons.category_outlined,
+                ),
+                items: _categories
+                    .map(
+                      (category) => DropdownMenuItem(
+                        value: category,
+                        child: Text(category),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: _isSubmitting
+                    ? null
+                    : (category) {
+                        if (category != null) {
+                          setState(() => _selectedCategory = category);
+                        }
+                      },
               ),
               const SizedBox(height: 8),
               Row(
@@ -347,7 +382,11 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
                       : Stack(
                           fit: StackFit.expand,
                           children: [
-                            Image.memory(_imageBytes!, fit: BoxFit.cover),
+                            Image.memory(
+                              _imageBytes!,
+                              fit: BoxFit.cover,
+                              cacheWidth: 600,
+                            ),
                             Positioned(
                               right: 8,
                               top: 8,

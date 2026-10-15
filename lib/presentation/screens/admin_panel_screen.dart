@@ -12,6 +12,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/place_provider.dart';
+import 'hidden_gem_suggestions_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
@@ -66,6 +67,15 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
       appBar: AppBar(
         title: Text(context.tr('admin_title')),
         actions: [
+          IconButton(
+            tooltip: 'Hidden Gem Suggestions',
+            icon: const Icon(Icons.auto_awesome_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HiddenGemSuggestionsScreen(),
+              ),
+            ),
+          ),
           IconButton(
             icon: Icon(
               _showChatLogs ? Icons.place_outlined : Icons.forum_outlined,

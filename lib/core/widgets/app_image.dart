@@ -52,7 +52,7 @@ class AppImage extends StatelessWidget {
             width: width,
             height: height,
             gaplessPlayback: true,
-            cacheWidth: memCacheWidth,
+            cacheWidth: memCacheWidth ?? 600,
             cacheHeight: memCacheHeight,
             errorBuilder: (_, __, ___) => _fallback(),
           );
@@ -72,6 +72,8 @@ class AppImage extends StatelessWidget {
           fallbackIcon: fallbackIcon,
           fallbackColor: fallbackColor,
           fallbackIconSize: fallbackIconSize,
+          memCacheWidth: memCacheWidth ?? 600,
+          memCacheHeight: memCacheHeight,
         ),
       );
     }

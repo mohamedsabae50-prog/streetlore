@@ -12,6 +12,8 @@ class ShimmerImage extends StatelessWidget {
   final IconData fallbackIcon;
   final Color? fallbackColor;
   final double fallbackIconSize;
+  final int? memCacheWidth;
+  final int? memCacheHeight;
 
   const ShimmerImage({
     super.key,
@@ -21,6 +23,8 @@ class ShimmerImage extends StatelessWidget {
     this.fallbackIcon = Icons.image_outlined,
     this.fallbackColor,
     this.fallbackIconSize = 40,
+    this.memCacheWidth = 600,
+    this.memCacheHeight,
   });
 
   @override
@@ -32,6 +36,8 @@ class ShimmerImage extends StatelessWidget {
       fallbackIcon: fallbackIcon,
       fallbackColor: fallbackColor,
       fallbackIconSize: fallbackIconSize,
+      memCacheWidth: memCacheWidth,
+      memCacheHeight: memCacheHeight,
     );
   }
 }

@@ -109,7 +109,7 @@ class _RobustImageState extends State<RobustImage> {
             bytes,
             fit: widget.fit,
             gaplessPlayback: true,
-            cacheWidth: widget.memCacheWidth,
+            cacheWidth: widget.memCacheWidth ?? 600,
             cacheHeight: widget.memCacheHeight,
             errorBuilder: (_, __, ___) => Container(
               color: const Color(0xFF1C2433),

@@ -229,6 +229,8 @@ class _VisitedPlaceCard extends StatelessWidget {
               ? Image.network(
                   imageUrl,
                   fit: BoxFit.cover,
+                  cacheWidth: 128,
+                  cacheHeight: 128,
                   headers: streetloreImageHeaders,
                   errorBuilder: (_, _, _) => CategoryImageFallback(
                     category: place.category,
