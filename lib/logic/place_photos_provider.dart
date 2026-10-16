@@ -128,6 +128,17 @@ class PlacePhotosProvider extends ChangeNotifier {
     await prefs.setString(_kKey, jsonEncode(all));
   }
 
+  /// Object path of a community photo in the `place-images` bucket. It must
+  /// stay under `user-photos/<auth uid>/`: the storage policies only let a
+  /// user write and delete inside their own folder, and account deletion only
+  /// removes files under that prefix.
+  @visibleForTesting
+  static String storagePathFor({
+    required String userId,
+    required String placeId,
+    required String photoId,
+  }) => 'user-photos/$userId/$placeId/$photoId.jpg';
+
   Future<PlacePhoto> addPhoto({
     required String placeId,
     required String userName,
@@ -135,9 +146,20 @@ class PlacePhotosProvider extends ChangeNotifier {
     String? userId,
     String caption = '',
   }) async {
-    final effectiveUserId = (userId ?? _currentUserId).trim();
+    var effectiveUserId = (userId ?? _currentUserId).trim();
+    final localClient = SupabaseService.instance.clientOrNull;
+    final client = effectiveUserId.isNotEmpty ? localClient : null;
+    if (client != null) {
+      // Storage paths and row ownership are keyed on the authenticated
+      // Supabase user id (what `auth.uid()` evaluates to server-side), never
+      // on the local display/guest id the caller passes in.
+      final authUserId = client.auth.currentUser?.id;
+      if (authUserId == null || authUserId.isEmpty) {
+        throw StateError('Sign in to add photos.');
+      }
+      effectiveUserId = authUserId;
+    }
     final photoId = _uuid.v4();
-    final svc = SupabaseService.instance;
     final compressedBytes = await FlutterImageCompress.compressWithList(
       imageBytes,
       minWidth: 1200,
@@ -148,9 +170,12 @@ class PlacePhotosProvider extends ChangeNotifier {
     var imageUrl = 'data:image/jpeg;base64,${base64Encode(compressedBytes)}';
     String? storagePath;
 
-    if (effectiveUserId.isNotEmpty && svc.clientOrNull != null) {
-      final client = svc.clientOrNull!;
-      storagePath = 'user-photos/$placeId/$photoId.jpg';
+    if (client != null) {
+      storagePath = storagePathFor(
+        userId: effectiveUserId,
+        placeId: placeId,
+        photoId: photoId,
+      );
       await client.storage
           .from('place-images')
           .uploadBinary(
@@ -173,17 +198,13 @@ class PlacePhotosProvider extends ChangeNotifier {
       caption: caption,
       date: DateTime.now(),
     );
-    if (effectiveUserId.isNotEmpty && svc.clientOrNull != null) {
+    if (client != null) {
       try {
-        await svc.clientOrNull!
-            .from('place_photos')
-            .insert(photo.toSupabaseInsert());
+        await client.from('place_photos').insert(photo.toSupabaseInsert());
       } catch (e) {
         if (storagePath != null) {
           try {
-            await svc.clientOrNull!.storage.from('place-images').remove([
-              storagePath,
-            ]);
+            await client.storage.from('place-images').remove([storagePath]);
           } catch (cleanupError) {
             debugPrint(
               'PlacePhotosProvider.addPhoto: failed to clean up uploaded '
