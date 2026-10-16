@@ -1219,6 +1219,18 @@ class AppStrings {
       'en': 'Equivalent to ~58 EGP / month',
       'ar': 'ما يعادل نحو 58 جنيهًا مصريًا / شهر',
     },
+    'pro_billing_period': {
+      'en': 'Billed every {period}',
+      'ar': 'يتم التجديد كل {period}',
+    },
+    'pro_period_day': {'en': 'day', 'ar': 'يوم'},
+    'pro_period_days': {'en': '{count} days', 'ar': '{count} أيام'},
+    'pro_period_week': {'en': 'week', 'ar': 'أسبوع'},
+    'pro_period_weeks': {'en': '{count} weeks', 'ar': '{count} أسابيع'},
+    'pro_period_month': {'en': 'month', 'ar': 'شهر'},
+    'pro_period_months': {'en': '{count} months', 'ar': '{count} أشهر'},
+    'pro_period_year': {'en': 'year', 'ar': 'سنة'},
+    'pro_period_years': {'en': '{count} years', 'ar': '{count} سنوات'},
     'pro_includes_free': {
       'en': 'Everything in Free, plus:',
       'ar': 'كل مزايا الخطة المجانية، بالإضافة إلى:',

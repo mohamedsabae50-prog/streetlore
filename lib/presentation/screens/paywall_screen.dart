@@ -8,6 +8,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/revenuecat_service.dart';
 import '../../logic/auth_provider.dart';
 import '../../l10n/app_strings.dart';
+import '../widgets/paywall_store_price.dart';
 
 class PaywallScreen extends StatefulWidget {
   const PaywallScreen({super.key});
@@ -290,6 +291,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
               description: context.tr('pro_weekly_description'),
               price: context.tr('pro_weekly_price'),
               usdPrice: context.tr('pro_weekly_usd_price'),
+              package: _weeklyPackage,
               icon: Icons.calendar_view_week_rounded,
               accent: AppColors.primary,
               badge: context.tr('pro_weekly_badge'),
@@ -302,6 +304,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
               description: context.tr('pro_monthly_description'),
               price: context.tr('pro_monthly_price'),
               usdPrice: context.tr('pro_monthly_usd_price'),
+              package: _monthlyPackage,
               icon: Icons.calendar_month_rounded,
               accent: AppColors.primary,
               badge: context.tr('pro_monthly_badge'),
@@ -314,6 +317,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
               description: context.tr('pro_annual_description'),
               price: context.tr('pro_annual_price'),
               usdPrice: context.tr('pro_annual_usd_price'),
+              package: _annualPackage,
               priceNote: context.tr('pro_annual_monthly_equivalent'),
               icon: Icons.calendar_month_rounded,
               accent: const Color(0xFF8B5CF6),
@@ -376,6 +380,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     required String description,
     required String price,
     required String usdPrice,
+    required Package? package,
     required IconData icon,
     required Color accent,
     required List<String> benefits,
@@ -474,23 +479,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
             ),
           ],
           const SizedBox(height: 14),
-          Text(
-            price,
-            style: TextStyle(
-              color: context.textPri,
-              fontSize: 25,
-              fontWeight: FontWeight.w900,
-            ),
+          PaywallStorePrice(
+            product: package?.storeProduct,
+            fallbackPrice: price,
+            fallbackDetail: usdPrice,
+            packageType: type,
           ),
-          Text(
-            usdPrice,
-            style: TextStyle(
-              color: context.textSec,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (priceNote != null) ...[
+          if (priceNote != null && package == null) ...[
             const SizedBox(height: 3),
             Text(
               priceNote,

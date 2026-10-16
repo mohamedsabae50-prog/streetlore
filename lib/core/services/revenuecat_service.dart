@@ -13,6 +13,7 @@ class RevenueCatService {
     'ENABLE_REVENUECAT',
     defaultValue: false,
   );
+  static const _apiKey = String.fromEnvironment('REVENUECAT_API_KEY');
   static const _androidApiKey = String.fromEnvironment(
     'REVENUECAT_ANDROID_API_KEY',
   );
@@ -23,7 +24,10 @@ class RevenueCatService {
       _enabled &&
       !kIsWeb &&
       (Platform.isAndroid || Platform.isIOS) &&
-      (_androidApiKey.isNotEmpty || _iosApiKey.isNotEmpty);
+      (_androidKey.isNotEmpty || _iosApiKey.isNotEmpty);
+
+  String get _androidKey =>
+      _androidApiKey.isNotEmpty ? _androidApiKey : _apiKey;
 
   Future<bool> configure(String userId) async {
     if (!isConfigured) return false;
@@ -35,7 +39,7 @@ class RevenueCatService {
     }
 
     final apiKey = Platform.isAndroid
-        ? _androidApiKey
+        ? _androidKey
         : Platform.isIOS
         ? _iosApiKey
         : '';

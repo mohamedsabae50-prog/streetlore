@@ -164,12 +164,16 @@ jobs:
         run: |
           set -e
           flutter build apk --release \
-            --target-platform android-arm64
+            --target-platform android-arm64 \
+            --dart-define=ENABLE_REVENUECAT=true \
+            --dart-define=REVENUECAT_API_KEY=goog_rUOBKQKNQSCDxomWWuBnYLgAweH
           # v1.0.74: also produce the Android App Bundle that the Play
           # Store actually accepts (App Bundles are the mandatory upload
           # format for every new app since Aug 2021).
           flutter build appbundle \
-            --target-platform android-arm64
+            --target-platform android-arm64 \
+            --dart-define=ENABLE_REVENUECAT=true \
+            --dart-define=REVENUECAT_API_KEY=goog_rUOBKQKNQSCDxomWWuBnYLgAweH
 
       - name: Compute APK hashes
         id: hashes
