@@ -27,6 +27,7 @@ import '../../logic/offline_provider.dart';
 import '../../logic/place_photos_provider.dart';
 import '../../data/models/review_model.dart';
 import '../../l10n/app_strings.dart';
+import '../../logic/in_flight_guard.dart';
 import '../widgets/add_review_sheet.dart';
 import '../widgets/place_image_carousel.dart';
 import '../widgets/place_photos_section.dart';
@@ -52,6 +53,12 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
   final ConfettiController _confetti = ConfettiController();
 
   bool _isVisited = false;
+  // Blocks a second check-in tap while GPS verification / the save is running.
+  late final InFlightGuard _checkInGuard = InFlightGuard(
+    onChange: () {
+      if (mounted) setState(() {});
+    },
+  );
   final List<PlaceModel> _nearby = [];
 
   @override
@@ -583,7 +590,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     color: context.quickActionSuccess,
                                     backgroundColor:
                                         context.quickActionSuccessBg,
-                                    onTap: () async {
+                                    isLoading: _checkInGuard.isBusy,
+                                    onTap: () => _checkInGuard.run(() async {
                                       HapticFeedback.mediumImpact();
                                       final wasVisited = _isVisited;
                                       if (!wasVisited) {
@@ -687,7 +695,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                 currentStreak: newStreak,
                                               ),
                                         );
-                                        setState(() => _isVisited = true);
+                                        if (mounted) {
+                                          setState(() => _isVisited = true);
+                                        }
                                         try {
                                           await placeProvider.fetchRemoteCounts(
                                             userId,
@@ -854,7 +864,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                           );
                                         }
                                       }
-                                    },
+                                    }),
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -1203,7 +1213,7 @@ class _QuickAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = backgroundColor ?? color.withValues(alpha: 0.12);
     return GestureDetector(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap,
       child: Column(
         children: [
           Container(
