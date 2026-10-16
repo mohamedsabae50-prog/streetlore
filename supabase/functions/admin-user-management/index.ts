@@ -530,6 +530,7 @@ serve(async (req: Request): Promise<Response> => {
     if (
       plan !== "weekly" &&
       plan !== "monthly" &&
+      plan !== "annual" &&
       plan !== "lifetime" &&
       plan !== "free"
     ) {
@@ -541,6 +542,8 @@ serve(async (req: Request): Promise<Response> => {
       ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       : plan === "monthly"
       ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      : plan === "annual"
+      ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
       : null;
     const { error } = await admin.from("profiles").upsert({
       user_id: userId,

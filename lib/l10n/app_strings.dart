@@ -1205,6 +1205,7 @@ class AppStrings {
     'pro_member': {'en': 'Streetlore Pro Member', 'ar': 'عضو ستريت لور برو'},
     'pro_tier_weekly': {'en': 'Weekly', 'ar': 'أسبوعي'},
     'pro_tier_monthly': {'en': 'Monthly', 'ar': 'شهري'},
+    'pro_tier_annual': {'en': 'Annual', 'ar': 'سنوي'},
     'pro_tier_lifetime': {'en': 'Lifetime', 'ar': 'مدى الحياة'},
     'pro_member_subtitle': {
       'en': 'Your membership is active',

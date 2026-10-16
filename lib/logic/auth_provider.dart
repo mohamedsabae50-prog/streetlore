@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/config/app_config.dart';
+import 'subscription_status.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool _isLoggedIn = false;
@@ -48,10 +49,10 @@ class AuthProvider extends ChangeNotifier {
     try {
       final profile = await Supabase.instance.client
           .from('profiles')
-          .select('is_pro, subscription_tier')
+          .select('is_pro, subscription_tier, subscription_end_date')
           .eq('user_id', _userId)
           .maybeSingle();
-      _isPro = profile?['is_pro'] == true;
+      _isPro = profileGrantsPro(profile);
       _subscriptionTier = profile?['subscription_tier'] as String?;
       await _persistCachedProStatus(_userId);
     } catch (error, stackTrace) {
@@ -340,12 +341,12 @@ class AuthProvider extends ChangeNotifier {
     try {
       final profile = await Supabase.instance.client
           .from('profiles')
-          .select('is_pro, subscription_tier, username')
+          .select('is_pro, subscription_tier, subscription_end_date, username')
           .eq('user_id', user.id)
           .maybeSingle()
           .timeout(const Duration(seconds: 2));
       if (profile != null) {
-        _isPro = profile['is_pro'] == true;
+        _isPro = profileGrantsPro(profile);
         _subscriptionTier = profile['subscription_tier'] as String?;
         final remote = (profile['username'] as String?)?.trim() ?? '';
         if (remote.isNotEmpty) _username = remote;

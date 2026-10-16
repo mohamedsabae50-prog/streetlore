@@ -253,6 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final tierLabel = switch (subscriptionTier?.toLowerCase()) {
       'weekly' => context.tr('pro_tier_weekly'),
       'monthly' => context.tr('pro_tier_monthly'),
+      'annual' => context.tr('pro_tier_annual'),
       'lifetime' => context.tr('pro_tier_lifetime'),
       _ => null,
     };

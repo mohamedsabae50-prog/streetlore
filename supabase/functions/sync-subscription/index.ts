@@ -1,5 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import {
+  allowSandboxFromEnv,
+  createRateLimiter,
+  deriveProfileState,
+  fetchSubscriber,
+  parseProductTiers,
+  type PaidTier,
+} from "../_shared/subscription.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY =
@@ -10,6 +18,14 @@ const REVENUECAT_PRODUCT_TIERS =
   Deno.env.get("REVENUECAT_PRODUCT_TIERS") ?? "";
 const PRO_ENTITLEMENT_ID =
   Deno.env.get("REVENUECAT_PRO_ENTITLEMENT_ID") ?? "pro";
+// Sandbox / RevenueCat Test Store purchases never grant Pro unless the owner
+// explicitly opts in (e.g. on a development project): REVENUECAT_ALLOW_SANDBOX=true.
+const ALLOW_SANDBOX = allowSandboxFromEnv(
+  Deno.env.get("REVENUECAT_ALLOW_SANDBOX"),
+);
+// Best-effort burst guard per user (per instance, no table): a real purchase or
+// restore needs one or two syncs, so 6 per 30 s never touches the happy path.
+const syncAllowance = createRateLimiter(6, 30_000);
 
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
@@ -22,12 +38,17 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function json(body: unknown, status = 200): Response {
+function json(
+  body: unknown,
+  status = 200,
+  extraHeaders: Record<string, string> = {},
+): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json; charset=utf-8",
+      ...extraHeaders,
     },
   });
 }
@@ -36,31 +57,6 @@ function bearer(req: Request): string | null {
   const match = (req.headers.get("authorization") ?? "")
     .match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
-}
-
-function productTierMap(): Map<string, string> {
-  let value: unknown;
-  try {
-    value = JSON.parse(REVENUECAT_PRODUCT_TIERS);
-  } catch {
-    throw new Error("REVENUECAT_PRODUCT_TIERS must be a JSON object");
-  }
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("REVENUECAT_PRODUCT_TIERS must be a JSON object");
-  }
-  const tiers = new Map<string, string>();
-  for (const [productId, tier] of Object.entries(value)) {
-    if (
-      tier !== "weekly" &&
-      tier !== "monthly" &&
-      tier !== "lifetime"
-    ) {
-      throw new Error(`Invalid tier configured for RevenueCat product ${productId}`);
-    }
-    tiers.set(productId, tier);
-  }
-  if (!tiers.size) throw new Error("REVENUECAT_PRODUCT_TIERS is empty");
-  return tiers;
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -79,91 +75,46 @@ serve(async (req: Request): Promise<Response> => {
     return json({ error: "subscription_sync_not_configured" }, 503);
   }
 
-  let tiers: Map<string, string>;
+  const retryAfter = syncAllowance(authData.user.id);
+  if (retryAfter > 0) {
+    return json({ error: "rate_limited" }, 429, {
+      "Retry-After": String(retryAfter),
+    });
+  }
+
+  let tiers: Map<string, PaidTier>;
   try {
-    tiers = productTierMap();
+    tiers = parseProductTiers(REVENUECAT_PRODUCT_TIERS);
   } catch (error) {
     console.error("sync-subscription: invalid RevenueCat product tier map:", error);
     return json({ error: "subscription_sync_not_configured" }, 503);
   }
 
-  let response: Response;
-  try {
-    response = await fetch(
-      `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(authData.user.id)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${REVENUECAT_SECRET_API_KEY}`,
-          Accept: "application/json",
-        },
-      },
-    );
-  } catch (error) {
-    console.error("sync-subscription: RevenueCat request failed:", error);
-    return json({ error: "revenuecat_unavailable" }, 502);
-  }
-  if (!response.ok) {
-    console.error(
-      `sync-subscription: RevenueCat returned HTTP ${response.status}`,
-    );
-    return json({ error: "revenuecat_lookup_failed" }, 502);
-  }
+  const lookup = await fetchSubscriber(
+    authData.user.id,
+    REVENUECAT_SECRET_API_KEY,
+  );
+  if (!lookup.ok) return json({ error: lookup.error }, lookup.status);
 
-  let payload: {
-    subscriber?: {
-      entitlements?: Record<string, {
-        expires_date?: string | null;
-        product_identifier?: string;
-      }>;
-    };
-  };
-  try {
-    payload = await response.json();
-  } catch (error) {
-    console.error("sync-subscription: invalid RevenueCat response:", error);
-    return json({ error: "invalid_revenuecat_response" }, 502);
+  const derived = deriveProfileState(lookup.subscriber, {
+    tiers,
+    entitlementId: PRO_ENTITLEMENT_ID,
+    allowSandbox: ALLOW_SANDBOX,
+  });
+  if (!derived.ok) {
+    console.error("sync-subscription: cannot derive profile state:", {
+      userId: authData.user.id,
+      error: derived.error,
+    });
+    return json({ error: derived.error }, derived.status);
   }
-
-  const entitlement = payload.subscriber?.entitlements?.[PRO_ENTITLEMENT_ID];
-  const expiration = entitlement?.expires_date ?? null;
-  if (
-    entitlement !== undefined &&
-    expiration !== null &&
-    !Number.isFinite(Date.parse(expiration))
-  ) {
-    return json({ error: "invalid_revenuecat_expiration" }, 502);
-  }
-  const active = entitlement !== undefined &&
-    (expiration === null || Date.parse(expiration) > Date.now());
-  let plan = "free";
-  let endDate: string | null = null;
-
-  if (active) {
-    const productId = entitlement.product_identifier;
-    const mappedPlan = productId ? tiers.get(productId) : undefined;
-    if (!productId || !mappedPlan) {
-      console.error(
-        "sync-subscription: active RevenueCat product has no configured tier",
-        { userId: authData.user.id, productId },
-      );
-      return json({ error: "unmapped_revenuecat_product" }, 409);
-    }
-    if (mappedPlan === "lifetime" && expiration !== null) {
-      console.error(
-        "sync-subscription: lifetime product has an expiration date",
-        { productId, expiration },
-      );
-      return json({ error: "invalid_lifetime_expiration" }, 409);
-    }
-    if (mappedPlan !== "lifetime" && expiration === null) {
-      console.error(
-        "sync-subscription: recurring product has no expiration date",
-        { productId },
-      );
-      return json({ error: "missing_subscription_expiration" }, 409);
-    }
-    plan = mappedPlan;
-    endDate = expiration;
+  const { is_pro: active, subscription_tier: plan, subscription_end_date: endDate } =
+    derived.state;
+  if (derived.reason?.startsWith("non_production")) {
+    console.warn("sync-subscription: ignored non-production purchase:", {
+      userId: authData.user.id,
+      reason: derived.reason,
+    });
   }
 
   const { error: updateError } = await admin.from("profiles").upsert({
@@ -183,5 +134,6 @@ serve(async (req: Request): Promise<Response> => {
     is_pro: active,
     subscription_tier: plan,
     subscription_end_date: endDate,
+    ...(derived.reason ? { ignored_reason: derived.reason } : {}),
   });
 });
