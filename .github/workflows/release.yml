@@ -33,8 +33,33 @@ permissions:
   contents: write
 
 jobs:
+  quality:
+    name: Analyze + Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.x
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
   build:
     name: Build + Publish APK
+    needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -187,9 +212,9 @@ jobs:
             ## Streetlore ${{ steps.resolve_tag.outputs.tag }} (GitHub Actions build)
 
             Built on `ubuntu-latest` from commit `${{ github.sha }}`.
-            `flutter analyze`: see commit log.
+            Gated by the `quality` job (`flutter analyze` + `flutter test`).
             Same keystore as v1.0.30+ (cert SHA-1 `AF:62:89:44:B5:F3:A0:0A:4E:CE:1E:72:34:13:26:EA:5A:E7:B4:8F`).
-            Same 5-key Gemini rotation + official `google_generative_ai` SDK + model fallback chain as in source.
+            Gemini calls go through the `ai-proxy` Edge Function; no AI keys ship in the binary.
 
             ### Assets
 
