@@ -9,12 +9,14 @@ import '../../core/constants/app_colors.dart';
 import '../../core/widgets/image_defaults.dart';
 import '../../core/services/supabase_service.dart';
 import '../../data/models/place_model.dart';
+import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/blocked_users_provider.dart';
 import 'login_screen.dart';
 import 'place_details_screen.dart';
 import 'user_profile_screen.dart';
+import '../widgets/social_user_widgets.dart';
 
 class ActivityFeedScreen extends StatefulWidget {
   const ActivityFeedScreen({super.key});
@@ -28,6 +30,8 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
   bool _loading = true;
   String? _error;
   String? _requestedUserId;
+  String _filter = 'all';
+  Map<String, SocialUser> _actorProfiles = const {};
 
   @override
   void didChangeDependencies() {
@@ -55,7 +59,32 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     try {
       final activities = await SupabaseService.instance
           .fetchFollowingActivity();
-      if (mounted) setState(() => _activities = activities);
+      if (!mounted) return;
+      setState(() {
+        _activities = activities;
+        _actorProfiles = const {};
+      });
+      final actorIds = activities
+          .map((activity) => activity['actor_id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList(growable: false);
+      try {
+        final profiles = await SupabaseService.instance.getSocialUsers(
+          actorIds,
+        );
+        if (mounted) {
+          setState(() {
+            _actorProfiles = {
+              for (final profile in profiles) profile.userId: profile,
+            };
+          });
+        }
+      } catch (error, stackTrace) {
+        debugPrint(
+          'ActivityFeedScreen: actor profiles failed: $error\n$stackTrace',
+        );
+      }
     } catch (error, stackTrace) {
       // Always log to the console with full detail. When Sentry is wired
       // up (it is in main.dart) we also report the exception so it shows
@@ -107,6 +136,11 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           return !blockedUsers.isBlocked(actorId);
         })
         .toList(growable: false);
+    final filteredActivities = _filter == 'all'
+        ? visibleActivities
+        : visibleActivities
+              .where((activity) => activity['event_type'] == _filter)
+              .toList(growable: false);
     final needsSignIn = !auth.isLoggedIn || auth.isGuest;
     return Scaffold(
       appBar: AppBar(
@@ -143,23 +177,113 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           ? _FeedMessage(text: context.tr('feed_empty'))
           : RefreshIndicator(
               onRefresh: _load,
-              child: ListView.separated(
+              child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                itemCount: visibleActivities.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
-                itemBuilder: (context, index) =>
-                    _ActivityCard(activity: visibleActivities[index]),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: _feedHeader(context, visibleActivities.length),
+                  ),
+                  SliverToBoxAdapter(child: _feedFilters(context)),
+                  if (filteredActivities.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _FeedMessage(
+                        text: context.tr(
+                          _filter == 'all' ? 'feed_empty' : 'feed_filter_empty',
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      sliver: SliverList.separated(
+                        itemCount: filteredActivities.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final activity = filteredActivities[index];
+                          return _ActivityCard(
+                            activity: activity,
+                            actor:
+                                _actorProfiles[activity['actor_id']
+                                    ?.toString()],
+                          );
+                        },
+                      ),
+                    ),
+                ],
               ),
             ),
     );
   }
+
+  Widget _feedHeader(BuildContext context, int count) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+    child: Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr('feed_header_title'),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: context.textPri,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                context.tr('feed_header_subtitle'),
+                style: TextStyle(color: context.textSec, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: context.cardColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: context.borderColor),
+          ),
+          child: Text(
+            '$count ${context.tr('feed_updates')}',
+            style: TextStyle(
+              color: context.textPri,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _feedFilters(BuildContext context) => SizedBox(
+    height: 52,
+    child: ListView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      children: [
+        for (final filter in const ['all', 'checkin', 'badge', 'suggestion'])
+          Padding(
+            padding: const EdgeInsetsDirectional.only(end: 8),
+            child: ChoiceChip(
+              label: Text(context.tr('feed_filter_$filter')),
+              selected: _filter == filter,
+              onSelected: (_) => setState(() => _filter = filter),
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 class _ActivityCard extends StatelessWidget {
   final Map<String, dynamic> activity;
+  final SocialUser? actor;
 
-  const _ActivityCard({required this.activity});
+  const _ActivityCard({required this.activity, required this.actor});
 
   @override
   Widget build(BuildContext context) {
@@ -197,8 +321,21 @@ class _ActivityCard extends StatelessWidget {
         ? null
         : '${MaterialLocalizations.of(context).formatMediumDate(occurredAt)} '
               '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(occurredAt))}';
+    final title = actor?.displayName.trim().isNotEmpty == true
+        ? actor!.displayName.trim()
+        : actorName;
+    final activityTime = occurredAt == null
+        ? timestamp
+        : _relativeTimestamp(context, occurredAt);
     return Card(
-      child: ListTile(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: context.borderColor),
+      ),
+      child: InkWell(
         onTap: place == null
             ? null
             : () => Navigator.of(context).push(
@@ -206,50 +343,136 @@ class _ActivityCard extends StatelessWidget {
                   builder: (_) => PlaceDetailsScreen(place: place),
                 ),
               ),
-        leading: _activityThumbnail(
-          activity['place_image_url'] as String?,
-          icon,
-          activity['place_category']?.toString(),
-        ),
-        title: Wrap(
-          spacing: 4,
-          children: [
-            InkWell(
-              onTap: () => _openActorProfile(context),
-              child: Text(
-                actorName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  decoration: TextDecoration.underline,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => _openActorProfile(context),
+                child: actor == null
+                    ? CircleAvatar(
+                        radius: 23,
+                        backgroundColor: AppColors.primary.withValues(
+                          alpha: 0.12,
+                        ),
+                        child: Text(
+                          actorName.characters.first.toUpperCase(),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      )
+                    : SocialUserAvatar(user: actor!, radius: 23),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 7,
+                      runSpacing: 5,
+                      children: [
+                        InkWell(
+                          onTap: () => _openActorProfile(context),
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              color: context.textPri,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        _ActivityKindChip(
+                          label: action,
+                          icon: icon,
+                          type: type,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      placeName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: context.textPri,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (type != 'checkin' &&
+                        ((activity['description'] as String?)?.isNotEmpty ??
+                            false)) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        activity['description'] as String,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: context.textSec, fontSize: 12),
+                      ),
+                    ],
+                    if (activityTime != null) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 14,
+                            color: context.textSec,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            activityTime,
+                            style: TextStyle(
+                              color: context.textSec,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ),
-            Text(action, style: const TextStyle(fontWeight: FontWeight.w700)),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              placeName,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            if (type != 'checkin' &&
-                ((activity['description'] as String?)?.isNotEmpty ?? false))
-              Text(activity['description'] as String),
-            if (timestamp != null)
-              Text(
-                timestamp,
-                style: TextStyle(color: context.textSec, fontSize: 12),
+              const SizedBox(width: 10),
+              _activityThumbnail(
+                activity['place_image_url'] as String?,
+                icon,
+                activity['place_category']?.toString(),
               ),
-          ],
+            ],
+          ),
         ),
-        isThreeLine: true,
       ),
     );
   }
 
+  String? _relativeTimestamp(BuildContext context, DateTime date) {
+    final localDate = date.toLocal();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final eventDay = DateTime(localDate.year, localDate.month, localDate.day);
+    final dayDifference = today.difference(eventDay).inDays;
+    if (dayDifference == 0) {
+      return '${context.tr('feed_today')} · '
+          '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(localDate))}';
+    }
+    if (dayDifference == 1) return context.tr('feed_yesterday');
+    return MaterialLocalizations.of(context).formatMediumDate(localDate);
+  }
+
   Future<void> _openActorProfile(BuildContext context) async {
+    if (actor != null) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => UserProfileScreen(user: actor!),
+        ),
+      );
+      return;
+    }
     final userId = activity['actor_id']?.toString() ?? '';
     if (userId.isEmpty) return;
     try {
@@ -293,17 +516,60 @@ class _ActivityCard extends StatelessWidget {
         child: Image.network(
           url,
           width: 54,
-          height: 54,
+          height: 62,
           cacheWidth: 108,
           cacheHeight: 108,
           fit: BoxFit.cover,
           headers: streetloreImageHeaders,
           errorBuilder: (_, _, _) =>
-              CategoryImageFallback(category: category, width: 54, height: 54),
+              CategoryImageFallback(category: category, width: 54, height: 62),
         ),
       );
     }
-    return CategoryImageFallback(category: category, width: 54, height: 54);
+    return CategoryImageFallback(category: category, width: 54, height: 62);
+  }
+}
+
+class _ActivityKindChip extends StatelessWidget {
+  const _ActivityKindChip({
+    required this.label,
+    required this.icon,
+    required this.type,
+  });
+
+  final String label;
+  final IconData icon;
+  final String type;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (type) {
+      'badge' => AppColors.ratingGold,
+      'suggestion' => const Color(0xFF7C3AED),
+      _ => AppColors.success,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

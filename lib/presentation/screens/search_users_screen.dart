@@ -9,6 +9,7 @@ import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import 'login_screen.dart';
 import 'user_profile_screen.dart';
+import '../widgets/social_user_widgets.dart';
 
 class SearchUsersScreen extends StatefulWidget {
   const SearchUsersScreen({super.key});
@@ -110,7 +111,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
       }
       if (mounted) setState(() => _following[user.userId] = !wasFollowing);
     } catch (error, stackTrace) {
-      debugPrint('SearchUsersScreen: follow action failed: $error\n$stackTrace');
+      debugPrint(
+        'SearchUsersScreen: follow action failed: $error\n$stackTrace',
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.tr('follow_action_failed'))),
@@ -194,19 +197,33 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                     itemBuilder: (context, index) {
                       final user = _users[index];
                       return ListTile(
-                        leading: CircleAvatar(
-                          child: Text(
-                            user.username.characters.isEmpty
-                                ? '?'
-                                : user.username.characters.first.toUpperCase(),
-                          ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
                         ),
+                        leading: SocialUserAvatar(user: user),
                         title: Text(
                           user.displayName.isEmpty
                               ? '@${user.username}'
                               : user.displayName,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
-                        subtitle: Text('@${user.username}'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('@${user.username}'),
+                            const SizedBox(height: 4),
+                            SocialFollowCounts(
+                              followers: user.followersCount,
+                              following: user.followingCount,
+                            ),
+                            if (user.badges.isNotEmpty) ...[
+                              const SizedBox(height: 5),
+                              SocialBadges(badges: user.badges, compact: true),
+                            ],
+                          ],
+                        ),
+                        isThreeLine: true,
                         trailing: OutlinedButton(
                           onPressed:
                               _updatingFollow.contains(user.userId) ||

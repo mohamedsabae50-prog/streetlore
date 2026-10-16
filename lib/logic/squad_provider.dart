@@ -2,6 +2,19 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/services/supabase_service.dart';
+import '../data/models/social_user.dart';
+
+class SquadMember {
+  const SquadMember({required this.user, required this.isLeader});
+
+  final SocialUser user;
+  final bool isLeader;
+
+  factory SquadMember.fromJson(Map<String, dynamic> json) => SquadMember(
+    user: SocialUser.fromJson(json),
+    isLeader: json['is_leader'] == true,
+  );
+}
 
 class SquadSession {
   const SquadSession({
@@ -10,6 +23,7 @@ class SquadSession {
     required this.createdBy,
     required this.memberCount,
     required this.expiresAt,
+    this.members = const [],
   });
 
   final String id;
@@ -17,6 +31,7 @@ class SquadSession {
   final String createdBy;
   final int memberCount;
   final DateTime? expiresAt;
+  final List<SquadMember> members;
   bool get isActive => expiresAt == null || expiresAt!.isAfter(DateTime.now());
 
   factory SquadSession.fromJson(Map<String, dynamic> json) {
@@ -34,6 +49,15 @@ class SquadSession {
       expiresAt: json['expires_at'] == null
           ? null
           : DateTime.parse(json['expires_at'] as String),
+      members: json['members'] is List
+          ? (json['members'] as List)
+                .whereType<Map>()
+                .map(
+                  (member) =>
+                      SquadMember.fromJson(Map<String, dynamic>.from(member)),
+                )
+                .toList(growable: false)
+          : const [],
     );
   }
 }

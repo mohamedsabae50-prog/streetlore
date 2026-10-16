@@ -8,14 +8,12 @@ class PaywallStorePrice extends StatelessWidget {
   const PaywallStorePrice({
     required this.product,
     required this.fallbackPrice,
-    required this.fallbackDetail,
     required this.packageType,
     super.key,
   });
 
   final StoreProduct? product;
   final String fallbackPrice;
-  final String fallbackDetail;
   final PackageType packageType;
 
   @override
@@ -31,20 +29,19 @@ class PaywallStorePrice extends StatelessWidget {
             fontWeight: FontWeight.w900,
           ),
         ),
-        Text(
-          product == null
-              ? fallbackDetail
-              : context.tr('pro_billing_period', {
-                  'period':
-                      _localizedPeriod(context, product!.subscriptionPeriod) ??
-                      _defaultPeriod(context),
-                }),
-          style: TextStyle(
-            color: context.textSec,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+        if (product != null)
+          Text(
+            context.tr('pro_billing_period', {
+              'period':
+                  _localizedPeriod(context, product!.subscriptionPeriod) ??
+                  _defaultPeriod(context),
+            }),
+            style: TextStyle(
+              color: context.textSec,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
       ],
     );
   }

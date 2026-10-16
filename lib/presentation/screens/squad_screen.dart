@@ -6,6 +6,8 @@ import '../../core/constants/app_colors.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/squad_provider.dart';
 import '../../l10n/app_strings.dart';
+import 'user_profile_screen.dart';
+import '../widgets/social_user_widgets.dart';
 
 class SquadScreen extends StatefulWidget {
   const SquadScreen({super.key});
@@ -39,9 +41,9 @@ class _SquadScreenState extends State<SquadScreen> {
   Future<void> _joinSquad() async {
     setState(() => _working = true);
     try {
-      final squad = await context
-          .read<SquadProvider>()
-          .joinSquad(_codeController.text);
+      final squad = await context.read<SquadProvider>().joinSquad(
+        _codeController.text,
+      );
       if (mounted) _showMessage('Joined squad ${squad.joinCode}.');
     } catch (error) {
       if (mounted) _showMessage('Could not join squad: $error');
@@ -63,9 +65,9 @@ class _SquadScreenState extends State<SquadScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -107,11 +109,7 @@ class _SquadScreenState extends State<SquadScreen> {
                 child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.groups_rounded,
-                      color: Colors.white,
-                      size: 34,
-                    ),
+                    Icon(Icons.groups_rounded, color: Colors.white, size: 34),
                     SizedBox(height: 12),
                     Text(
                       'Explore together',
@@ -235,6 +233,7 @@ class _SquadScreenState extends State<SquadScreen> {
   }
 
   Widget _activeSquad(BuildContext context, SquadSession squad) {
+    final currentUserId = context.read<AuthProvider>().userId;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -265,6 +264,67 @@ class _SquadScreenState extends State<SquadScreen> {
               ),
             ],
           ),
+          if (squad.members.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Text(
+              context.tr('squad_roster'),
+              style: TextStyle(
+                color: context.textPri,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (final member in squad.members)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: SocialUserAvatar(user: member.user, radius: 21),
+                title: Text(
+                  member.user.displayName.isNotEmpty
+                      ? member.user.displayName
+                      : '@${member.user.username}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  '@${member.user.username} · '
+                  '${member.user.followersCount} '
+                  '${context.tr('profile_followers')}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: member.isLeader
+                    ? Chip(
+                        avatar: const Icon(
+                          Icons.stars_rounded,
+                          size: 16,
+                          color: AppColors.ratingGold,
+                        ),
+                        label: Text(
+                          context.tr(
+                            member.user.userId == currentUserId
+                                ? 'squad_you_leader'
+                                : 'squad_leader',
+                          ),
+                        ),
+                        visualDensity: VisualDensity.compact,
+                      )
+                    : member.user.userId == currentUserId
+                    ? Chip(
+                        label: Text(context.tr('squad_you')),
+                        visualDensity: VisualDensity.compact,
+                      )
+                    : null,
+                onTap: member.user.userId == currentUserId
+                    ? null
+                    : () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => UserProfileScreen(user: member.user),
+                        ),
+                      ),
+              ),
+          ],
           const SizedBox(height: 22),
           Center(
             child: Column(

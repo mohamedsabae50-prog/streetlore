@@ -101,10 +101,7 @@ class AppStrings {
     'quick_prayer': {'en': 'Prayer', 'ar': 'الصلاة'},
     'quick_badges': {'en': 'Badges', 'ar': 'إنجازات'},
     'quick_routes': {'en': 'Routes', 'ar': 'مسارات'},
-    'ai_tour_guide': {
-      'en': 'EgyptLore AI',
-      'ar': 'مساعد إيجيبت لور الذكي',
-    },
+    'ai_tour_guide': {'en': 'EgyptLore AI', 'ar': 'مساعد إيجيبت لور الذكي'},
     'ai_guide_general_title': {
       'en': 'EgyptLore AI',
       'ar': 'مساعد إيجيبت لور الذكي',
@@ -172,7 +169,8 @@ class AppStrings {
     },
     'weather_my_location': {'en': 'Use my location', 'ar': 'استخدم موقعي'},
     'weather_unavailable': {
-      'en': 'Current weather is unavailable. Check your location and connection.',
+      'en':
+          'Current weather is unavailable. Check your location and connection.',
       'ar': 'الطقس الحالي غير متاح. تحقق من الموقع والاتصال بالإنترنت.',
     },
     'weather_clear_sky': {'en': 'Clear sky', 'ar': 'سماء صافية'},
@@ -327,7 +325,30 @@ class AppStrings {
       'en': 'Could not update follow status. Please try again.',
       'ar': 'تعذر تحديث حالة المتابعة. حاول مرة أخرى.',
     },
+    'profile_followers': {'en': 'followers', 'ar': 'متابعون'},
+    'profile_following': {'en': 'following', 'ar': 'يتابع'},
+    'profile_no_public_badges': {
+      'en': 'No badges earned yet',
+      'ar': 'لا توجد شارات مكتسبة بعد',
+    },
+    'badge_earned_fallback': {'en': 'Explorer badge', 'ar': 'شارة مستكشف'},
     'feed_title': {'en': 'Activity', 'ar': 'النشاط'},
+    'feed_header_subtitle': {
+      'en': 'See what your community is exploring',
+      'ar': 'تابع ما يستكشفه مجتمعك',
+    },
+    'feed_header_title': {'en': 'Your community', 'ar': 'مجتمعك'},
+    'feed_updates': {'en': 'updates', 'ar': 'تحديثات'},
+    'feed_filter_all': {'en': 'All', 'ar': 'الكل'},
+    'feed_filter_checkin': {'en': 'Check-ins', 'ar': 'الزيارات'},
+    'feed_filter_badge': {'en': 'Badges', 'ar': 'الشارات'},
+    'feed_filter_suggestion': {'en': 'Suggestions', 'ar': 'الاقتراحات'},
+    'feed_filter_empty': {
+      'en': 'No activity in this category yet.',
+      'ar': 'لا يوجد نشاط في هذه الفئة بعد.',
+    },
+    'feed_today': {'en': 'Today', 'ar': 'اليوم'},
+    'feed_yesterday': {'en': 'Yesterday', 'ar': 'أمس'},
     'feed_empty': {
       'en':
           'No recent activity yet. Follow explorers to see their check-ins, badges, and approved place suggestions.',
@@ -382,7 +403,8 @@ class AppStrings {
       'ar': 'تعذر تحديث قائمة الحظر. حاول مرة أخرى.',
     },
     'blocked_profile_hidden': {
-      'en': 'This user is blocked. Unblock them to view their profile and activity.',
+      'en':
+          'This user is blocked. Unblock them to view their profile and activity.',
       'ar': 'هذا المستخدم محظور. ألغِ حظره لعرض ملفه الشخصي ونشاطه.',
     },
 
@@ -545,12 +567,18 @@ class AppStrings {
     },
     'cancel': {'en': 'Cancel', 'ar': 'إلغاء'},
     'no_saved_tours': {'en': 'No Saved Tours', 'ar': 'لا توجد جولات محفوظة'},
-    'no_visited_places': {'en': 'No Visited Places', 'ar': 'لا توجد أماكن تمت زيارتها'},
+    'no_visited_places': {
+      'en': 'No Visited Places',
+      'ar': 'لا توجد أماكن تمت زيارتها',
+    },
     'empty_visited_places_sub': {
       'en': 'Places you check in at will appear here.',
       'ar': 'ستظهر هنا الأماكن التي تسجل زيارتها.',
     },
-    'no_visited_tours': {'en': 'No Visited Tours', 'ar': 'لا توجد جولات تمت زيارتها'},
+    'no_visited_tours': {
+      'en': 'No Visited Tours',
+      'ar': 'لا توجد جولات تمت زيارتها',
+    },
     'empty_visited_tours_sub': {
       'en': 'Tours you complete will appear here.',
       'ar': 'ستظهر هنا الجولات التي تكملها.',
@@ -763,6 +791,10 @@ class AppStrings {
     'squad_copy_code': {'en': 'Copy code', 'ar': 'انسخ الرمز'},
     'squad_leave': {'en': 'Leave squad', 'ar': 'غادر الفريق'},
     'squad_members': {'en': '{n} members', 'ar': '{n} أعضاء'},
+    'squad_roster': {'en': 'Squad members', 'ar': 'أعضاء الفريق'},
+    'squad_leader': {'en': 'Leader', 'ar': 'قائد الفريق'},
+    'squad_you_leader': {'en': 'Leader · You', 'ar': 'قائد الفريق · أنت'},
+    'squad_you': {'en': 'You', 'ar': 'أنت'},
     'squad_sign_in': {
       'en': 'Sign in to create or join a squad.',
       'ar': 'سجّل الدخول لإنشاء فريق أو الانضمام إليه.',
@@ -928,8 +960,10 @@ class AppStrings {
       'ar': 'تعذر فتح الصفحة. حاول مرة أخرى لاحقًا.',
     },
     'subscription_disclosure': {
-      'en': 'Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Payment is charged to your Google Play account at confirmation. Manage or cancel anytime in Google Play > Payments & subscriptions. Deleting your EgyptLore account does not cancel an active subscription.',
-      'ar': 'تتجدد الاشتراكات تلقائيًا ما لم تُلغَ قبل 24 ساعة على الأقل من نهاية الفترة الحالية. يُحصّل الدفع عبر حسابك في Google Play عند التأكيد. يمكنك إدارة الاشتراك أو إلغاؤه من Google Play > الدفعات والاشتراكات. حذف حساب EgyptLore لا يلغي الاشتراك النشط.',
+      'en':
+          'Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Payment is charged to your Google Play account at confirmation. Manage or cancel anytime in Google Play > Payments & subscriptions. Deleting your EgyptLore account does not cancel an active subscription.',
+      'ar':
+          'تتجدد الاشتراكات تلقائيًا ما لم تُلغَ قبل 24 ساعة على الأقل من نهاية الفترة الحالية. يُحصّل الدفع عبر حسابك في Google Play عند التأكيد. يمكنك إدارة الاشتراك أو إلغاؤه من Google Play > الدفعات والاشتراكات. حذف حساب EgyptLore لا يلغي الاشتراك النشط.',
     },
     'terms_of_service_title': {'en': 'Terms of Service', 'ar': 'شروط الخدمة'},
     'profile_legal_title': {
@@ -1194,16 +1228,20 @@ class AppStrings {
       'ar': 'وصول برو لمدة أسبوع',
     },
     'pro_weekly_badge': {'en': 'WEEKLY PLAN', 'ar': 'باقة أسبوعية'},
-    'pro_weekly_price': {'en': '49 EGP / week', 'ar': '49 جنيهًا مصريًا / أسبوع'},
-    'pro_weekly_usd_price': {'en': r'$1.99 / week', 'ar': r'$1.99 / أسبوع'},
+    'pro_weekly_price': {
+      'en': '49 EGP / week',
+      'ar': '49 جنيهًا مصريًا / أسبوع',
+    },
     'pro_monthly': {'en': 'Monthly Pro Plan', 'ar': 'اشتراك برو شهري'},
     'pro_monthly_description': {
       'en': 'Perfect for short trips',
       'ar': 'مثالي للرحلات القصيرة',
     },
     'pro_monthly_badge': {'en': 'MOST POPULAR', 'ar': 'الأكثر شيوعًا'},
-    'pro_monthly_price': {'en': '99 EGP / month', 'ar': '99 جنيهًا مصريًا / شهر'},
-    'pro_monthly_usd_price': {'en': r'$3.99 / month', 'ar': r'$3.99 / شهر'},
+    'pro_monthly_price': {
+      'en': '99 EGP / month',
+      'ar': '99 جنيهًا مصريًا / شهر',
+    },
     'pro_annual': {'en': 'Annual Pro Plan', 'ar': 'اشتراك برو سنوي'},
     'pro_annual_description': {
       'en': 'One year of complete Pro access',
@@ -1213,8 +1251,10 @@ class AppStrings {
       'en': 'BEST VALUE · SAVE 40%',
       'ar': 'أفضل قيمة · وفّر ٤٠٪',
     },
-    'pro_annual_price': {'en': '699 EGP / year', 'ar': '699 جنيهًا مصريًا / سنة'},
-    'pro_annual_usd_price': {'en': r'$24.99 / year', 'ar': r'$24.99 / سنة'},
+    'pro_annual_price': {
+      'en': '699 EGP / year',
+      'ar': '699 جنيهًا مصريًا / سنة',
+    },
     'pro_annual_monthly_equivalent': {
       'en': 'Equivalent to ~58 EGP / month',
       'ar': 'ما يعادل نحو 58 جنيهًا مصريًا / شهر',

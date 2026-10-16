@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/widgets/image_defaults.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/widgets/image_defaults.dart';
 import '../../data/models/place_model.dart';
 import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
@@ -12,6 +12,7 @@ import '../../logic/auth_provider.dart';
 import '../../logic/blocked_users_provider.dart';
 import 'place_details_screen.dart';
 import '../widgets/report_content_sheet.dart';
+import '../widgets/social_user_widgets.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final SocialUser user;
@@ -25,6 +26,7 @@ class UserProfileScreen extends StatefulWidget {
 class _UserProfileScreenState extends State<UserProfileScreen> {
   bool? _isFollowing;
   bool _isUpdating = false;
+  late int _followersCount;
   String? _error;
   List<Map<String, dynamic>> _visitedPlaces = const [];
   bool _isLoadingVisits = true;
@@ -33,6 +35,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _followersCount = widget.user.followersCount;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _loadFollowState();
       if (mounted) _loadVisitedPlaces();
@@ -94,7 +97,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           widget.user.userId,
         );
       }
-      if (mounted) setState(() => _isFollowing = !wasFollowing);
+      if (mounted) {
+        setState(() {
+          _isFollowing = !wasFollowing;
+          _followersCount += wasFollowing ? -1 : 1;
+        });
+      }
     } catch (error, stackTrace) {
       debugPrint(
         'UserProfileScreen: follow action failed: $error\n$stackTrace',
@@ -192,26 +200,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 Center(
                   child: Column(
                     children: [
-                      CircleAvatar(
-                        radius: 42,
-                        backgroundColor: AppColors.primary.withValues(
-                          alpha: 0.12,
-                        ),
-                        child: Text(
-                          widget.user.username.characters.first.toUpperCase(),
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 30,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
+                      SocialUserAvatar(user: widget.user, radius: 42),
                       const SizedBox(height: 16),
                       Text(
-                        '@${widget.user.username}',
+                        widget.user.displayName.isEmpty
+                            ? '@${widget.user.username}'
+                            : widget.user.displayName,
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),
+                      if (widget.user.displayName.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          '@${widget.user.username}',
+                          style: TextStyle(color: context.textSec),
+                        ),
+                      ],
+                      const SizedBox(height: 14),
+                      SocialFollowCounts(
+                        followers: _followersCount,
+                        following: widget.user.followingCount,
+                      ),
+                      const SizedBox(height: 10),
+                      SocialBadges(badges: widget.user.badges),
                       const SizedBox(height: 24),
                       if (canFollow)
                         FilledButton.icon(

@@ -14,7 +14,6 @@ void main() {
   Widget buildPrice({
     StoreProduct? product,
     String fallbackPrice = '49 EGP / week',
-    String fallbackDetail = r'$1.99 / week',
     PackageType packageType = PackageType.weekly,
   }) {
     return ChangeNotifierProvider(
@@ -24,7 +23,6 @@ void main() {
           body: PaywallStorePrice(
             product: product,
             fallbackPrice: fallbackPrice,
-            fallbackDetail: fallbackDetail,
             packageType: packageType,
           ),
         ),
@@ -50,15 +48,14 @@ void main() {
 
     expect(find.text('€12.99'), findsOneWidget);
     expect(find.text('Billed every 3 months'), findsOneWidget);
-    expect(find.text(r'$1.99 / week'), findsNothing);
   });
 
-  testWidgets('uses the fallback price and detail when no store product is '
+  testWidgets('uses only the fallback local price when no store product is '
       'available', (tester) async {
     await tester.pumpWidget(buildPrice());
     await tester.pumpAndSettle();
 
     expect(find.text('49 EGP / week'), findsOneWidget);
-    expect(find.text(r'$1.99 / week'), findsOneWidget);
+    expect(find.textContaining(r'$'), findsNothing);
   });
 }

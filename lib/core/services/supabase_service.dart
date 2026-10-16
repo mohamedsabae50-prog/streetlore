@@ -319,6 +319,26 @@ class SupabaseService {
     return user;
   }
 
+  Future<List<SocialUser>> getSocialUsers(List<String> userIds) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    if (userIds.isEmpty) return const [];
+    final result = await client.rpc(
+      'get_public_profiles',
+      params: {'p_user_ids': userIds},
+    );
+    if (result is! List) {
+      throw const FormatException('Public profiles response was not a list.');
+    }
+    return result
+        .map(
+          (row) => SocialUser.fromJson(Map<String, dynamic>.from(row as Map)),
+        )
+        .toList(growable: false);
+  }
+
   Future<List<Map<String, dynamic>>> getUserVisitedPlaces(
     String targetUserId,
   ) async {
@@ -846,25 +866,15 @@ class SupabaseService {
     if (token.isEmpty) {
       throw Exception('Not signed in');
     }
-    final uri = Uri.parse(
-      '${AppConfig.supabaseUrl}/functions/v1/delete-user-account',
+    final response = await client.functions.invoke(
+      'delete-user-account',
+      headers: {'Authorization': 'Bearer $token'},
+      body: const <String, dynamic>{},
     );
-    final response = await http.post(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-    if (response.statusCode != 200) {
-      throw Exception(
-        'delete-user-account HTTP ${response.statusCode}: ${response.body}',
-      );
-    }
-    final result = jsonDecode(response.body);
-    if (result is! Map<String, dynamic> || result['ok'] != true) {
+    final result = response.data;
+    if (response.status != 200 || result is! Map || result['ok'] != true) {
       throw const FormatException('Invalid account deletion response.');
     }
-    return result;
+    return Map<String, dynamic>.from(result);
   }
 }
