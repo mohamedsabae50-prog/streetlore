@@ -42,10 +42,19 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     if (text.isEmpty) return;
     final auth = context.read<AuthProvider>();
     final chat = context.read<ChatProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    // Posting requires a real account: the insert RLS policy checks
+    // user_id = auth.uid(), which a guest (random local id) can never satisfy.
+    if (auth.isGuest || auth.userId.isEmpty) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(context.tr('chat_sign_in_required'))),
+      );
+      return;
+    }
     final msg = ChatMessage(
       id: const Uuid().v4(),
       placeId: widget.place.id,
-      userId: auth.userEmail,
+      userId: auth.userId,
       userName: auth.userName,
       text: text,
       sentAt: DateTime.now(),
@@ -53,7 +62,16 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     );
     _input.clear();
 
-    chat.send(msg);
+    try {
+      await chat.send(msg);
+    } catch (_) {
+      if (!mounted) return;
+      // Give the text back so the user can retry instead of retyping it.
+      if (_input.text.isEmpty) _input.text = text;
+      messenger.showSnackBar(
+        SnackBar(content: Text(context.tr('chat_send_failed'))),
+      );
+    }
   }
 
   @override

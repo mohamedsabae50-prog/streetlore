@@ -173,12 +173,25 @@ class SupabaseService {
     }
   }
 
+  /// Inserts [message] into `place_chat`. Throws if the send fails (not signed
+  /// in, RLS rejection, network) so the caller can tell the user — a failed
+  /// send must never look like a delivered one.
   Future<void> postMessage(ChatMessage message) async {
     if (_client == null) return;
     try {
-      await _client!.from('place_chat').insert(message.toJson()).select();
+      // The insert policy requires user_id = auth.uid(), so take the id from
+      // the live session rather than trusting the model's copy.
+      final uid = _client!.auth.currentUser?.id;
+      if (uid == null) {
+        throw StateError('postMessage: no authenticated user');
+      }
+      await _client!.from('place_chat').insert({
+        ...message.toJson(),
+        'user_id': uid,
+      });
     } catch (e) {
       _logError('postMessage', e);
+      rethrow;
     }
   }
 

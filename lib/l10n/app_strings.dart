@@ -1037,6 +1037,14 @@ class AppStrings {
       'en': 'Say something to fellow travellers...',
       'ar': 'قول حاجة للمسافرين اللي معاك...',
     },
+    'chat_send_failed': {
+      'en': 'Could not send your message. Please try again.',
+      'ar': 'تعذر إرسال رسالتك. حاول مرة أخرى.',
+    },
+    'chat_sign_in_required': {
+      'en': 'Sign in with an account to join the chat.',
+      'ar': 'سجّل الدخول بحساب للمشاركة في الدردشة.',
+    },
 
     'map_err_location_denied': {
       'en': 'Location permission is required to show the route.',
