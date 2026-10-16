@@ -38,8 +38,8 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
         children: [
           Text(
             _arabic
-                ? 'آخر تحديث: 14 أكتوبر 2026'
-                : 'Last updated: October 14, 2026',
+                ? 'آخر تحديث: 16 أكتوبر 2026'
+                : 'Last updated: October 16, 2026',
             style: TextStyle(color: context.textSec, fontSize: 12),
           ),
           const SizedBox(height: 12),
@@ -57,11 +57,11 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
           Text(
             _arabic
                 ? (terms
-                      ? 'يرجى قراءة هذه الشروط قبل استخدام Streetlore.'
-                      : 'تشرح هذه السياسة البيانات التي يستخدمها Streetlore وكيفية التعامل معها.')
+                      ? 'يرجى قراءة هذه الشروط قبل استخدام EgyptLore.'
+                      : 'تشرح هذه السياسة البيانات التي يستخدمها EgyptLore وكيفية التعامل معها.')
                 : (terms
-                      ? 'Please read these terms before using Streetlore.'
-                      : 'This policy explains what information Streetlore uses and how it is handled.'),
+                      ? 'Please read these terms before using EgyptLore.'
+                      : 'This policy explains what information EgyptLore uses and how it is handled.'),
             style: TextStyle(color: context.textSec, height: 1.6, fontSize: 14),
           ),
           const SizedBox(height: 14),
@@ -87,16 +87,16 @@ class _LegalSectionData {
 
 const _termsSections = <_LegalSectionData>[
   _LegalSectionData(
-    '1. About Streetlore and acceptance',
-    '١. عن Streetlore والموافقة',
-    'Streetlore helps people discover places, cultural stories, tours, and travel features. By creating an account or using the app, you agree to these Terms. If you do not agree, do not use the service. You must meet the minimum age required by the laws where you live.',
-    'يساعد Streetlore المستخدمين على اكتشاف الأماكن والحكايات الثقافية والجولات وميزات السفر. بإنشاء حساب أو استخدام التطبيق، فإنك توافق على هذه الشروط. إذا لم توافق، فلا تستخدم الخدمة. يجب أن تستوفي الحد الأدنى للعمر الذي تفرضه القوانين في مكان إقامتك.',
+    '1. About EgyptLore and acceptance',
+    '١. عن EgyptLore والموافقة',
+    'EgyptLore helps people discover places, cultural stories, tours, and travel features. By creating an account or using the app, you agree to these Terms. If you do not agree, do not use the service. You must meet the minimum age required by the laws where you live.',
+    'يساعد EgyptLore المستخدمين على اكتشاف الأماكن والحكايات الثقافية والجولات وميزات السفر. بإنشاء حساب أو استخدام التطبيق، فإنك توافق على هذه الشروط. إذا لم توافق، فلا تستخدم الخدمة. يجب أن تستوفي الحد الأدنى للعمر الذي تفرضه القوانين في مكان إقامتك.',
   ),
   _LegalSectionData(
     '2. Accounts and account deletion',
     '٢. الحسابات وحذف الحساب',
-    'Keep your sign-in details secure and provide accurate information. You are responsible for activity performed through your account. You can request deletion using Delete Account in Profile settings. After confirmation, we submit the request to remove your account and associated personal data, subject to limited retention required by law, security, or accounting obligations. Deleting your Streetlore account does not cancel an Apple or Google subscription; cancel it separately in the relevant store settings.',
-    'حافظ على بيانات تسجيل الدخول آمنة وقدّم معلومات دقيقة. أنت مسؤول عن النشاط الذي يتم عبر حسابك. يمكنك طلب الحذف من خيار «حذف الحساب» في إعدادات الملف الشخصي. بعد التأكيد، نرسل طلب إزالة حسابك وبياناتك الشخصية المرتبطة به، مع مراعاة الاحتفاظ المحدود الذي تفرضه القوانين أو متطلبات الأمان أو المحاسبة. حذف حساب Streetlore لا يلغي اشتراك Apple أو Google؛ ألغِه بشكل منفصل من إعدادات المتجر المعني.',
+    'Keep your sign-in details secure and provide accurate information. You are responsible for activity performed through your account. You can request deletion using Delete Account in Profile settings. After confirmation, we submit the request to remove your account and associated personal data, subject to limited retention required by law, security, or accounting obligations. Deleting your EgyptLore account does not cancel an Apple or Google subscription; cancel it separately in the relevant store settings.',
+    'حافظ على بيانات تسجيل الدخول آمنة وقدّم معلومات دقيقة. أنت مسؤول عن النشاط الذي يتم عبر حسابك. يمكنك طلب الحذف من خيار «حذف الحساب» في إعدادات الملف الشخصي. بعد التأكيد، نرسل طلب إزالة حسابك وبياناتك الشخصية المرتبطة به، مع مراعاة الاحتفاظ المحدود الذي تفرضه القوانين أو متطلبات الأمان أو المحاسبة. حذف حساب EgyptLore لا يلغي اشتراك Apple أو Google؛ ألغِه بشكل منفصل من إعدادات المتجر المعني.',
   ),
   _LegalSectionData(
     '3. Location and safety',
@@ -107,8 +107,8 @@ const _termsSections = <_LegalSectionData>[
   _LegalSectionData(
     '4. Check-ins, photos, and other user content',
     '٤. تسجيلات الوصول والصور ومحتوى المستخدم',
-    'You retain ownership of content you submit, including check-ins, photos, reviews, and place suggestions. You give Streetlore a non-exclusive, worldwide, royalty-free license to host, display, and distribute that content as needed to operate and improve social features. Only upload content you have the right to share; do not post unlawful, private, misleading, abusive, or infringing material. Do not upload another person’s image or personal information without permission. You can remove content where the app provides that control. We may review, restrict, or remove content that violates these Terms or applicable law.',
-    'تحتفظ بملكية المحتوى الذي ترسله، بما في ذلك تسجيلات الوصول والصور والمراجعات واقتراحات الأماكن. تمنح Streetlore ترخيصًا غير حصري وعالميًا وخاليًا من الإتاوات لاستضافة هذا المحتوى وعرضه وتوزيعه بالقدر اللازم لتشغيل الميزات الاجتماعية وتحسينها. لا ترسل إلا محتوى يحق لك مشاركته؛ ولا تنشر مواد غير قانونية أو خاصة أو مضللة أو مسيئة أو منتهكة للحقوق. لا ترفع صورة شخص آخر أو معلوماته الشخصية دون إذنه. يمكنك إزالة المحتوى حيث يوفر التطبيق ذلك. يجوز لنا مراجعة المحتوى المخالف لهذه الشروط أو للقانون المعمول به أو تقييده أو إزالته.',
+    'You retain ownership of content you submit, including check-ins, photos, reviews, and place suggestions. You give EgyptLore a non-exclusive, worldwide, royalty-free license to host, display, and distribute that content as needed to operate and improve social features. Only upload content you have the right to share; do not post unlawful, private, misleading, abusive, or infringing material. Do not upload another person’s image or personal information without permission. You can remove content where the app provides that control. We may review, restrict, or remove content that violates these Terms or applicable law.',
+    'تحتفظ بملكية المحتوى الذي ترسله، بما في ذلك تسجيلات الوصول والصور والمراجعات واقتراحات الأماكن. تمنح EgyptLore ترخيصًا غير حصري وعالميًا وخاليًا من الإتاوات لاستضافة هذا المحتوى وعرضه وتوزيعه بالقدر اللازم لتشغيل الميزات الاجتماعية وتحسينها. لا ترسل إلا محتوى يحق لك مشاركته؛ ولا تنشر مواد غير قانونية أو خاصة أو مضللة أو مسيئة أو منتهكة للحقوق. لا ترفع صورة شخص آخر أو معلوماته الشخصية دون إذنه. يمكنك إزالة المحتوى حيث يوفر التطبيق ذلك. يجوز لنا مراجعة المحتوى المخالف لهذه الشروط أو للقانون المعمول به أو تقييده أو إزالته.',
   ),
   _LegalSectionData(
     '5. AI tour guide and travel information',
@@ -119,14 +119,14 @@ const _termsSections = <_LegalSectionData>[
   _LegalSectionData(
     '6. Subscriptions, availability, and changes',
     '٦. الاشتراكات والتوفر والتغييرات',
-    'Some features may require a paid subscription. Purchase, renewal, cancellation, and refund terms are controlled by the store through which you subscribe. Streetlore is provided on an “as available” basis; features may change or be interrupted. To the extent permitted by law, Streetlore is not liable for indirect losses resulting from use of the service. Nothing in these Terms limits rights that cannot legally be limited.',
-    'قد تتطلب بعض الميزات اشتراكًا مدفوعًا. تخضع شروط الشراء والتجديد والإلغاء والاسترداد للمتجر الذي اشتركت من خلاله. يُقدّم Streetlore حسب التوفر، وقد تتغير الميزات أو تتوقف. بالقدر الذي يسمح به القانون، لا تتحمل Streetlore مسؤولية الخسائر غير المباشرة الناتجة عن استخدام الخدمة. لا تحد هذه الشروط من أي حقوق لا يجوز قانونًا تقييدها.',
+    'Some features may require a paid subscription. Purchase, renewal, cancellation, and refund terms are controlled by the store through which you subscribe. EgyptLore is provided on an “as available” basis; features may change or be interrupted. To the extent permitted by law, EgyptLore is not liable for indirect losses resulting from use of the service. Nothing in these Terms limits rights that cannot legally be limited.',
+    'قد تتطلب بعض الميزات اشتراكًا مدفوعًا. تخضع شروط الشراء والتجديد والإلغاء والاسترداد للمتجر الذي اشتركت من خلاله. يُقدّم EgyptLore حسب التوفر، وقد تتغير الميزات أو تتوقف. بالقدر الذي يسمح به القانون، لا تتحمل EgyptLore مسؤولية الخسائر غير المباشرة الناتجة عن استخدام الخدمة. لا تحد هذه الشروط من أي حقوق لا يجوز قانونًا تقييدها.',
   ),
   _LegalSectionData(
     '7. Contact',
     '٧. التواصل',
-    'For questions or requests about these Terms, account deletion, or the service, contact the Streetlore team through the support options provided in the app.',
-    'للاستفسارات أو الطلبات المتعلقة بهذه الشروط أو حذف الحساب أو الخدمة، تواصل مع فريق Streetlore عبر خيارات الدعم المتاحة في التطبيق.',
+    'For questions or requests about these Terms, account deletion, or the service, contact the EgyptLore team through the support options provided in the app.',
+    'للاستفسارات أو الطلبات المتعلقة بهذه الشروط أو حذف الحساب أو الخدمة، تواصل مع فريق EgyptLore عبر خيارات الدعم المتاحة في التطبيق.',
   ),
 ];
 
@@ -134,8 +134,8 @@ const _privacySections = <_LegalSectionData>[
   _LegalSectionData(
     '1. Information we use',
     '١. المعلومات التي نستخدمها',
-    'Depending on the features you use, Streetlore processes account details such as your email, username, and profile name; places you save; check-ins, reviews, photos, and suggestions you submit; preferences; and technical diagnostic information needed to operate and secure the app. We do not ask for information that is not needed for the relevant feature.',
-    'بحسب الميزات التي تستخدمها، يعالج Streetlore بيانات الحساب مثل بريدك الإلكتروني واسم المستخدم واسم الملف الشخصي؛ والأماكن التي تحفظها؛ وتسجيلات الوصول والمراجعات والصور والاقتراحات التي ترسلها؛ والتفضيلات؛ والمعلومات التقنية والتشخيصية اللازمة لتشغيل التطبيق وتأمينه. لا نطلب معلومات لا تحتاج إليها الميزة المعنية.',
+    'Depending on the features you use, EgyptLore processes account details such as your email, username, and profile name; places you save; check-ins, reviews, photos, and suggestions you submit; preferences; and technical diagnostic information needed to operate and secure the app. We do not ask for information that is not needed for the relevant feature.',
+    'بحسب الميزات التي تستخدمها، يعالج EgyptLore بيانات الحساب مثل بريدك الإلكتروني واسم المستخدم واسم الملف الشخصي؛ والأماكن التي تحفظها؛ وتسجيلات الوصول والمراجعات والصور والاقتراحات التي ترسلها؛ والتفضيلات؛ والمعلومات التقنية والتشخيصية اللازمة لتشغيل التطبيق وتأمينه. لا نطلب معلومات لا تحتاج إليها الميزة المعنية.',
   ),
   _LegalSectionData(
     '2. Location use and controls',
@@ -170,14 +170,14 @@ const _privacySections = <_LegalSectionData>[
   _LegalSectionData(
     '7. Children and policy updates',
     '٧. الأطفال وتحديثات السياسة',
-    'Streetlore is not intended for children below the minimum age required by local law. We do not knowingly collect their personal information. We may update this policy as the app changes; the latest version and date will be available in the app.',
-    'لا يستهدف Streetlore الأطفال دون الحد الأدنى للعمر الذي يحدده القانون المحلي. لا نجمع معلوماتهم الشخصية عن علم. قد نحدّث هذه السياسة عند تغير التطبيق؛ وستتوفر أحدث نسخة وتاريخها في التطبيق.',
+    'EgyptLore is not intended for children below the minimum age required by local law. We do not knowingly collect their personal information. We may update this policy as the app changes; the latest version and date will be available in the app.',
+    'لا يستهدف EgyptLore الأطفال دون الحد الأدنى للعمر الذي يحدده القانون المحلي. لا نجمع معلوماتهم الشخصية عن علم. قد نحدّث هذه السياسة عند تغير التطبيق؛ وستتوفر أحدث نسخة وتاريخها في التطبيق.',
   ),
   _LegalSectionData(
     '8. Contact',
     '٨. التواصل',
-    'For privacy questions, data requests, or account-deletion support, contact the Streetlore team through the support options provided in the app.',
-    'للاستفسارات المتعلقة بالخصوصية أو طلبات البيانات أو المساعدة في حذف الحساب، تواصل مع فريق Streetlore عبر خيارات الدعم المتاحة في التطبيق.',
+    'For privacy questions, data requests, or account-deletion support, contact the EgyptLore team through the support options provided in the app.',
+    'للاستفسارات المتعلقة بالخصوصية أو طلبات البيانات أو المساعدة في حذف الحساب، تواصل مع فريق EgyptLore عبر خيارات الدعم المتاحة في التطبيق.',
   ),
 ];
 

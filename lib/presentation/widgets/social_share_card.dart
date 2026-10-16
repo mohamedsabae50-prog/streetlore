@@ -152,7 +152,7 @@ class SocialShareCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 20),
                     const Text(
-                      'Streetlore',
+                      'EgyptLore',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 32,

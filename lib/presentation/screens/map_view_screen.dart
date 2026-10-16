@@ -47,18 +47,14 @@ class MapViewScreen extends StatefulWidget {
 
 class _MapViewScreenState extends State<MapViewScreen> {
   final MapController _mapController = MapController();
-  
-  
-  
-  
+
   String? _selectedCategory;
   PlaceModel? _selectedPlace;
   LatLng? _userLocation;
   bool _initialCentered = false;
-  
-  
+
   bool _showAtms = false;
-  
+
   final Set<String> _extraLayers = <String>{};
 
   static const _alexCenter = LatLng(31.2001, 29.9187);
@@ -90,7 +86,6 @@ class _MapViewScreenState extends State<MapViewScreen> {
     } catch (_) {}
   }
 
-  
   void _showAtmSheet(BuildContext context, MapPoi atm) {
     showModalBottomSheet<void>(
       context: context,
@@ -120,8 +115,6 @@ class _MapViewScreenState extends State<MapViewScreen> {
       case 'Churches':
         return Icons.church_rounded;
       case 'Hotels':
-        
-        
         return Icons.bed_rounded;
       default:
         return Icons.location_on_rounded;
@@ -145,19 +138,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
       case 'Churches':
         return const Color(0xFFF97316);
       case 'Hotels':
-        return const Color(0xFF6A1B9A); 
+        return const Color(0xFF6A1B9A);
       default:
         return AppColors.primary;
     }
   }
 
-  
-  
-  
-  
   List<PlaceModel> _filtered(List<PlaceModel> all) {
-    
-    
     if (_showAtms) return const <PlaceModel>[];
     if (_showHotels) {
       return all.where((p) => p.category == 'Hotels').toList();
@@ -190,7 +177,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.streetlore.app',
+                userAgentPackageName: 'com.alsaba.egyptlore',
                 maxNativeZoom: 17,
                 tileProvider: OfflineTileProvider(),
               ),
@@ -292,12 +279,6 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         width: 44,
                         height: 44,
                         child: GestureDetector(
-                          
-                          
-                          
-                          
-                          
-                          
                           onTap: () {
                             final match = places.firstWhere(
                               (p) => p.id == hotel.id,
@@ -332,10 +313,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                   blurRadius: 8,
                                 ),
                               ],
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 3,
-                              ),
+                              border: Border.all(color: Colors.white, width: 3),
                             ),
                             child: Icon(
                               hotel.icon,
@@ -445,30 +423,18 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 setState(() {
                   if (_extraLayers.contains(layer)) {
                     _extraLayers.remove(layer);
-                    
-                    
-                    
+
                     if (layer == _hotelsCategory &&
                         _selectedCategory == _hotelsCategory) {
                       _selectedCategory = null;
                     }
                   } else {
                     _extraLayers.add(layer);
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                   }
                 });
               },
               showAtms: _showAtms,
-              onToggleAtms: () =>
-                  setState(() => _showAtms = !_showAtms),
+              onToggleAtms: () => setState(() => _showAtms = !_showAtms),
             ),
           ),
         ],
@@ -590,7 +556,7 @@ class _CategoryFilter extends StatelessWidget {
   final ValueChanged<String?> onSelect;
   final Color Function(String) colorOf;
   final IconData Function(String) iconOf;
-  
+
   final Set<String> extraLayers;
   final Set<String> activeLayers;
   final ValueChanged<String> onToggleExtraLayer;
@@ -611,7 +577,6 @@ class _CategoryFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     const cats = [
       'All',
       'Historical',
@@ -625,9 +590,7 @@ class _CategoryFilter extends StatelessWidget {
 
     for (final cat in cats) {
       final isAll = cat == 'All';
-      
-      
-      
+
       final allOn = selected == null;
       final isSel = isAll ? allOn : cat == selected;
       final color = isAll ? AppColors.primary : colorOf(cat);
@@ -638,15 +601,9 @@ class _CategoryFilter extends StatelessWidget {
             selected: isSel,
             onSelected: (_) {
               if (isAll) {
-                
-                
-                
-                
                 final currentlyAll = selected == null;
                 onSelect(currentlyAll ? '__none__' : null);
               } else {
-                
-                
                 if (cat == selected) {
                   onSelect('__none__');
                 } else {
@@ -683,7 +640,6 @@ class _CategoryFilter extends StatelessWidget {
       );
     }
 
-    
     children.add(
       Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -692,7 +648,6 @@ class _CategoryFilter extends StatelessWidget {
       ),
     );
 
-    
     const hotelsey = 'Hotels';
     final isHotels = activeLayers.contains(hotelsey);
     children.add(
@@ -721,9 +676,7 @@ class _CategoryFilter extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: BorderSide(
-              color: isHotels
-                  ? const Color(0xFF6A1B9A)
-                  : context.cardColor,
+              color: isHotels ? const Color(0xFF6A1B9A) : context.cardColor,
               width: 1.5,
             ),
           ),
@@ -731,7 +684,6 @@ class _CategoryFilter extends StatelessWidget {
       ),
     );
 
-    
     children.add(
       Padding(
         padding: const EdgeInsets.only(right: 8),
@@ -758,9 +710,7 @@ class _CategoryFilter extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: BorderSide(
-              color: showAtms
-                  ? const Color(0xFF10B981)
-                  : context.cardColor,
+              color: showAtms ? const Color(0xFF10B981) : context.cardColor,
               width: 1.5,
             ),
           ),

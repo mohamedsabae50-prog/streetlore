@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_version.dart';
 import '../../core/constants/app_colors.dart';
@@ -41,6 +42,13 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  static final _privacyPolicyUri = Uri.parse(
+    'https://mohamedsabae50-prog.github.io/streetlore/privacy.html',
+  );
+  static final _deleteAccountUri = Uri.parse(
+    'https://mohamedsabae50-prog.github.io/streetlore/delete-account.html',
+  );
+
   final ConfettiController _confetti = ConfettiController();
   bool _notificationsEnabled = true;
   bool _locationEnabled = true;
@@ -71,6 +79,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
         _locationEnabled = prefs.getBool('location_enabled') ?? true;
       });
+    }
+  }
+
+  Future<void> _openPublicPage(Uri uri) async {
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) throw StateError('No browser could open $uri.');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ProfileScreen: could not open public page: $error\n$stackTrace',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('public_link_failed'))));
     }
   }
 
@@ -138,9 +164,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         GeofencingStartResult.locationUnavailable => 'geo_start_failed',
         GeofencingStartResult.started => 'geo_monitoring_on',
       };
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr(key))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr(key))));
     }
   }
 
@@ -1185,7 +1211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: context.textSec,
                           onTap: () => showAboutDialog(
                             context: context,
-                            applicationName: 'Streetlore',
+                            applicationName: 'EgyptLore',
                             applicationVersion: kAppVersionFull,
                             applicationIcon: Container(
                               padding: const EdgeInsets.all(8),
@@ -1283,22 +1309,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _Div(),
                       ListTile(
                         leading: const Icon(
+                          Icons.open_in_new_rounded,
+                          color: AppColors.error,
+                        ),
+                        title: Text(context.tr('delete_account_public')),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => _openPublicPage(_deleteAccountUri),
+                      ),
+                      _Div(),
+                      ListTile(
+                        leading: const Icon(
                           Icons.privacy_tip_outlined,
                           color: Color(0xFF0EA5E9),
                         ),
                         title: Text(context.tr('privacy_policy_title')),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute<void>(
-                              builder: (_) => const LegalDocumentScreen(
-                                document: LegalDocument.privacy,
-                              ),
-                            ),
-                          );
-                        },
+                        onTap: () => _openPublicPage(_privacyPolicyUri),
                       ),
                       _Div(),
                       ListTile(

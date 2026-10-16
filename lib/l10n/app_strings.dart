@@ -102,19 +102,19 @@ class AppStrings {
     'quick_badges': {'en': 'Badges', 'ar': 'إنجازات'},
     'quick_routes': {'en': 'Routes', 'ar': 'مسارات'},
     'ai_tour_guide': {
-      'en': 'Streetlore AI Guide',
-      'ar': 'دليل ستريت لور الذكي',
+      'en': 'EgyptLore AI',
+      'ar': 'مساعد إيجيبت لور الذكي',
     },
     'ai_guide_general_title': {
-      'en': 'Streetlore AI Guide',
-      'ar': 'دليل ستريت لور الذكي',
+      'en': 'EgyptLore AI',
+      'ar': 'مساعد إيجيبت لور الذكي',
     },
     'ai_guide_welcome_en': {
       'en':
-          "Hi! I'm your Streetlore AI Guide. Ask me anything about places to "
+          "Hi! I'm EgyptLore AI. Ask me anything about places to "
           'visit, food, history, hidden gems, or tips for getting around the city.',
       'ar':
-          "أهلاً! أنا دليل ستريت لور الذكي. اسألني عن أي حاجة — أماكن للزيارة، "
+          "أهلاً! أنا مساعد إيجيبت لور الذكي. اسألني عن أي حاجة — أماكن للزيارة، "
           'أكل، تاريخ، جواهر مخفية، أو نصايح للتنقل في المدينة.',
     },
     'ai_guide_thinking': {'en': 'Thinking…', 'ar': 'بفكر…'},
@@ -171,6 +171,21 @@ class AppStrings {
       'ar': 'الإحساس {t}  · رطوبة {h}%',
     },
     'weather_my_location': {'en': 'Use my location', 'ar': 'استخدم موقعي'},
+    'weather_unavailable': {
+      'en': 'Current weather is unavailable. Check your location and connection.',
+      'ar': 'الطقس الحالي غير متاح. تحقق من الموقع والاتصال بالإنترنت.',
+    },
+    'weather_clear_sky': {'en': 'Clear sky', 'ar': 'سماء صافية'},
+    'weather_mainly_clear': {'en': 'Mainly clear', 'ar': 'صحو غالبًا'},
+    'weather_partly_cloudy': {'en': 'Partly cloudy', 'ar': 'غائم جزئيًا'},
+    'weather_overcast': {'en': 'Overcast', 'ar': 'غائم'},
+    'weather_rain_possible': {'en': 'Rain possible', 'ar': 'احتمال هطول أمطار'},
+    'weather_rain': {'en': 'Rain', 'ar': 'ممطر'},
+    'weather_drizzle': {'en': 'Drizzle', 'ar': 'رذاذ'},
+    'weather_thunderstorm': {'en': 'Thunderstorm', 'ar': 'عاصفة رعدية'},
+    'weather_snow': {'en': 'Snow', 'ar': 'ثلوج'},
+    'weather_fog': {'en': 'Fog', 'ar': 'ضباب'},
+    'weather_unknown': {'en': 'Current conditions', 'ar': 'الطقس الحالي'},
     'location_denied': {
       'en': 'Location permission denied. Enable it to see local weather.',
       'ar': 'تم رفض إذن الموقع. فعّله لعرض طقس منطقتك.',
@@ -270,8 +285,8 @@ class AppStrings {
       'ar': 'شارك مكاناً مميزاً مع فريقنا',
     },
     'users_search_subtitle': {
-      'en': 'Find and follow other Streetlore explorers',
-      'ar': 'اعثر على مستكشفي Streetlore الآخرين وتابعهم',
+      'en': 'Find and follow other EgyptLore explorers',
+      'ar': 'اعثر على مستكشفي EgyptLore الآخرين وتابعهم',
     },
     'users_search_hint': {
       'en': 'Search usernames',
@@ -351,6 +366,25 @@ class AppStrings {
       'en': 'Could not submit your report. Please try again.',
       'ar': 'تعذر إرسال البلاغ. حاول مرة أخرى.',
     },
+    'block_user': {'en': 'Block user', 'ar': 'حظر المستخدم'},
+    'unblock_user': {'en': 'Unblock user', 'ar': 'إلغاء حظر المستخدم'},
+    'block_user_title': {'en': 'Block this user?', 'ar': 'حظر هذا المستخدم؟'},
+    'block_user_confirmation': {
+      'en': 'Their community photos and activity will be hidden from you.',
+      'ar': 'ستُخفى صور المجتمع ونشاط هذا المستخدم عنك.',
+    },
+    'user_blocked': {
+      'en': 'User blocked. Their content is now hidden.',
+      'ar': 'تم حظر المستخدم وإخفاء محتواه.',
+    },
+    'block_user_failed': {
+      'en': 'Could not update the block list. Please try again.',
+      'ar': 'تعذر تحديث قائمة الحظر. حاول مرة أخرى.',
+    },
+    'blocked_profile_hidden': {
+      'en': 'This user is blocked. Unblock them to view their profile and activity.',
+      'ar': 'هذا المستخدم محظور. ألغِ حظره لعرض ملفه الشخصي ونشاطه.',
+    },
 
     'level_explorer': {'en': 'Explorer', 'ar': 'مستكشف'},
     'level_wanderer': {'en': 'Wanderer', 'ar': 'متجوّل'},
@@ -381,9 +415,9 @@ class AppStrings {
     },
     'smart_alerts_consent': {
       'en':
-          'Streetlore uses background location to alert you when you are within 150 m of a hidden gem. You can turn this off at any time.',
+          'EgyptLore uses background location to alert you when you are within 150 m of a hidden gem. You can turn this off at any time.',
       'ar':
-          'يستخدم Streetlore موقعك في الخلفية لتنبيهك عند الاقتراب لمسافة ١٥٠ مترًا من جوهرة مخفية. يمكنك إيقاف ذلك في أي وقت.',
+          'يستخدم EgyptLore موقعك في الخلفية لتنبيهك عند الاقتراب لمسافة ١٥٠ مترًا من جوهرة مخفية. يمكنك إيقاف ذلك في أي وقت.',
     },
     'smart_alerts_no_gems': {
       'en': 'No hidden gems are available to monitor right now.',
@@ -417,13 +451,13 @@ class AppStrings {
     },
     'help_center': {'en': 'Help Center', 'ar': 'مركز المساعدة'},
     'help_center_sub': {'en': 'FAQs and support', 'ar': 'أسئلة شائعة ودعم'},
-    'rate_app': {'en': 'Rate Streetlore', 'ar': 'قيّم ستريت لور'},
+    'rate_app': {'en': 'Rate EgyptLore', 'ar': 'قيّم إيجيبت لور'},
     'rate_app_sub': {'en': 'Share your experience', 'ar': 'شاركنا تجربتك'},
     'rate_thanks': {
       'en': 'Thank you for your support! ',
       'ar': 'شكرًا لدعمك! ',
     },
-    'about_app': {'en': 'About Streetlore', 'ar': 'عن ستريت لور'},
+    'about_app': {'en': 'About EgyptLore', 'ar': 'عن إيجيبت لور'},
     'attributions_title': {'en': 'Attributions', 'ar': 'حقوق الملكية'},
     'attribution_osm': {
       'en':
@@ -436,7 +470,7 @@ class AppStrings {
       'ar':
           'صور الأماكن من Wikimedia Commons، مستخدمة وفق شروط الرخصة المفتوحة لكل صورة.',
     },
-    'version': {'en': 'Version 2.0.0', 'ar': 'الإصدار 2.0.0'},
+    'version': {'en': 'Version 2.1.14', 'ar': 'الإصدار 2.1.14'},
     'saved_cleared': {
       'en': 'All saved places cleared.',
       'ar': 'تم مسح كل الأماكن المحفوظة.',
@@ -763,7 +797,7 @@ class AppStrings {
       'en': 'Tap the flag on any place to check in — your visits show up here.',
       'ar': 'سجّل حضورك في أي مكان من زر العلم، وهتلاقي زياراتك هنا.',
     },
-    'share_app': {'en': 'Share Streetlore', 'ar': 'شارك ستريت لور'},
+    'share_app': {'en': 'Share EgyptLore', 'ar': 'شارك إيجيبت لور'},
     'share_tour': {'en': 'Share completed tour', 'ar': 'شارك الجولة المكتملة'},
     'share_completed_tour': {'en': 'Tour completed', 'ar': 'جولة مكتملة'},
     'share_tour_details': {
@@ -870,17 +904,33 @@ class AppStrings {
     },
     'geo_background_explanation': {
       'en':
-          'Streetlore collects location data in the background to enable '
+          'EgyptLore collects location data in the background to enable '
           'geofenced notifications for nearby historical landmarks, even '
           'when the app is closed or not in use. This happens only while '
           'nearby alerts are enabled.',
       'ar':
-          'يجمع Streetlore بيانات الموقع في الخلفية لتمكين الإشعارات المحددة '
+          'يجمع EgyptLore بيانات الموقع في الخلفية لتمكين الإشعارات المحددة '
           'جغرافيًا عن المعالم التاريخية القريبة، حتى عندما يكون التطبيق '
           'مغلقًا أو غير قيد الاستخدام. يحدث ذلك فقط أثناء تفعيل التنبيهات '
           'القريبة.',
     },
     'privacy_policy_title': {'en': 'Privacy Policy', 'ar': 'سياسة الخصوصية'},
+    'privacy_policy_public': {
+      'en': 'Public Privacy Policy',
+      'ar': 'سياسة الخصوصية العامة',
+    },
+    'delete_account_public': {
+      'en': 'Account deletion instructions',
+      'ar': 'تعليمات حذف الحساب',
+    },
+    'public_link_failed': {
+      'en': 'Could not open the page. Please try again later.',
+      'ar': 'تعذر فتح الصفحة. حاول مرة أخرى لاحقًا.',
+    },
+    'subscription_disclosure': {
+      'en': 'Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Payment is charged to your Google Play account at confirmation. Manage or cancel anytime in Google Play > Payments & subscriptions. Deleting your EgyptLore account does not cancel an active subscription.',
+      'ar': 'تتجدد الاشتراكات تلقائيًا ما لم تُلغَ قبل 24 ساعة على الأقل من نهاية الفترة الحالية. يُحصّل الدفع عبر حسابك في Google Play عند التأكيد. يمكنك إدارة الاشتراك أو إلغاؤه من Google Play > الدفعات والاشتراكات. حذف حساب EgyptLore لا يلغي الاشتراك النشط.',
+    },
     'terms_of_service_title': {'en': 'Terms of Service', 'ar': 'شروط الخدمة'},
     'profile_legal_title': {
       'en': 'Settings & Legal',
@@ -889,9 +939,9 @@ class AppStrings {
     'delete_account_title': {'en': 'Delete Account', 'ar': 'حذف الحساب'},
     'delete_account_warning': {
       'en':
-          'This permanently deletes your account, personal data, saved items, and check-ins. Your Streetlore Pro access will be lost. Deleting the account does not cancel or refund billing managed by Apple or Google; cancel any active subscription in your store settings first. This action cannot be undone.',
+          'This permanently deletes your account, personal data, saved items, and check-ins. Your EgyptLore Pro access will be lost. Deleting the account does not cancel or refund billing managed by Apple or Google; cancel any active subscription in your store settings first. This action cannot be undone.',
       'ar':
-          'سيؤدي ذلك إلى حذف حسابك وبياناتك الشخصية والعناصر المحفوظة وتسجيلات الوصول نهائيًا. ستفقد إمكانية الوصول إلى ستريت لور برو. حذف الحساب لا يلغي أو يسترد المدفوعات التي تديرها Apple أو Google؛ ألغِ أي اشتراك نشط من إعدادات المتجر أولًا. لا يمكن التراجع عن هذا الإجراء.',
+          'سيؤدي ذلك إلى حذف حسابك وبياناتك الشخصية والعناصر المحفوظة وتسجيلات الوصول نهائيًا. ستفقد إمكانية الوصول إلى إيجيبت لور برو. حذف الحساب لا يلغي أو يسترد المدفوعات التي تديرها Apple أو Google؛ ألغِ أي اشتراك نشط من إعدادات المتجر أولًا. لا يمكن التراجع عن هذا الإجراء.',
     },
     'delete_account_confirm': {'en': 'Delete my account', 'ar': 'احذف حسابي'},
     'delete_account_success': {
@@ -905,10 +955,10 @@ class AppStrings {
     'legal_coming_soon': {'en': 'Coming soon', 'ar': 'قريبًا'},
     'privacy_policy_intro': {
       'en':
-          'This policy explains what information Streetlore uses and how it '
+          'This policy explains what information EgyptLore uses and how it '
           'supports your experience discovering places.',
       'ar':
-          'توضح هذه السياسة المعلومات التي يستخدمها Streetlore وكيف تساعد '
+          'توضح هذه السياسة المعلومات التي يستخدمها EgyptLore وكيف تساعد '
           'في تحسين تجربتك في اكتشاف الأماكن.',
     },
     'privacy_data_title': {
@@ -919,28 +969,28 @@ class AppStrings {
       'en':
           'Information you add to your profile and your saved places, alert '
           'selections, and app preferences are used to provide and personalize '
-          'Streetlore features.',
+          'EgyptLore features.',
       'ar':
           'تُستخدم المعلومات التي تضيفها إلى ملفك الشخصي والأماكن المحفوظة '
-          'واختيارات التنبيهات وتفضيلات التطبيق لتقديم ميزات Streetlore '
+          'واختيارات التنبيهات وتفضيلات التطبيق لتقديم ميزات EgyptLore '
           'وتخصيصها.',
     },
     'privacy_location_title': {'en': 'Location', 'ar': 'الموقع'},
     'privacy_location_body': {
       'en':
-          'When you allow location access, Streetlore uses your location for '
+          'When you allow location access, EgyptLore uses your location for '
           'nearby recommendations and location-based features. You can manage '
           'location access in your device settings.',
       'ar':
-          'عند السماح بالوصول إلى الموقع، يستخدم Streetlore موقعك لاقتراح '
+          'عند السماح بالوصول إلى الموقع، يستخدم EgyptLore موقعك لاقتراح '
           'أماكن قريبة وتقديم الميزات المرتبطة بالموقع. يمكنك إدارة إذن '
           'الوصول إلى الموقع من إعدادات جهازك.',
     },
     'privacy_background_location': {
       'en':
-          'Streetlore collects location data in the background to enable geofenced notifications for nearby historical landmarks, even when the app is closed or not in use.',
+          'EgyptLore collects location data in the background to enable geofenced notifications for nearby historical landmarks, even when the app is closed or not in use.',
       'ar':
-          'يجمع Streetlore بيانات الموقع في الخلفية لتمكين الإشعارات المحددة جغرافيًا عن المعالم التاريخية القريبة، حتى عندما يكون التطبيق مغلقًا أو غير قيد الاستخدام.',
+          'يجمع EgyptLore بيانات الموقع في الخلفية لتمكين الإشعارات المحددة جغرافيًا عن المعالم التاريخية القريبة، حتى عندما يكون التطبيق مغلقًا أو غير قيد الاستخدام.',
     },
     'privacy_geofence_title': {
       'en': 'Nearby landmark alerts',
@@ -949,13 +999,13 @@ class AppStrings {
     'privacy_geofence_body': {
       'en':
           'Background location is used only after you enable nearby alerts. '
-          'Streetlore checks your location against the landmarks you selected '
+          'EgyptLore checks your location against the landmarks you selected '
           'so it can notify you when you are nearby. Turn alerts off in '
           'Geofencing Settings or revoke location access in your device '
           'settings to stop this use.',
       'ar':
           'يُستخدم الموقع في الخلفية فقط بعد تفعيل التنبيهات القريبة. يقارن '
-          'Streetlore موقعك بالمعالم التي اخترتها ليتمكن من تنبيهك عند '
+          'EgyptLore موقعك بالمعالم التي اخترتها ليتمكن من تنبيهك عند '
           'اقترابك منها. أوقف التنبيهات من إعدادات التنبيهات الجغرافية أو '
           'ألغِ إذن الموقع من إعدادات جهازك لإيقاف هذا الاستخدام.',
     },
@@ -1105,14 +1155,14 @@ class AppStrings {
     'tour_stops': {'en': 'Stops', 'ar': 'محطات'},
     'tour_access': {'en': 'Access', 'ar': 'الدخول'},
     'tour_free': {'en': 'Free', 'ar': 'مجاني'},
-    'tour_pro': {'en': 'Streetlore Pro', 'ar': 'ستريت لور برو'},
+    'tour_pro': {'en': 'EgyptLore Pro', 'ar': 'إيجيبت لور برو'},
     'tour_pro_locked': {
       'en':
-          'This tour is part of Streetlore Pro. Hidden Gems and Premium Tours are for Pro members.',
+          'This tour is part of EgyptLore Pro. Hidden Gems and Premium Tours are for Pro members.',
       'ar':
-          'هذه الجولة متاحة ضمن ستريت لور برو. الجواهر المخفية والجولات المميزة حصرية لأعضاء برو.',
+          'هذه الجولة متاحة ضمن إيجيبت لور برو. الجواهر المخفية والجولات المميزة حصرية لأعضاء برو.',
     },
-    'pro_title': {'en': 'Streetlore Pro', 'ar': 'ستريت لور برو'},
+    'pro_title': {'en': 'EgyptLore Pro', 'ar': 'إيجيبت لور برو'},
     'pro_subtitle': {
       'en': 'Discover more of the stories behind your city.',
       'ar': 'اكتشف المزيد من الحكايات وراء مدينتك.',
@@ -1191,16 +1241,16 @@ class AppStrings {
           'لم يتم إعداد عمليات الشراء بعد. أضف مفاتيح RevenueCat العامة لتفعيلها.',
     },
     'pro_sign_in_required': {
-      'en': 'Sign in to subscribe to Streetlore Pro.',
-      'ar': 'سجّل الدخول للاشتراك في ستريت لور برو.',
+      'en': 'Sign in to subscribe to EgyptLore Pro.',
+      'ar': 'سجّل الدخول للاشتراك في إيجيبت لور برو.',
     },
     'pro_offering_unavailable': {
       'en': 'This purchase option is not available right now.',
       'ar': 'خيار الشراء هذا غير متاح حاليًا.',
     },
     'pro_purchase_success': {
-      'en': 'Streetlore Pro is active. Enjoy exploring!',
-      'ar': 'تم تفعيل ستريت لور برو. استمتع بالاكتشاف!',
+      'en': 'EgyptLore Pro is active. Enjoy exploring!',
+      'ar': 'تم تفعيل إيجيبت لور برو. استمتع بالاكتشاف!',
     },
     'pro_purchase_pending': {
       'en': 'Purchase received. Pro access will activate after verification.',
@@ -1210,7 +1260,7 @@ class AppStrings {
       'en': 'The purchase could not be completed. Please try again.',
       'ar': 'تعذر إكمال عملية الشراء. حاول مرة أخرى.',
     },
-    'pro_member': {'en': 'Streetlore Pro Member', 'ar': 'عضو ستريت لور برو'},
+    'pro_member': {'en': 'EgyptLore Pro Member', 'ar': 'عضو إيجيبت لور برو'},
     'pro_tier_weekly': {'en': 'Weekly', 'ar': 'أسبوعي'},
     'pro_tier_monthly': {'en': 'Monthly', 'ar': 'شهري'},
     'pro_tier_annual': {'en': 'Annual', 'ar': 'سنوي'},
@@ -1221,8 +1271,8 @@ class AppStrings {
     },
     'restore_purchases': {'en': 'Restore Purchases', 'ar': 'استعادة المشتريات'},
     'restore_sign_in_required': {
-      'en': 'Sign in to restore your Streetlore Pro purchases.',
-      'ar': 'سجّل الدخول لاستعادة مشتريات ستريت لور برو.',
+      'en': 'Sign in to restore your EgyptLore Pro purchases.',
+      'ar': 'سجّل الدخول لاستعادة مشتريات إيجيبت لور برو.',
     },
     'restore_setup_required': {
       'en': 'Purchase restoration is not available right now.',
@@ -1233,8 +1283,8 @@ class AppStrings {
       'ar': 'لم يتم العثور على مشتريات سابقة لبرو.',
     },
     'restore_success': {
-      'en': 'Your Streetlore Pro purchases have been restored.',
-      'ar': 'تمت استعادة مشتريات ستريت لور برو.',
+      'en': 'Your EgyptLore Pro purchases have been restored.',
+      'ar': 'تمت استعادة مشتريات إيجيبت لور برو.',
     },
     'restore_pending': {
       'en': 'Purchase restored. Pro access will activate after verification.',
@@ -1500,8 +1550,8 @@ class AppStrings {
     },
 
     'login_welcome': {
-      'en': 'Welcome to\nStreetlore',
-      'ar': 'أهلًا بك في\nستريت لور',
+      'en': 'Welcome to\nEgyptLore',
+      'ar': 'أهلًا بك في\nإيجيبت لور',
     },
     'login_subtitle': {
       'en': 'Sign in to save your favorite places and access exclusive tours.',

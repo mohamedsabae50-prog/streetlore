@@ -173,7 +173,7 @@ class GeofencingService {
         distanceFilter: 100,
         intervalDuration: const Duration(minutes: 1),
         foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationTitle: 'Streetlore nearby stories',
+          notificationTitle: 'EgyptLore nearby stories',
           notificationText: 'Monitoring your selected nearby places.',
           enableWakeLock: false,
           setOngoing: true,
@@ -263,8 +263,8 @@ class GeofencingService {
         a.placeId.hashCode,
         a.isSmartAlert ? 'Hidden gem nearby' : 'Nearby place',
         a.isSmartAlert
-            ? 'You are near ${a.placeName}. Open Streetlore to discover it.'
-            : 'You are near ${a.placeName}. Open Streetlore to discover its story.',
+            ? 'You are near ${a.placeName}. Open EgyptLore to discover it.'
+            : 'You are near ${a.placeName}. Open EgyptLore to discover its story.',
         const NotificationDetails(
           android: AndroidNotificationDetails(
             'streetlore_geofence',

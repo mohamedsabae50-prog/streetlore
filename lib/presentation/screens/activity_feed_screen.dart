@@ -11,6 +11,7 @@ import '../../core/services/supabase_service.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/blocked_users_provider.dart';
 import 'login_screen.dart';
 import 'place_details_screen.dart';
 import 'user_profile_screen.dart';
@@ -99,6 +100,13 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final blockedUsers = context.watch<BlockedUsersProvider>();
+    final visibleActivities = _activities
+        .where((activity) {
+          final actorId = activity['actor_id']?.toString() ?? '';
+          return !blockedUsers.isBlocked(actorId);
+        })
+        .toList(growable: false);
     final needsSignIn = !auth.isLoggedIn || auth.isGuest;
     return Scaffold(
       appBar: AppBar(
@@ -121,7 +129,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                 child: Text(context.tr('login_sign_in')),
               ),
             )
-          : _loading && _activities.isEmpty
+          : _loading && visibleActivities.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : _error != null
           ? _FeedMessage(
@@ -131,17 +139,17 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                 child: Text(context.tr('no_internet_retry')),
               ),
             )
-          : _activities.isEmpty
+          : visibleActivities.isEmpty
           ? _FeedMessage(text: context.tr('feed_empty'))
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView.separated(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
-                itemCount: _activities.length,
+                itemCount: visibleActivities.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, index) =>
-                    _ActivityCard(activity: _activities[index]),
+                    _ActivityCard(activity: visibleActivities[index]),
               ),
             ),
     );
@@ -277,11 +285,7 @@ class _ActivityCard extends StatelessWidget {
     );
   }
 
-  Widget _activityThumbnail(
-    String? imageUrl,
-    IconData icon,
-    String? category,
-  ) {
+  Widget _activityThumbnail(String? imageUrl, IconData icon, String? category) {
     final url = imageUrl?.trim() ?? '';
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return ClipRRect(
@@ -299,13 +303,8 @@ class _ActivityCard extends StatelessWidget {
         ),
       );
     }
-    return CategoryImageFallback(
-      category: category,
-      width: 54,
-      height: 54,
-    );
+    return CategoryImageFallback(category: category, width: 54, height: 54);
   }
-
 }
 
 class _FeedMessage extends StatelessWidget {

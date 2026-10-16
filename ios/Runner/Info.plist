@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Streetlore</string>
+	<string>EgyptLore</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -67,9 +67,9 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Streetlore uses your location to verify check-ins and show routes.</string>
+	<string>EgyptLore uses your location to verify check-ins and show routes.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Streetlore uses background location only when nearby alerts are enabled, so it can notify you when you approach selected places.</string>
+	<string>EgyptLore uses background location only when nearby alerts are enabled, so it can notify you when you approach selected places.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

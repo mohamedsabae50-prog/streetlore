@@ -9,23 +9,29 @@ import '../../logic/auth_provider.dart';
 class ReportContentSheet extends StatefulWidget {
   final String targetId;
   final String targetType;
+  final String? targetContext;
 
   const ReportContentSheet({
     super.key,
     required this.targetId,
     required this.targetType,
+    this.targetContext,
   });
 
   static Future<void> show(
     BuildContext context, {
     required String targetId,
     required String targetType,
+    String? targetContext,
   }) => showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) =>
-        ReportContentSheet(targetId: targetId, targetType: targetType),
+    builder: (_) => ReportContentSheet(
+      targetId: targetId,
+      targetType: targetType,
+      targetContext: targetContext,
+    ),
   );
 
   @override
@@ -55,6 +61,7 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
         reporterId: reporterId,
         targetId: widget.targetId,
         targetType: widget.targetType,
+        targetContext: widget.targetContext,
         reason: switch (_selectedReasonKey) {
           'report_reason_inappropriate' => 'Inappropriate content',
           'report_reason_spam' => 'Spam',
@@ -65,9 +72,9 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
       );
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('report_submitted'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('report_submitted'))));
     } catch (error, stackTrace) {
       debugPrint('ReportContentSheet: submission failed: $error\n$stackTrace');
       if (mounted) {
@@ -95,9 +102,9 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
           children: [
             Text(
               context.tr('report_title'),
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(context.tr('report_reason_prompt')),
@@ -112,9 +119,7 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
                     selected: _selectedReasonKey == reasonKey,
                     onSelected: _submitting
                         ? null
-                        : (_) => setState(
-                            () => _selectedReasonKey = reasonKey,
-                          ),
+                        : (_) => setState(() => _selectedReasonKey = reasonKey),
                   ),
               ],
             ),

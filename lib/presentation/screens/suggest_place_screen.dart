@@ -314,7 +314,7 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
                       TileLayer(
                         urlTemplate:
                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.streetlore.app',
+                        userAgentPackageName: 'com.alsaba.egyptlore',
                         maxZoom: 19,
                       ),
                       if (location != null)

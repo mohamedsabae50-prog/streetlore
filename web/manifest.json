@@ -1,11 +1,11 @@
 {
-    "name": "streetlore",
-    "short_name": "streetlore",
+    "name": "EgyptLore",
+    "short_name": "EgyptLore",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Discover Egypt's hidden stories with EgyptLore.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

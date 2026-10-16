@@ -308,10 +308,7 @@ class _MapScreenState extends State<MapScreen> {
 
     final fallbackRoute =
         cachedRoadRoute ??
-        [
-          if (_currentLocation != null) _currentLocation!,
-          ...waypointPoints,
-        ];
+        [if (_currentLocation != null) _currentLocation!, ...waypointPoints];
     if (mounted) {
       setState(() {
         _routePoints = fallbackRoute;
@@ -334,7 +331,7 @@ class _MapScreenState extends State<MapScreen> {
             url,
             headers: const {
               'User-Agent':
-                  'StreetloreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)',
+                  'EgyptLoreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)',
             },
           )
           .timeout(const Duration(seconds: 3));
@@ -458,7 +455,7 @@ class _MapScreenState extends State<MapScreen> {
     mapChildren.add(
       TileLayer(
         urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        userAgentPackageName: 'com.streetlore.app',
+        userAgentPackageName: 'com.alsaba.egyptlore',
         keepBuffer: 8,
         maxNativeZoom: 17,
         tileProvider: OfflineTileProvider(),

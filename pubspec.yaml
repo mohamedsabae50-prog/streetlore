@@ -1,7 +1,7 @@
 name: streetlore
-description: Discover the unseen stories of your city with Streetlore.
+description: Discover the unseen stories of your city with EgyptLore.
 publish_to: 'none'
-version: 2.1.13+213
+version: 2.1.14+214
 
 environment:
   sdk: ^3.12.0
@@ -55,7 +55,6 @@ flutter:
   uses-material-design: true
   generate: true
   assets:
-    - assets/logo/streetlore_logo.png
     - assets/images/splash_logo.png
     - assets/images/compass_only.png
   fonts:

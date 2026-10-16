@@ -58,9 +58,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _CategoryItem(label: 'Shopping', icon: Icons.shopping_bag_rounded),
     _CategoryItem(label: 'Mosques', icon: Icons.mosque_rounded),
     _CategoryItem(label: 'Churches', icon: Icons.church_rounded),
-    
-    
-    
+
     _CategoryItem(label: 'Hotels', icon: Icons.bed_rounded),
   ];
   @override
@@ -100,9 +98,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       );
     } else if (status == LocationPermissionStatus.serviceDisabled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('loc_service_off'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('loc_service_off'))));
     }
   }
 
@@ -139,8 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   List<PlaceModel> _searchResults(List<PlaceModel> all) {
     final term = _searchTerm;
-    bool matches(String? s) =>
-        s != null && s.toLowerCase().contains(term);
+    bool matches(String? s) => s != null && s.toLowerCase().contains(term);
     return all
         .where(
           (p) =>
@@ -159,7 +156,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<PlaceModel> _filtered(List<PlaceModel> all) {
     final base = _isSearching ? _searchResults(all) : _categoryFiltered(all);
     final isPro = context.read<AuthProvider>().isPro;
-    var result = isPro ? base : base.where((place) => !place.isHiddenGem).toList();
+    var result = isPro
+        ? base
+        : base.where((place) => !place.isHiddenGem).toList();
     if (_freeOnly) result = result.where((p) => p.isFree).toList();
     if (_hiddenGemsOnly) result = result.where((p) => p.isHiddenGem).toList();
     return result;
@@ -231,9 +230,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           HapticFeedback.lightImpact();
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => const GeneralAITourGuideScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const GeneralAITourGuideScreen()),
           );
         },
       ),
@@ -265,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               colors: [AppColors.primary, Color(0xFF22C55E)],
                             ).createShader(bounds),
                             child: const Text(
-                              'Streetlore',
+                              'EgyptLore',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 28,
@@ -446,13 +443,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
-          
-          
-          
-          
-          SliverToBoxAdapter(
-            child: RepaintBoundary(child: _QuickAccessGrid()),
-          ),
+
+          SliverToBoxAdapter(child: RepaintBoundary(child: _QuickAccessGrid())),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(top: 20),
@@ -511,16 +503,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           vertical: 9,
                         ),
                         decoration: BoxDecoration(
-                          color: isSel
-                              ? AppColors.primary
-                              : context.cardColor,
+                          color: isSel ? AppColors.primary : context.cardColor,
                           borderRadius: BorderRadius.circular(22),
                           border: isSel
                               ? null
                               : Border.all(
-                                  color: context.textSec.withValues(
-                                    alpha: 0.2,
-                                  ),
+                                  color: context.textSec.withValues(alpha: 0.2),
                                 ),
                           boxShadow: isSel
                               ? [
@@ -540,17 +528,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             Icon(
                               cat.icon,
                               size: 14,
-                              color: isSel
-                                  ? Colors.white
-                                  : context.textSec,
+                              color: isSel ? Colors.white : context.textSec,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               context.tr('cat_${cat.label.toLowerCase()}'),
                               style: TextStyle(
-                                color: isSel
-                                    ? Colors.white
-                                    : context.textSec,
+                                color: isSel ? Colors.white : context.textSec,
                                 fontWeight: isSel
                                     ? FontWeight.w700
                                     : FontWeight.w500,
@@ -576,8 +560,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Text(
                     _selectedCategory == 'All'
                         ? context.tr('all_places')
-                        : context.tr(
-                            'cat_${_selectedCategory.toLowerCase()}'),
+                        : context.tr('cat_${_selectedCategory.toLowerCase()}'),
                     style: AppTextStyles.sectionTitle.copyWith(
                       color: context.textPri,
                     ),
@@ -672,10 +655,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 6),
             Text(
               context.tr('try_different'),
-              style: TextStyle(
-                color: context.textSec,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: context.textSec, fontSize: 13),
             ),
           ],
         ),
@@ -691,10 +671,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               'n': '${results.length}',
               'q': _searchQuery,
             }),
-            style: TextStyle(
-              color: context.textSec,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: context.textSec, fontSize: 13),
           ),
         ),
         Expanded(
@@ -798,9 +775,7 @@ class _IconBtn extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: context.textSec.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: context.textSec.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),

@@ -15,7 +15,7 @@ class OfflineTileProvider extends TileProvider {
   OfflineTileProvider() : super(headers: {'User-Agent': _userAgent});
 
   static const _userAgent =
-      'StreetloreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)';
+      'EgyptLoreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)';
 
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>
@@ -27,7 +27,7 @@ class _OfflineTileImageProvider
   const _OfflineTileImageProvider(this.coordinates);
 
   static const _userAgent =
-      'StreetloreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)';
+      'EgyptLoreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)';
 
   final TileCoordinates coordinates;
 

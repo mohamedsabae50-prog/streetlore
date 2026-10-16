@@ -20,6 +20,7 @@ import 'logic/theme_provider.dart';
 import 'logic/auth_provider.dart';
 import 'logic/locale_provider.dart';
 import 'logic/place_photos_provider.dart';
+import 'logic/blocked_users_provider.dart';
 import 'logic/streak_provider.dart';
 import 'logic/squad_provider.dart';
 import 'logic/journal_provider.dart';
@@ -32,7 +33,8 @@ import 'logic/ai_features_providers.dart';
 import 'logic/connectivity_provider.dart';
 
 Future<void> main() async {
-  const sentryDsn = 'https://a53b51a6844eba2f4f122031f2c12f7d@o4512250554810368.ingest.de.sentry.io/4512250574798928';
+  const sentryDsn =
+      'https://a53b51a6844eba2f4f122031f2c12f7d@o4512250554810368.ingest.de.sentry.io/4512250574798928';
   await SentryFlutter.init((options) {
     // An empty DSN keeps the app runnable until a project DSN is configured.
     options.dsn = sentryDsn == 'YOUR_SENTRY_DSN_HERE' ? '' : sentryDsn;
@@ -93,6 +95,12 @@ Future<void> _runApplication() async {
 
   final auth = AuthProvider();
   await auth.bootstrap();
+  final blockedUsers = BlockedUsersProvider();
+  unawaited(
+    blockedUsers.setUserId(auth.userId).catchError((Object error, stackTrace) {
+      debugPrint('Blocked users startup sync failed: $error\n$stackTrace');
+    }),
+  );
   unawaited(SyncQueueService.instance.flush());
   await _configureRevenueCat(auth.userId);
   unawaited(_bindAuthDeepLink(auth));
@@ -145,6 +153,11 @@ Future<void> _runApplication() async {
     gamification.syncWithAuth(auth);
     achievements.syncWithAuth(auth);
     unawaited(squad.setUserId(id));
+    unawaited(
+      blockedUsers.setUserId(id).catchError((Object error, stackTrace) {
+        debugPrint('Blocked users auth sync failed: $error\n$stackTrace');
+      }),
+    );
     if (id.isEmpty) {
       _lastBootstrappedUserId = null;
       tourProvider.clearCheckedInPlaces();
@@ -179,13 +192,14 @@ Future<void> _runApplication() async {
         ChangeNotifierProvider(create: (_) => GeofenceProvider()),
         ChangeNotifierProvider(create: (_) => OfflineProvider()),
         ChangeNotifierProvider(create: (_) => PlacePhotosProvider()),
+        ChangeNotifierProvider<BlockedUsersProvider>.value(value: blockedUsers),
         ChangeNotifierProvider<StreakProvider>.value(value: streak),
         ChangeNotifierProvider<SquadProvider>.value(value: squad),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => JournalProvider()),
         ChangeNotifierProvider<AchievementProvider>.value(value: achievements),
       ],
-      child: const StreetloreApp(),
+      child: const EgyptLoreApp(),
     ),
   );
 }
@@ -215,14 +229,14 @@ Future<void> _bindAuthDeepLink(AuthProvider auth) async {
   }
 }
 
-class StreetloreApp extends StatefulWidget {
-  const StreetloreApp({super.key});
+class EgyptLoreApp extends StatefulWidget {
+  const EgyptLoreApp({super.key});
 
   @override
-  State<StreetloreApp> createState() => _StreetloreAppState();
+  State<EgyptLoreApp> createState() => _EgyptLoreAppState();
 }
 
-class _StreetloreAppState extends State<StreetloreApp>
+class _EgyptLoreAppState extends State<EgyptLoreApp>
     with WidgetsBindingObserver {
   final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   bool _offlineNoticeShown = false;
@@ -271,7 +285,7 @@ class _StreetloreAppState extends State<StreetloreApp>
       builder: (context, themeProvider, localeProvider, _) {
         return MaterialApp(
           scaffoldMessengerKey: _scaffoldMessengerKey,
-          title: 'Streetlore',
+          title: 'EgyptLore',
           debugShowCheckedModeBanner: false,
           locale: localeProvider.locale,
           supportedLocales: AppLocalizations.supportedLocales,

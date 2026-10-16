@@ -1,6 +1,6 @@
-# Streetlore — Supabase Setup Guide
+# EgyptLore — Supabase Setup Guide
 
-This guide walks you through wiring the Streetlore app and the new Admin panel to a real Supabase project.
+This guide walks you through wiring the EgyptLore app and the new Admin panel to a real Supabase project.
 
 ---
 

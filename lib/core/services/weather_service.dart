@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -7,90 +8,60 @@ class WeatherData {
   final double tempC;
   final double feelsLikeC;
   final int humidity;
-  final double windSpeed;
-  final String condition;
-  final String description;
-  final String iconCode;
+  final double precipitation;
+  final int precipitationProbability;
+  final int cloudCover;
+  final int weatherCode;
+  final bool isDay;
+  final String conditionKey;
   final DateTime fetchedAt;
 
   const WeatherData({
     required this.tempC,
     required this.feelsLikeC,
     required this.humidity,
-    required this.windSpeed,
-    required this.condition,
-    required this.description,
-    required this.iconCode,
+    required this.precipitation,
+    required this.precipitationProbability,
+    required this.cloudCover,
+    required this.weatherCode,
+    required this.isDay,
+    required this.conditionKey,
     required this.fetchedAt,
   });
+
+  String get iconCode => 'wmo_$weatherCode';
 }
 
 class WeatherService {
   WeatherService._();
   static final WeatherService instance = WeatherService._();
 
-  WeatherData? _cached;
   bool _loading = false;
-
-  WeatherData? get cached => _cached;
   bool get loading => _loading;
 
-  String _describeIcon(String code) {
-    if (code == '01d' || code == '01n') return 'Clear sky';
-    if (code == '02d' || code == '02n') return 'Few clouds';
-    if (code == '03d' || code == '03n') return 'Scattered clouds';
-    if (code == '04d' || code == '04n') return 'Broken clouds';
-    if (code == '09d' || code == '09n') return 'Shower rain';
-    if (code == '10d' || code == '10n') return 'Rain';
-    if (code == '11d' || code == '11n') return 'Thunderstorm';
-    if (code == '13d' || code == '13n') return 'Snow';
-    if (code == '50d' || code == '50n') return 'Mist';
-    return 'Unknown';
-  }
-
-  Future<WeatherData?> fetch({
-    double lat = 31.2001,
-    double lng = 29.9187,
-  }) async {
-    if (_loading) return _cached;
+  Future<WeatherData?> fetch({required double lat, required double lng}) async {
+    if (_loading) return null;
     _loading = true;
     try {
-      const apiKey = String.fromEnvironment(
-        'OPENWEATHER_API_KEY',
-        defaultValue: '',
-      );
-      if (apiKey.isEmpty) {
-        return _mockWeather();
+      final uri = Uri.https('api.open-meteo.com', '/v1/forecast', {
+        'latitude': '$lat',
+        'longitude': '$lng',
+        'current':
+            'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,weather_code,cloud_cover',
+        'hourly': 'precipitation_probability',
+        'timezone': 'auto',
+      });
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) {
+        throw StateError('Open-Meteo returned HTTP ${response.statusCode}.');
       }
-      final uri = Uri.parse(
-        'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lng&appid=$apiKey&units=metric',
+      return parseCurrentWeather(
+        jsonDecode(response.body) as Map<String, dynamic>,
+        now: DateTime.now(),
       );
-      final res = await http.get(uri).timeout(const Duration(seconds: 8));
-      if (res.statusCode != 200) {
-        debugPrint('WeatherService: API returned ${res.statusCode}');
-        return _cached ?? _mockWeather();
-      }
-      final json = jsonDecode(res.body) as Map<String, dynamic>;
-      final main = json['main'] as Map<String, dynamic>;
-      final wind = json['wind'] as Map<String, dynamic>? ?? const {};
-      final weather =
-          (json['weather'] as List?)?.first as Map<String, dynamic>?;
-      if (weather == null) return _mockWeather();
-      final data = WeatherData(
-        tempC: (main['temp'] as num).toDouble(),
-        feelsLikeC: (main['feels_like'] as num).toDouble(),
-        humidity: (main['humidity'] as num).toInt(),
-        windSpeed: (wind['speed'] as num?)?.toDouble() ?? 0,
-        condition: (weather['main'] as String?) ?? 'Clear',
-        description: _describeIcon(weather['icon'] as String? ?? '01d'),
-        iconCode: (weather['icon'] as String?) ?? '01d',
-        fetchedAt: DateTime.now(),
-      );
-      _cached = data;
-      return data;
-    } catch (e) {
-      debugPrint('WeatherService: failed: $e');
-      return _cached ?? _mockWeather();
+    } catch (error, stackTrace) {
+      debugPrint('WeatherService.fetch failed: $error\n$stackTrace');
+      return null;
     } finally {
       _loading = false;
     }
@@ -98,7 +69,7 @@ class WeatherService {
 
   Future<WeatherData?> fetchForDeviceLocation() async {
     try {
-      LocationPermission permission = await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
@@ -106,26 +77,86 @@ class WeatherService {
           permission == LocationPermission.deniedForever) {
         return null;
       }
-      final pos = await Geolocator.getCurrentPosition(
+      final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.low,
       );
-      return fetch(lat: pos.latitude, lng: pos.longitude);
-    } catch (e) {
-      debugPrint('WeatherService: device location failed: $e');
+      return fetch(lat: position.latitude, lng: position.longitude);
+    } catch (error, stackTrace) {
+      debugPrint('WeatherService device location failed: $error\n$stackTrace');
       return null;
     }
   }
 
-  WeatherData _mockWeather() {
+  @visibleForTesting
+  static WeatherData parseCurrentWeather(
+    Map<String, dynamic> json, {
+    required DateTime now,
+  }) {
+    final current = json['current'] as Map<String, dynamic>;
+    final hourly = json['hourly'] as Map<String, dynamic>?;
+    final times = (hourly?['time'] as List<dynamic>?) ?? const [];
+    final probabilities =
+        (hourly?['precipitation_probability'] as List<dynamic>?) ?? const [];
+    final currentTime = current['time'] as String;
+    final currentHour = currentTime.length >= 13
+        ? currentTime.substring(0, 13)
+        : currentTime;
+    var probability = 0;
+    for (
+      var index = 0;
+      index < times.length && index < probabilities.length;
+      index++
+    ) {
+      final time = times[index].toString();
+      if (time.startsWith(currentHour)) {
+        probability = (probabilities[index] as num?)?.round() ?? 0;
+        break;
+      }
+    }
+
+    final code = (current['weather_code'] as num).toInt();
+    final rain = (current['rain'] as num?)?.toDouble() ?? 0;
+    final cloudCover = (current['cloud_cover'] as num?)?.toInt() ?? 0;
     return WeatherData(
-      tempC: 24,
-      feelsLikeC: 26,
-      humidity: 65,
-      windSpeed: 4.2,
-      condition: 'Clear',
-      description: 'Clear sky',
-      iconCode: '01d',
-      fetchedAt: DateTime.now(),
+      tempC: (current['temperature_2m'] as num).toDouble(),
+      feelsLikeC: (current['apparent_temperature'] as num).toDouble(),
+      humidity: (current['relative_humidity_2m'] as num).toInt(),
+      precipitation: (current['precipitation'] as num?)?.toDouble() ?? rain,
+      precipitationProbability: probability,
+      cloudCover: cloudCover,
+      weatherCode: code,
+      isDay: (current['is_day'] as num).toInt() == 1,
+      conditionKey: _conditionKey(
+        code: code,
+        cloudCover: cloudCover,
+        rain: rain,
+        precipitationProbability: probability,
+      ),
+      fetchedAt: now,
     );
+  }
+
+  static String _conditionKey({
+    required int code,
+    required int cloudCover,
+    required double rain,
+    required int precipitationProbability,
+  }) {
+    if (const {95, 96, 99}.contains(code)) return 'weather_thunderstorm';
+    if (const {71, 73, 75, 77, 85, 86}.contains(code)) return 'weather_snow';
+    if (const {45, 48}.contains(code)) return 'weather_fog';
+    if (const {51, 53, 55, 56, 57}.contains(code)) return 'weather_drizzle';
+    if (const {61, 63, 65, 66, 67, 80, 81, 82}.contains(code) || rain > 0) {
+      return 'weather_rain';
+    }
+    if (code <= 3 && precipitationProbability >= 40) {
+      return 'weather_rain_possible';
+    }
+    if (cloudCover >= 85 || code == 3) return 'weather_overcast';
+    if (cloudCover >= 60 || code == 2) return 'weather_partly_cloudy';
+    if (code == 0) return 'weather_clear_sky';
+    if (code == 1) return 'weather_mainly_clear';
+    if (code == 51 || code == 53 || code == 55) return 'weather_drizzle';
+    return 'weather_unknown';
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/revenuecat_service.dart';
@@ -16,6 +17,13 @@ class PaywallScreen extends StatefulWidget {
 }
 
 class _PaywallScreenState extends State<PaywallScreen> {
+  static final _privacyPolicyUri = Uri.parse(
+    'https://mohamedsabae50-prog.github.io/streetlore/privacy.html',
+  );
+  static final _deleteAccountUri = Uri.parse(
+    'https://mohamedsabae50-prog.github.io/streetlore/delete-account.html',
+  );
+
   Package? _weeklyPackage;
   Package? _monthlyPackage;
   Package? _annualPackage;
@@ -154,7 +162,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
         try {
           await RevenueCatService.instance.syncSubscription(auth.userId);
         } catch (error) {
-          debugPrint('PaywallScreen: RevenueCat purchase sync is pending: $error');
+          debugPrint(
+            'PaywallScreen: RevenueCat purchase sync is pending: $error',
+          );
         }
       }
       var profileActivated = false;
@@ -194,6 +204,21 @@ class _PaywallScreenState extends State<PaywallScreen> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _openPublicPage(Uri uri) async {
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) throw StateError('No browser could open $uri.');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'PaywallScreen: could not open public page: $error\n$stackTrace',
+      );
+      if (mounted) _showMessage(context.tr('public_link_failed'));
+    }
   }
 
   @override
@@ -304,6 +329,29 @@ class _PaywallScreenState extends State<PaywallScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(color: context.textSec, fontSize: 12),
             ),
+            const SizedBox(height: 12),
+            Text(
+              context.tr('subscription_disclosure'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: context.textSec,
+                fontSize: 11,
+                height: 1.45,
+              ),
+            ),
+            Wrap(
+              alignment: WrapAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () => _openPublicPage(_privacyPolicyUri),
+                  child: Text(context.tr('privacy_policy_title')),
+                ),
+                TextButton(
+                  onPressed: () => _openPublicPage(_deleteAccountUri),
+                  child: Text(context.tr('delete_account_public')),
+                ),
+              ],
+            ),
             const SizedBox(height: 18),
             Center(
               child: TextButton(
@@ -405,11 +453,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
           const SizedBox(height: 5),
           Text(
             description,
-            style: TextStyle(
-              color: context.textSec,
-              fontSize: 12,
-              height: 1.4,
-            ),
+            style: TextStyle(color: context.textSec, fontSize: 12, height: 1.4),
           ),
           if (badge != null) ...[
             const SizedBox(height: 10),

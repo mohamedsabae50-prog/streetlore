@@ -41,16 +41,17 @@ class SupabaseService {
         ? envelope['items']
         : const <dynamic>[];
 
-    final items = (rawItems as List).whereType<Map>().map((item) {
-      return Map<String, dynamic>.fromEntries(
-        item.entries
-            .where((entry) => entry.key is String)
-            .map((entry) => MapEntry(entry.key as String, entry.value)),
-      );
-    }).toList(growable: false);
-    final containsThreads = items.any(
-      (item) => item['messages'] is List,
-    );
+    final items = (rawItems as List)
+        .whereType<Map>()
+        .map((item) {
+          return Map<String, dynamic>.fromEntries(
+            item.entries
+                .where((entry) => entry.key is String)
+                .map((entry) => MapEntry(entry.key as String, entry.value)),
+          );
+        })
+        .toList(growable: false);
+    final containsThreads = items.any((item) => item['messages'] is List);
     final threads = <Map<String, dynamic>>[];
     if (containsThreads) {
       for (final item in items) {
@@ -58,22 +59,24 @@ class SupabaseService {
         if (rawMessages is! List) continue;
         final messages = rawMessages
             .whereType<Map>()
-            .map((message) => _normalizeAiChatLog(
-                  Map<String, dynamic>.fromEntries(
-                    message.entries
-                        .where((entry) => entry.key is String)
-                        .map(
-                          (entry) =>
-                              MapEntry(entry.key as String, entry.value),
-                        ),
-                  ),
-                ))
+            .map(
+              (message) => _normalizeAiChatLog(
+                Map<String, dynamic>.fromEntries(
+                  message.entries
+                      .where((entry) => entry.key is String)
+                      .map(
+                        (entry) => MapEntry(entry.key as String, entry.value),
+                      ),
+                ),
+              ),
+            )
             .toList(growable: false);
         if (messages.isEmpty) continue;
         threads.add({
           ...item,
           'user_id': item['user_id']?.toString() ?? '',
-          'created_at': _normalizeIsoDate(item['created_at']) ??
+          'created_at':
+              _normalizeIsoDate(item['created_at']) ??
               messages.first['created_at'],
           'messages': messages,
         });
@@ -100,15 +103,13 @@ class SupabaseService {
         });
       }
       threads.sort(
-        (left, right) => (right['last_message_at'] as String)
-            .compareTo(left['last_message_at'] as String),
+        (left, right) => (right['last_message_at'] as String).compareTo(
+          left['last_message_at'] as String,
+        ),
       );
     }
 
-    return {
-      'threads': threads,
-      'has_more': envelope['has_more'] == true,
-    };
+    return {'threads': threads, 'has_more': envelope['has_more'] == true};
   }
 
   static Map<String, dynamic> _normalizeAiChatLog(
@@ -126,7 +127,10 @@ class SupabaseService {
           (log['user_prompt'] ?? log['prompt'] ?? log['user_message'] ?? '')
               .toString(),
       'ai_response':
-          (log['ai_response'] ?? log['response'] ?? log['assistant_message'] ?? '')
+          (log['ai_response'] ??
+                  log['response'] ??
+                  log['assistant_message'] ??
+                  '')
               .toString(),
       'created_at':
           _normalizeIsoDate(log['created_at'] ?? log['timestamp']) ?? '',
@@ -208,7 +212,9 @@ class SupabaseService {
     if (status['daily_limit'] is! num ||
         status['remaining'] is! num ||
         status['next_reset_at'] is! String) {
-      throw const FormatException('AI quota response is missing required fields.');
+      throw const FormatException(
+        'AI quota response is missing required fields.',
+      );
     }
     return status;
   }
@@ -261,11 +267,7 @@ class SupabaseService {
     try {
       final result = await client.rpc(
         'get_city_leaderboard',
-        params: {
-          'p_period': period,
-          'p_metric': metric,
-          'p_limit': limit,
-        },
+        params: {'p_period': period, 'p_metric': metric, 'p_limit': limit},
       );
       if (result is! List) {
         throw const FormatException('Leaderboard response was not a list.');
@@ -355,11 +357,13 @@ class SupabaseService {
     if (client == null) {
       throw StateError('Supabase is unavailable.');
     }
-    await client.from('user_follows').upsert(
-      {'follower_id': followerId, 'following_id': followingId},
-      onConflict: 'follower_id,following_id',
-      ignoreDuplicates: true,
-    );
+    await client
+        .from('user_follows')
+        .upsert(
+          {'follower_id': followerId, 'following_id': followingId},
+          onConflict: 'follower_id,following_id',
+          ignoreDuplicates: true,
+        );
   }
 
   Future<void> unfollowUser(String followerId, String followingId) async {
@@ -429,6 +433,7 @@ class SupabaseService {
     required String targetId,
     required String targetType,
     required String reason,
+    String? targetContext,
   }) async {
     final client = _client;
     if (client == null) {
@@ -436,7 +441,9 @@ class SupabaseService {
     }
     if (reporterId.isEmpty ||
         targetId.trim().isEmpty ||
-        !const {'place', 'user', 'review'}.contains(targetType) ||
+        (targetContext != null &&
+            (targetType != 'ai_message' || targetContext.trim().isEmpty)) ||
+        !const {'place', 'user', 'review', 'ai_message'}.contains(targetType) ||
         !const {
           'Inappropriate content',
           'Spam',
@@ -451,6 +458,13 @@ class SupabaseService {
       'target_id': targetId.trim(),
       'target_type': targetType,
       'reason': reason,
+      if (targetContext != null)
+        'target_context': targetContext.trim().substring(
+          0,
+          targetContext.trim().length > 2000
+              ? 2000
+              : targetContext.trim().length,
+        ),
     });
   }
 

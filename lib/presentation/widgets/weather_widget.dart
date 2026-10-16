@@ -23,8 +23,11 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
-    final d = await WeatherService.instance.fetch();
+    setState(() {
+      _loading = true;
+      _data = null;
+    });
+    final d = await WeatherService.instance.fetchForDeviceLocation();
     if (mounted) {
       setState(() {
         _data = d;
@@ -35,33 +38,58 @@ class _WeatherWidgetState extends State<WeatherWidget> {
 
   Future<void> _useMyLocation() async {
     HapticFeedback.lightImpact();
-    setState(() => _locating = true);
+    setState(() {
+      _locating = true;
+      _loading = true;
+      _data = null;
+    });
     final d = await WeatherService.instance.fetchForDeviceLocation();
     if (!mounted) return;
     setState(() {
       _locating = false;
+      _loading = false;
       if (d != null) _data = d;
     });
     if (d == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.tr('location_denied'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('weather_unavailable'))),
+      );
     }
   }
 
   IconData _iconForCode(String code) {
-    if (code.startsWith('01')) { return Icons.wb_sunny_rounded; }
-    if (code.startsWith('02')) { return Icons.wb_cloudy_rounded; }
-    if (code.startsWith('03') || code.startsWith('04')) {
-      return Icons.cloud_rounded;
-    }
-    if (code.startsWith('09') || code.startsWith('10')) {
+    final weatherCode = int.tryParse(code.replaceFirst('wmo_', ''));
+    if (weatherCode == null) return Icons.cloud_off_rounded;
+    if ((_data?.precipitationProbability ?? 0) >= 40 &&
+        (_data?.precipitation ?? 0) == 0 &&
+        weatherCode <= 3) {
       return Icons.umbrella_rounded;
     }
-    if (code.startsWith('11')) { return Icons.thunderstorm_rounded; }
-    if (code.startsWith('13')) { return Icons.ac_unit_rounded; }
-    if (code.startsWith('50')) { return Icons.foggy; }
-    return Icons.wb_sunny_rounded;
+    if (weatherCode >= 95) return Icons.thunderstorm_rounded;
+    if ((weatherCode >= 51 && weatherCode <= 67) ||
+        (weatherCode >= 80 && weatherCode <= 82)) {
+      return Icons.umbrella_rounded;
+    }
+    if ((weatherCode >= 71 && weatherCode <= 77) ||
+        (weatherCode == 85 || weatherCode == 86)) {
+      return Icons.ac_unit_rounded;
+    }
+    if (weatherCode == 45 || weatherCode == 48) return Icons.foggy;
+    if (weatherCode == 0 && _data?.isDay == false) {
+      return Icons.nightlight_round;
+    }
+    if (weatherCode <= 1 && _data?.isDay == true) {
+      return Icons.wb_sunny_rounded;
+    }
+    if (weatherCode <= 2) {
+      return _data?.isDay == true
+          ? Icons.wb_cloudy_rounded
+          : Icons.cloud_rounded;
+    }
+    if (weatherCode >= 3) {
+      return Icons.cloud_rounded;
+    }
+    return Icons.cloud_rounded;
   }
 
   @override
@@ -83,20 +111,49 @@ class _WeatherWidgetState extends State<WeatherWidget> {
         ),
       );
     }
+    if (_data == null) {
+      return Container(
+        height: 100,
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 18),
+            const Icon(Icons.cloud_off_rounded, color: Colors.blueGrey),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                context.tr('weather_unavailable'),
+                style: TextStyle(color: context.textSec, fontSize: 13),
+              ),
+            ),
+            IconButton(
+              onPressed: _load,
+              tooltip: context.tr('refresh'),
+              icon: const Icon(Icons.refresh_rounded),
+            ),
+          ],
+        ),
+      );
+    }
     final d = _data!;
+    final gradient = _gradientFor(d);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: _gradientFor(d.iconCode),
+          colors: gradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: _gradientFor(d.iconCode).first.withValues(alpha: 0.3),
+            color: gradient.first.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -112,7 +169,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${d.tempC.round()}°  ${d.description}',
+                  '${d.tempC.round()}°  ${context.tr(d.conditionKey)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,
@@ -174,25 +231,32 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     );
   }
 
-  List<Color> _gradientFor(String code) {
-    if (code.startsWith('01')) {
-      return [const Color(0xFF60A5FA), const Color(0xFFFBBF24)];
+  List<Color> _gradientFor(WeatherData data) {
+    if (!data.isDay) {
+      return [const Color(0xFF0F172A), const Color(0xFF334155)];
     }
-    if (code.startsWith('02') ||
-        code.startsWith('03') ||
-        code.startsWith('04')) {
-      return [const Color(0xFF64748B), const Color(0xFF94A3B8)];
-    }
-    if (code.startsWith('09') || code.startsWith('10')) {
+    final code = data.weatherCode;
+    if (data.precipitationProbability >= 40 ||
+        data.precipitation > 0 ||
+        code >= 51) {
       return [const Color(0xFF1E40AF), const Color(0xFF3B82F6)];
     }
-    if (code.startsWith('11')) {
+    if (code <= 1) {
+      return [const Color(0xFF2563EB), const Color(0xFFF59E0B)];
+    }
+    if (code <= 3) {
+      return [const Color(0xFF64748B), const Color(0xFF94A3B8)];
+    }
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+      return [const Color(0xFF1E40AF), const Color(0xFF3B82F6)];
+    }
+    if (code >= 95) {
       return [const Color(0xFF1E1B4B), const Color(0xFF4338CA)];
     }
-    if (code.startsWith('13')) {
+    if ((code >= 71 && code <= 77) || code == 85 || code == 86) {
       return [const Color(0xFFE0F2FE), const Color(0xFFBAE6FD)];
     }
-    if (code.startsWith('50')) {
+    if (code == 45 || code == 48) {
       return [const Color(0xFF6B7280), const Color(0xFF9CA3AF)];
     }
     return [const Color(0xFF3B82F6), const Color(0xFF60A5FA)];

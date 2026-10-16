@@ -1,15 +1,15 @@
-# Google Sign-In Fix — Streetlore
+# Google Sign-In Fix — EgyptLore
 
 ## Diagnosis (Confirmed)
 - Error: `PlatformException(sign_in_failed, y1.d: 10: , null, null)` → **API Exception Code 10 (DEVELOPER_ERROR)**
-- Cause: **Debug SHA-1 fingerprint not registered** in Google Cloud Console OAuth client for `com.example.streetlore`
+- Cause: **Debug SHA-1 fingerprint not registered** in Google Cloud Console OAuth client for `com.alsaba.egyptlore`
 - The Web Client ID (`504340157609-pj8oox9662299u613glititqn4dqa7ij.apps.googleusercontent.com`) is correctly used as `serverClientId`, but Android Sign-In SDK requires an **Android OAuth client** with matching SHA-1 + package name.
 
 ## Values You Need
 
 | Field | Value |
 |-------|-------|
-| **Package name** | `com.example.streetlore` |
+| **Package name** | `com.alsaba.egyptlore` |
 | **Debug SHA-1** | `A4:30:B8:FD:D5:69:9F:35:07:34:51:16:1D:D9:90:77:4D:31:CA:E5` |
 | **Release SHA-1** | _(run keytool against your release keystore when ready — see step 3)_ |
 | **Web Client ID** | `504340157609-pj8oox9662299u613glititqn4dqa7ij.apps.googleusercontent.com` |
@@ -24,8 +24,8 @@
    (sign in with the account that owns the project containing client `504340157609-...`)
 2. Click **+ Create Credentials → OAuth client ID**
 3. Application type: **Android**
-4. Name: `Streetlore Android (debug)` (or anything)
-5. Package name: `com.example.streetlore`
+4. Name: `EgyptLore Android (debug)` (or anything)
+5. Package name: `com.alsaba.egyptlore`
 6. SHA-1 certificate fingerprint: `A4:30:B8:FD:D5:69:9F:35:07:34:51:16:1D:D9:90:77:4D:31:CA:E5`
 7. Click **Create**
 

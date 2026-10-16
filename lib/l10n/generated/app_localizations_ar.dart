@@ -9,7 +9,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get about_app => 'عن ستريت لور';
+  String get about_app => 'عن إيجيبت لور';
 
   @override
   String get attributions_title => 'حقوق الملكية';
@@ -826,7 +826,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'سجّل دخولك لحفظ أماكنك المفضلة والوصول لجولات حصرية.';
 
   @override
-  String get login_welcome => 'أهلًا بك في\\nستريت لور';
+  String get login_welcome => 'أهلًا بك في\\nإيجيبت لور';
 
   @override
   String get map_close => 'إغلاق';
@@ -1092,7 +1092,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get quick_transport => 'المواصلات';
 
   @override
-  String get rate_app => 'قيّم ستريت لور';
+  String get rate_app => 'قيّم إيجيبت لور';
 
   @override
   String get rate_app_sub => 'شاركنا تجربتك';
@@ -1161,7 +1161,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get see_all => 'عرض الكل';
 
   @override
-  String get share_app => 'شارك ستريت لور';
+  String get share_app => 'شارك إيجيبت لور';
 
   @override
   String get sign_in_continue => 'كمّل';

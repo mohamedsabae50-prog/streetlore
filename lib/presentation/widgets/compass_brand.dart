@@ -148,7 +148,7 @@ class _LettersPainter extends CustomPainter {
   final double totalHeight;
   final bool isLooping;
 
-  static const String _text = 'STREETLORE';
+  static const String _text = 'EGYPTLORE';
   static const Color _color = Color(0xFF1F3A5F);
   static const double _letterFontSize = 22;
 
@@ -190,8 +190,8 @@ class _LettersPainter extends CustomPainter {
     final morphT = isMorph && !isFadeOut
         ? ((progress - orbitEnd) / (morphEnd - orbitEnd)).clamp(0.0, 1.0)
         : isFadeOut
-            ? 1.0
-            : 0.0;
+        ? 1.0
+        : 0.0;
 
     // Fade-out alpha (only during Phase 3, only when looping)
     final fadeOutAlpha = isFadeOut
@@ -226,10 +226,7 @@ class _LettersPainter extends CustomPainter {
 
       if (!isMorph) {
         final angle =
-            -math.pi / 2 +
-            i * (2 * math.pi / n) +
-            liveBaseAngle +
-            phaseOffset;
+            -math.pi / 2 + i * (2 * math.pi / n) + liveBaseAngle + phaseOffset;
         x = orbitCenter.dx + orbitRadius * math.cos(angle);
         y = orbitCenter.dy + orbitRadius * math.sin(angle);
         rotation = _normalizeAngle(angle + math.pi / 2);

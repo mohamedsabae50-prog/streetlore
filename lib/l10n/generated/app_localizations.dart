@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// Translation key: about_app
   ///
   /// In en, this message translates to:
-  /// **'About Streetlore'**
+  /// **'About EgyptLore'**
   String get about_app;
 
   /// Translation key: attributions_title
@@ -1631,7 +1631,7 @@ abstract class AppLocalizations {
   /// Translation key: login_welcome
   ///
   /// In en, this message translates to:
-  /// **'Welcome to\\nStreetlore'**
+  /// **'Welcome to\\nEgyptLore'**
   String get login_welcome;
 
   /// Translation key: map_close
@@ -2129,7 +2129,7 @@ abstract class AppLocalizations {
   /// Translation key: rate_app
   ///
   /// In en, this message translates to:
-  /// **'Rate Streetlore'**
+  /// **'Rate EgyptLore'**
   String get rate_app;
 
   /// Translation key: rate_app_sub
@@ -2255,7 +2255,7 @@ abstract class AppLocalizations {
   /// Translation key: share_app
   ///
   /// In en, this message translates to:
-  /// **'Share Streetlore'**
+  /// **'Share EgyptLore'**
   String get share_app;
 
   /// Translation key: sign_in_continue

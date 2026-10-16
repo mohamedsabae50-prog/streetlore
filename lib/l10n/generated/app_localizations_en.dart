@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get about_app => 'About Streetlore';
+  String get about_app => 'About EgyptLore';
 
   @override
   String get attributions_title => 'Attributions';
@@ -834,7 +834,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Sign in to save your favorite places and access exclusive tours.';
 
   @override
-  String get login_welcome => 'Welcome to\\nStreetlore';
+  String get login_welcome => 'Welcome to\\nEgyptLore';
 
   @override
   String get map_close => 'Close';
@@ -1100,7 +1100,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quick_transport => 'Transport';
 
   @override
-  String get rate_app => 'Rate Streetlore';
+  String get rate_app => 'Rate EgyptLore';
 
   @override
   String get rate_app_sub => 'Share your experience';
@@ -1169,7 +1169,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get see_all => 'See all';
 
   @override
-  String get share_app => 'Share Streetlore';
+  String get share_app => 'Share EgyptLore';
 
   @override
   String get sign_in_continue => 'Continue';

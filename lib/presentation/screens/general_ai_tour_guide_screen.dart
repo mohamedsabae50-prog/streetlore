@@ -6,6 +6,7 @@ import '../../core/services/ai_tour_guide_service.dart';
 import '../../core/services/gemini_rest_client.dart';
 import '../../core/widgets/ai_quota_banner.dart';
 import '../../l10n/app_strings.dart';
+import '../widgets/report_content_sheet.dart';
 
 class GeneralAITourGuideScreen extends StatefulWidget {
   const GeneralAITourGuideScreen({super.key});
@@ -30,7 +31,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   @override
   void initState() {
     super.initState();
-    _messages.add(_Msg(role: _Role.bot, text: _welcomeText));
+    _messages.add(_Msg(id: '', role: _Role.bot, text: _welcomeText));
   }
 
   bool _busy = false;
@@ -55,9 +56,10 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
           ),
         )
         .toList(growable: false);
+    final responseId = const Uuid().v4();
     setState(() {
-      _messages.add(_Msg(role: _Role.user, text: text));
-      _messages.add(const _Msg(role: _Role.bot, text: ''));
+      _messages.add(_Msg(id: '', role: _Role.user, text: text));
+      _messages.add(_Msg(id: responseId, role: _Role.bot, text: ''));
       _busy = true;
     });
     _input.clear();
@@ -71,6 +73,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
           if (!mounted) return;
           setState(() {
             _messages[_messages.length - 1] = _Msg(
+              id: responseId,
               role: _Role.bot,
               text: response,
             );
@@ -80,7 +83,11 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
       );
       if (!mounted) return;
       setState(() {
-        _messages[_messages.length - 1] = _Msg(role: _Role.bot, text: reply);
+        _messages[_messages.length - 1] = _Msg(
+          id: responseId,
+          role: _Role.bot,
+          text: reply,
+        );
         _busy = false;
       });
       _scrollToBottom();
@@ -89,6 +96,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
       if (!mounted) return;
       setState(() {
         _messages[_messages.length - 1] = _Msg(
+          id: '',
           role: _Role.bot,
           text:
               e.statusCode == 429 &&
@@ -105,6 +113,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
       if (!mounted) return;
       setState(() {
         _messages[_messages.length - 1] = _Msg(
+          id: '',
           role: _Role.bot,
           text: 'Something went wrong: $e',
         );
@@ -193,9 +202,10 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
 enum _Role { user, bot }
 
 class _Msg {
+  final String id;
   final _Role role;
   final String text;
-  const _Msg({required this.role, required this.text});
+  const _Msg({required this.id, required this.role, required this.text});
 }
 
 class _Bubble extends StatelessWidget {
@@ -255,6 +265,18 @@ class _Bubble extends StatelessWidget {
               ),
             ),
           ),
+          if (!isUser && msg.id.isNotEmpty && msg.text.isNotEmpty)
+            IconButton(
+              tooltip: context.tr('report_title'),
+              onPressed: () => ReportContentSheet.show(
+                context,
+                targetId: msg.id,
+                targetType: 'ai_message',
+                targetContext: msg.text,
+              ),
+              icon: const Icon(Icons.flag_outlined, size: 18),
+              visualDensity: VisualDensity.compact,
+            ),
         ],
       ),
     );

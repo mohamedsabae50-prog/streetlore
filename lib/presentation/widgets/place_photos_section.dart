@@ -15,6 +15,7 @@ import '../../data/models/place_photo.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/blocked_users_provider.dart';
 import '../../logic/place_photos_provider.dart';
 
 class PlacePhotosSection extends StatelessWidget {
@@ -91,6 +92,40 @@ class PlacePhotosSection extends StatelessWidget {
     }
   }
 
+  Future<void> _confirmBlockUser(BuildContext context, PlacePhoto photo) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.tr('block_user_title')),
+        content: Text(context.tr('block_user_confirmation')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.tr('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(context.tr('block_user')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await context.read<BlockedUsersProvider>().blockUser(photo.userId);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('user_blocked'))));
+    } catch (error, stackTrace) {
+      debugPrint('PlacePhotosSection: block user failed: $error\n$stackTrace');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('block_user_failed'))));
+    }
+  }
+
   Future<void> _sharePhoto(BuildContext context, PlacePhoto photo) async {
     final locale = Localizations.localeOf(context).languageCode;
     try {
@@ -117,11 +152,12 @@ class PlacePhotosSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-      child: Consumer<PlacePhotosProvider>(
-        builder: (context, provider, _) {
+      child: Consumer2<PlacePhotosProvider, BlockedUsersProvider>(
+        builder: (context, provider, blockedUsers, _) {
           final photos = provider.photosFor(
             place.id,
             officialImageUrls: place.officialImages,
+            blockedUserIds: blockedUsers.blockedUserIds,
           );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,6 +339,7 @@ class PlacePhotosSection extends StatelessWidget {
               );
             },
             onDelete: () => _confirmDelete(context, photo),
+            onBlock: () => _confirmBlockUser(context, photo),
           );
         },
       ),
@@ -318,6 +355,7 @@ class _PhotoCard extends StatelessWidget {
   final VoidCallback onShare;
   final VoidCallback onLike;
   final VoidCallback onDelete;
+  final VoidCallback onBlock;
   const _PhotoCard({
     required this.photo,
     required this.placeId,
@@ -326,6 +364,7 @@ class _PhotoCard extends StatelessWidget {
     required this.onShare,
     required this.onLike,
     required this.onDelete,
+    required this.onBlock,
   });
 
   @override
@@ -444,6 +483,16 @@ class _PhotoCard extends StatelessWidget {
                       icon: Icons.delete_outline_rounded,
                       tooltip: context.tr('delete'),
                       onTap: onDelete,
+                    ),
+                  ],
+                  if (!canDelete &&
+                      photo.userId.isNotEmpty &&
+                      photo.userId != context.read<AuthProvider>().userId) ...[
+                    const SizedBox(width: 6),
+                    _PhotoActionButton(
+                      icon: Icons.block_rounded,
+                      tooltip: context.tr('block_user'),
+                      onTap: onBlock,
                     ),
                   ],
                 ],

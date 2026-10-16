@@ -1,6 +1,6 @@
-# StreetLore
+# EgyptLore
 
-Alexandria tourism app — places, curated tours, an AI guide, offline maps,
+Egypt discovery app — places, curated tours, an AI guide, offline maps,
 prayer times and Qibla, check-ins with achievements, and a community feed.
 
 - **App:** Flutter (Android, iOS scaffold, Web on GitHub Pages)

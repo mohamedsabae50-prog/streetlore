@@ -1,8 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../logic/auth_provider.dart';
-import '../widgets/alexandria_shoreline.dart';
 import '../widgets/compass_brand.dart';
 import 'login_screen.dart';
 import 'main_navigation.dart';
@@ -18,11 +19,12 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  static const Color _bg = Color(0xFFFAF5EB);
-  static const Color _letterColor = Color(0xFF1F3A5F);
+  static const Color _bg = Color(0xFFFFF7E6);
+  static const Color _letterColor = Color(0xFF18324B);
 
   late final AnimationController _exitCtrl;
   late final AnimationController _introCtrl;
+  Timer? _navigationTimer;
   late final Animation<double> _logoFade;
   late final Animation<double> _taglineFade;
   late final Animation<Offset> _taglineSlide;
@@ -60,11 +62,15 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 600),
     );
 
-    Future.delayed(const Duration(milliseconds: 5000), _exitThenNavigate);
+    _navigationTimer = Timer(
+      const Duration(milliseconds: 5000),
+      _exitThenNavigate,
+    );
   }
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _introCtrl.dispose();
     _exitCtrl.dispose();
     super.dispose();
@@ -113,11 +119,20 @@ class _SplashScreenState extends State<SplashScreen>
       body: AnimatedBuilder(
         animation: _exitCtrl,
         builder: (context, _) {
-          return Container(
-            color: _bg,
+          return DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFFFF8E8), Color(0xFFF2D49B)],
+              ),
+            ),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
+                const Positioned.fill(
+                  child: CustomPaint(painter: _EgyptHorizonPainter()),
+                ),
                 Center(
                   child: SingleChildScrollView(
                     clipBehavior: Clip.none,
@@ -126,10 +141,20 @@ class _SplashScreenState extends State<SplashScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        const Text(
+                          'EgyptLore',
+                          style: TextStyle(
+                            color: _letterColor,
+                            fontSize: 36,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         FadeTransition(
                           opacity: _logoFade,
                           child: const CompassBrandIntro(
-                            size: 260,
+                            size: 220,
                             totalDuration: Duration(milliseconds: 4200),
                             loop: false,
                             spinCompass: true,
@@ -144,22 +169,21 @@ class _SplashScreenState extends State<SplashScreen>
                             child: const Column(
                               children: [
                                 Text(
-                                  'Discover the unseen',
+                                  "Egypt Unseen — Discover Egypt's Hidden Stories",
                                   style: TextStyle(
                                     color: _letterColor,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 1.0,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                                 SizedBox(height: 6),
                                 Text(
-                                  'Stories of Alexandria',
+                                  'اكتشف حكايات وكنوز مصر المخفية',
                                   style: TextStyle(
                                     color: Color(0xFF8C7B5E),
-                                    fontSize: 13,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w400,
-                                    letterSpacing: 0.8,
                                   ),
                                 ),
                               ],
@@ -168,15 +192,6 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ],
                     ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: FadeTransition(
-                    opacity: _logoFade,
-                    child: const AlexandriaShoreline(),
                   ),
                 ),
                 Positioned(
@@ -214,4 +229,52 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
   }
+}
+
+class _EgyptHorizonPainter extends CustomPainter {
+  const _EgyptHorizonPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final horizon = size.height * 0.76;
+    final sun = Paint()
+      ..color = const Color(0xFFE9AF4B).withValues(alpha: 0.36);
+    canvas.drawCircle(Offset(size.width * 0.5, horizon - 16), 58, sun);
+
+    final skyline = Paint()
+      ..color = const Color(0xFFB97838).withValues(alpha: 0.42);
+    final pyramid = Path()
+      ..moveTo(size.width * 0.1, horizon)
+      ..lineTo(size.width * 0.28, horizon - 118)
+      ..lineTo(size.width * 0.45, horizon)
+      ..close();
+    canvas.drawPath(pyramid, skyline);
+    final secondPyramid = Path()
+      ..moveTo(size.width * 0.32, horizon)
+      ..lineTo(size.width * 0.47, horizon - 82)
+      ..lineTo(size.width * 0.61, horizon)
+      ..close();
+    canvas.drawPath(secondPyramid, skyline);
+
+    final river = Path()
+      ..moveTo(0, horizon + 18)
+      ..cubicTo(
+        size.width * 0.3,
+        horizon - 4,
+        size.width * 0.62,
+        horizon + 42,
+        size.width,
+        horizon + 10,
+      )
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(
+      river,
+      Paint()..color = const Color(0xFF4D9A9A).withValues(alpha: 0.34),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _EgyptHorizonPainter oldDelegate) => false;
 }

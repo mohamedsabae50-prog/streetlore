@@ -27,6 +27,7 @@ class PlacePhotosProvider extends ChangeNotifier {
   List<PlacePhoto> photosFor(
     String placeId, {
     Iterable<String> officialImageUrls = const <String>[],
+    Iterable<String> blockedUserIds = const <String>[],
   }) {
     final officialUrls = officialImageUrls
         .map((url) => url.trim())
@@ -34,6 +35,7 @@ class PlacePhotosProvider extends ChangeNotifier {
         .toSet();
     return List.unmodifiable(
       (_byPlace[placeId] ?? const <PlacePhoto>[]).where((photo) {
+        if (blockedUserIds.contains(photo.userId)) return false;
         final userName = photo.userName.trim().toLowerCase();
         final isAdminPlaceholder = const {
           'admin',

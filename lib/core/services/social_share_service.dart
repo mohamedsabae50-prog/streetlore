@@ -12,7 +12,7 @@ import '../../presentation/widgets/social_share_card.dart';
 class SocialShareService {
   SocialShareService._();
 
-  static const _logoAsset = 'assets/logo/streetlore_logo.png';
+  static const _logoAsset = 'assets/images/compass_only.png';
   static const _imageTimeout = Duration(seconds: 20);
 
   static Future<void> shareCompletedTour({
@@ -31,7 +31,7 @@ class SocialShareService {
       subtitle: tour.localizedDescription(locale),
       category: category,
       footer: completedDetails,
-      fileName: 'streetlore-tour.png',
+      fileName: 'egyptlore-tour.png',
     );
   }
 
@@ -53,7 +53,7 @@ class SocialShareService {
       subtitle: caption.isNotEmpty ? caption : place.address,
       category: category,
       footer: footer,
-      fileName: 'streetlore-place-photo.png',
+      fileName: 'egyptlore-place-photo.png',
     );
   }
 

@@ -27,7 +27,7 @@ class OfflineStorageService {
     'https://tile.openstreetmap.org',
   ];
   static const _tileUserAgent =
-      'StreetloreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)';
+      'EgyptLoreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)';
 
   bool _ready = false;
   String? _tileDirectoryPath;

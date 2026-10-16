@@ -6,6 +6,7 @@ import '../../core/widgets/ai_quota_banner.dart';
 import '../../core/services/ai_tour_guide_service.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
+import '../widgets/report_content_sheet.dart';
 
 class AITourGuideScreen extends StatefulWidget {
   final PlaceModel place;
@@ -151,10 +152,10 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
       itemCount: msgs.length + (_streamingReply == null ? 0 : 1),
       itemBuilder: (context, i) {
         if (i == msgs.length) {
-          return _MessageBubble(text: _streamingReply!, isUser: false);
+          return _MessageBubble(text: _streamingReply!, isUser: false, id: '');
         }
         final m = msgs[i];
-        return _MessageBubble(text: m.text, isUser: m.isUser);
+        return _MessageBubble(text: m.text, isUser: m.isUser, id: m.id);
       },
     );
   }
@@ -221,7 +222,12 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
 class _MessageBubble extends StatelessWidget {
   final String text;
   final bool isUser;
-  const _MessageBubble({required this.text, required this.isUser});
+  final String id;
+  const _MessageBubble({
+    required this.text,
+    required this.isUser,
+    required this.id,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -273,6 +279,18 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
           ),
+          if (!isUser && id.isNotEmpty && text.isNotEmpty)
+            IconButton(
+              tooltip: context.tr('report_title'),
+              onPressed: () => ReportContentSheet.show(
+                context,
+                targetId: id,
+                targetType: 'ai_message',
+                targetContext: text,
+              ),
+              icon: const Icon(Icons.flag_outlined, size: 18),
+              visualDensity: VisualDensity.compact,
+            ),
         ],
       ),
     );

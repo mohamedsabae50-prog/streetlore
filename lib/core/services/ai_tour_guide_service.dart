@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import '../config/app_config.dart';
 import '../../data/models/place_model.dart';
 import 'gemini_rest_client.dart';
@@ -8,11 +9,13 @@ const aiDailyLimitMessage =
     'You have reached your daily limit, please come back tomorrow.';
 
 class ChatMessage {
+  final String id;
   final String text;
   final bool isUser;
   final DateTime timestamp;
 
   const ChatMessage({
+    required this.id,
     required this.text,
     required this.isUser,
     required this.timestamp,
@@ -22,6 +25,7 @@ class ChatMessage {
 class AITourGuideService {
   AITourGuideService._();
   static final AITourGuideService instance = AITourGuideService._();
+  static const _uuid = Uuid();
 
   final List<ChatMessage> _messages = [];
   List<ChatMessage> get messages => List.unmodifiable(_messages);
@@ -114,6 +118,7 @@ family-friendliness, safety, and accessibility.''';
       );
       _messages.add(
         ChatMessage(
+          id: _uuid.v4(),
           text: _offlineWelcome(place, locale),
           isUser: false,
           timestamp: DateTime.now(),
@@ -129,6 +134,7 @@ family-friendliness, safety, and accessibility.''';
     );
     _messages.add(
       ChatMessage(
+        id: _uuid.v4(),
         text: _initialWelcome(place, locale),
         isUser: false,
         timestamp: DateTime.now(),
@@ -170,11 +176,21 @@ family-friendliness, safety, and accessibility.''';
     if (_session == null && _currentPlace != null) {
       _busy = true;
       _messages.add(
-        ChatMessage(text: userText, isUser: true, timestamp: DateTime.now()),
+        ChatMessage(
+          id: _uuid.v4(),
+          text: userText,
+          isUser: true,
+          timestamp: DateTime.now(),
+        ),
       );
       final reply = _offlineAnswer(userText, _currentPlace!);
       _messages.add(
-        ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()),
+        ChatMessage(
+          id: _uuid.v4(),
+          text: reply,
+          isUser: false,
+          timestamp: DateTime.now(),
+        ),
       );
       _busy = false;
       return reply;
@@ -183,7 +199,12 @@ family-friendliness, safety, and accessibility.''';
     if (_busy) return 'Please wait for the previous reply.';
     _busy = true;
     _messages.add(
-      ChatMessage(text: userText, isUser: true, timestamp: DateTime.now()),
+      ChatMessage(
+        id: _uuid.v4(),
+        text: userText,
+        isUser: true,
+        timestamp: DateTime.now(),
+      ),
     );
     final contextualTurn = _buildContextualUserPrompt(userText);
     try {
@@ -193,7 +214,12 @@ family-friendliness, safety, and accessibility.''';
         onChunk: onResponseChunk,
       );
       _messages.add(
-        ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()),
+        ChatMessage(
+          id: _uuid.v4(),
+          text: reply,
+          isUser: false,
+          timestamp: DateTime.now(),
+        ),
       );
       return reply;
     } catch (e, stackTrace) {
@@ -208,7 +234,12 @@ family-friendliness, safety, and accessibility.''';
           : _offlineErrorReply(userText);
       onResponseChunk?.call(reply);
       _messages.add(
-        ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()),
+        ChatMessage(
+          id: _uuid.v4(),
+          text: reply,
+          isUser: false,
+          timestamp: DateTime.now(),
+        ),
       );
       return reply;
     } finally {
@@ -422,11 +453,11 @@ $userText''';
     void Function(String response)? onResponseChunk,
   }) async {
     final system =
-        '''You are the street-level local tourism expert inside the "Streetlore" app. You answer questions about travel, places, food, history, and culture for the city or area the user is currently exploring.
+        '''You are the street-level local tourism expert inside the "EgyptLore" app. You answer questions about travel, places, food, history, and culture for the city or area the user is currently exploring.
 
 STRICT RULES:
 1. ONLY answer questions related to travel, places, history, culture, food, or tourism in the city or area the user is exploring.
-2. If the user asks about coding, mathematics, general chat, politics, news, medical advice, or any non-tourism topic, politely decline and state your specific role (e.g. "I'm your local Streetlore guide — I can only help with travel, places, history, and culture here.").
+2. If the user asks about coding, mathematics, general chat, politics, news, medical advice, or any non-tourism topic, politely decline and state your specific role (e.g. "I'm your local EgyptLore guide — I can only help with travel, places, history, and culture here.").
 3. Be concise but COMPLETE. Never cut a sentence mid-thought. If you would run out of tokens, wrap the answer cleanly with a final full sentence.
 4. Use specific local details when possible (well-known landmarks, neighbourhoods, signature foods, transit options) for the city or area the user is in. Do NOT hard-code any single city — adapt to whichever city or area the user is asking about.
 5. Never invent places that don't exist. If unsure, say so and suggest the user open the app map.

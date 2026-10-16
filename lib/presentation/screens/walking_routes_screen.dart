@@ -21,9 +21,8 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
   static const _alexCenter = LatLng(31.2001, 29.9187);
   final MapController _mapController = MapController();
 
-  
   List<LatLng> _routePoints = const [];
-  
+
   RouteMetrics? _routeMetrics;
   bool _routeLoading = false;
 
@@ -33,8 +32,6 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
     super.dispose();
   }
 
-  
-  
   Future<void> _refreshRoute() async {
     if (_selected.length < 2) {
       setState(() {
@@ -192,7 +189,7 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
                         TileLayer(
                           urlTemplate:
                               'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.streetlore.app',
+                          userAgentPackageName: 'com.alsaba.egyptlore',
                           maxZoom: 19,
                         ),
                         if (_selected.length >= 2)
@@ -202,8 +199,8 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
                                 points: _routePoints.isNotEmpty
                                     ? _routePoints
                                     : _selected
-                                        .map((p) => LatLng(p.lat, p.lng))
-                                        .toList(),
+                                          .map((p) => LatLng(p.lat, p.lng))
+                                          .toList(),
                                 color: _routePoints.isNotEmpty
                                     ? const Color(0xFF14B8A6)
                                     : const Color(0xFFEC4899),
@@ -331,10 +328,11 @@ class _RouteSummary extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: (hasRealRoute
-                    ? const Color(0xFF14B8A6)
-                    : const Color(0xFFEC4899))
-                .withValues(alpha: 0.35),
+            color:
+                (hasRealRoute
+                        ? const Color(0xFF14B8A6)
+                        : const Color(0xFFEC4899))
+                    .withValues(alpha: 0.35),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -355,8 +353,7 @@ class _RouteSummary extends StatelessWidget {
                     height: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
                 : const Icon(
@@ -519,8 +516,9 @@ class _PlaceSelector extends StatelessWidget {
                                   children: [
                                     Text(
                                       p.localizedName(
-                                        Localizations.localeOf(context)
-                                            .languageCode,
+                                        Localizations.localeOf(
+                                          context,
+                                        ).languageCode,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,

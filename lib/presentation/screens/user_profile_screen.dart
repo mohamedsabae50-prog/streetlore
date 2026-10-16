@@ -9,6 +9,7 @@ import '../../data/models/place_model.dart';
 import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/blocked_users_provider.dart';
 import 'place_details_screen.dart';
 import '../widgets/report_content_sheet.dart';
 
@@ -104,9 +105,51 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
+  Future<void> _toggleBlock() async {
+    final blockedUsers = context.read<BlockedUsersProvider>();
+    final isBlocked = blockedUsers.isBlocked(widget.user.userId);
+    if (!isBlocked) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(context.tr('block_user_title')),
+          content: Text(context.tr('block_user_confirmation')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(context.tr('cancel')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(context.tr('block_user')),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+    setState(() => _isUpdating = true);
+    try {
+      if (isBlocked) {
+        await blockedUsers.unblockUser(widget.user.userId);
+      } else {
+        await blockedUsers.blockUser(widget.user.userId);
+      }
+    } catch (error, stackTrace) {
+      debugPrint('UserProfileScreen: block action failed: $error\n$stackTrace');
+      if (mounted) {
+        setState(() => _error = context.tr('block_user_failed'));
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final blockedUsers = context.watch<BlockedUsersProvider>();
+    final isBlocked = blockedUsers.isBlocked(widget.user.userId);
     final canFollow =
         AppConfig.supabaseEnabled && auth.isLoggedIn && !auth.isGuest;
     return Scaffold(
@@ -123,83 +166,114 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
               icon: const Icon(Icons.flag_outlined),
             ),
+          if (canFollow && widget.user.userId != auth.userId)
+            IconButton(
+              tooltip: context.tr(isBlocked ? 'unblock_user' : 'block_user'),
+              onPressed: _isUpdating ? null : _toggleBlock,
+              icon: Icon(
+                isBlocked ? Icons.check_circle_outline : Icons.block_rounded,
+              ),
+            ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Center(
-            child: Column(
-              children: [
-              CircleAvatar(
-                radius: 42,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+      body: isBlocked
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
                 child: Text(
-                  widget.user.username.characters.first.toUpperCase(),
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  context.tr('blocked_profile_hidden'),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                '@${widget.user.username}',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 24),
-              if (canFollow)
-                FilledButton.icon(
-                  onPressed: _isUpdating || _isFollowing == null
-                      ? null
-                      : _toggleFollow,
-                  icon: _isUpdating
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(
-                          _isFollowing == true
-                              ? Icons.person_remove_alt_1_rounded
-                              : Icons.person_add_alt_1_rounded,
+            )
+          : ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                Center(
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 42,
+                        backgroundColor: AppColors.primary.withValues(
+                          alpha: 0.12,
                         ),
-                  label: Text(
-                    context.tr(
-                      _isFollowing == true ? 'unfollow_user' : 'follow_user',
-                    ),
+                        child: Text(
+                          widget.user.username.characters.first.toUpperCase(),
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 30,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '@${widget.user.username}',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 24),
+                      if (canFollow)
+                        FilledButton.icon(
+                          onPressed: _isUpdating || _isFollowing == null
+                              ? null
+                              : _toggleFollow,
+                          icon: _isUpdating
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Icon(
+                                  _isFollowing == true
+                                      ? Icons.person_remove_alt_1_rounded
+                                      : Icons.person_add_alt_1_rounded,
+                                ),
+                          label: Text(
+                            context.tr(
+                              _isFollowing == true
+                                  ? 'unfollow_user'
+                                  : 'follow_user',
+                            ),
+                          ),
+                        )
+                      else
+                        Text(context.tr('users_sign_in_required')),
+                      if (_error != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          _error!,
+                          style: const TextStyle(color: AppColors.error),
+                        ),
+                      ],
+                    ],
                   ),
-                )
-              else
-                Text(context.tr('users_sign_in_required')),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(_error!, style: const TextStyle(color: AppColors.error)),
-              ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  context.tr('profile_visited_places'),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 10),
+                if (_isLoadingVisits)
+                  const Center(child: CircularProgressIndicator())
+                else if (_visitsError != null)
+                  Text(
+                    _visitsError!,
+                    style: const TextStyle(color: AppColors.error),
+                  )
+                else if (_visitedPlaces.isEmpty)
+                  Text(context.tr('profile_no_visits'))
+                else
+                  ..._visitedPlaces.map(
+                    (visit) => _VisitedPlaceCard(visit: visit),
+                  ),
               ],
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            context.tr('profile_visited_places'),
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 10),
-          if (_isLoadingVisits)
-            const Center(child: CircularProgressIndicator())
-          else if (_visitsError != null)
-            Text(_visitsError!, style: const TextStyle(color: AppColors.error))
-          else if (_visitedPlaces.isEmpty)
-            Text(context.tr('profile_no_visits'))
-          else
-            ..._visitedPlaces.map((visit) => _VisitedPlaceCard(visit: visit)),
-        ],
-      ),
     );
   }
 }
@@ -225,7 +299,8 @@ class _VisitedPlaceCard extends StatelessWidget {
         leading: SizedBox(
           width: 64,
           height: 64,
-          child: imageUrl.startsWith('https://') || imageUrl.startsWith('http://')
+          child:
+              imageUrl.startsWith('https://') || imageUrl.startsWith('http://')
               ? Image.network(
                   imageUrl,
                   fit: BoxFit.cover,
