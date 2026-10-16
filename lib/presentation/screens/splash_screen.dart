@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../logic/auth_provider.dart';
+import '../widgets/alexandria_shoreline.dart';
 import '../widgets/compass_brand.dart';
 import 'login_screen.dart';
 import 'main_navigation.dart';
@@ -170,7 +171,16 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 Positioned(
-                  bottom: 50,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: FadeTransition(
+                    opacity: _logoFade,
+                    child: const AlexandriaShoreline(),
+                  ),
+                ),
+                Positioned(
+                  bottom: 160,
                   left: 0,
                   right: 0,
                   child: FadeTransition(
