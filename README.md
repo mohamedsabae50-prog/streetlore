@@ -1,17 +1,36 @@
-# streetlore
+# StreetLore
 
-A new Flutter project.
+Alexandria tourism app — places, curated tours, an AI guide, offline maps,
+prayer times and Qibla, check-ins with achievements, and a community feed.
 
-## Getting Started
+- **App:** Flutter (Android, iOS scaffold, Web on GitHub Pages)
+- **Backend:** Supabase — Postgres with RLS, Storage, Edge Functions
+  (`ai-proxy` for Gemini, `sync-subscription` / `revenuecat-webhook` for Pro,
+  `delete-user-account`, `admin-user-management`)
+- **Payments:** RevenueCat (off unless built with `--dart-define=ENABLE_REVENUECAT=true`)
 
-This project is a starting point for a Flutter application.
+## Develop
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter run
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+No AI keys live in the app: every Gemini call goes through the `ai-proxy`
+Edge Function, which holds the credentials and enforces the daily quota.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Backend
+
+- Schema and policies: `supabase/migrations/` (applied in filename order).
+  `supabase_setup.sql` is the original bootstrap — do not re-run it on an
+  existing project; it predates the admin-only write policies.
+- Setup steps and Edge Function secrets: [SETUP_SUPABASE.md](SETUP_SUPABASE.md)
+- Google Sign-In SHA-1 notes: [GOOGLE_SIGNIN_FIX.md](GOOGLE_SIGNIN_FIX.md)
+
+## Release
+
+`.github/workflows/release.yml` runs `flutter analyze` + `flutter test`
+(job `quality`), then builds the signed APK + AAB and deploys the web build
+to `gh-pages`.
