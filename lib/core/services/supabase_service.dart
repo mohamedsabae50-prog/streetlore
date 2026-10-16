@@ -718,9 +718,10 @@ class SupabaseService {
   /// (PR #3). The real GEMINI_API_KEY lives only on the function and
   /// is never sent to the client.
   ///
-  /// [body] is the raw Gemini REST request body (contents + optional
-  /// generationConfig). The function picks the model from
-  /// `body['model']` (default `gemini-2.5-flash`).
+  /// [body] is a Gemini REST request body (contents + optional
+  /// systemInstruction / generationConfig). The function only forwards a
+  /// whitelist of it: `body['model']` must be an allowed model (otherwise
+  /// `gemini-2.5-flash` is used) and `maxOutputTokens` is capped.
   Future<Map<String, dynamic>> aiProxyInvoke(
     Map<String, dynamic> body, {
     String? accessToken,
