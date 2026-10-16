@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 
 class PrayerTimes {
@@ -95,7 +96,7 @@ class PrayerTimesService {
         })
         .catchError((Object e) {
           _inflight = null;
-          if (!completer.isCompleted) completer.complete(_computeFallback());
+          if (!completer.isCompleted) completer.complete(computeFallback());
         });
     return completer.future;
   }
@@ -154,9 +155,15 @@ class PrayerTimesService {
     return '$dd-$mm-${d.year}';
   }
 
-  PrayerTimes _computeFallback() {
-    final d = DateTime.now();
-    final julian = _julianDate(d);
+  /// Offline fallback (used when AlAdhan fails). Solar times are computed in
+  /// UTC and converted to the device's local zone. [now] is injectable for
+  /// tests; only its local calendar date is used.
+  @visibleForTesting
+  PrayerTimes computeFallback({DateTime? now}) {
+    final d = now ?? DateTime.now();
+    // Solar position is evaluated at 12:00 UTC of the local calendar date, so
+    // the times don't drift with the hour of day or the device's UTC offset.
+    final julian = _julianDate(DateTime.utc(d.year, d.month, d.day, 12));
     final d2r = math.pi / 180.0;
     final r2d = 180.0 / math.pi;
 
@@ -171,10 +178,14 @@ class PrayerTimesService {
         math.atan2(math.cos(e * d2r) * math.sin(L * d2r), math.cos(L * d2r)) /
         15.0;
     final decl = r2d * math.asin(math.sin(e * d2r) * math.sin(L * d2r));
-    final eqt = q / 15.0 - raRad;
+    // Equation of time in hours. atan2 yields a right ascension in (-12, 12],
+    // so without wrapping the difference is ~24 h off from late September to
+    // March, which pushed Dhuhr onto the previous day.
+    final eqt = ((q / 15.0 - raRad + 12.0) % 24.0) - 12.0;
 
-    const fajrAngle = 18.0;
-    const ishaAngle = 17.0;
+    // Egyptian General Authority of Survey (AlAdhan method 5, see _method).
+    const fajrAngle = 19.5;
+    const ishaAngle = 17.5;
 
     final dhuhr = _timeFor(12.0 + (-_lng / 15.0) - eqt, d);
     final sunrise = dhuhr.subtract(_hourAngle(d, decl, -0.833, d2r, r2d));
@@ -251,9 +262,11 @@ class PrayerTimesService {
     return Duration(minutes: (H * 4).round());
   }
 
+  /// [t] is a UTC hour-of-day (the solar-noon formula uses timezone 0), so it
+  /// must be built as UTC and only then converted to the device's local time.
   DateTime _timeFor(double t, DateTime d) {
     final hour = t.floor();
     final minute = ((t - hour) * 60).round();
-    return DateTime(d.year, d.month, d.day, hour, minute);
+    return DateTime.utc(d.year, d.month, d.day, hour, minute).toLocal();
   }
 }
