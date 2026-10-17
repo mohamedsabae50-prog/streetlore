@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -24,8 +26,16 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   bool _isLoading = false;
   String? _error;
   bool _searched = false;
-  final Map<String, bool> _following = {};
-  final Set<String> _updatingFollow = {};
+  final Map<String, String> _relationships = {};
+  final Set<String> _updatingRelationship = {};
+  final Set<String> _updatingPrivacy = {};
+  List<SocialUser> _friends = const [];
+  List<SocialUser> _incomingRequests = const [];
+  List<SocialUser> _outgoingRequests = const [];
+  Map<String, String> _incomingRequestIds = const {};
+  Map<String, bool> _friendPrivacy = const {};
+  bool _relationshipsLoading = false;
+  String? _relationshipError;
   int _requestGeneration = 0;
   String? _requestedUserId;
 
@@ -42,13 +52,17 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
         ++_requestGeneration;
         setState(() {
           _users = const [];
-          _following.clear();
+          _relationships.clear();
+          _friends = const [];
+          _incomingRequests = const [];
+          _outgoingRequests = const [];
           _isLoading = false;
           _error = null;
           _searched = false;
         });
       } else {
         _search();
+        unawaited(_loadRelationships());
       }
     });
   }
@@ -80,9 +94,11 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
       if (!mounted || generation != _requestGeneration) return;
       setState(() {
         _users = users;
-        _following.clear();
         for (final user in users) {
-          _following[user.userId] = user.isFollowing;
+          _relationships.putIfAbsent(
+            user.userId,
+            () => user.isFollowing ? 'accepted' : 'none',
+          );
         }
       });
     } catch (error, stackTrace) {
@@ -99,27 +115,166 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     }
   }
 
-  Future<void> _toggleFollow(SocialUser user) async {
-    final auth = context.read<AuthProvider>();
-    final wasFollowing = _following[user.userId] ?? false;
-    setState(() => _updatingFollow.add(user.userId));
+  Future<void> _loadRelationships() async {
+    if (!mounted) return;
+    setState(() {
+      _relationshipsLoading = true;
+      _relationshipError = null;
+    });
     try {
-      if (wasFollowing) {
-        await SupabaseService.instance.unfollowUser(auth.userId, user.userId);
-      } else {
-        await SupabaseService.instance.followUser(auth.userId, user.userId);
+      final rows = await SupabaseService.instance.fetchFriendships();
+      if (!mounted) return;
+      final userId = context.read<AuthProvider>().userId;
+      final incomingIds = <String, String>{};
+      final outgoingIds = <String, String>{};
+      final friendIds = <String>{};
+      for (final row in rows) {
+        final requester = row['requester_id']?.toString() ?? '';
+        final recipient = row['recipient_id']?.toString() ?? '';
+        final status = row['status']?.toString() ?? '';
+        final requestId = row['id']?.toString() ?? '';
+        if (status == 'accepted') {
+          friendIds.add(requester == userId ? recipient : requester);
+        } else if (status == 'pending' && recipient == userId) {
+          incomingIds[requester] = requestId;
+        } else if (status == 'pending' && requester == userId) {
+          outgoingIds[recipient] = requestId;
+        }
       }
-      if (mounted) setState(() => _following[user.userId] = !wasFollowing);
+      final allIds = {...friendIds, ...incomingIds.keys, ...outgoingIds.keys};
+      final profiles = await SupabaseService.instance.getSocialUsers(
+        allIds.toList(growable: false),
+      );
+      final byId = {for (final profile in profiles) profile.userId: profile};
+      final privacy = await SupabaseService.instance
+          .fetchFriendPrivacySettings();
+      if (!mounted) return;
+      setState(() {
+        _friends = friendIds
+            .map((id) => byId[id])
+            .whereType<SocialUser>()
+            .toList(growable: false);
+        _incomingRequests = incomingIds.keys
+            .map((id) => byId[id])
+            .whereType<SocialUser>()
+            .toList(growable: false);
+        _outgoingRequests = outgoingIds.keys
+            .map((id) => byId[id])
+            .whereType<SocialUser>()
+            .toList(growable: false);
+        _incomingRequestIds = incomingIds;
+        _friendPrivacy = privacy;
+        _relationships
+          ..clear()
+          ..addEntries(friendIds.map((id) => MapEntry(id, 'accepted')))
+          ..addEntries(incomingIds.keys.map((id) => MapEntry(id, 'incoming')))
+          ..addEntries(outgoingIds.keys.map((id) => MapEntry(id, 'outgoing')));
+      });
     } catch (error, stackTrace) {
       debugPrint(
-        'SearchUsersScreen: follow action failed: $error\n$stackTrace',
+        'SearchUsersScreen: relationship load failed: $error\n$stackTrace',
       );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('follow_action_failed'))),
-      );
+      if (mounted) {
+        setState(() => _relationshipError = context.tr('friends_load_failed'));
+      }
     } finally {
-      if (mounted) setState(() => _updatingFollow.remove(user.userId));
+      if (mounted) setState(() => _relationshipsLoading = false);
+    }
+  }
+
+  Future<void> _actOnRelationship(SocialUser user) async {
+    final status = _relationships[user.userId] ?? 'none';
+    if (status == 'incoming') return;
+    setState(() => _updatingRelationship.add(user.userId));
+    try {
+      switch (status) {
+        case 'accepted':
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: Text(context.tr('remove_friend_title')),
+              content: Text(context.tr('remove_friend_confirmation')),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: Text(context.tr('cancel')),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: Text(context.tr('remove_friend')),
+                ),
+              ],
+            ),
+          );
+          if (confirmed != true) return;
+          await SupabaseService.instance.removeFriend(user.userId);
+          break;
+        case 'outgoing':
+          await SupabaseService.instance.cancelFriendRequest(user.userId);
+          break;
+        default:
+          await SupabaseService.instance.sendFriendRequest(user.userId);
+      }
+      await _loadRelationships();
+    } catch (error, stackTrace) {
+      debugPrint(
+        'SearchUsersScreen: friend action failed: $error\n$stackTrace',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('friend_action_failed'))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _updatingRelationship.remove(user.userId));
+    }
+  }
+
+  Future<void> _respondToRequest(SocialUser user, bool accept) async {
+    final requestId = _incomingRequestIds[user.userId];
+    if (requestId == null) return;
+    setState(() => _updatingRelationship.add(user.userId));
+    try {
+      await SupabaseService.instance.respondToFriendRequest(
+        user.userId,
+        accept: accept,
+      );
+      await _loadRelationships();
+    } catch (error, stackTrace) {
+      debugPrint(
+        'SearchUsersScreen: request response failed: $error\n$stackTrace',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('friend_action_failed'))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _updatingRelationship.remove(user.userId));
+    }
+  }
+
+  Future<void> _setFriendPrivacy(SocialUser friend, bool enabled) async {
+    setState(() => _updatingPrivacy.add(friend.userId));
+    try {
+      await SupabaseService.instance.setFriendLocationActivitySharing(
+        friend.userId,
+        enabled,
+      );
+      if (mounted) {
+        setState(() => _friendPrivacy[friend.userId] = enabled);
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        'SearchUsersScreen: friend privacy update failed: $error\n$stackTrace',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('privacy_settings_save_failed'))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _updatingPrivacy.remove(friend.userId));
     }
   }
 
@@ -129,7 +284,18 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     final requiresSignIn =
         !AppConfig.supabaseEnabled || !auth.isLoggedIn || auth.isGuest;
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr('users_search_title'))),
+      appBar: AppBar(
+        title: Text(context.tr('users_search_title')),
+        actions: [
+          IconButton(
+            onPressed: _relationshipsLoading
+                ? null
+                : () => unawaited(_loadRelationships()),
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: context.tr('refresh'),
+          ),
+        ],
+      ),
       body: requiresSignIn
           ? _SignInPrompt(
               onSignIn: () => Navigator.of(context).push(
@@ -158,107 +324,248 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                   ),
                 ),
                 if (_isLoading) const LinearProgressIndicator(),
-                if (!_searched && _users.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Text(
-                        context.tr('users_suggested_title'),
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      _error!,
-                      style: TextStyle(color: AppColors.error),
-                    ),
-                  )
-                else if (!_isLoading && _users.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      context.tr(
-                        _searched
-                            ? 'users_search_empty'
-                            : 'users_suggestions_empty',
-                      ),
-                    ),
-                  ),
                 Expanded(
-                  child: ListView.separated(
-                    itemCount: _users.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final user = _users[index];
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
-                        leading: SocialUserAvatar(user: user),
-                        title: Text(
-                          user.displayName.isEmpty
-                              ? '@${user.username}'
-                              : user.displayName,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('@${user.username}'),
-                            const SizedBox(height: 4),
-                            SocialFollowCounts(
-                              followers: user.followersCount,
-                              following: user.followingCount,
-                            ),
-                            if (user.badges.isNotEmpty) ...[
-                              const SizedBox(height: 5),
-                              SocialBadges(badges: user.badges, compact: true),
-                            ],
-                          ],
-                        ),
-                        isThreeLine: true,
-                        trailing: OutlinedButton(
-                          onPressed:
-                              _updatingFollow.contains(user.userId) ||
-                                  !_following.containsKey(user.userId)
-                              ? null
-                              : () => _toggleFollow(user),
-                          child: _updatingFollow.contains(user.userId)
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  context.tr(
-                                    _following[user.userId] == true
-                                        ? 'unfollow_user'
-                                        : 'follow_user',
-                                  ),
-                                ),
-                        ),
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => UserProfileScreen(user: user),
+                  child: ListView(
+                    children: [
+                      if (_relationshipsLoading)
+                        const LinearProgressIndicator(),
+                      if (_relationshipError != null)
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            _relationshipError!,
+                            style: const TextStyle(color: AppColors.error),
                           ),
                         ),
-                      );
-                    },
+                      if (_incomingRequests.isNotEmpty) ...[
+                        _sectionTitle(
+                          context,
+                          'incoming_friend_requests',
+                          _incomingRequests.length,
+                        ),
+                        for (final user in _incomingRequests)
+                          ListTile(
+                            leading: SocialUserAvatar(user: user),
+                            title: Text(
+                              user.displayName.isEmpty
+                                  ? '@${user.username}'
+                                  : user.displayName,
+                            ),
+                            subtitle: Text('@${user.username}'),
+                            trailing: Wrap(
+                              spacing: 0,
+                              children: [
+                                IconButton(
+                                  tooltip: context.tr('accept_friend_request'),
+                                  onPressed:
+                                      _updatingRelationship.contains(
+                                        user.userId,
+                                      )
+                                      ? null
+                                      : () => _respondToRequest(user, true),
+                                  icon: const Icon(
+                                    Icons.check_circle_outline_rounded,
+                                    color: AppColors.success,
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: context.tr('decline_friend_request'),
+                                  onPressed:
+                                      _updatingRelationship.contains(
+                                        user.userId,
+                                      )
+                                      ? null
+                                      : () => _respondToRequest(user, false),
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                      if (_friends.isNotEmpty) ...[
+                        _sectionTitle(
+                          context,
+                          'friends_list_title',
+                          _friends.length,
+                        ),
+                        for (final user in _friends)
+                          ListTile(
+                            leading: SocialUserAvatar(user: user),
+                            title: Text(
+                              user.displayName.isEmpty
+                                  ? '@${user.username}'
+                                  : user.displayName,
+                            ),
+                            subtitle: Text(
+                              context.tr('friend_location_activity_sharing'),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Switch.adaptive(
+                                  value: _friendPrivacy[user.userId] ?? true,
+                                  onChanged:
+                                      _updatingPrivacy.contains(user.userId)
+                                      ? null
+                                      : (enabled) =>
+                                            _setFriendPrivacy(user, enabled),
+                                ),
+                                IconButton(
+                                  tooltip: context.tr('remove_friend'),
+                                  onPressed:
+                                      _updatingRelationship.contains(
+                                        user.userId,
+                                      )
+                                      ? null
+                                      : () => _actOnRelationship(user),
+                                  icon: const Icon(
+                                    Icons.person_remove_alt_1_rounded,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => UserProfileScreen(user: user),
+                              ),
+                            ),
+                          ),
+                      ],
+                      if (_outgoingRequests.isNotEmpty) ...[
+                        _sectionTitle(
+                          context,
+                          'sent_friend_requests',
+                          _outgoingRequests.length,
+                        ),
+                        for (final user in _outgoingRequests)
+                          ListTile(
+                            leading: SocialUserAvatar(user: user),
+                            title: Text(
+                              user.displayName.isEmpty
+                                  ? '@${user.username}'
+                                  : user.displayName,
+                            ),
+                            subtitle: Text(
+                              context.tr('friend_request_pending'),
+                            ),
+                            trailing: IconButton(
+                              tooltip: context.tr('cancel_friend_request'),
+                              onPressed:
+                                  _updatingRelationship.contains(user.userId)
+                                  ? null
+                                  : () => _actOnRelationship(user),
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                          ),
+                      ],
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(color: AppColors.error),
+                          ),
+                        )
+                      else if (!_isLoading && _users.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            context.tr(
+                              _searched
+                                  ? 'users_search_empty'
+                                  : 'users_suggestions_empty',
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      if (_users.isNotEmpty)
+                        _sectionTitle(
+                          context,
+                          _searched
+                              ? 'users_search_results'
+                              : 'users_suggested_title',
+                          _users.length,
+                        ),
+                      for (final user in _users)
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          leading: SocialUserAvatar(user: user),
+                          title: Text(
+                            user.displayName.isEmpty
+                                ? '@${user.username}'
+                                : user.displayName,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('@${user.username}'),
+                              const SizedBox(height: 4),
+                              SocialFriendCount(friends: user.friendsCount),
+                              if (user.badges.isNotEmpty) ...[
+                                const SizedBox(height: 5),
+                                SocialBadges(
+                                  badges: user.badges,
+                                  compact: true,
+                                ),
+                              ],
+                            ],
+                          ),
+                          isThreeLine: true,
+                          trailing: OutlinedButton(
+                            onPressed:
+                                _updatingRelationship.contains(user.userId) ||
+                                    _relationshipsLoading ||
+                                    (_relationships[user.userId] ?? 'none') ==
+                                        'incoming'
+                                ? null
+                                : () => _actOnRelationship(user),
+                            child: _updatingRelationship.contains(user.userId)
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    context.tr(
+                                      switch (_relationships[user.userId] ??
+                                          'none') {
+                                        'accepted' => 'remove_friend',
+                                        'incoming' => 'incoming_request',
+                                        'outgoing' => 'friend_request_pending',
+                                        _ => 'send_friend_request',
+                                      },
+                                    ),
+                                  ),
+                          ),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => UserProfileScreen(user: user),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
             ),
     );
   }
+
+  Widget _sectionTitle(BuildContext context, String key, int count) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
+    child: Text(
+      '${context.tr(key)} ($count)',
+      style: Theme.of(
+        context,
+      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+    ),
+  );
 }
 
 class _SignInPrompt extends StatelessWidget {

@@ -24,9 +24,9 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  bool? _isFollowing;
+  String? _friendshipState;
   bool _isUpdating = false;
-  late int _followersCount;
+  late int _friendsCount;
   String? _error;
   List<Map<String, dynamic>> _visitedPlaces = const [];
   bool _isLoadingVisits = true;
@@ -35,7 +35,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _followersCount = widget.user.followersCount;
+    _friendsCount = widget.user.friendsCount;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _loadFollowState();
       if (mounted) _loadVisitedPlaces();
@@ -65,11 +65,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (!auth.isLoggedIn || auth.isGuest || auth.userId.isEmpty) return;
     setState(() => _isUpdating = true);
     try {
-      final following = await SupabaseService.instance.isFollowing(
-        auth.userId,
+      final state = await SupabaseService.instance.getFriendshipState(
         widget.user.userId,
       );
-      if (mounted) setState(() => _isFollowing = following);
+      if (mounted) setState(() => _friendshipState = state);
     } catch (error, stackTrace) {
       debugPrint('UserProfileScreen: follow state failed: $error\n$stackTrace');
       if (mounted) setState(() => _error = context.tr('follow_action_failed'));
@@ -79,28 +78,41 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _toggleFollow() async {
-    final auth = context.read<AuthProvider>();
-    final wasFollowing = _isFollowing ?? false;
+    final state = _friendshipState ?? 'none';
     setState(() {
       _isUpdating = true;
       _error = null;
     });
     try {
-      if (wasFollowing) {
-        await SupabaseService.instance.unfollowUser(
-          auth.userId,
-          widget.user.userId,
-        );
-      } else {
-        await SupabaseService.instance.followUser(
-          auth.userId,
-          widget.user.userId,
-        );
+      switch (state) {
+        case 'accepted':
+          await SupabaseService.instance.removeFriend(widget.user.userId);
+          break;
+        case 'outgoing':
+          await SupabaseService.instance.cancelFriendRequest(
+            widget.user.userId,
+          );
+          break;
+        case 'incoming':
+          await SupabaseService.instance.respondToFriendRequest(
+            widget.user.userId,
+            accept: true,
+          );
+          break;
+        default:
+          await SupabaseService.instance.sendFriendRequest(widget.user.userId);
       }
+      final updatedState = await SupabaseService.instance.getFriendshipState(
+        widget.user.userId,
+      );
       if (mounted) {
         setState(() {
-          _isFollowing = !wasFollowing;
-          _followersCount += wasFollowing ? -1 : 1;
+          if (state == 'accepted' && updatedState != 'accepted') {
+            _friendsCount = (_friendsCount - 1).clamp(0, 1 << 30);
+          } else if (state == 'incoming' && updatedState == 'accepted') {
+            _friendsCount++;
+          }
+          _friendshipState = updatedState;
         });
       }
     } catch (error, stackTrace) {
@@ -217,16 +229,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                       ],
                       const SizedBox(height: 14),
-                      SocialFollowCounts(
-                        followers: _followersCount,
-                        following: widget.user.followingCount,
-                      ),
+                      SocialFriendCount(friends: _friendsCount),
                       const SizedBox(height: 10),
                       SocialBadges(badges: widget.user.badges),
                       const SizedBox(height: 24),
                       if (canFollow)
                         FilledButton.icon(
-                          onPressed: _isUpdating || _isFollowing == null
+                          onPressed: _isUpdating || _friendshipState == null
                               ? null
                               : _toggleFollow,
                           icon: _isUpdating
@@ -238,16 +247,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                   ),
                                 )
                               : Icon(
-                                  _isFollowing == true
+                                  _friendshipState == 'accepted'
                                       ? Icons.person_remove_alt_1_rounded
+                                      : _friendshipState == 'outgoing'
+                                      ? Icons.hourglass_top_rounded
+                                      : _friendshipState == 'incoming'
+                                      ? Icons.person_add_alt_1_rounded
                                       : Icons.person_add_alt_1_rounded,
                                 ),
                           label: Text(
-                            context.tr(
-                              _isFollowing == true
-                                  ? 'unfollow_user'
-                                  : 'follow_user',
-                            ),
+                            context.tr(switch (_friendshipState) {
+                              'accepted' => 'remove_friend',
+                              'outgoing' => 'cancel_friend_request',
+                              'incoming' => 'accept_friend_request',
+                              _ => 'send_friend_request',
+                            }),
                           ),
                         )
                       else

@@ -289,8 +289,8 @@ class _SquadScreenState extends State<SquadScreen> {
                 ),
                 subtitle: Text(
                   '@${member.user.username} · '
-                  '${member.user.followersCount} '
-                  '${context.tr('profile_followers')}',
+                  '${member.user.friendsCount} '
+                  '${context.tr('profile_friends')}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

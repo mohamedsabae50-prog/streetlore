@@ -50,15 +50,12 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            // v1.0.29: R8 / ProGuard disabled. v1.0.28 turned on
-            // minify + resource shrinking which apparently stripped
-            // some Google Sign-In / Supabase native class the
-            // reflection-based plugin needs at runtime, surfacing
-            // as a Code 10 in the user's installation. Reverting to
-            // the v1.0.27 build configuration keeps the native
-            // entry points intact.
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
@@ -75,4 +72,5 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    implementation("androidx.core:core-ktx:1.16.0")
 }

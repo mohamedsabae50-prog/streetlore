@@ -18,12 +18,19 @@ import '../../logic/auth_provider.dart';
 import '../../logic/blocked_users_provider.dart';
 import '../../logic/place_photos_provider.dart';
 
-class PlacePhotosSection extends StatelessWidget {
+class PlacePhotosSection extends StatefulWidget {
   final PlaceModel place;
   const PlacePhotosSection({super.key, required this.place});
 
+  @override
+  State<PlacePhotosSection> createState() => _PlacePhotosSectionState();
+}
+
+class _PlacePhotosSectionState extends State<PlacePhotosSection> {
+  bool _isUploading = false;
+
   Future<void> _addPhoto(BuildContext context) async {
-    if (!place.enableGallery) return;
+    if (!widget.place.enableGallery || _isUploading) return;
     final picker = ImagePicker();
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -38,23 +45,55 @@ class PlacePhotosSection extends StatelessWidget {
       imageQuality: 80,
     );
     if (picked == null) return;
-    if (!context.mounted) return;
+    if (!context.mounted || _isUploading) return;
     final auth = context.read<AuthProvider>();
     final photos = context.read<PlacePhotosProvider>();
     HapticFeedback.mediumImpact();
-    final bytes = await picked.readAsBytes();
+    setState(() => _isUploading = true);
+    final uploadDialog = showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+              const SizedBox(width: 16),
+              Expanded(child: Text(dialogContext.tr('image_uploading'))),
+            ],
+          ),
+        ),
+      ),
+    );
     try {
+      final bytes = await picked.readAsBytes();
       await photos.addPhoto(
-        placeId: place.id,
+        placeId: widget.place.id,
         userName: auth.userName.isEmpty ? 'Traveler' : auth.userName,
         imageBytes: bytes,
         userId: auth.currentUserId,
       );
-    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('image_upload_success'))),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('PlacePhotosSection image upload failed: $error\n$stackTrace');
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Photo upload failed: $e')));
+      ).showSnackBar(SnackBar(content: Text(context.tr('image_upload_error'))));
+    } finally {
+      if (context.mounted) {
+        setState(() => _isUploading = false);
+        Navigator.of(context, rootNavigator: true).pop();
+        await uploadDialog;
+      }
     }
   }
 
@@ -82,7 +121,7 @@ class PlacePhotosSection extends StatelessWidget {
     if (confirmed == true) {
       HapticFeedback.mediumImpact();
       try {
-        await photos.removePhoto(place.id, photo.id);
+        await photos.removePhoto(widget.place.id, photo.id);
       } catch (e) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(
@@ -126,13 +165,61 @@ class PlacePhotosSection extends StatelessWidget {
     }
   }
 
+  Future<void> _reportPhoto(BuildContext context, PlacePhoto photo) async {
+    const reasons = [
+      ('Inappropriate content', 'photo_report_reason_inappropriate'),
+      ('Not related to this place', 'photo_report_reason_unrelated'),
+      ('Offensive/Abuse', 'photo_report_reason_offensive'),
+      ('Other', 'photo_report_reason_other'),
+    ];
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.tr('report_photo_title')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final (value, label) in reasons)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(context.tr(label)),
+                onTap: () => Navigator.pop(dialogContext, value),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.tr('cancel')),
+          ),
+        ],
+      ),
+    );
+    if (reason == null || !context.mounted) return;
+    try {
+      await context.read<PlacePhotosProvider>().reportPhoto(photo, reason);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('photo_report_submitted'))),
+      );
+    } catch (error, stackTrace) {
+      debugPrint(
+        'PlacePhotosSection: photo report failed: $error\n$stackTrace',
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('photo_report_failed'))),
+      );
+    }
+  }
+
   Future<void> _sharePhoto(BuildContext context, PlacePhoto photo) async {
     final locale = Localizations.localeOf(context).languageCode;
     try {
       await SocialShareService.sharePlacePhoto(
         context: context,
         photo: photo,
-        place: place,
+        place: widget.place,
         locale: locale,
         category: context.tr('share_place_photo'),
         footer: context.tr('share_card_footer'),
@@ -155,8 +242,8 @@ class PlacePhotosSection extends StatelessWidget {
       child: Consumer2<PlacePhotosProvider, BlockedUsersProvider>(
         builder: (context, provider, blockedUsers, _) {
           final photos = provider.photosFor(
-            place.id,
-            officialImageUrls: place.officialImages,
+            widget.place.id,
+            officialImageUrls: widget.place.officialImages,
             blockedUserIds: blockedUsers.blockedUserIds,
           );
           return Column(
@@ -198,26 +285,39 @@ class PlacePhotosSection extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  if (place.enableGallery)
+                  if (widget.place.enableGallery)
                     GestureDetector(
-                      onTap: () => _addPhoto(context),
+                      onTap: _isUploading ? null : () => _addPhoto(context),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
+                          gradient: _isUploading
+                              ? null
+                              : AppColors.primaryGradient,
+                          color: _isUploading ? Colors.grey : null,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              Icons.add_a_photo_rounded,
-                              color: Colors.white,
-                              size: 14,
-                            ),
+                            if (_isUploading)
+                              const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            else
+                              const Icon(
+                                Icons.add_a_photo_rounded,
+                                color: Colors.white,
+                                size: 14,
+                              ),
                             const SizedBox(width: 5),
                             Text(
                               context.tr('add'),
@@ -327,19 +427,25 @@ class PlacePhotosSection extends StatelessWidget {
           }
           return _PhotoCard(
             photo: photo,
-            placeId: place.id,
-            fallbackCategory: place.category,
+            placeId: widget.place.id,
+            fallbackCategory: widget.place.category,
             canDelete: context.read<AuthProvider>().owns(photo.userId),
             onShare: () => _sharePhoto(context, photo),
             onLike: () {
               HapticFeedback.lightImpact();
               context.read<PlacePhotosProvider>().toggleLike(
-                place.id,
+                widget.place.id,
                 photo.id,
               );
             },
             onDelete: () => _confirmDelete(context, photo),
             onBlock: () => _confirmBlockUser(context, photo),
+            onReport: () => _reportPhoto(context, photo),
+            canReport:
+                context.read<AuthProvider>().isLoggedIn &&
+                !context.read<AuthProvider>().isGuest &&
+                photo.userId.isNotEmpty &&
+                photo.userId != context.read<AuthProvider>().userId,
           );
         },
       ),
@@ -356,6 +462,8 @@ class _PhotoCard extends StatelessWidget {
   final VoidCallback onLike;
   final VoidCallback onDelete;
   final VoidCallback onBlock;
+  final VoidCallback onReport;
+  final bool canReport;
   const _PhotoCard({
     required this.photo,
     required this.placeId,
@@ -365,6 +473,8 @@ class _PhotoCard extends StatelessWidget {
     required this.onLike,
     required this.onDelete,
     required this.onBlock,
+    required this.onReport,
+    required this.canReport,
   });
 
   @override
@@ -483,6 +593,14 @@ class _PhotoCard extends StatelessWidget {
                       icon: Icons.delete_outline_rounded,
                       tooltip: context.tr('delete'),
                       onTap: onDelete,
+                    ),
+                  ],
+                  if (canReport) ...[
+                    const SizedBox(width: 6),
+                    _PhotoActionButton(
+                      icon: Icons.flag_outlined,
+                      tooltip: context.tr('report_photo_title'),
+                      onTap: onReport,
                     ),
                   ],
                   if (!canDelete &&

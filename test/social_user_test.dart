@@ -21,9 +21,21 @@ void main() {
     expect(user.displayName, 'City Explorer');
     expect(user.isFollowing, isTrue);
     expect(user.avatarUrl, 'https://example.com/avatar.png');
+    expect(user.friendsCount, 12);
     expect(user.followersCount, 12);
     expect(user.followingCount, 7);
     expect(user.badges.single['id'], 'first_visit');
+  });
+
+  test('SocialUser prefers the mutual-friend count when available', () {
+    final user = SocialUser.fromJson({
+      'user_id': 'user-2',
+      'username': 'friend',
+      'friends_count': 4,
+      'followers_count': 12,
+    });
+
+    expect(user.friendsCount, 4);
   });
 
   test('SquadSession parses roster members and leader status', () {

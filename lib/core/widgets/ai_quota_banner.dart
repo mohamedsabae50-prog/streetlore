@@ -92,7 +92,7 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
                 Text(message, style: const TextStyle(fontSize: 12)),
                 if (!_loading && _error == null)
                   Text(
-                    context.tr('ai_quota_reset_cairo'),
+                    context.tr('ai_quota_reset_utc'),
                     style: const TextStyle(fontSize: 10),
                   ),
                 if (_error != null)
@@ -113,6 +113,43 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
               icon: const Icon(Icons.refresh_rounded, size: 18),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class AiDailyLimitCard extends StatelessWidget {
+  const AiDailyLimitCard({super.key, required this.onUpgrade});
+
+  final VoidCallback onUpgrade;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Theme.of(
+        context,
+      ).colorScheme.errorContainer.withValues(alpha: 0.5),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.tr('ai_daily_limit_title'),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            Text(context.tr('ai_daily_limit_body')),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: onUpgrade,
+              icon: const Icon(Icons.workspace_premium_rounded),
+              label: Text(context.tr('ai_upgrade_pro')),
+            ),
+          ],
+        ),
       ),
     );
   }

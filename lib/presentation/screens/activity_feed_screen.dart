@@ -305,14 +305,25 @@ class _ActivityCard extends StatelessWidget {
     );
     final place = _activityPlace(activity);
     final locale = Localizations.localeOf(context).languageCode;
-    final placeName = locale == 'ar'
-        ? (activity['place_name_ar'] as String?) ??
-              (activity['place_name'] as String?) ??
-              (activity['title'] as String?) ??
-              ''
-        : (activity['place_name'] as String?) ??
-              (activity['title'] as String?) ??
-              '';
+    final placeName = _localizedField(
+      activity,
+      locale,
+      'place_name_en',
+      'place_name_ar',
+      fallbackKeys: locale == 'ar'
+          ? const ['title_ar', 'place_name', 'title']
+          : const ['title_en', 'place_name', 'title'],
+    );
+    final activityDescription = _localizedField(
+      activity,
+      locale,
+      'description_en',
+      'description_ar',
+      fallbackKeys: const ['description'],
+    );
+    final textDirection = locale == 'ar'
+        ? TextDirection.rtl
+        : TextDirection.ltr;
     final actorName =
         (activity['actor_display_name'] as String?)?.trim().isNotEmpty == true
         ? (activity['actor_display_name'] as String).trim()
@@ -394,6 +405,7 @@ class _ActivityCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       placeName,
+                      textDirection: textDirection,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -403,11 +415,11 @@ class _ActivityCard extends StatelessWidget {
                       ),
                     ),
                     if (type != 'checkin' &&
-                        ((activity['description'] as String?)?.isNotEmpty ??
-                            false)) ...[
+                        activityDescription.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
-                        activity['description'] as String,
+                        activityDescription,
+                        textDirection: textDirection,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: context.textSec, fontSize: 12),
@@ -496,16 +508,44 @@ class _ActivityCard extends StatelessWidget {
     return PlaceModel(
       id: id,
       nameEn:
+          (activity['place_name_en'] as String?) ??
           (activity['place_name'] as String?) ??
+          (activity['title_en'] as String?) ??
           (activity['title'] as String?) ??
           '',
-      nameAr: activity['place_name_ar'] as String?,
-      descriptionEn: '',
+      nameAr:
+          (activity['place_name_ar'] as String?) ??
+          activity['title_ar'] as String?,
+      descriptionEn:
+          (activity['description_en'] as String?) ??
+          (activity['description'] as String?) ??
+          '',
+      descriptionAr: activity['description_ar'] as String?,
       imageUrl: (activity['place_image_url'] as String?) ?? '',
       rating: 0,
       lat: lat.toDouble(),
       lng: lng.toDouble(),
     );
+  }
+
+  String _localizedField(
+    Map<String, dynamic> value,
+    String locale,
+    String enKey,
+    String arKey, {
+    required List<String> fallbackKeys,
+  }) {
+    final localized = value[locale == 'ar' ? arKey : enKey];
+    if (localized is String && localized.trim().isNotEmpty) {
+      return localized.trim();
+    }
+    for (final key in fallbackKeys) {
+      final fallback = value[key];
+      if (fallback is String && fallback.trim().isNotEmpty) {
+        return fallback.trim();
+      }
+    }
+    return '';
   }
 
   Widget _activityThumbnail(String? imageUrl, IconData icon, String? category) {

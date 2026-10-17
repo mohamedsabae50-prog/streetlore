@@ -243,7 +243,11 @@ class SupabaseService {
     try {
       final res = await _client!
           .from('leaderboard')
-          .select()
+          .select(
+            'user_id,user_name,avatar_color_hex,total_points,places_visited,'
+            'reviews_posted,photos_uploaded,level,badges,current_streak,'
+            'longest_streak,total_visit_days',
+          )
           .order('total_points', ascending: false)
           .limit(limit);
       return (res as List)
@@ -339,6 +343,168 @@ class SupabaseService {
         .toList(growable: false);
   }
 
+  Future<List<Map<String, dynamic>>> fetchFriendships() async {
+    final client = _client;
+    final userId = client?.auth.currentUser?.id;
+    if (client == null || userId == null) {
+      throw StateError('Sign in to load friends.');
+    }
+    final rows = await client
+        .from('friendships')
+        .select('id, requester_id, recipient_id, status')
+        .or('requester_id.eq.$userId,recipient_id.eq.$userId')
+        .order('created_at', ascending: false);
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList(growable: false);
+  }
+
+  Future<String> getFriendshipState(String otherUserId) async {
+    final userId = _client?.auth.currentUser?.id;
+    if (userId == null) throw StateError('Sign in to load friendship status.');
+    final rows = await fetchFriendships();
+    for (final row in rows) {
+      final requesterId = row['requester_id']?.toString();
+      final recipientId = row['recipient_id']?.toString();
+      final status = row['status']?.toString();
+      if (requesterId != otherUserId && recipientId != otherUserId) continue;
+      if (status == 'accepted') return 'accepted';
+      if (status == 'pending') {
+        return requesterId == userId ? 'outgoing' : 'incoming';
+      }
+    }
+    return 'none';
+  }
+
+  Future<String> sendFriendRequest(String targetUserId) async {
+    final client = _client;
+    if (client == null) throw StateError('Supabase is unavailable.');
+    final result = await client.rpc(
+      'send_friend_request',
+      params: {'target_user_id': targetUserId},
+    );
+    if (result is! String) {
+      throw const FormatException('Friend request response was invalid.');
+    }
+    return result;
+  }
+
+  Future<void> respondToFriendRequest(
+    String requesterId, {
+    required bool accept,
+  }) async {
+    final client = _client;
+    final userId = client?.auth.currentUser?.id;
+    if (client == null || userId == null) {
+      throw StateError('Sign in to respond to friend requests.');
+    }
+    final request = await client
+        .from('friendships')
+        .select('id')
+        .eq('requester_id', requesterId)
+        .eq('recipient_id', userId)
+        .eq('status', 'pending')
+        .maybeSingle();
+    if (request == null) {
+      throw StateError('Friend request is no longer pending.');
+    }
+    await client.rpc(
+      'respond_to_friend_request',
+      params: {'request_id': request['id'], 'accept_request': accept},
+    );
+  }
+
+  Future<void> cancelFriendRequest(String targetUserId) async {
+    final client = _client;
+    final userId = client?.auth.currentUser?.id;
+    if (client == null || userId == null) {
+      throw StateError('Sign in to cancel friend requests.');
+    }
+    final request = await client
+        .from('friendships')
+        .select('id')
+        .eq('requester_id', userId)
+        .eq('recipient_id', targetUserId)
+        .eq('status', 'pending')
+        .maybeSingle();
+    if (request == null) {
+      throw StateError('Friend request is no longer pending.');
+    }
+    await client.rpc(
+      'cancel_friend_request',
+      params: {'request_id': request['id']},
+    );
+  }
+
+  Future<void> removeFriend(String targetUserId) async {
+    final client = _client;
+    if (client == null) throw StateError('Supabase is unavailable.');
+    await client.rpc('remove_friend', params: {'target_user_id': targetUserId});
+  }
+
+  Future<Map<String, bool>> fetchFriendPrivacySettings() async {
+    final client = _client;
+    final userId = client?.auth.currentUser?.id;
+    if (client == null || userId == null) {
+      throw StateError('Sign in to load friend privacy settings.');
+    }
+    final rows = await client
+        .from('friend_privacy_settings')
+        .select('friend_id, share_location_activity')
+        .eq('user_id', userId);
+    return {
+      for (final row in rows as List)
+        (row as Map)['friend_id'].toString():
+            (row['share_location_activity'] as bool?) ?? true,
+    };
+  }
+
+  Future<void> setFriendLocationActivitySharing(
+    String friendId,
+    bool enabled,
+  ) async {
+    final client = _client;
+    final userId = client?.auth.currentUser?.id;
+    if (client == null || userId == null) {
+      throw StateError('Sign in to update friend privacy settings.');
+    }
+    await client.from('friend_privacy_settings').upsert({
+      'user_id': userId,
+      'friend_id': friendId,
+      'share_location_activity': enabled,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }, onConflict: 'user_id,friend_id');
+  }
+
+  Future<bool> fetchLocationActivitySharing() async {
+    final client = _client;
+    final userId = client?.auth.currentUser?.id;
+    if (client == null || userId == null) {
+      throw StateError('Sign in to load privacy settings.');
+    }
+    final row = await client
+        .from('profiles')
+        .select('share_location_activity')
+        .eq('user_id', userId)
+        .single();
+    return row['share_location_activity'] as bool? ?? true;
+  }
+
+  Future<void> setLocationActivitySharing(bool enabled) async {
+    final client = _client;
+    final userId = client?.auth.currentUser?.id;
+    if (client == null || userId == null) {
+      throw StateError('Sign in to update privacy settings.');
+    }
+    await client
+        .from('profiles')
+        .update({
+          'share_location_activity': enabled,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('user_id', userId);
+  }
+
   Future<List<Map<String, dynamic>>> getUserVisitedPlaces(
     String targetUserId,
   ) async {
@@ -356,46 +522,6 @@ class SupabaseService {
     return result
         .map((row) => Map<String, dynamic>.from(row as Map))
         .toList(growable: false);
-  }
-
-  Future<bool> isFollowing(String followerId, String followingId) async {
-    final client = _client;
-    if (client == null) {
-      throw StateError('Supabase is unavailable.');
-    }
-    final result = await client
-        .from('user_follows')
-        .select('follower_id')
-        .eq('follower_id', followerId)
-        .eq('following_id', followingId)
-        .maybeSingle();
-    return result != null;
-  }
-
-  Future<void> followUser(String followerId, String followingId) async {
-    final client = _client;
-    if (client == null) {
-      throw StateError('Supabase is unavailable.');
-    }
-    await client
-        .from('user_follows')
-        .upsert(
-          {'follower_id': followerId, 'following_id': followingId},
-          onConflict: 'follower_id,following_id',
-          ignoreDuplicates: true,
-        );
-  }
-
-  Future<void> unfollowUser(String followerId, String followingId) async {
-    final client = _client;
-    if (client == null) {
-      throw StateError('Supabase is unavailable.');
-    }
-    await client
-        .from('user_follows')
-        .delete()
-        .eq('follower_id', followerId)
-        .eq('following_id', followingId);
   }
 
   Future<List<Map<String, dynamic>>> fetchFollowingActivity({
@@ -459,6 +585,7 @@ class SupabaseService {
     if (client == null) {
       throw StateError('Supabase is unavailable.');
     }
+
     if (reporterId.isEmpty ||
         targetId.trim().isEmpty ||
         (targetContext != null &&
@@ -488,10 +615,58 @@ class SupabaseService {
     });
   }
 
+  Future<Set<String>> fetchReportedPhotoIds() async {
+    final client = _client;
+    final userId = client?.auth.currentUser?.id;
+    if (client == null || userId == null) return <String>{};
+    final rows = await client
+        .from('photo_reports')
+        .select('photo_id')
+        .eq('reporter_id', userId);
+    return (rows as List)
+        .map((row) => (row as Map)['photo_id'].toString())
+        .toSet();
+  }
+
+  Future<void> submitPhotoReport({
+    required String photoId,
+    required String photoUrl,
+    required String uploaderId,
+    required String placeId,
+    required String reason,
+  }) async {
+    final client = _client;
+    final reporterId = client?.auth.currentUser?.id;
+    if (client == null || reporterId == null) {
+      throw StateError('Sign in to report a photo.');
+    }
+    if (photoId.trim().isEmpty ||
+        photoUrl.trim().isEmpty ||
+        uploaderId.trim().isEmpty ||
+        placeId.trim().isEmpty ||
+        reporterId == uploaderId ||
+        !const {
+          'Inappropriate content',
+          'Not related to this place',
+          'Offensive/Abuse',
+          'Other',
+        }.contains(reason)) {
+      throw ArgumentError('Invalid photo report details.');
+    }
+    await client.from('photo_reports').insert({
+      'photo_id': photoId,
+      'photo_url': photoUrl,
+      'uploader_id': uploaderId,
+      'reporter_id': reporterId,
+      'place_id': placeId,
+      'reason': reason,
+    });
+  }
+
   Future<void> pushStats(GamificationStats stats) async {
     if (_client == null) return;
     try {
-      await _client!.from('leaderboard').upsert(stats.toJson()).select();
+      await _client!.from('leaderboard').upsert(stats.toJson());
     } catch (e) {
       _logError('pushStats', e);
     }
@@ -502,7 +677,11 @@ class SupabaseService {
     try {
       final res = await _client!
           .from('leaderboard')
-          .select()
+          .select(
+            'user_id,user_name,avatar_color_hex,total_points,places_visited,'
+            'reviews_posted,photos_uploaded,level,badges,current_streak,'
+            'longest_streak,total_visit_days',
+          )
           .eq('user_id', userId)
           .maybeSingle();
       if (res == null) return null;

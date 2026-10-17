@@ -194,6 +194,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final textDirection = locale == 'ar'
+        ? TextDirection.rtl
+        : TextDirection.ltr;
     final place = context.select<PlaceProvider, PlaceModel>(
       (provider) => provider.findById(widget.place.id) ?? widget.place,
     );
@@ -475,12 +479,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                               child: Material(
                                 type: MaterialType.transparency,
                                 child: Text(
-                                  place.localizedName(
-                                    context
-                                        .read<LocaleProvider>()
-                                        .locale
-                                        .languageCode,
-                                  ),
+                                  place.localizedName(locale),
+                                  textDirection: textDirection,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 26,
@@ -1117,12 +1117,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
-                                  place.localizedDescription(
-                                    context
-                                        .read<LocaleProvider>()
-                                        .locale
-                                        .languageCode,
-                                  ),
+                                  place.localizedDescription(locale),
+                                  textDirection: textDirection,
                                   style: TextStyle(
                                     color: textSec,
                                     fontSize: 15,

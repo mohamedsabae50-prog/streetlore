@@ -35,6 +35,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get add_photo_title => 'Add a photo';
 
   @override
+  String get image_upload_error =>
+      'Could not upload the image. Please try again.';
+
+  @override
+  String get image_upload_success => 'Image uploaded successfully.';
+
+  @override
+  String get image_uploading => 'Uploading image...';
+
+  @override
+  String get suggest_place_success => 'Your place suggestion was submitted.';
+
+  @override
   String get ai_add_all => 'Add all to Trip Planner';
 
   @override
@@ -47,6 +60,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ai_days => 'Days';
+
+  @override
+  String get ai_daily_limit_body =>
+      'Your free messages reset at midnight UTC. Upgrade to Pro for higher AI limits.';
+
+  @override
+  String get ai_daily_limit_title =>
+      'You’ve reached today’s free AI message limit';
+
+  @override
+  String get ai_upgrade_pro => 'Upgrade to Pro';
+
+  @override
+  String get ai_quota_reset_utc => 'Resets at midnight UTC';
 
   @override
   String ai_days_count(String n) {

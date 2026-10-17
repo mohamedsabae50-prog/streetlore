@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -12,6 +13,7 @@ class PlacePhotosProvider extends ChangeNotifier {
   static const _uuid = Uuid();
 
   final Map<String, List<PlacePhoto>> _byPlace = {};
+  Set<String> _reportedPhotoIds = <String>{};
   String _currentUserId = 'me';
   String? _loadError;
 
@@ -21,6 +23,10 @@ class PlacePhotosProvider extends ChangeNotifier {
   void setUserId(String id) {
     if (_currentUserId == id) return;
     _currentUserId = id;
+    _reportedPhotoIds = <String>{};
+    if (id != 'me' && SupabaseService.instance.clientOrNull != null) {
+      unawaited(refreshFromSupabase());
+    }
     notifyListeners();
   }
 
@@ -36,6 +42,7 @@ class PlacePhotosProvider extends ChangeNotifier {
     return List.unmodifiable(
       (_byPlace[placeId] ?? const <PlacePhoto>[]).where((photo) {
         if (blockedUserIds.contains(photo.userId)) return false;
+        if (_reportedPhotoIds.contains(photo.id)) return false;
         final userName = photo.userName.trim().toLowerCase();
         final isAdminPlaceholder = const {
           'admin',
@@ -95,6 +102,8 @@ class PlacePhotosProvider extends ChangeNotifier {
             (row) => PlacePhoto.fromMap(Map<String, dynamic>.from(row as Map)),
           )
           .toList();
+      final reportedPhotoIds = await SupabaseService.instance
+          .fetchReportedPhotoIds();
       _byPlace
         ..clear()
         ..addEntries(
@@ -102,6 +111,7 @@ class PlacePhotosProvider extends ChangeNotifier {
             photos,
           ).entries.map((entry) => MapEntry(entry.key, entry.value)),
         );
+      _reportedPhotoIds = reportedPhotoIds;
       try {
         await _saveLocal();
       } catch (e) {
@@ -245,9 +255,29 @@ class PlacePhotosProvider extends ChangeNotifier {
       newLikedBy.add(_currentUserId);
       newLikes = newLikes + 1;
     }
+
     list[i] = photo.copyWith(likes: newLikes, likedBy: newLikedBy);
     await _saveLocal();
     notifyListeners();
+  }
+
+  Future<void> reportPhoto(PlacePhoto photo, String reason) async {
+    if (_reportedPhotoIds.contains(photo.id)) return;
+    _reportedPhotoIds.add(photo.id);
+    notifyListeners();
+    try {
+      await SupabaseService.instance.submitPhotoReport(
+        photoId: photo.id,
+        photoUrl: photo.imageUrl,
+        uploaderId: photo.userId,
+        placeId: photo.placeId,
+        reason: reason,
+      );
+    } catch (_) {
+      _reportedPhotoIds.remove(photo.id);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> removePhoto(String placeId, String photoId) async {

@@ -6,6 +6,7 @@ import '../../core/services/ai_tour_guide_service.dart';
 import '../../core/services/gemini_rest_client.dart';
 import '../../core/widgets/ai_quota_banner.dart';
 import '../../l10n/app_strings.dart';
+import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
 
 class GeneralAITourGuideScreen extends StatefulWidget {
@@ -35,6 +36,13 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   }
 
   bool _busy = false;
+
+  void _openPaywall() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
+    );
+  }
 
   @override
   void dispose() {
@@ -98,12 +106,11 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
         _messages[_messages.length - 1] = _Msg(
           id: '',
           role: _Role.bot,
-          text:
-              e.statusCode == 429 &&
-                  e.message.contains('AI_DAILY_LIMIT_EXCEEDED')
-              ? aiDailyLimitMessage
-              : 'Could not reach the AI right now (${e.message}). Try again '
-                    'in a moment.',
+              text: e.statusCode == 429
+                  ? context.tr('ai_daily_limit_body')
+                  : 'Could not reach the AI right now (${e.message}). Try again '
+                        'in a moment.',
+              isDailyLimitExceeded: e.statusCode == 429,
         );
         _busy = false;
       });
@@ -165,7 +172,10 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
               controller: _scroll,
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               itemCount: _messages.length,
-              itemBuilder: (context, i) => _Bubble(msg: _messages[i]),
+              itemBuilder: (context, i) => _Bubble(
+                msg: _messages[i],
+                onUpgrade: _openPaywall,
+              ),
             ),
           ),
           if (_busy)
@@ -205,15 +215,28 @@ class _Msg {
   final String id;
   final _Role role;
   final String text;
-  const _Msg({required this.id, required this.role, required this.text});
+  final bool isDailyLimitExceeded;
+  const _Msg({
+    required this.id,
+    required this.role,
+    required this.text,
+    this.isDailyLimitExceeded = false,
+  });
 }
 
 class _Bubble extends StatelessWidget {
   final _Msg msg;
-  const _Bubble({required this.msg});
+  final VoidCallback onUpgrade;
+  const _Bubble({required this.msg, required this.onUpgrade});
 
   @override
   Widget build(BuildContext context) {
+    if (msg.isDailyLimitExceeded) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: AiDailyLimitCard(onUpgrade: onUpgrade),
+      );
+    }
     final isUser = msg.role == _Role.user;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),

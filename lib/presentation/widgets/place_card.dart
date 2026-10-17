@@ -103,6 +103,9 @@ class _PlaceCardState extends State<PlaceCard> {
   }
 
   Widget _buildDetails(String localeCode) {
+    final textDirection = localeCode == 'ar'
+        ? TextDirection.rtl
+        : TextDirection.ltr;
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       child: Column(
@@ -152,6 +155,7 @@ class _PlaceCardState extends State<PlaceCard> {
               type: MaterialType.transparency,
               child: Text(
                 widget.place.localizedName(localeCode),
+                textDirection: textDirection,
                 style: AppTextStyles.placeName.copyWith(color: context.textPri),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -162,6 +166,7 @@ class _PlaceCardState extends State<PlaceCard> {
 
           Text(
             widget.place.localizedDescription(localeCode),
+            textDirection: textDirection,
             style: AppTextStyles.placeDescription,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

@@ -22,11 +22,25 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _data = null;
-    });
+  Future<void> _load({bool forceRefresh = false}) async {
+    final cached = await WeatherService.instance.loadCached();
+    if (!mounted) return;
+    if (cached != null) {
+      setState(() {
+        _data = cached;
+        _loading = false;
+      });
+      if ((forceRefresh || !WeatherService.instance.isCacheFresh(cached)) &&
+          !_locating) {
+        final refreshed = await WeatherService.instance
+            .fetchForDeviceLocation();
+        if (mounted && refreshed != null) {
+          setState(() => _data = refreshed);
+        }
+      }
+      return;
+    }
+    setState(() => _loading = true);
     final d = await WeatherService.instance.fetchForDeviceLocation();
     if (mounted) {
       setState(() {
@@ -40,8 +54,6 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     HapticFeedback.lightImpact();
     setState(() {
       _locating = true;
-      _loading = true;
-      _data = null;
     });
     final d = await WeatherService.instance.fetchForDeviceLocation();
     if (!mounted) return;
@@ -131,7 +143,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
               ),
             ),
             IconButton(
-              onPressed: _load,
+              onPressed: () => _load(forceRefresh: true),
               tooltip: context.tr('refresh'),
               icon: const Icon(Icons.refresh_rounded),
             ),
@@ -216,7 +228,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
           ),
           IconButton(
-            onPressed: _load,
+            onPressed: () => _load(forceRefresh: true),
             tooltip: context.tr('refresh'),
             icon: const Icon(
               Icons.refresh_rounded,

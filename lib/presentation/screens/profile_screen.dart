@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_version.dart';
@@ -52,6 +55,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ConfettiController _confetti = ConfettiController();
   bool _notificationsEnabled = true;
   bool _locationEnabled = true;
+  bool _shareLocationActivity = true;
+  bool _privacyLoaded = false;
+  bool _privacyLoading = false;
+  bool _isUploadingAvatar = false;
+  String? _privacyError;
   bool _deletingAccount = false;
 
   @override
@@ -80,7 +88,150 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _locationEnabled = prefs.getBool('location_enabled') ?? true;
       });
     }
+    if (!mounted) return;
+    final auth = context.read<AuthProvider>();
+    if (!auth.isLoggedIn || auth.isGuest) return;
+    try {
+      final enabled = await SupabaseService.instance
+          .fetchLocationActivitySharing();
+      if (mounted) {
+        setState(() {
+          _shareLocationActivity = enabled;
+          _privacyLoaded = true;
+        });
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ProfileScreen: failed to load location privacy: $error\n$stackTrace',
+      );
+      if (mounted) {
+        setState(() {
+          _privacyError = 'privacy_settings_failed';
+          _privacyLoaded = false;
+        });
+      }
+    }
   }
+
+  Future<void> _setLocationActivitySharing(bool enabled) async {
+    if (_privacyLoading) return;
+    setState(() {
+      _privacyLoading = true;
+      _privacyError = null;
+    });
+    try {
+      await SupabaseService.instance.setLocationActivitySharing(enabled);
+      if (mounted) setState(() => _shareLocationActivity = enabled);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ProfileScreen: failed to save location privacy: $error\n$stackTrace',
+      );
+      if (mounted) {
+        setState(() => _privacyError = 'privacy_settings_save_failed');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('privacy_settings_save_failed'))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _privacyLoading = false);
+    }
+  }
+
+  Future<void> _pickAvatar(BuildContext context, AuthProvider auth) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_rounded),
+              title: Text(context.tr('take_photo')),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: Text(context.tr('choose_gallery')),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !context.mounted) return;
+    SupabaseClient? avatarClient;
+    String? uploadedAvatarPath;
+    try {
+      final selectedImage = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 1200,
+        imageQuality: 85,
+      );
+      if (selectedImage == null || !context.mounted) return;
+      setState(() => _isUploadingAvatar = true);
+      final compressed = await FlutterImageCompress.compressWithList(
+        await selectedImage.readAsBytes(),
+        minWidth: 512,
+        minHeight: 512,
+        quality: 82,
+        format: CompressFormat.jpeg,
+      );
+      final client = SupabaseService.instance.clientOrNull;
+      final userId = client?.auth.currentUser?.id;
+      if (client == null || userId == null || userId != auth.userId) {
+        throw StateError('Sign in to upload a profile picture.');
+      }
+      avatarClient = client;
+      final objectPath =
+          '$userId/avatar_${DateTime.now().microsecondsSinceEpoch}.jpg';
+      await client.storage
+          .from('avatars')
+          .uploadBinary(
+            objectPath,
+            compressed,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: false,
+            ),
+          );
+      uploadedAvatarPath = objectPath;
+      await auth.updateAvatarUrl(
+        client.storage.from('avatars').getPublicUrl(objectPath),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('ProfileScreen: avatar upload failed: $error\n$stackTrace');
+      if (avatarClient != null && uploadedAvatarPath != null) {
+        try {
+          await avatarClient.storage.from('avatars').remove([
+            uploadedAvatarPath,
+          ]);
+        } catch (cleanupError, cleanupStackTrace) {
+          debugPrint(
+            'ProfileScreen: failed to clean up uploaded avatar: '
+            '$cleanupError\n$cleanupStackTrace',
+          );
+        }
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('avatar_upload_failed'))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingAvatar = false);
+    }
+  }
+
+  Widget _profileAvatarFallback(AuthProvider auth) => Center(
+    child: Text(
+      auth.userName.isNotEmpty ? auth.userName[0].toUpperCase() : 'E',
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 38,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+  );
 
   Future<void> _openPublicPage(Uri uri) async {
     try {
@@ -405,31 +556,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     children: [
                       Stack(
+                        alignment: Alignment.center,
                         children: [
-                          Container(
-                            width: 90,
-                            height: 90,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withValues(alpha: 0.2),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.4),
-                                width: 3,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                auth.userName.isNotEmpty
-                                    ? auth.userName[0].toUpperCase()
-                                    : 'E',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 38,
-                                  fontWeight: FontWeight.w900,
+                          GestureDetector(
+                            onTap: auth.isLoggedIn && !auth.isGuest
+                                ? () => _pickAvatar(context, auth)
+                                : null,
+                            child: Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withValues(alpha: 0.2),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  width: 3,
                                 ),
+                              ),
+                              child: ClipOval(
+                                child:
+                                    auth.avatarUrl.startsWith('https://') ||
+                                        auth.avatarUrl.startsWith('http://')
+                                    ? Image.network(
+                                        auth.avatarUrl,
+                                        width: 90,
+                                        height: 90,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) =>
+                                            _profileAvatarFallback(auth),
+                                      )
+                                    : _profileAvatarFallback(auth),
                               ),
                             ),
                           ),
+                          if (auth.isLoggedIn && !auth.isGuest)
+                            const Positioned(
+                              bottom: 2,
+                              right: 2,
+                              child: CircleAvatar(
+                                radius: 13,
+                                backgroundColor: Colors.white,
+                                child: Icon(
+                                  Icons.camera_alt_rounded,
+                                  size: 15,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          if (_isUploadingAvatar)
+                            Positioned.fill(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.48),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 28,
+                                    height: 28,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 3,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 14),
@@ -1006,6 +1198,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             await prefs.setBool('location_enabled', v);
                           },
                         ),
+                        if (auth.isLoggedIn && !auth.isGuest) ...[
+                          _Div(),
+                          if (_privacyLoaded)
+                            _ToggleTile(
+                              icon: Icons.shield_outlined,
+                              title: context.tr('share_location_activity'),
+                              subtitle: context.tr(
+                                'share_location_activity_subtitle',
+                              ),
+                              color: AppColors.success,
+                              value: _shareLocationActivity,
+                              onChanged: _setLocationActivitySharing,
+                            ),
+                          if (_privacyError != null)
+                            Padding(
+                              padding: const EdgeInsetsDirectional.fromSTEB(
+                                16,
+                                0,
+                                16,
+                                8,
+                              ),
+                              child: Text(
+                                context.tr(_privacyError!),
+                                style: const TextStyle(
+                                  color: AppColors.error,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
                         _Div(),
                         Consumer<GeofenceProvider>(
                           builder: (context, geo, _) => _ToggleTile(

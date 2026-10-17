@@ -369,7 +369,7 @@ class _RouteSummary extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '$stopCount stops',
+                  context.tr('tour_stops_count', {'n': '$stopCount'}),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 11,

@@ -35,6 +35,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get add_photo_title => 'أضف صورة';
 
   @override
+  String get image_upload_error => 'تعذر رفع الصورة. حاول مرة أخرى.';
+
+  @override
+  String get image_upload_success => 'تم رفع الصورة بنجاح.';
+
+  @override
+  String get image_uploading => 'جاري رفع الصورة...';
+
+  @override
+  String get suggest_place_success => 'تم إرسال اقتراح المكان.';
+
+  @override
   String get ai_add_all => 'ضيف الكل لمخطط الرحلة';
 
   @override
@@ -47,6 +59,20 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get ai_days => 'الأيام';
+
+  @override
+  String get ai_daily_limit_body =>
+      'يتجدد رصيدك المجاني عند منتصف الليل بتوقيت UTC. اشترك في برو للحصول على حد أعلى.';
+
+  @override
+  String get ai_daily_limit_title =>
+      'وصلت إلى الحد اليومي المجاني لرسائل الذكاء الاصطناعي';
+
+  @override
+  String get ai_upgrade_pro => 'الترقية إلى برو';
+
+  @override
+  String get ai_quota_reset_utc => 'يتجدد عند منتصف الليل بتوقيت UTC';
 
   @override
   String ai_days_count(String n) {

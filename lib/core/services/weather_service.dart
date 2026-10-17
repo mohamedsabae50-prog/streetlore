@@ -3,8 +3,14 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../constants/city_coordinates.dart';
 
 class WeatherData {
+  static const _cacheKey = 'weather_payload_v1';
+  static const cacheTtl = Duration(minutes: 30);
+
   final double tempC;
   final double feelsLikeC;
   final int humidity;
@@ -30,6 +36,33 @@ class WeatherData {
   });
 
   String get iconCode => 'wmo_$weatherCode';
+
+  Map<String, dynamic> toJson() => {
+    'tempC': tempC,
+    'feelsLikeC': feelsLikeC,
+    'humidity': humidity,
+    'precipitation': precipitation,
+    'precipitationProbability': precipitationProbability,
+    'cloudCover': cloudCover,
+    'weatherCode': weatherCode,
+    'isDay': isDay,
+    'conditionKey': conditionKey,
+    'fetchedAt': fetchedAt.toIso8601String(),
+  };
+
+  factory WeatherData.fromJson(Map<String, dynamic> json) => WeatherData(
+    tempC: (json['tempC'] as num).toDouble(),
+    feelsLikeC: (json['feelsLikeC'] as num).toDouble(),
+    humidity: (json['humidity'] as num).toInt(),
+    precipitation: (json['precipitation'] as num).toDouble(),
+    precipitationProbability: (json['precipitationProbability'] as num)
+        .toInt(),
+    cloudCover: (json['cloudCover'] as num).toInt(),
+    weatherCode: (json['weatherCode'] as num).toInt(),
+    isDay: json['isDay'] as bool,
+    conditionKey: json['conditionKey'] as String,
+    fetchedAt: DateTime.parse(json['fetchedAt'] as String),
+  );
 }
 
 class WeatherService {
@@ -51,14 +84,21 @@ class WeatherService {
         'hourly': 'precipitation_probability',
         'timezone': 'auto',
       });
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response = await http.get(uri).timeout(const Duration(seconds: 5));
       if (response.statusCode != 200) {
         throw StateError('Open-Meteo returned HTTP ${response.statusCode}.');
       }
-      return parseCurrentWeather(
+      final data = parseCurrentWeather(
         jsonDecode(response.body) as Map<String, dynamic>,
         now: DateTime.now(),
       );
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(WeatherData._cacheKey, jsonEncode(data.toJson()));
+      } catch (error, stackTrace) {
+        debugPrint('WeatherService cache write failed: $error\n$stackTrace');
+      }
+      return data;
     } catch (error, stackTrace) {
       debugPrint('WeatherService.fetch failed: $error\n$stackTrace');
       return null;
@@ -67,24 +107,37 @@ class WeatherService {
     }
   }
 
-  Future<WeatherData?> fetchForDeviceLocation() async {
+  Future<WeatherData?> loadCached() async {
     try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return null;
-      }
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low,
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(WeatherData._cacheKey);
+      if (raw == null) return null;
+      return WeatherData.fromJson(
+        jsonDecode(raw) as Map<String, dynamic>,
       );
-      return fetch(lat: position.latitude, lng: position.longitude);
     } catch (error, stackTrace) {
-      debugPrint('WeatherService device location failed: $error\n$stackTrace');
+      debugPrint('WeatherService.loadCached failed: $error\n$stackTrace');
       return null;
     }
+  }
+
+  bool isCacheFresh(WeatherData data, {DateTime? now}) =>
+      (now ?? DateTime.now()).difference(data.fetchedAt) <
+      WeatherData.cacheTtl;
+
+  Future<WeatherData?> fetchForDeviceLocation() async {
+    Position? position;
+    try {
+      position = await Geolocator.getLastKnownPosition();
+    } catch (error, stackTrace) {
+      debugPrint(
+        'WeatherService last-known location failed: $error\n$stackTrace',
+      );
+    }
+    return fetch(
+      lat: position?.latitude ?? alexandriaCenterLat,
+      lng: position?.longitude ?? alexandriaCenterLng,
+    );
   }
 
   @visibleForTesting

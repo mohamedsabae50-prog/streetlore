@@ -146,6 +146,30 @@ abstract class AppLocalizations {
   /// **'Add a photo'**
   String get add_photo_title;
 
+  /// Translation key: image_upload_error
+  ///
+  /// In en, this message translates to:
+  /// **'Could not upload the image. Please try again.'**
+  String get image_upload_error;
+
+  /// Translation key: image_upload_success
+  ///
+  /// In en, this message translates to:
+  /// **'Image uploaded successfully.'**
+  String get image_upload_success;
+
+  /// Translation key: image_uploading
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading image...'**
+  String get image_uploading;
+
+  /// Translation key: suggest_place_success
+  ///
+  /// In en, this message translates to:
+  /// **'Your place suggestion was submitted.'**
+  String get suggest_place_success;
+
   /// Translation key: ai_add_all
   ///
   /// In en, this message translates to:
@@ -169,6 +193,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Days'**
   String get ai_days;
+
+  /// Translation key: ai_daily_limit_body
+  ///
+  /// In en, this message translates to:
+  /// **'Your free messages reset at midnight UTC. Upgrade to Pro for higher AI limits.'**
+  String get ai_daily_limit_body;
+
+  /// Translation key: ai_daily_limit_title
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached today’s free AI message limit'**
+  String get ai_daily_limit_title;
+
+  /// Translation key: ai_upgrade_pro
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Pro'**
+  String get ai_upgrade_pro;
+
+  /// Translation key: ai_quota_reset_utc
+  ///
+  /// In en, this message translates to:
+  /// **'Resets at midnight UTC'**
+  String get ai_quota_reset_utc;
 
   /// Translation key: ai_days_count
   ///

@@ -280,9 +280,38 @@ async function listChatLogs(page: number, perPage: number) {
   };
 }
 
+function isMissingTableError(error: {
+  code?: string;
+  message?: string;
+  details?: string;
+  hint?: string;
+}): boolean {
+  return error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    /could not find the table/i.test(
+      `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`,
+    );
+}
+
+function warnMissingTable(table: string, error: {
+  code?: string;
+  message?: string;
+  details?: string;
+  hint?: string;
+}): void {
+  console.warn(
+    `admin-user-management: skipping cleanup for missing table public.${table}:`,
+    error,
+  );
+}
+
 async function deleteRows(table: string, column: string, userId: string) {
   const { error } = await admin.from(table).delete().eq(column, userId);
   if (error) {
+    if (isMissingTableError(error)) {
+      warnMissingTable(table, error);
+      return;
+    }
     throw new Error(`Could not clean ${table} for user ${userId}: ${error.message}`);
   }
 }
@@ -408,11 +437,12 @@ async function removeUserStorage(
     .select("image_url")
     .eq("user_id", userId)
     .eq("status", "approved");
-  if (approvedError) {
+  if (approvedError && !isMissingTableError(approvedError)) {
     throw new Error(
       `Could not load approved suggestions: ${approvedError.message}`,
     );
   }
+  if (approvedError) warnMissingTable("suggested_places", approvedError);
   const published = new Set(
     (approved ?? []).map((row) =>
       storagePathFromPublicUrl(row.image_url ?? "", SUGGESTION_BUCKET)
@@ -428,25 +458,40 @@ async function removeUserData(userId: string) {
     .from("place_photos")
     .select("image_url")
     .eq("user_id", userId);
-  if (photosError) {
+  if (photosError && !isMissingTableError(photosError)) {
     throw new Error(`Could not load user photos: ${photosError.message}`);
   }
+  if (photosError) warnMissingTable("place_photos", photosError);
 
   await removeUserStorage(
     userId,
     (photos ?? []).map((photo) => photo.image_url ?? ""),
   );
 
-  for (const table of [
-    "place_photos",
-    "place_chat",
-    "place_checkins",
-    "saved_places",
-    "saved_tours",
-    "leaderboard",
-    "ai_quota",
+  for (const [table, column] of [
+    ["place_photos", "user_id"],
+    ["place_chat", "user_id"],
+    ["place_checkins", "user_id"],
+    ["saved_places", "user_id"],
+    ["saved_tours", "user_id"],
+    ["leaderboard", "user_id"],
+    ["ai_quota", "user_id"],
+    ["ai_chat_logs", "user_id"],
+    ["suggested_places", "user_id"],
+    ["squad_members", "user_id"],
+    ["friendships", "requester_id"],
+    ["friendships", "recipient_id"],
+    ["friend_privacy_settings", "user_id"],
+    ["friend_privacy_settings", "friend_id"],
+    ["photo_reports", "reporter_id"],
+    ["photo_reports", "uploader_id"],
+    ["reports", "reporter_id"],
+    ["user_follows", "follower_id"],
+    ["user_follows", "following_id"],
+    ["blocked_users", "blocker_id"],
+    ["blocked_users", "blocked_user_id"],
   ]) {
-    await deleteRows(table, "user_id", userId);
+    await deleteRows(table, column, userId);
   }
 }
 

@@ -12,6 +12,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_service.dart';
+import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 
 class SuggestPlaceScreen extends StatefulWidget {
@@ -41,6 +42,7 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
   LatLng? _selectedLocation;
   Uint8List? _imageBytes;
   bool _isSubmitting = false;
+  bool _isUploadingImage = false;
   bool _isPickingLocation = false;
 
   @override
@@ -133,6 +135,7 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
       String? imageUrl;
       final imageBytes = _imageBytes;
       if (imageBytes != null) {
+        setState(() => _isUploadingImage = true);
         final compressedBytes = await FlutterImageCompress.compressWithList(
           imageBytes,
           minWidth: 1600,
@@ -153,6 +156,7 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
             );
         uploadedPath = storagePath;
         imageUrl = client.storage.from('suggestions').getPublicUrl(storagePath);
+        if (mounted) setState(() => _isUploadingImage = false);
       }
 
       await client.from('suggested_places').insert({
@@ -168,7 +172,7 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your place suggestion was submitted.')),
+        SnackBar(content: Text(context.tr('suggest_place_success'))),
       );
       Navigator.of(context).pop();
     } catch (error) {
@@ -182,9 +186,20 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
           );
         }
       }
-      if (mounted) _showMessage('Could not submit your suggestion: $error');
+      if (mounted) {
+        _showMessage(
+          _isUploadingImage
+              ? context.tr('image_upload_error')
+              : 'Could not submit your suggestion: $error',
+        );
+      }
     } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+          _isUploadingImage = false;
+        });
+      }
     }
   }
 
@@ -417,7 +432,13 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
                         ),
                       )
                     : const Icon(Icons.send_rounded),
-                label: Text(_isSubmitting ? 'Submitting...' : 'Submit place'),
+                label: Text(
+                  _isUploadingImage
+                      ? context.tr('image_uploading')
+                      : _isSubmitting
+                      ? 'Submitting...'
+                      : 'Submit place',
+                ),
               ),
             ],
           ),

@@ -69,18 +69,50 @@ class ItineraryModel {
     if (locale == 'ar' && durationAr != null && durationAr!.isNotEmpty) {
       return durationAr!;
     }
+    if (locale == 'ar') {
+      final durationText = duration.trim();
+      if (durationText.toLowerCase() == 'full day') return 'يوم كامل';
+      if (durationText.toLowerCase() == 'half day') return 'نصف يوم';
+      final hours = RegExp(
+        r'^(\d+)\s*hours?$',
+        caseSensitive: false,
+      ).firstMatch(durationText);
+      if (hours != null) {
+        final count = int.parse(hours.group(1)!);
+        return switch (count) {
+          1 => 'ساعة واحدة',
+          2 => 'ساعتان',
+          >= 3 && <= 10 => '$count ساعات',
+          _ => '$count ساعة',
+        };
+      }
+    }
     return duration;
   }
 
   factory ItineraryModel.fromJson(Map<String, dynamic> json) {
     return ItineraryModel(
       id: json['id'] as String,
-      title: json['title'] as String,
-      titleAr: json['title_ar'] as String? ?? json['titleAr'] as String?,
-      description: json['description'] as String,
+      title:
+          json['title_en'] as String? ??
+          json['title'] as String? ??
+          json['titleEn'] as String? ??
+          '',
+      titleAr:
+          json['title_ar'] as String? ??
+          json['titleAr'] as String?,
+      description:
+          json['description_en'] as String? ??
+          json['description'] as String? ??
+          json['descriptionEn'] as String? ??
+          '',
       descriptionAr:
           json['description_ar'] as String? ?? json['descriptionAr'] as String?,
-      duration: json['duration'] as String,
+      duration:
+          json['duration_en'] as String? ??
+          json['duration'] as String? ??
+          json['durationEn'] as String? ??
+          '',
       durationAr:
           json['duration_ar'] as String? ?? json['durationAr'] as String?,
       imageUrl:

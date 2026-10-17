@@ -27,6 +27,12 @@ Apply `supabase/migrations/2026_10_11_admin_analytics.sql` after that migration 
 
 Apply `supabase/migrations/2026_10_12_admin_checkins_by_place.sql` after the analytics migration to add the Top Places by Check-ins breakdown to the Admin dashboard.
 
+For Phase 2 social features, run the complete
+`supabase/migrations/20261109000000_phase_two_social_privacy_and_photo_reports.sql`
+script in the Supabase SQL Editor after the existing social/profile migrations.
+It is safe to rerun and adds avatar storage, approval-based friendships,
+location/activity privacy enforcement, and per-photo reporting.
+
 ---
 
 ## 2. Create the admin user (one-time)

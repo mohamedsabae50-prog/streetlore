@@ -165,6 +165,10 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
   @override
   Widget build(BuildContext context) {
     final tour = widget.tour;
+    final locale = Localizations.localeOf(context).languageCode;
+    final textDirection = locale == 'ar'
+        ? TextDirection.rtl
+        : TextDirection.ltr;
     final imageUrl = tour.coverImageUrl;
     final isLocked = !context.watch<AuthProvider>().isPro;
 
@@ -447,10 +451,9 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                               },
                           child: Material(
                             type: MaterialType.transparency,
-                            child: Text(
-                              tour.localizedTitle(
-                                Localizations.localeOf(context).languageCode,
-                              ),
+                            child:                             Text(
+                              tour.localizedTitle(locale),
+                              textDirection: textDirection,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 26,
@@ -473,6 +476,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                               context.tr('tour_stops_along', {
                                 'n': '${tour.places.length}',
                               }),
+                              textDirection: textDirection,
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
@@ -512,9 +516,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                               child: _StatCard(
                                 icon: Icons.access_time_rounded,
                                 label: context.tr('tour_duration'),
-                                value: tour.localizedDuration(
-                                  Localizations.localeOf(context).languageCode,
-                                ),
+                                value: tour.localizedDuration(locale),
                                 color: AppColors.primary,
                               ),
                             ),
@@ -553,9 +555,8 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              tour.localizedDescription(
-                                Localizations.localeOf(context).languageCode,
-                              ),
+                              tour.localizedDescription(locale),
+                              textDirection: textDirection,
                               style: AppTextStyles.bodyMedium,
                             ),
                           ],
@@ -578,6 +579,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                                 context.tr('tour_stops_count', {
                                   'n': '${tour.places.length}',
                                 }),
+                                textDirection: textDirection,
                                 style: TextStyle(
                                   color: context.textSec,
                                   fontSize: 13,

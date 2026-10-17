@@ -37,6 +37,19 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const REMOVE_BATCH_SIZE = 100;
 
+function isMissingTableError(error: {
+  code?: string;
+  message?: string;
+  details?: string;
+  hint?: string;
+}): boolean {
+  return error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    /could not find the table/i.test(
+      `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`,
+    );
+}
+
 async function removeObjects(
   bucket: string,
   paths: string[],
@@ -106,18 +119,39 @@ async function removeUserStorage(
 async function deleteUserRows(userId: string, token: string): Promise<void> {
   await removeUserStorage(userId, token);
 
-  const userDataTables = [
+  const userDataRows = [
     { table: "place_photos", column: "user_id" },
     { table: "place_chat", column: "user_id" },
     { table: "place_checkins", column: "user_id" },
     { table: "saved_places", column: "user_id" },
+    { table: "saved_tours", column: "user_id" },
     { table: "leaderboard", column: "user_id" },
     { table: "ai_quota", column: "user_id" },
+    { table: "ai_chat_logs", column: "user_id" },
+    { table: "suggested_places", column: "user_id" },
     { table: "squad_members", column: "user_id" },
+    { table: "friendships", column: "requester_id" },
+    { table: "friendships", column: "recipient_id" },
+    { table: "friend_privacy_settings", column: "user_id" },
+    { table: "friend_privacy_settings", column: "friend_id" },
+    { table: "photo_reports", column: "reporter_id" },
+    { table: "photo_reports", column: "uploader_id" },
+    { table: "reports", column: "reporter_id" },
+    { table: "user_follows", column: "follower_id" },
+    { table: "user_follows", column: "following_id" },
+    { table: "blocked_users", column: "blocker_id" },
+    { table: "blocked_users", column: "blocked_user_id" },
   ];
-  for (const { table, column } of userDataTables) {
+  for (const { table, column } of userDataRows) {
     const { error } = await admin.from(table).delete().eq(column, userId);
     if (error) {
+      if (isMissingTableError(error)) {
+        console.warn(
+          `delete-user-account: skipping cleanup for missing table public.${table}:`,
+          error,
+        );
+        continue;
+      }
       throw new Error(`Could not delete ${table}: ${error.message}`);
     }
   }

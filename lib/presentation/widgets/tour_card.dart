@@ -44,6 +44,10 @@ class TourCard extends StatelessWidget {
 
   Widget _buildImageHeader(BuildContext context) {
     final imageUrl = tour.coverImageUrl;
+    final locale = Localizations.localeOf(context).languageCode;
+    final textDirection = locale == 'ar'
+        ? TextDirection.rtl
+        : TextDirection.ltr;
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: SizedBox(
@@ -123,9 +127,8 @@ class TourCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      tour.localizedDuration(
-                        Localizations.localeOf(context).languageCode,
-                      ),
+                      tour.localizedDuration(locale),
+                      textDirection: textDirection,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -165,6 +168,7 @@ class TourCard extends StatelessWidget {
                       context.tr('tour_stops_count', {
                         'n': '${tour.places.length}',
                       }),
+                      textDirection: textDirection,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -199,6 +203,10 @@ class TourCard extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final textDirection = locale == 'ar'
+        ? TextDirection.rtl
+        : TextDirection.ltr;
     return Padding(
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -222,18 +230,16 @@ class TourCard extends StatelessWidget {
             child: Material(
               type: MaterialType.transparency,
               child: Text(
-                tour.localizedTitle(
-                  Localizations.localeOf(context).languageCode,
-                ),
+                tour.localizedTitle(locale),
+                textDirection: textDirection,
                 style: AppTextStyles.cardTitle.copyWith(color: context.textPri),
               ),
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            tour.localizedDescription(
-              Localizations.localeOf(context).languageCode,
-            ),
+            tour.localizedDescription(locale),
+            textDirection: textDirection,
             style: AppTextStyles.placeDescription,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -246,7 +252,7 @@ class TourCard extends StatelessWidget {
                   context,
                   icon: Icons.timer_outlined,
                   label: tour.localizedDuration(
-                    Localizations.localeOf(context).languageCode,
+                    locale,
                   ),
                 ),
               ),
@@ -298,6 +304,10 @@ class TourCard extends StatelessWidget {
           Flexible(
             child: Text(
               label,
+              textDirection: Localizations.localeOf(context).languageCode ==
+                      'ar'
+                  ? TextDirection.rtl
+                  : TextDirection.ltr,
               style: TextStyle(
                 fontSize: 11,
                 color: context.textSec,

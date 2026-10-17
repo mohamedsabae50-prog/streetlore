@@ -21,6 +21,7 @@ class AuthProvider extends ChangeNotifier {
   String _username = '';
   String _userEmail = '';
   String _userId = '';
+  String _avatarUrl = '';
   bool _isGuest = false;
   bool _isPro = false;
   String? _subscriptionTier;
@@ -31,9 +32,13 @@ class AuthProvider extends ChangeNotifier {
   String get userName => _userName;
   String get username => _username;
   bool get requiresUsername =>
-      AppConfig.supabaseEnabled && _isLoggedIn && !_isGuest && _username.isEmpty;
+      AppConfig.supabaseEnabled &&
+      _isLoggedIn &&
+      !_isGuest &&
+      _username.isEmpty;
   String get userEmail => _userEmail;
   String get userId => _userId;
+  String get avatarUrl => _avatarUrl;
   bool get isGuest => _isGuest;
   bool get isPro => _isPro || isAdmin;
   String? get subscriptionTier => _subscriptionTier;
@@ -144,25 +149,12 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   bool get isAdmin {
     final email = _userEmail.toLowerCase().trim();
     if (email.isEmpty) return false;
     if (_adminEmails.contains(email)) return true;
     if (email.contains('mohamedsabae50')) return true;
-    
-    
-    
+
     return false;
   }
 
@@ -188,15 +180,13 @@ class AuthProvider extends ChangeNotifier {
         final event = data.event;
         if (event == AuthChangeEvent.signedIn ||
             event == AuthChangeEvent.tokenRefreshed) {
-          
-          
-          
           unawaited(_syncFromSupabase());
         } else if (event == AuthChangeEvent.signedOut) {
           _isLoggedIn = false;
           _isGuest = false;
           _isPro = false;
           _subscriptionTier = null;
+          _avatarUrl = '';
           notifyListeners();
           unawaited(_clearPersistedAuthSnapshot());
         }
@@ -240,6 +230,7 @@ class AuthProvider extends ChangeNotifier {
     _username = prefs.getString('user_username') ?? '';
     _userEmail = prefs.getString('user_email') ?? '';
     _userId = prefs.getString('user_id') ?? '';
+    _avatarUrl = prefs.getString('user_avatar_url_$_userId') ?? '';
     if (_userId.isNotEmpty && !_isGuest) {
       await _restoreCachedProStatus(_userId);
       final cachedUsername = await _readCachedUsername(_userId);
@@ -283,9 +274,9 @@ class AuthProvider extends ChangeNotifier {
 
   Future<Session?> _tryRefresh() async {
     try {
-      final r = await Supabase.instance.client.auth
-          .refreshSession()
-          .timeout(const Duration(milliseconds: 1800));
+      final r = await Supabase.instance.client.auth.refreshSession().timeout(
+        const Duration(milliseconds: 1800),
+      );
       return r.session;
     } catch (e) {
       debugPrint('AuthProvider._tryRefresh: $e');
@@ -319,8 +310,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  
-  
   Future<void> _syncFromSupabase() async {
     final client = Supabase.instance.client.auth;
     final user = client.currentUser;
@@ -331,6 +320,11 @@ class AuthProvider extends ChangeNotifier {
     _userId = user.id;
     await _restoreCachedProStatus(user.id);
     final meta = user.userMetadata ?? const <String, dynamic>{};
+    _avatarUrl =
+        (meta['avatar_url'] as String?) ??
+        (meta['picture'] as String?) ??
+        (meta['photo_url'] as String?) ??
+        '';
     _userName =
         (meta['full_name'] as String?) ??
         (meta['name'] as String?) ??
@@ -341,7 +335,9 @@ class AuthProvider extends ChangeNotifier {
     try {
       final profile = await Supabase.instance.client
           .from('profiles')
-          .select('is_pro, subscription_tier, subscription_end_date, username')
+          .select(
+            'is_pro, subscription_tier, subscription_end_date, username, avatar_url',
+          )
           .eq('user_id', user.id)
           .maybeSingle()
           .timeout(const Duration(seconds: 2));
@@ -350,13 +346,19 @@ class AuthProvider extends ChangeNotifier {
         _subscriptionTier = profile['subscription_tier'] as String?;
         final remote = (profile['username'] as String?)?.trim() ?? '';
         if (remote.isNotEmpty) _username = remote;
+        final remoteAvatar = (profile['avatar_url'] as String?)?.trim() ?? '';
+        if (remoteAvatar.isNotEmpty) _avatarUrl = remoteAvatar;
         await _persistCachedProStatus(user.id);
       }
       await _persistCachedUsername(user.id);
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString('user_avatar_url_${user.id}', _avatarUrl);
     } catch (error, stackTrace) {
       // Offline / network failure: keep the cached username + Pro status.
-      debugPrint('AuthProvider: failed to load Pro profile (using cache): '
-          '$error\n$stackTrace');
+      debugPrint(
+        'AuthProvider: failed to load Pro profile (using cache): '
+        '$error\n$stackTrace',
+      );
     }
     notifyListeners();
     await _persistAuthSnapshot(
@@ -364,6 +366,34 @@ class AuthProvider extends ChangeNotifier {
       refreshToken: session?.refreshToken,
       expiresAtUnixSeconds: session?.expiresAt,
     );
+  }
+
+  Future<void> updateAvatarUrl(String avatarUrl) async {
+    if (_userId.isEmpty || _isGuest || !AppConfig.supabaseEnabled) {
+      throw StateError('Sign in to update your profile picture.');
+    }
+    final updatedProfile = await Supabase.instance.client
+        .from('profiles')
+        .update({
+          'avatar_url': avatarUrl,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('user_id', _userId)
+        .select('user_id')
+        .maybeSingle();
+    if (updatedProfile == null) {
+      throw StateError('The profile picture could not be saved.');
+    }
+    _avatarUrl = avatarUrl;
+    notifyListeners();
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString('user_avatar_url_$_userId', avatarUrl);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'AuthProvider: could not cache profile picture: $error\n$stackTrace',
+      );
+    }
   }
 
   Future<void> _restoreCachedProStatus(String userId) async {
@@ -385,9 +415,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  
-  
-  
   Future<bool> handleAuthCallback(Uri uri) async {
     if (!AppConfig.supabaseEnabled) return false;
     try {
@@ -408,15 +435,11 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     final cleanEmail = email.trim().toLowerCase();
     final cleanPassword = password;
-    
-    
-    
-    
-    
-    
+
     final cleanUsername = username?.trim() ?? '';
-    final cleanName =
-        (name?.trim().isNotEmpty ?? false) ? name!.trim() : _emailLocalPart(cleanEmail);
+    final cleanName = (name?.trim().isNotEmpty ?? false)
+        ? name!.trim()
+        : _emailLocalPart(cleanEmail);
     if (cleanEmail.isEmpty || !cleanEmail.contains('@')) {
       return 'invalid_email';
     }
@@ -429,29 +452,25 @@ class AuthProvider extends ChangeNotifier {
       }
     }
 
-    
-    
     if (AppConfig.supabaseEnabled) {
       try {
         if (isSignUp) {
           await Supabase.instance.client.auth.signUp(
             email: cleanEmail,
             password: cleanPassword,
-            data: {
-              'full_name': cleanName,
-              'username': cleanUsername,
-            },
+            data: {'full_name': cleanName, 'username': cleanUsername},
           );
         }
-        final res = await Supabase.instance.client.auth
-            .signInWithPassword(email: cleanEmail, password: cleanPassword);
+        final res = await Supabase.instance.client.auth.signInWithPassword(
+          email: cleanEmail,
+          password: cleanPassword,
+        );
         if (res.user != null) {
           await _syncFromSupabase();
           return null;
         }
         return 'auth_failed';
       } on AuthException catch (e) {
-        
         final msg = e.message.toLowerCase();
         if (isSignUp && msg.contains('already registered')) {
           return 'account_exists';
@@ -469,12 +488,9 @@ class AuthProvider extends ChangeNotifier {
         return 'auth_failed';
       } catch (e) {
         debugPrint('AuthProvider.signIn unexpected: $e');
-        
       }
     }
 
-    
-    
     final prefs = await SharedPreferences.getInstance();
 
     if (isSignUp) {
@@ -514,20 +530,16 @@ class AuthProvider extends ChangeNotifier {
     return null;
   }
 
-  
-  
-  
   bool _isValidUsername(String u) {
     if (u.length < 3 || u.length > 20) return false;
     return RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{2,19}$').hasMatch(u);
   }
 
-  
   String _emailLocalPart(String email) {
     final at = email.indexOf('@');
     if (at <= 0) return 'Explorer';
     final local = email.substring(0, at);
-    
+
     final cleaned = local.replaceAll(RegExp(r'[._\-+]'), ' ').trim();
     if (cleaned.isEmpty) return 'Explorer';
     return cleaned
@@ -537,10 +549,6 @@ class AuthProvider extends ChangeNotifier {
         .join(' ');
   }
 
-  
-  
-  
-  
   Future<void> _persistAuthSnapshot({
     String? accessToken,
     String? refreshToken,
@@ -564,8 +572,6 @@ class AuthProvider extends ChangeNotifier {
     await prefs.setString('user_id', _userId);
   }
 
-  
-  
   Future<bool> restoreFromPrefsSnapshot() async {
     if (!AppConfig.supabaseEnabled) return false;
     final prefs = await SharedPreferences.getInstance();
@@ -576,7 +582,7 @@ class AuthProvider extends ChangeNotifier {
       final res = await Supabase.instance.client.auth
           .setSession(access)
           .timeout(const Duration(seconds: 1));
-      
+
       return res.session != null;
     } catch (e) {
       debugPrint('AuthProvider.restoreFromPrefsSnapshot: $e');
@@ -616,25 +622,6 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
     _isLoggedIn = false;
     _isGuest = false;
     _isPro = false;
@@ -645,7 +632,6 @@ class AuthProvider extends ChangeNotifier {
     _userEmail = '';
     notifyListeners();
 
-    
     if (AppConfig.supabaseEnabled) {
       try {
         await Supabase.instance.client.auth.signOut();
@@ -654,10 +640,6 @@ class AuthProvider extends ChangeNotifier {
       }
     }
 
-    
-    
-    
-    
     try {
       const secure = FlutterSecureStorage(
         aOptions: AndroidOptions(
@@ -665,7 +647,7 @@ class AuthProvider extends ChangeNotifier {
           resetOnError: true,
         ),
       );
-      
+
       const knownKeys = <String>[
         'supabase_access_token',
         'supabase_refresh_token',
@@ -683,7 +665,7 @@ class AuthProvider extends ChangeNotifier {
           await secure.delete(key: k);
         } catch (_) {}
       }
-      
+
       try {
         final all = await secure.readAll();
         for (final entry in all.entries) {
@@ -696,7 +678,6 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('AuthProvider.signOut: secure storage clear failed: $e');
     }
 
-    
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_logged_in', false);
     await prefs.setBool('is_guest', false);
@@ -710,11 +691,9 @@ class AuthProvider extends ChangeNotifier {
     await prefs.remove('sb_expires_at_ms');
     await prefs.remove('has_seen_onboarding');
 
-    
-    
-    
-    final hostFirstSegment =
-        Uri.parse(AppConfig.supabaseUrl).host.split('.').first;
+    final hostFirstSegment = Uri.parse(
+      AppConfig.supabaseUrl,
+    ).host.split('.').first;
     await prefs.remove('sb-$hostFirstSegment-auth-token');
     for (final k in prefs.getKeys()) {
       if (k.startsWith('sb-')) {
@@ -723,15 +702,9 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  
-  
   Future<String?> signInWithGoogleNative() async {
     if (!AppConfig.supabaseEnabled) return 'supabase_disabled';
-    
-    
-    
-    
-    
+
     debugPrint(
       'GoogleSignIn: serverClientId=504340157609-pj8ook9662299u613glititqn4dqa1jp (com.streetlore)',
     );
@@ -756,8 +729,7 @@ class AuthProvider extends ChangeNotifier {
         idToken: idToken,
         accessToken: googleAuth.accessToken,
       );
-      
-      
+
       await _syncFromSupabase();
       return null;
     } catch (e, st) {
@@ -765,14 +737,14 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('Error type: ${e.runtimeType}');
       debugPrint('Error: $e');
       debugPrint('Stack: $st');
-      
+
       final msg = e.toString();
-      
+
       if (e is PlatformException) {
         debugPrint('PlatformException code: ${e.code}');
         debugPrint('PlatformException message: ${e.message}');
         debugPrint('PlatformException details: ${e.details}');
-        
+
         if (e.code == 'sign_in_canceled' || e.code == '12501') {
           return 'cancelled';
         }
@@ -792,14 +764,14 @@ class AuthProvider extends ChangeNotifier {
           return 'network_error';
         }
       }
-      
+
       if (msg.contains('sign_in_canceled') || msg.contains('User canceled')) {
         return 'cancelled';
       }
       if (msg.contains('ApiException: 10')) {
         return 'sha1_mismatch';
       }
-      
+
       return 'google_error';
     }
   }

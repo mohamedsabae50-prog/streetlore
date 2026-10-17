@@ -131,11 +131,22 @@ class AppStrings {
       'en': '{remaining} of {limit} AI calls remaining',
       'ar': 'متبقي {remaining} من {limit} طلبات للذكاء الاصطناعي',
     },
-    'ai_quota_reset_cairo': {
-      'en': 'Resets at midnight Cairo time',
-      'ar': 'يتجدد عند منتصف الليل بتوقيت القاهرة',
+    'ai_quota_reset_utc': {
+      'en': 'Resets at midnight UTC',
+      'ar': 'يتجدد عند منتصف الليل بتوقيت UTC',
     },
     'ai_quota_retry': {'en': 'Retry', 'ar': 'إعادة المحاولة'},
+    'ai_daily_limit_title': {
+      'en': 'You’ve reached today’s free AI message limit',
+      'ar': 'وصلت إلى الحد اليومي المجاني لرسائل الذكاء الاصطناعي',
+    },
+    'ai_daily_limit_body': {
+      'en':
+          'Your free messages reset at midnight UTC. Upgrade to Pro for higher AI limits.',
+      'ar':
+          'يتجدد رصيدك المجاني عند منتصف الليل بتوقيت UTC. اشترك في برو للحصول على حد أعلى.',
+    },
+    'ai_upgrade_pro': {'en': 'Upgrade to Pro', 'ar': 'الترقية إلى برو'},
     'admin_ai_chat_logs': {
       'en': 'AI Chat Logs',
       'ar': 'سجل محادثات الذكاء الاصطناعي',
@@ -172,6 +183,19 @@ class AppStrings {
       'en':
           'Current weather is unavailable. Check your location and connection.',
       'ar': 'الطقس الحالي غير متاح. تحقق من الموقع والاتصال بالإنترنت.',
+    },
+    'image_uploading': {'en': 'Uploading image...', 'ar': 'جاري رفع الصورة...'},
+    'image_upload_success': {
+      'en': 'Image uploaded successfully.',
+      'ar': 'تم رفع الصورة بنجاح.',
+    },
+    'image_upload_error': {
+      'en': 'Could not upload the image. Please try again.',
+      'ar': 'تعذر رفع الصورة. حاول مرة أخرى.',
+    },
+    'suggest_place_success': {
+      'en': 'Your place suggestion was submitted.',
+      'ar': 'تم إرسال اقتراح المكان.',
     },
     'weather_clear_sky': {'en': 'Clear sky', 'ar': 'سماء صافية'},
     'weather_mainly_clear': {'en': 'Mainly clear', 'ar': 'صحو غالبًا'},
@@ -283,8 +307,8 @@ class AppStrings {
       'ar': 'شارك مكاناً مميزاً مع فريقنا',
     },
     'users_search_subtitle': {
-      'en': 'Find and follow other EgyptLore explorers',
-      'ar': 'اعثر على مستكشفي EgyptLore الآخرين وتابعهم',
+      'en': 'Find explorers and manage your friend requests',
+      'ar': 'اعثر على مستكشفين وأدر طلبات الصداقة',
     },
     'users_search_hint': {
       'en': 'Search usernames',
@@ -302,9 +326,10 @@ class AppStrings {
       'en': 'No users found. Try another username.',
       'ar': 'لم يتم العثور على مستخدمين. جرّب اسمًا آخر.',
     },
+    'users_search_results': {'en': 'Search results', 'ar': 'نتائج البحث'},
     'users_sign_in_required': {
-      'en': 'Sign in to find and follow other explorers.',
-      'ar': 'سجّل الدخول للعثور على مستكشفين آخرين ومتابعتهم.',
+      'en': 'Sign in to find and add other explorers as friends.',
+      'ar': 'سجّل الدخول للعثور على مستكشفين آخرين وإضافتهم كأصدقاء.',
     },
     'user_profile_title': {'en': 'Explorer Profile', 'ar': 'ملف المستكشف'},
     'profile_visited_places': {
@@ -312,8 +337,8 @@ class AppStrings {
       'ar': 'الأماكن التي زارها',
     },
     'profile_no_visits': {
-      'en': 'No check-ins yet.',
-      'ar': 'لا توجد زيارات مسجلة بعد.',
+      'en': 'No shared visits to show yet.',
+      'ar': 'لا توجد زيارات متاحة للمشاركة بعد.',
     },
     'profile_visits_failed': {
       'en': 'Could not load visited places. Please try again.',
@@ -321,12 +346,71 @@ class AppStrings {
     },
     'follow_user': {'en': 'Follow', 'ar': 'متابعة'},
     'unfollow_user': {'en': 'Unfollow', 'ar': 'إلغاء المتابعة'},
+    'send_friend_request': {'en': 'Add friend', 'ar': 'إرسال طلب صداقة'},
+    'incoming_request': {'en': 'Incoming request', 'ar': 'طلب وارد'},
+    'friend_request_pending': {
+      'en': 'Request pending',
+      'ar': 'الطلب قيد الانتظار',
+    },
+    'cancel_friend_request': {'en': 'Cancel request', 'ar': 'إلغاء الطلب'},
+    'incoming_friend_requests': {
+      'en': 'Incoming Friend Requests',
+      'ar': 'طلبات الصداقة الواردة',
+    },
+    'sent_friend_requests': {'en': 'Sent Requests', 'ar': 'الطلبات المرسلة'},
+    'friends_list_title': {'en': 'Friends', 'ar': 'الأصدقاء'},
+    'accept_friend_request': {'en': 'Accept', 'ar': 'قبول'},
+    'decline_friend_request': {'en': 'Decline', 'ar': 'رفض'},
+    'remove_friend': {'en': 'Remove friend', 'ar': 'إزالة الصديق'},
+    'remove_friend_title': {
+      'en': 'Remove this friend?',
+      'ar': 'إزالة هذا الصديق؟',
+    },
+    'remove_friend_confirmation': {
+      'en': 'You will no longer share friend activity with each other.',
+      'ar': 'لن تتم مشاركة النشاط بينكما بعد الآن.',
+    },
+    'friend_location_activity_sharing': {
+      'en': 'Share my location and activity with this friend',
+      'ar': 'مشاركة موقعي ونشاطي مع هذا الصديق',
+    },
+    'friends_load_failed': {
+      'en': 'Could not load friends and requests.',
+      'ar': 'تعذر تحميل الأصدقاء والطلبات.',
+    },
+    'friend_action_failed': {
+      'en': 'Could not update this friend request. Please try again.',
+      'ar': 'تعذر تحديث طلب الصداقة. حاول مرة أخرى.',
+    },
     'follow_action_failed': {
       'en': 'Could not update follow status. Please try again.',
       'ar': 'تعذر تحديث حالة المتابعة. حاول مرة أخرى.',
     },
+    'share_location_activity': {
+      'en': 'Share my location & activity with friends',
+      'ar': 'مشاركة موقعي ونشاطي مع الأصدقاء',
+    },
+    'share_location_activity_subtitle': {
+      'en':
+          'Friends can see visited places and activity only while this is on.',
+      'ar':
+          'يمكن للأصدقاء رؤية الأماكن التي زرتها ونشاطك عند تفعيل هذا الخيار فقط.',
+    },
+    'privacy_settings_failed': {
+      'en': 'Could not load privacy settings.',
+      'ar': 'تعذر تحميل إعدادات الخصوصية.',
+    },
+    'privacy_settings_save_failed': {
+      'en': 'Could not save privacy settings. Please try again.',
+      'ar': 'تعذر حفظ إعدادات الخصوصية. حاول مرة أخرى.',
+    },
+    'avatar_upload_failed': {
+      'en': 'Could not upload your profile picture. Please try again.',
+      'ar': 'تعذر تحميل صورة الملف الشخصي. حاول مرة أخرى.',
+    },
     'profile_followers': {'en': 'followers', 'ar': 'متابعون'},
     'profile_following': {'en': 'following', 'ar': 'يتابع'},
+    'profile_friends': {'en': 'friends', 'ar': 'أصدقاء'},
     'profile_no_public_badges': {
       'en': 'No badges earned yet',
       'ar': 'لا توجد شارات مكتسبة بعد',
@@ -351,9 +435,9 @@ class AppStrings {
     'feed_yesterday': {'en': 'Yesterday', 'ar': 'أمس'},
     'feed_empty': {
       'en':
-          'No recent activity yet. Follow explorers to see their check-ins, badges, and approved place suggestions.',
+          'No recent activity yet. Add friends to see their check-ins, badges, and approved place suggestions.',
       'ar':
-          'لا يوجد نشاط حديث بعد. تابع المستكشفين لرؤية زياراتهم وشاراتهم واقتراحات الأماكن المقبولة.',
+          'لا يوجد نشاط حديث بعد. أضف أصدقاء لرؤية زياراتهم وشاراتهم واقتراحات الأماكن المقبولة.',
     },
     'feed_load_failed': {
       'en': 'Could not load the activity feed. Please try again.',
@@ -363,6 +447,28 @@ class AppStrings {
     'feed_action_badge': {'en': 'unlocked a badge', 'ar': 'حصل على شارة'},
     'feed_action_suggestion': {'en': 'suggested a place', 'ar': 'اقترح مكانًا'},
     'report_title': {'en': 'Report content', 'ar': 'الإبلاغ عن محتوى'},
+    'report_photo_title': {'en': 'Report Photo', 'ar': 'إبلاغ عن الصورة'},
+    'photo_report_reason_inappropriate': {
+      'en': 'Inappropriate content',
+      'ar': 'محتوى غير لائق',
+    },
+    'photo_report_reason_unrelated': {
+      'en': 'Not related to this place',
+      'ar': 'غير مرتبطة بهذا المكان',
+    },
+    'photo_report_reason_offensive': {
+      'en': 'Offensive/Abuse',
+      'ar': 'محتوى مسيء أو ينطوي على إساءة',
+    },
+    'photo_report_reason_other': {'en': 'Other', 'ar': 'سبب آخر'},
+    'photo_report_submitted': {
+      'en': 'Photo reported. It has been hidden from your gallery.',
+      'ar': 'تم الإبلاغ عن الصورة وإخفاؤها من معرضك.',
+    },
+    'photo_report_failed': {
+      'en': 'Could not report this photo. Please try again.',
+      'ar': 'تعذر الإبلاغ عن الصورة. حاول مرة أخرى.',
+    },
     'report_reason_prompt': {
       'en': 'Why are you reporting this?',
       'ar': 'لماذا تريد الإبلاغ عن هذا المحتوى؟',

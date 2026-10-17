@@ -103,35 +103,21 @@ class SocialBadges extends StatelessWidget {
   };
 }
 
-class SocialFollowCounts extends StatelessWidget {
-  const SocialFollowCounts({
-    required this.followers,
-    required this.following,
-    super.key,
-  });
+class SocialFriendCount extends StatelessWidget {
+  const SocialFriendCount({required this.friends, super.key});
 
-  final int followers;
-  final int following;
+  final int friends;
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: 16,
-    runSpacing: 8,
-    children: [
-      _count(context, followers, context.tr('profile_followers')),
-      _count(context, following, context.tr('profile_following')),
-    ],
-  );
-
-  Widget _count(BuildContext context, int count, String label) => Text.rich(
+  Widget build(BuildContext context) => Text.rich(
     TextSpan(
       style: TextStyle(color: context.textSec, fontSize: 13),
       children: [
         TextSpan(
-          text: '$count ',
+          text: '$friends ',
           style: TextStyle(color: context.textPri, fontWeight: FontWeight.w800),
         ),
-        TextSpan(text: label),
+        TextSpan(text: context.tr('profile_friends')),
       ],
     ),
   );

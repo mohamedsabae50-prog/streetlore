@@ -44,6 +44,16 @@ Future<void> main() async {
 
 Future<void> _runApplication() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
     unawaited(
@@ -328,7 +338,6 @@ class _EgyptLoreAppState extends State<EgyptLoreApp>
   }
 
   ThemeData _lightTheme() {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,

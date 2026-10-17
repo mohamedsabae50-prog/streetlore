@@ -13,12 +13,14 @@ class ChatMessage {
   final String text;
   final bool isUser;
   final DateTime timestamp;
+  final bool isDailyLimitExceeded;
 
   const ChatMessage({
     required this.id,
     required this.text,
     required this.isUser,
     required this.timestamp,
+    this.isDailyLimitExceeded = false,
   });
 }
 
@@ -227,8 +229,7 @@ family-friendliness, safety, and accessibility.''';
       debugPrint('AITourGuideService.send error: $e');
       final isDailyLimit =
           e is GeminiApiException &&
-          e.statusCode == 429 &&
-          e.message.contains('AI_DAILY_LIMIT_EXCEEDED');
+          e.statusCode == 429;
       final reply = isDailyLimit
           ? _localizedDailyLimit(userText)
           : _offlineErrorReply(userText);
@@ -239,6 +240,7 @@ family-friendliness, safety, and accessibility.''';
           text: reply,
           isUser: false,
           timestamp: DateTime.now(),
+          isDailyLimitExceeded: isDailyLimit,
         ),
       );
       return reply;

@@ -89,98 +89,100 @@ class _ToursScreenState extends State<ToursScreen>
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: RefreshIndicator(
-          onRefresh: () => context.read<TourProvider>().refresh(),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: RefreshIndicator(
+            onRefresh: () => context.read<TourProvider>().refresh(),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              slivers: [
+                SliverAppBar(
+                  floating: true,
+                  snap: true,
+                  backgroundColor: context.bgColor,
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  titleSpacing: 20,
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr('tours_subtitle'),
+                        style: TextStyle(fontSize: 12, color: context.textSec),
+                      ),
+                      Text(
+                        context.tr('tours_title'),
+                        style: AppTextStyles.screenTitle.copyWith(
+                          color: context.textPri,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                    child: _squadButton(context),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                    child: Text(
+                      filtered.isEmpty
+                          ? context.tr('no_tours')
+                          : context.tr('tours_available', {
+                              'n': '${filtered.length}',
+                            }),
+                      style: TextStyle(
+                        color: context.textSec,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+                if (filtered.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Text(
+                          context.tr('loading_tours'),
+                          style: TextStyle(color: context.textSec),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate((context, i) {
+                      final tour = filtered[i];
+                      return FadeInUp(
+                        delay: Duration(milliseconds: 100 * i + 200),
+                        offsetY: 30,
+                        child: TourCard(
+                          tour: tour,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TourDetailsScreen(tour: tour),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    }, childCount: filtered.length),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
             ),
-            slivers: [
-              SliverAppBar(
-                floating: true,
-                snap: true,
-                backgroundColor: context.bgColor,
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                titleSpacing: 20,
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.tr('tours_subtitle'),
-                      style: TextStyle(fontSize: 12, color: context.textSec),
-                    ),
-                    Text(
-                      context.tr('tours_title'),
-                      style: AppTextStyles.screenTitle.copyWith(
-                        color: context.textPri,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-                  child: _squadButton(context),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-                  child: Text(
-                    filtered.isEmpty
-                        ? context.tr('no_tours')
-                        : context.tr('tours_available', {
-                            'n': '${filtered.length}',
-                          }),
-                    style: TextStyle(
-                      color: context.textSec,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              if (filtered.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Text(
-                        context.tr('loading_tours'),
-                        style: TextStyle(color: context.textSec),
-                      ),
-                    ),
-                  ),
-                )
-              else
-                SliverList(
-                  delegate: SliverChildBuilderDelegate((context, i) {
-                    final tour = filtered[i];
-                    return FadeInUp(
-                      delay: Duration(milliseconds: 100 * i + 200),
-                      offsetY: 30,
-                      child: TourCard(
-                        tour: tour,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => TourDetailsScreen(tour: tour),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  }, childCount: filtered.length),
-                ),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            ],
           ),
         ),
       ),
@@ -217,10 +219,7 @@ class _ToursScreenState extends State<ToursScreen>
           hasActiveSquad
               ? context.tr('squad_active_title')
               : context.tr('squad_title'),
-          style: TextStyle(
-            color: context.textPri,
-            fontWeight: FontWeight.w800,
-          ),
+          style: TextStyle(color: context.textPri, fontWeight: FontWeight.w800),
         ),
         subtitle: Text(
           hasActiveSquad

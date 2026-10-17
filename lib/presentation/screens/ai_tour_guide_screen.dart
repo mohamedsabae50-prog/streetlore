@@ -6,6 +6,7 @@ import '../../core/widgets/ai_quota_banner.dart';
 import '../../core/services/ai_tour_guide_service.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
+import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
 
 class AITourGuideScreen extends StatefulWidget {
@@ -92,6 +93,13 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
     });
   }
 
+  void _openPaywall() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,10 +160,21 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
       itemCount: msgs.length + (_streamingReply == null ? 0 : 1),
       itemBuilder: (context, i) {
         if (i == msgs.length) {
-          return _MessageBubble(text: _streamingReply!, isUser: false, id: '');
-        }
-        final m = msgs[i];
-        return _MessageBubble(text: m.text, isUser: m.isUser, id: m.id);
+        return _MessageBubble(
+          text: _streamingReply!,
+          isUser: false,
+          id: '',
+          onUpgrade: _openPaywall,
+        );
+      }
+      final m = msgs[i];
+      return _MessageBubble(
+        text: m.text,
+        isUser: m.isUser,
+        id: m.id,
+        isDailyLimitExceeded: m.isDailyLimitExceeded,
+        onUpgrade: _openPaywall,
+      );
       },
     );
   }
@@ -223,14 +242,24 @@ class _MessageBubble extends StatelessWidget {
   final String text;
   final bool isUser;
   final String id;
+  final bool isDailyLimitExceeded;
+  final VoidCallback onUpgrade;
   const _MessageBubble({
     required this.text,
     required this.isUser,
     required this.id,
+    this.isDailyLimitExceeded = false,
+    required this.onUpgrade,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (isDailyLimitExceeded) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: AiDailyLimitCard(onUpgrade: onUpgrade),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(

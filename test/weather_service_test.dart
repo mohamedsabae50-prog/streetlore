@@ -48,6 +48,32 @@ void main() {
     expect(overcast.conditionKey, 'weather_overcast');
     expect(rain.conditionKey, 'weather_rain');
   });
+
+  test('weather payload round-trips and respects its 30-minute TTL', () {
+    final weather = WeatherService.parseCurrentWeather(
+      _response(code: 3, cloudCover: 92),
+      now: now,
+    );
+    final restored = WeatherData.fromJson(weather.toJson());
+
+    expect(restored.tempC, weather.tempC);
+    expect(restored.conditionKey, weather.conditionKey);
+    expect(restored.fetchedAt, weather.fetchedAt);
+    expect(
+      WeatherService.instance.isCacheFresh(
+        restored,
+        now: now.add(const Duration(minutes: 29)),
+      ),
+      isTrue,
+    );
+    expect(
+      WeatherService.instance.isCacheFresh(
+        restored,
+        now: now.add(const Duration(minutes: 31)),
+      ),
+      isFalse,
+    );
+  });
 }
 
 Map<String, dynamic> _response({
