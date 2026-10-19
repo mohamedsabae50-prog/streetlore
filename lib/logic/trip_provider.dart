@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,7 @@ class TripProvider extends ChangeNotifier {
   Set<String> get visitedPlaceIds => Set.unmodifiable(_visitedPlaceIds);
   String? _visitedUserId;
   int _visitedRefreshGeneration = 0;
+  Future<void> _visitCacheWrites = Future<void>.value();
 
   TripProvider() {
     _loadTrip();
@@ -46,6 +48,23 @@ class TripProvider extends ChangeNotifier {
       _replaceVisitedPlaces(userId, const <String>{});
     }
     try {
+      final prefs = await SharedPreferences.getInstance();
+      if (generation != _visitedRefreshGeneration ||
+          client.auth.currentUser?.id != userId) {
+        return;
+      }
+      final cachedIds = prefs.getStringList(_visitedCacheKey(userId));
+      if (cachedIds != null) {
+        _replaceVisitedPlaces(userId, cachedIds.toSet());
+      }
+    } catch (e, stackTrace) {
+      debugPrint(
+        'TripProvider: failed to read cached visits for $userId: '
+        '$e\n$stackTrace',
+      );
+    }
+
+    try {
       final rows = await client
           .from('place_checkins')
           .select('place_id')
@@ -54,14 +73,41 @@ class TripProvider extends ChangeNotifier {
           client.auth.currentUser?.id != userId) {
         return;
       }
-      _replaceVisitedPlaces(
-        userId,
-        rows.map((row) => row['place_id'].toString()).toSet(),
-      );
+      final remoteIds = rows
+          .map((row) => (row['place_id'] ?? '').toString())
+          .where((id) => id.isNotEmpty)
+          .toSet();
+      _replaceVisitedPlaces(userId, remoteIds);
+      await _persistVisitedPlaces(userId, remoteIds);
     } catch (e) {
       debugPrint('TripProvider._loadVisitedFromSupabase: $e');
     }
   }
+
+  String _visitedCacheKey(String userId) => 'visited_place_ids_$userId';
+
+  Future<void> _persistVisitedPlaces(
+    String userId,
+    Set<String> placeIds,
+  ) async {
+    _visitCacheWrites = _visitCacheWrites.then((_) async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList(
+          _visitedCacheKey(userId),
+          placeIds.toList(growable: false),
+        );
+      } catch (e, stackTrace) {
+        debugPrint(
+          'TripProvider: failed to cache visits for $userId: $e\n$stackTrace',
+        );
+      }
+    });
+    await _visitCacheWrites;
+  }
+
+  String _currentUserId() =>
+      SupabaseService.instance.clientOrNull?.auth.currentUser?.id ?? '';
 
   void _replaceVisitedPlaces(String userId, Set<String> placeIds) {
     final changed =
@@ -82,7 +128,17 @@ class TripProvider extends ChangeNotifier {
   /// immediately (don't wait for the next refresh).
   void markVisited(String placeId) {
     if (placeId.isEmpty) return;
-    if (_visitedPlaceIds.add(placeId)) notifyListeners();
+    final userId = _currentUserId();
+    if (userId.isNotEmpty && _visitedUserId != userId) {
+      _replaceVisitedPlaces(userId, const <String>{});
+    }
+    if (_visitedPlaceIds.add(placeId)) {
+      _visitedRefreshGeneration++;
+      notifyListeners();
+      if (userId.isNotEmpty) {
+        unawaited(_persistVisitedPlaces(userId, Set.of(_visitedPlaceIds)));
+      }
+    }
   }
 
   /// v1.0.63: drop the visited marker (called from PlaceDetails when the
@@ -90,7 +146,14 @@ class TripProvider extends ChangeNotifier {
   /// immediately, without waiting for a Supabase round-trip).
   void unmarkVisited(String placeId) {
     if (placeId.isEmpty) return;
-    if (_visitedPlaceIds.remove(placeId)) notifyListeners();
+    if (_visitedPlaceIds.remove(placeId)) {
+      _visitedRefreshGeneration++;
+      notifyListeners();
+      final userId = _currentUserId();
+      if (userId.isNotEmpty) {
+        unawaited(_persistVisitedPlaces(userId, Set.of(_visitedPlaceIds)));
+      }
+    }
   }
 
   bool isInTrip(String id) {

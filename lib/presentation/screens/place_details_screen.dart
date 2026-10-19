@@ -657,6 +657,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                   latitude: place.lat,
                                                   longitude: place.lng,
                                                 );
+                                        if (!context.mounted) return;
                                         if (locationResult !=
                                             CheckInLocationResult.verified) {
                                           if (!context.mounted) return;
@@ -686,6 +687,12 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                           return;
                                         }
 
+                                        final tripProvider = context
+                                            .read<TripProvider>();
+                                        tripProvider.markVisited(place.id);
+                                        if (mounted) {
+                                          setState(() => _isVisited = true);
+                                        }
                                         await gamification.applyAction(
                                           'check_in',
                                           placeId: place.id,
@@ -694,6 +701,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                             gamification.lastCheckinError;
                                         if (checkinError != null) {
                                           gamification.clearCheckinError();
+                                          tripProvider.unmarkVisited(place.id);
+                                          if (mounted) {
+                                            setState(() => _isVisited = false);
+                                          }
                                           if (!context.mounted) return;
                                           messenger.showSnackBar(
                                             SnackBar(
@@ -706,9 +717,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                           return;
                                         }
                                         if (context.mounted) {
-                                          context
-                                              .read<TripProvider>()
-                                              .markVisited(place.id);
                                           context
                                               .read<TourProvider>()
                                               .markPlaceCheckedIn(place.id);

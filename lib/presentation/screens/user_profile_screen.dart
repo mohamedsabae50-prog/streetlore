@@ -11,6 +11,8 @@ import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/achievement_provider.dart';
 import '../../logic/blocked_users_provider.dart';
+import '../../logic/place_provider.dart';
+import '../../logic/trip_provider.dart';
 import 'place_details_screen.dart';
 import '../widgets/report_content_sheet.dart';
 import '../widgets/social_user_widgets.dart';
@@ -172,6 +174,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final blockedUsers = context.watch<BlockedUsersProvider>();
+    final isOwnProfile = auth.userId == widget.user.userId;
+    final localVisitedIds = isOwnProfile
+        ? context.watch<TripProvider>().visitedPlaceIds
+        : const <String>{};
+    final localPlaces = isOwnProfile
+        ? context.watch<PlaceProvider>().places
+        : const <PlaceModel>[];
+    final localVisitedPlaces = isOwnProfile
+        ? localPlaces
+              .where((place) => localVisitedIds.contains(place.id))
+              .map((place) => place.toJson())
+              .toList(growable: false)
+        : const <Map<String, dynamic>>[];
+    final visibleVisitedPlaces = isOwnProfile
+        ? localVisitedPlaces
+        : _visitedPlaces;
     final isBlocked = blockedUsers.isBlocked(widget.user.userId);
     final canFollow =
         AppConfig.supabaseEnabled && auth.isLoggedIn && !auth.isGuest;
@@ -287,17 +305,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 10),
-                if (_isLoadingVisits)
+                if (_isLoadingVisits && visibleVisitedPlaces.isEmpty)
                   const Center(child: CircularProgressIndicator())
-                else if (_visitsError != null)
+                else if (_visitsError != null && visibleVisitedPlaces.isEmpty)
                   Text(
                     _visitsError!,
                     style: const TextStyle(color: AppColors.error),
                   )
-                else if (_visitedPlaces.isEmpty)
+                else if (visibleVisitedPlaces.isEmpty)
                   Text(context.tr('profile_no_visits'))
                 else
-                  ..._visitedPlaces.map(
+                  ...visibleVisitedPlaces.map(
                     (visit) => _VisitedPlaceCard(visit: visit),
                   ),
               ],

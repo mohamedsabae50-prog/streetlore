@@ -17,6 +17,7 @@ import '../../logic/tour_provider.dart';
 import '../widgets/place_card.dart';
 import '../widgets/weather_widget.dart';
 import '../widgets/compass_card.dart';
+import '../widgets/alexandria_mastery_bar.dart';
 import '../../l10n/app_strings.dart';
 import 'place_details_screen.dart';
 import 'leaderboard_screen.dart';
@@ -421,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
 
             Expanded(
-              child: _isLoading
+              child: _isLoading && !placeProvider.hasPlaces
                   ? _buildShimmer()
                   : isSearching
                   ? _buildSearchResults(filtered)
@@ -459,6 +460,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
 
           SliverToBoxAdapter(child: RepaintBoundary(child: _QuickAccessGrid())),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: AlexandriaMasteryBar(
+                places: context.watch<PlaceProvider>().places,
+                visitedPlaceIds: context.watch<TripProvider>().visitedPlaceIds,
+              ),
+            ),
+          ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(top: 20),

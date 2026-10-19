@@ -11,6 +11,7 @@ import '../../data/models/place_model.dart';
 import '../../core/services/offline_tile_provider.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
+import '../../logic/trip_provider.dart';
 import '_atm_sheet.dart';
 import 'place_details_screen.dart';
 
@@ -130,7 +131,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
         );
       }
     } catch (error, stackTrace) {
-      debugPrint('MapViewScreen: nearby ATM lookup failed: $error\n$stackTrace');
+      debugPrint(
+        'MapViewScreen: nearby ATM lookup failed: $error\n$stackTrace',
+      );
       if (!mounted) return;
       setState(() {
         _atms = const [];
@@ -205,6 +208,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
   @override
   Widget build(BuildContext context) {
     final places = context.watch<PlaceProvider>().places;
+    final visitedPlaceIds = context.watch<TripProvider>().visitedPlaceIds;
     final visible = _filtered(places);
 
     return Scaffold(
@@ -254,34 +258,91 @@ class _MapViewScreenState extends State<MapViewScreen> {
                   for (final p in visible)
                     Marker(
                       point: LatLng(p.lat, p.lng),
-                      width: 44,
-                      height: 44,
+                      width: visitedPlaceIds.contains(p.id) ? 50 : 44,
+                      height: visitedPlaceIds.contains(p.id) ? 50 : 44,
                       child: GestureDetector(
                         onTap: () {
                           setState(() => _selectedPlace = p);
                           _mapController.move(LatLng(p.lat, p.lng), 14);
                         },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: _colorForCategory(p.category),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: _colorForCategory(
-                                  p.category,
-                                ).withValues(alpha: 0.5),
-                                blurRadius: 8,
-                                spreadRadius: 2,
+                        child: visitedPlaceIds.contains(p.id)
+                            ? Stack(
+                                clipBehavior: Clip.none,
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    width: 42,
+                                    height: 42,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF059669),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(
+                                            0xFF059669,
+                                          ).withValues(alpha: 0.5),
+                                          blurRadius: 9,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 3,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.check_rounded,
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: -1,
+                                    right: -1,
+                                    child: Container(
+                                      width: 19,
+                                      height: 19,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF4C542),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.check,
+                                        color: Color(0xFF14532D),
+                                        size: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Container(
+                                decoration: BoxDecoration(
+                                  color: _colorForCategory(p.category),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _colorForCategory(
+                                        p.category,
+                                      ).withValues(alpha: 0.5),
+                                      blurRadius: 8,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 3,
+                                  ),
+                                ),
+                                child: Icon(
+                                  _iconForCategory(p.category),
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                               ),
-                            ],
-                            border: Border.all(color: Colors.white, width: 3),
-                          ),
-                          child: Icon(
-                            _iconForCategory(p.category),
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
                       ),
                     ),
                   if (_showAtms)

@@ -71,6 +71,7 @@ class PlaceProvider extends ChangeNotifier {
               places[index] = updated;
               _places = places;
             }
+            unawaited(_cachePlaces());
             notifyListeners();
           },
         )
@@ -158,7 +159,22 @@ class PlaceProvider extends ChangeNotifier {
 
     final storage = OfflineStorageService.instance;
     if (_places.isEmpty) {
-      _places = List<PlaceModel>.from(fallbackPlaces);
+      final cachedRows = storage.getCachedApiRows('supabase_places');
+      if (cachedRows != null && cachedRows.isNotEmpty) {
+        try {
+          final cached = _filterInvalidCoords(
+            cachedRows.map(PlaceModel.fromJson).toList(growable: false),
+          );
+          if (cached.isNotEmpty) _places = cached;
+        } catch (cacheError) {
+          debugPrint(
+            'PlaceProvider.loadPlaces: cached response invalid: $cacheError',
+          );
+        }
+      }
+      if (_places.isEmpty) {
+        _places = List<PlaceModel>.from(fallbackPlaces);
+      }
       mergeSeedHotels();
       notifyListeners();
     }
@@ -285,6 +301,17 @@ class PlaceProvider extends ChangeNotifier {
     if (lat < 29.5 || lat > 31.5) return false;
     if (lng < 29.0 || lng > 30.5) return false;
     return true;
+  }
+
+  Future<void> _cachePlaces() {
+    return OfflineStorageService.instance.cacheApiRows(
+      'supabase_places',
+      _places
+          .map(
+            (place) => {...place.toJson(), 'display_order': place.displayOrder},
+          )
+          .toList(growable: false),
+    );
   }
 
   List<PlaceModel> _filterInvalidCoords(List<PlaceModel> input) {
