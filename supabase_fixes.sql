@@ -622,9 +622,7 @@ END;
 $function$;
 
 REVOKE ALL ON FUNCTION public.admin_add_visits_and_sync(uuid, text[])
-  FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.admin_add_visits_and_sync(uuid, text[])
-  TO authenticated;
+  FROM PUBLIC, anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Coordinate safety: repair only unmistakably swapped lat/lng pairs and
