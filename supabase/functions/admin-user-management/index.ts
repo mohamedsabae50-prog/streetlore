@@ -170,6 +170,64 @@ async function includeProStatus<T extends { id: string }>(users: T[]) {
   }));
 }
 
+async function requireManageableUser(userId: string, callerId: string) {
+  if (!userId) throw new Error("user_id_required");
+  if (userId === callerId) throw new Error("cannot_manage_own_admin_account");
+  const { data, error } = await admin.auth.admin.getUserById(userId);
+  if (error || !data.user) throw new Error("user_not_found");
+  if (isProtectedAdmin(data.user.email)) {
+    throw new Error("cannot_manage_admin_account");
+  }
+  return data.user;
+}
+
+async function getUserVisitState(userId: string) {
+  const [{ data: checkins, error: checkinsError }, { data: leaderboard, error }] =
+    await Promise.all([
+      admin.from("place_checkins").select("place_id").eq("user_id", userId),
+      admin
+        .from("leaderboard")
+        .select("total_points, badges, level")
+        .eq("user_id", userId)
+        .maybeSingle(),
+    ]);
+  if (checkinsError) throw checkinsError;
+  if (error) throw error;
+  return {
+    visited_place_ids: (checkins ?? []).map((row) => row.place_id),
+    places_visited: (checkins ?? []).length,
+    total_points: leaderboard?.total_points ?? 0,
+    badges: leaderboard?.badges ?? [],
+    level: leaderboard?.level ?? "Explorer",
+  };
+}
+
+async function updateUserVisits(
+  userId: string,
+  callerId: string,
+  placeIds: string[],
+  operation: "add" | "remove",
+) {
+  await requireManageableUser(userId, callerId);
+  if (
+    placeIds.length === 0 ||
+    placeIds.length > 100 ||
+    placeIds.some((placeId) => !placeId.trim())
+  ) {
+    throw new Error("invalid_place_ids");
+  }
+  const { data, error } = await admin.rpc("admin_manage_user_visits", {
+    target_user_id: userId,
+    place_ids: [...new Set(placeIds)],
+    operation,
+  });
+  if (error) throw error;
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("invalid_visit_management_response");
+  }
+  return data;
+}
+
 async function listChatLogs(page: number, perPage: number) {
   type ChatLog = {
     id: string;
@@ -551,6 +609,57 @@ serve(async (req: Request): Promise<Response> => {
     } catch (error) {
       console.error("admin-user-management: list chat logs failed:", error);
       return json({ error: "list_chat_logs_failed" }, 500);
+    }
+  }
+
+  if (body.action === "visits") {
+    const userId = typeof body.user_id === "string" ? body.user_id.trim() : "";
+    try {
+      await requireManageableUser(userId, caller.id);
+      return json(await getUserVisitState(userId));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      const status = message === "user_not_found"
+        ? 404
+        : message === "user_id_required"
+        ? 400
+        : message.startsWith("cannot_manage_")
+        ? 400
+        : 500;
+      if (status === 500) {
+        console.error("admin-user-management: fetch user visits failed:", error);
+      }
+      return json({ error: "fetch_user_visits_failed", message }, status);
+    }
+  }
+
+  if (
+    body.action === "add_visits" ||
+    body.action === "remove_visits"
+  ) {
+    const userId = typeof body.user_id === "string" ? body.user_id.trim() : "";
+    const placeIds = Array.isArray(body.place_ids) &&
+        body.place_ids.every((id) => typeof id === "string")
+      ? body.place_ids as string[]
+      : [];
+    const operation = body.action === "add_visits" ? "add" : "remove";
+    try {
+      return json(
+        await updateUserVisits(userId, caller.id, placeIds, operation),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      const status = message === "user_not_found"
+        ? 404
+        : message.endsWith("_required") ||
+            message.startsWith("cannot_manage_") ||
+            message === "invalid_place_ids"
+        ? 400
+        : 500;
+      if (status === 500) {
+        console.error("admin-user-management: update user visits failed:", error);
+      }
+      return json({ error: "update_user_visits_failed", message }, status);
     }
   }
 
