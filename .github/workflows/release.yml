@@ -158,6 +158,9 @@ jobs:
         run: flutter pub get
 
       - name: Build APK + AAB (arm64, release)
+        env:
+          STREETLORE_KEYSTORE_PASSWORD: ${{ secrets.STREETLORE_KEYSTORE_PASSWORD }}
+          STREETLORE_KEY_PASSWORD: ${{ secrets.STREETLORE_KEY_PASSWORD }}
         run: |
           set -e
           flutter build apk --release \
