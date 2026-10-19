@@ -9,27 +9,16 @@ class AppStrings {
   static const Map<String, Map<String, String>> _v = {
     'nav_explore': {'en': 'Explore', 'ar': 'استكشاف'},
     'nav_tours': {'en': 'Tours', 'ar': 'الجولات'},
-    'nav_saved': {'en': 'Saved', 'ar': 'المحفوظات'},
     'nav_profile': {'en': 'Profile', 'ar': 'حسابي'},
 
     'greet_morning': {'en': 'Good Morning', 'ar': 'صباح الخير'},
     'greet_afternoon': {'en': 'Good Afternoon', 'ar': 'مساء الخير'},
     'greet_evening': {'en': 'Good Evening', 'ar': 'مساء الخير'},
-    'compass_title': {'en': 'Compass direction', 'ar': 'اتجاه البوصلة'},
-    'compass_sub': {
-      'en':
-          'Discover the city with a sweeping animated compass that grows into place.',
-      'ar': 'اكتشف المدينة ببوصلة متحركة تنساب إلى مكانها.',
-    },
     'search_hint': {
       'en': 'Search places, landmarks...',
       'ar': 'ابحث عن أماكن أو معالم...',
     },
     'featured': {'en': 'Featured', 'ar': 'مميز'},
-    'see_all': {'en': 'See all', 'ar': 'عرض الكل'},
-    'filter_open_now': {'en': 'Open Now', 'ar': 'مفتوح الآن'},
-    'filter_cheapest': {'en': 'Cheapest', 'ar': 'الأرخص'},
-    'filter_nearest': {'en': 'Nearest', 'ar': 'الأقرب'},
     'filter_free': {'en': 'Free only', 'ar': 'المجاني فقط'},
     'filter_hidden_gems': {'en': 'Hidden Gems', 'ar': 'جواهر مخفية'},
     'download_offline': {
@@ -84,21 +73,14 @@ class AppStrings {
     'cat_shopping': {'en': 'Shopping', 'ar': 'تسوق'},
     'cat_mosques': {'en': 'Mosques', 'ar': 'مساجد'},
     'cat_churches': {'en': 'Churches', 'ar': 'كنائس'},
-    'cat_streets': {'en': 'Streets', 'ar': 'شوارع'},
 
-    'quick_ai_trip': {'en': 'AI Trip', 'ar': 'رحلة ذكية'},
     'quick_best_time': {'en': 'Best Time', 'ar': 'أفضل وقت'},
     'best_time_admin_hint': {
       'en': 'Set by the editorial team',
       'ar': 'حددها فريق التحرير',
     },
     'quick_map': {'en': 'Map', 'ar': 'الخريطة'},
-    'quick_transport': {'en': 'Transport', 'ar': 'المواصلات'},
-    'quick_journal': {'en': 'Journal', 'ar': 'اليوميات'},
     'quick_ranking': {'en': 'Ranking', 'ar': 'الترتيب'},
-    'quick_offline': {'en': 'Offline', 'ar': 'أوفلاين'},
-    'quick_chat': {'en': 'Live Chat', 'ar': 'دردشة مباشرة'},
-    'quick_prayer': {'en': 'Prayer', 'ar': 'الصلاة'},
     'quick_badges': {'en': 'Badges', 'ar': 'إنجازات'},
     'quick_routes': {'en': 'Routes', 'ar': 'مسارات'},
     'ai_tour_guide': {'en': 'EgyptLore AI', 'ar': 'مساعد إيجيبت لور الذكي'},
@@ -227,10 +209,6 @@ class AppStrings {
     'weather_snow': {'en': 'Snow', 'ar': 'ثلوج'},
     'weather_fog': {'en': 'Fog', 'ar': 'ضباب'},
     'weather_unknown': {'en': 'Current conditions', 'ar': 'الطقس الحالي'},
-    'location_denied': {
-      'en': 'Location permission denied. Enable it to see local weather.',
-      'ar': 'تم رفض إذن الموقع. فعّله لعرض طقس منطقتك.',
-    },
     'refresh': {'en': 'Refresh', 'ar': 'تحديث'},
     'map_title': {'en': 'Map · {n} places', 'ar': 'الخريطة · {n} مكان'},
     'map_my_location': {'en': 'My location', 'ar': 'موقعي'},
@@ -239,19 +217,7 @@ class AppStrings {
       'en': 'Ask travelers about this place',
       'ar': 'اسأل المسافرين عن هذا المكان',
     },
-    'ai_planner_title': {
-      'en': 'Smart Trip Planner',
-      'ar': 'مخطط الرحلات الذكي',
-    },
-    'ai_planner_sub': {
-      'en': "Describe your ideal trip and we'll plan it.",
-      'ar': 'صف رحلتك المثالية وهنخططها لك.',
-    },
 
-    'lb_subtitle': {
-      'en': 'Most travelled around the world',
-      'ar': 'الأكثر تنقلًا حول العالم',
-    },
     'lb_city_title': {'en': 'King of Alexandria', 'ar': 'ملك الإسكندرية'},
     'lb_period_week': {'en': 'Weekly', 'ar': 'أسبوعي'},
     'lb_period_month': {'en': 'Monthly', 'ar': 'شهري'},
@@ -272,10 +238,6 @@ class AppStrings {
     'lb_empty': {
       'en': 'No leaderboard data yet',
       'ar': 'لا توجد بيانات للترتيب بعد',
-    },
-    'lb_row_sub': {
-      'en': '{v} visited · {r} reviews',
-      'ar': '{v} زيارة · {r} تقييم',
     },
     'username_title': {'en': 'Choose your username', 'ar': 'اختر اسم المستخدم'},
     'username_subtitle': {
@@ -363,8 +325,6 @@ class AppStrings {
       'en': 'Could not load visited places. Please try again.',
       'ar': 'تعذر تحميل الأماكن التي تمت زيارتها. حاول مرة أخرى.',
     },
-    'follow_user': {'en': 'Follow', 'ar': 'متابعة'},
-    'unfollow_user': {'en': 'Unfollow', 'ar': 'إلغاء المتابعة'},
     'send_friend_request': {'en': 'Add friend', 'ar': 'إرسال طلب صداقة'},
     'incoming_request': {'en': 'Incoming request', 'ar': 'طلب وارد'},
     'friend_request_pending': {
@@ -427,8 +387,6 @@ class AppStrings {
       'en': 'Could not upload your profile picture. Please try again.',
       'ar': 'تعذر تحميل صورة الملف الشخصي. حاول مرة أخرى.',
     },
-    'profile_followers': {'en': 'followers', 'ar': 'متابعون'},
-    'profile_following': {'en': 'following', 'ar': 'يتابع'},
     'profile_friends': {'en': 'friends', 'ar': 'أصدقاء'},
     'profile_no_public_badges': {
       'en': 'No badges earned yet',
@@ -582,10 +540,6 @@ class AppStrings {
       'ar': 'مواعيد الصلاة اليومية للإسكندرية',
     },
     'map_view': {'en': 'Map View', 'ar': 'عرض الخريطة'},
-    'map_view_sub': {
-      'en': 'All places on interactive map',
-      'ar': 'كل الأماكن على خريطة تفاعلية',
-    },
     'currency_converter': {'en': 'Currency Converter', 'ar': 'محوّل العملات'},
     'currency_converter_sub': {
       'en': 'EGP ↔ USD, EUR, GBP, SAR + more',
@@ -621,11 +575,6 @@ class AppStrings {
     'saved_cleared': {
       'en': 'All saved places cleared.',
       'ar': 'تم مسح كل الأماكن المحفوظة.',
-    },
-    'free_banner_title': {'en': 'Everything is free', 'ar': 'كل حاجة مجانية'},
-    'free_banner_sub': {
-      'en': 'All tours, places & guides are unlocked for everyone.',
-      'ar': 'كل الجولات والأماكن والمرشدين متاحين للجميع.',
     },
     'passion_banner_title': {
       'en': 'A compass for every story worth telling',
@@ -738,14 +687,6 @@ class AppStrings {
       'en': '{n} tours available - all free',
       'ar': '{n} جولة متاحة - كلها مجانية',
     },
-    'tour_filter_all': {'en': 'All', 'ar': 'الكل'},
-    'tour_filter_short': {'en': 'Up to 3h', 'ar': 'حتى 3 ساعات'},
-    'tour_filter_half': {'en': 'Half day', 'ar': 'نصف يوم'},
-    'tour_filter_full': {'en': 'Full day', 'ar': 'يوم كامل'},
-    'tour_none_in_filter': {
-      'en': 'No tours in this category',
-      'ar': 'لا توجد جولات في هذه الفئة',
-    },
 
     'open_now': {'en': 'Open Now', 'ar': 'مفتوح الآن'},
     'closed': {'en': 'Closed', 'ar': 'مغلق'},
@@ -770,20 +711,11 @@ class AppStrings {
       'en': 'Checked in! Streak: {n}',
       'ar': 'تم تسجيل الزيارة! ستريك {n}',
     },
-    'badge_unlocked': {
-      'en': 'Badge unlocked: {name} 🏅',
-      'ar': 'شارة جديدة: {name} 🏅',
-    },
     'badges_title': {'en': 'Badges', 'ar': 'الشارات'},
     'no_badges': {
       'en': 'Check in at places to earn badges',
       'ar': 'سجّل زياراتك للأماكن لتكسب الشارات',
     },
-    'badge_streak_5': {'en': '5 Visits', 'ar': '5 زيارات'},
-    'badge_streak_10': {'en': '10 Visits', 'ar': '10 زيارات'},
-    'badge_streak_25': {'en': '25 Visits', 'ar': '25 زيارة'},
-    'badge_streak_50': {'en': '50 Visits', 'ar': '50 زيارة'},
-    'First Steps': {'en': 'First Steps', 'ar': 'الخطوات الأولى'},
     'ach_first_steps_name': {'en': 'First Steps', 'ar': 'الخطوات الأولى'},
     'ach_first_steps_desc': {
       'en': 'Check in at your first place',
@@ -931,10 +863,8 @@ class AppStrings {
       'ar': 'لا توجد تقييمات بعد. كن أول من يشارك قصته!',
     },
     'about_place': {'en': 'About this place', 'ar': 'عن هذا المكان'},
-    'nearby_gems': {'en': 'Nearby Hidden Gems', 'ar': 'جواهر مخفية قريبة'},
     'nearby_places': {'en': 'Nearby Places', 'ar': 'أماكن قريبة'},
     'trip_visited': {'en': 'Visited', 'ar': 'تمت زيارتها'},
-    'trip_planned': {'en': 'Planned', 'ar': 'في الرحلة'},
     'trip_visited_badge': {'en': 'Visited', 'ar': 'تمت الزيارة'},
     'trip_tab_saved': {'en': 'Saved', 'ar': 'المحفوظة'},
     'trip_tab_visited': {'en': 'Visited', 'ar': 'الزيارات'},
@@ -974,7 +904,6 @@ class AppStrings {
       'en': 'Could not prepare this share image. Please try again.',
       'ar': 'تعذر تجهيز صورة المشاركة. حاول مرة أخرى.',
     },
-    'copy_link': {'en': 'Copy Link', 'ar': 'نسخ الرابط'},
     'message': {'en': 'Message', 'ar': 'رسالة'},
     'email': {'en': 'Email', 'ar': 'بريد'},
     'free_entry': {'en': 'Free entry', 'ar': 'دخول مجاني'},
@@ -1008,29 +937,7 @@ class AppStrings {
     'edit': {'en': 'Edit', 'ar': 'تعديل'},
 
     'trip_title': {'en': 'My Trip Planner', 'ar': 'مخطط رحلتي'},
-    'trip_empty': {
-      'en': 'Your trip is empty.\nAdd places from the explore screen!',
-      'ar': 'رحلتك فاضية.\nضيف أماكن من شاشة الاستكشاف!',
-    },
-    'trip_places_planned': {'en': '{n} Places Planned', 'ar': '{n} مكان مخطط'},
-    'trip_clear_all': {'en': 'Clear All', 'ar': 'مسح الكل'},
 
-    'offline_title': {'en': 'Offline Mode', 'ar': 'الوضع دون اتصال'},
-    'offline_hero_title': {
-      'en': 'Travel without signal',
-      'ar': 'سافر من غير شبكة',
-    },
-    'offline_mb_downloaded': {
-      'en': '{n} MB downloaded',
-      'ar': '{n} ميجابايت محمّلة',
-    },
-    'offline_downloaded': {'en': 'Downloaded', 'ar': 'المحمّلة'},
-    'offline_available': {'en': 'Available to download', 'ar': 'متاحة للتحميل'},
-    'offline_pack_size': {
-      'en': '{mb} MB · {n} places',
-      'ar': '{mb} ميجابايت · {n} مكان',
-    },
-    'offline_download': {'en': 'Download', 'ar': 'تحميل'},
 
     'geo_title': {'en': 'Geofencing Alerts', 'ar': 'تنبيهات الموقع'},
     'geo_hero_title': {
@@ -1072,10 +979,6 @@ class AppStrings {
           'القريبة.',
     },
     'privacy_policy_title': {'en': 'Privacy Policy', 'ar': 'سياسة الخصوصية'},
-    'privacy_policy_public': {
-      'en': 'Public Privacy Policy',
-      'ar': 'سياسة الخصوصية العامة',
-    },
     'delete_account_public': {
       'en': 'Account deletion instructions',
       'ar': 'تعليمات حذف الحساب',
@@ -1103,89 +1006,9 @@ class AppStrings {
           'سيؤدي ذلك إلى حذف حسابك وبياناتك الشخصية والعناصر المحفوظة وتسجيلات الوصول نهائيًا. ستفقد إمكانية الوصول إلى إيجيبت لور برو. حذف الحساب لا يلغي أو يسترد المدفوعات التي تديرها Apple أو Google؛ ألغِ أي اشتراك نشط من إعدادات المتجر أولًا. لا يمكن التراجع عن هذا الإجراء.',
     },
     'delete_account_confirm': {'en': 'Delete my account', 'ar': 'احذف حسابي'},
-    'delete_account_success': {
-      'en': 'Your account and its data have been deleted.',
-      'ar': 'تم حذف حسابك وبياناته.',
-    },
     'delete_account_failed': {
       'en': 'Your account could not be deleted. Please try again.',
       'ar': 'تعذر حذف حسابك. حاول مرة أخرى.',
-    },
-    'legal_coming_soon': {'en': 'Coming soon', 'ar': 'قريبًا'},
-    'privacy_policy_intro': {
-      'en':
-          'This policy explains what information EgyptLore uses and how it '
-          'supports your experience discovering places.',
-      'ar':
-          'توضح هذه السياسة المعلومات التي يستخدمها EgyptLore وكيف تساعد '
-          'في تحسين تجربتك في اكتشاف الأماكن.',
-    },
-    'privacy_data_title': {
-      'en': 'Information you provide',
-      'ar': 'المعلومات التي تقدمها',
-    },
-    'privacy_data_body': {
-      'en':
-          'Information you add to your profile and your saved places, alert '
-          'selections, and app preferences are used to provide and personalize '
-          'EgyptLore features.',
-      'ar':
-          'تُستخدم المعلومات التي تضيفها إلى ملفك الشخصي والأماكن المحفوظة '
-          'واختيارات التنبيهات وتفضيلات التطبيق لتقديم ميزات EgyptLore '
-          'وتخصيصها.',
-    },
-    'privacy_location_title': {'en': 'Location', 'ar': 'الموقع'},
-    'privacy_location_body': {
-      'en':
-          'When you allow location access, EgyptLore uses your location for '
-          'nearby recommendations and location-based features. You can manage '
-          'location access in your device settings.',
-      'ar':
-          'عند السماح بالوصول إلى الموقع، يستخدم EgyptLore موقعك لاقتراح '
-          'أماكن قريبة وتقديم الميزات المرتبطة بالموقع. يمكنك إدارة إذن '
-          'الوصول إلى الموقع من إعدادات جهازك.',
-    },
-    'privacy_background_location': {
-      'en':
-          'EgyptLore collects location data in the background to enable geofenced notifications for nearby historical landmarks, even when the app is closed or not in use.',
-      'ar':
-          'يجمع EgyptLore بيانات الموقع في الخلفية لتمكين الإشعارات المحددة جغرافيًا عن المعالم التاريخية القريبة، حتى عندما يكون التطبيق مغلقًا أو غير قيد الاستخدام.',
-    },
-    'privacy_geofence_title': {
-      'en': 'Nearby landmark alerts',
-      'ar': 'تنبيهات المعالم القريبة',
-    },
-    'privacy_geofence_body': {
-      'en':
-          'Background location is used only after you enable nearby alerts. '
-          'EgyptLore checks your location against the landmarks you selected '
-          'so it can notify you when you are nearby. Turn alerts off in '
-          'Geofencing Settings or revoke location access in your device '
-          'settings to stop this use.',
-      'ar':
-          'يُستخدم الموقع في الخلفية فقط بعد تفعيل التنبيهات القريبة. يقارن '
-          'EgyptLore موقعك بالمعالم التي اخترتها ليتمكن من تنبيهك عند '
-          'اقترابك منها. أوقف التنبيهات من إعدادات التنبيهات الجغرافية أو '
-          'ألغِ إذن الموقع من إعدادات جهازك لإيقاف هذا الاستخدام.',
-    },
-    'privacy_notifications_title': {'en': 'Notifications', 'ar': 'الإشعارات'},
-    'privacy_notifications_body': {
-      'en':
-          'Notifications are used to deliver nearby landmark alerts and other '
-          'updates you enable. You can manage notification permissions in '
-          'your device settings.',
-      'ar':
-          'تُستخدم الإشعارات لإرسال تنبيهات المعالم القريبة والتحديثات الأخرى '
-          'التي تفعّلها. يمكنك إدارة أذونات الإشعارات من إعدادات جهازك.',
-    },
-    'privacy_controls_title': {'en': 'Your choices', 'ar': 'خياراتك'},
-    'privacy_controls_body': {
-      'en':
-          'You can choose which places trigger alerts, pause geofencing, and '
-          'change location or notification permissions at any time.',
-      'ar':
-          'يمكنك اختيار الأماكن التي تصدر عنها التنبيهات وإيقاف التنبيهات '
-          'الجغرافية مؤقتًا وتغيير أذونات الموقع أو الإشعارات في أي وقت.',
     },
     'geo_enable': {'en': 'Continue', 'ar': 'متابعة'},
     'geo_read_privacy_policy': {
@@ -1255,27 +1078,6 @@ class AppStrings {
       'ar': 'سجّل الدخول بحساب للمشاركة في الدردشة.',
     },
 
-    'map_err_location_denied': {
-      'en': 'Location permission is required to show the route.',
-      'ar': 'يجب الموافقة على صلاحية الموقع لعرض المسار.',
-    },
-    'map_err_location_denied_forever': {
-      'en':
-          'Location permission is permanently denied. Please enable it in Settings.',
-      'ar': 'صلاحية الموقع مرفوضة دائماً، يرجى تفعيلها من الإعدادات.',
-    },
-    'map_err_location': {
-      'en': 'Something went wrong while locating you.',
-      'ar': 'حدث خطأ أثناء تحديد الموقع.',
-    },
-    'map_err_route': {
-      'en': 'Failed to load the road route.',
-      'ar': 'فشل في تحميل مسار الطريق.',
-    },
-    'map_err_offline': {
-      'en': 'Check your internet connection.',
-      'ar': 'تأكد من اتصالك بالإنترنت.',
-    },
     'map_offline_fallback': {
       'en':
           'Offline guidance: showing a straight-line route to your destination.',
@@ -1313,7 +1115,6 @@ class AppStrings {
     'tour_duration': {'en': 'Duration', 'ar': 'المدة'},
     'tour_stops': {'en': 'Stops', 'ar': 'محطات'},
     'tour_access': {'en': 'Access', 'ar': 'الدخول'},
-    'tour_free': {'en': 'Free', 'ar': 'مجاني'},
     'tour_pro': {'en': 'EgyptLore Pro', 'ar': 'إيجيبت لور برو'},
     'tour_pro_locked': {
       'en':
@@ -1322,6 +1123,10 @@ class AppStrings {
           'هذه الجولة متاحة ضمن إيجيبت لور برو. الجواهر المخفية والجولات المميزة حصرية لأعضاء برو.',
     },
     'pro_title': {'en': 'EgyptLore Pro', 'ar': 'إيجيبت لور برو'},
+    'pro_detected_offerings': {
+      'en': 'Detected offerings:',
+      'ar': 'العروض المكتشفة:',
+    },
     'pro_subtitle': {
       'en': 'Discover more of the stories behind your city.',
       'ar': 'اكتشف المزيد من الحكايات وراء مدينتك.',
@@ -1346,7 +1151,6 @@ class AppStrings {
       'en': 'Exclusive Pro Badges',
       'ar': 'شارات برو حصرية',
     },
-    'pro_benefits_title': {'en': 'Included with Pro', 'ar': 'مزايا برو'},
     'pro_weekly': {'en': 'Explorer Pass', 'ar': 'باقة المستكشف'},
     'pro_weekly_description': {
       'en': 'Pro access for one week',
@@ -1480,18 +1284,7 @@ class AppStrings {
     },
     'tour_start_nav': {'en': 'Start Navigation', 'ar': 'ابدأ التنقل'},
     'tour_locations_count': {'en': '{n} locations', 'ar': '{n} موقع'},
-    'tour_mark_visited': {'en': 'Mark as Visited', 'ar': 'سجّل الزيارة'},
     'tour_visited': {'en': 'Visited', 'ar': 'تمت الزيارة'},
-    'tour_visit_recorded': {
-      'en':
-          'Tour marked as visited. The Tours counter on your profile just increased.',
-      'ar': 'تم تسجيل الجولة كزيارة. عداد الجولات في ملفك الشخصي زاد للتو.',
-    },
-    'tour_visit_unmarked': {'en': 'Visit removed.', 'ar': 'تمت إزالة الزيارة.'},
-    'tour_visit_offline': {
-      'en': "You're offline — will sync the visit when connection returns.",
-      'ar': 'أنت غير متصل — ستتم المزامنة عند عودة الاتصال.',
-    },
 
     'journal_add_memory': {'en': 'Add memory', 'ar': 'أضف ذكرى'},
     'journal_empty_title': {
@@ -1518,52 +1311,6 @@ class AppStrings {
     'journal_save_memory': {'en': 'Save memory', 'ar': 'احفظ الذكرى'},
     'journal_update_memory': {'en': 'Update memory', 'ar': 'حدّث الذكرى'},
 
-    'ai_sugg_1': {
-      'en': 'Two days, mid-budget, love history and seafood',
-      'ar': 'يومين، ميزانية متوسطة، بحب التاريخ والسي فود',
-    },
-    'ai_sugg_2': {
-      'en': 'One relaxed day focused on cafés and the corniche',
-      'ar': 'يوم واحد هادي على القهاوي والكورنيش',
-    },
-    'ai_sugg_3': {
-      'en': 'Three days off the beaten path, hidden gems only',
-      'ar': 'تلات أيام بعيد عن الزحمة، جواهر مخفية بس',
-    },
-    'ai_sugg_4': {
-      'en': 'A family day with kid-friendly museums and a beach',
-      'ar': 'يوم عائلي مع متاحف مناسبة للأطفال وشاطئ',
-    },
-    'ai_err_empty': {
-      'en': 'Please describe what kind of trip you want.',
-      'ar': 'من فضلك صف نوع الرحلة اللي عايزها.',
-    },
-    'ai_err_failed': {
-      'en': 'Failed to generate: {e}',
-      'ar': 'فشل التوليد: {e}',
-    },
-    'ai_prompt_title': {
-      'en': 'Tell us about your trip',
-      'ar': 'قولنا عن رحلتك',
-    },
-    'ai_prompt_hint': {
-      'en': 'e.g. two days, mid-budget, love history',
-      'ar': 'مثال: يومين، ميزانية متوسطة، بحب التاريخ',
-    },
-    'ai_generating': {'en': 'Generating...', 'ar': 'جارٍ التخطيط...'},
-    'ai_generate': {'en': 'Generate Itinerary', 'ar': 'خطّط رحلتي'},
-    'ai_days': {'en': 'Days', 'ar': 'الأيام'},
-    'ai_budget': {'en': 'Budget', 'ar': 'الميزانية'},
-    'ai_days_count': {'en': '{n} days', 'ar': '{n} يوم'},
-    'ai_added_to_planner': {
-      'en': 'Added {n} places to your Trip Planner',
-      'ar': 'اتضاف {n} مكان لمخطط رحلتك',
-    },
-    'ai_add_all': {
-      'en': 'Add all to Trip Planner',
-      'ar': 'ضيف الكل لمخطط الرحلة',
-    },
-    'ai_local_tips': {'en': 'Local tips', 'ar': 'نصايح من أهل البلد'},
 
     'cur_amount': {'en': 'Amount', 'ar': 'المبلغ'},
     'cur_enter_amount': {'en': 'Enter amount', 'ar': 'أدخل المبلغ'},
@@ -1576,93 +1323,7 @@ class AppStrings {
           'الأسعار تقريبية ومبنية على متوسطات السوق. راجع البنك أو الصرافة للأسعار الفعلية.',
     },
 
-    'transport_hero': {
-      'en': 'Get around Alexandria with microbuses, buses, and taxis',
-      'ar': 'اتنقل في إسكندرية بالميكروباص والأتوبيس والتاكسي',
-    },
-    'transport_bus_routes': {'en': 'Bus Routes', 'ar': 'خطوط الأتوبيس'},
-    'transport_taxi_section': {
-      'en': 'Taxis & Microbuses',
-      'ar': 'التاكسي والميكروباص',
-    },
-    'transport_taxi': {'en': 'Taxi', 'ar': 'تاكسي'},
-    'transport_taxi_desc': {
-      'en':
-          'Hail on the street or order by phone. Ask for the meter or agree the fare before you ride.',
-      'ar':
-          'اطلبه من الشارع أو بالتليفون. اطلب العداد أو اتفق على الأجرة قبل ما تركب.',
-    },
-    'transport_taxi_price': {
-      'en': 'Meter: EGP 7-10 base + EGP 3/km',
-      'ar': 'العداد: ٧-١٠ جنيه أساسي + ٣ جنيه لكل كم',
-    },
-    'transport_taxi_s1': {
-      'en': 'Available citywide',
-      'ar': 'متاح في كل المدينة',
-    },
-    'transport_taxi_s2': {
-      'en': 'Black & yellow cabs',
-      'ar': 'تاكسي أسود وأصفر',
-    },
-    'transport_uber_desc': {
-      'en': 'App-based. Cash or card. Surge pricing at peak hours.',
-      'ar': 'بالتطبيق. كاش أو كارت. أسعار أعلى في أوقات الذروة.',
-    },
-    'transport_uber_price': {
-      'en': 'EGP 30-100+ depending on distance',
-      'ar': '٣٠-١٠٠+ جنيه حسب المسافة',
-    },
-    'transport_uber_s1': {'en': 'Download app', 'ar': 'حمّل التطبيق'},
-    'transport_uber_s2': {
-      'en': 'Set pickup & drop-off',
-      'ar': 'حدد مكان الركوب والنزول',
-    },
-    'transport_micro_title': {
-      'en': 'Microbus (Servis)',
-      'ar': 'ميكروباص (سيرفيس)',
-    },
-    'transport_micro_desc': {
-      'en': 'Shared 14-seater vans. Fixed routes, cheap.',
-      'ar': 'ميكروباص ١٤ راكب مشترك. خطوط ثابتة ورخيصة.',
-    },
-    'transport_micro_s1': {'en': 'Set routes', 'ar': 'خطوط ثابتة'},
-    'transport_micro_s2': {'en': 'Wave to board', 'ar': 'لوّح عشان تركب'},
-    'transport_pro_tip': {
-      'en':
-          'Pro tip: Microbuses (servis) are the cheapest way along the Corniche — wave to board, and pay the driver directly when you get off.',
-      'ar':
-          'نصيحة: الميكروباص (السيرفيس) أرخص وسيلة على الكورنيش — لوّح عشان تركب، وادفع للسواق مباشرة لما تنزل.',
-    },
-    'transport_stops': {'en': 'Stops:', 'ar': 'المحطات:'},
 
-    'bt_title': {'en': 'Best Time to Visit', 'ar': 'أفضل وقت للزيارة'},
-    'bt_ranked_now': {
-      'en': 'Ranked for right now',
-      'ar': 'مرتبة حسب الوقت الحالي',
-    },
-    'greet_night': {'en': 'Good night', 'ar': 'ليلة سعيدة'},
-    'bt_sub_great': {
-      'en': '{day} — {n} place{s} glowing right now',
-      'ar': '{day} — {n} مكان متألق دلوقتي',
-    },
-    'bt_sub_okay': {
-      'en': '{day} — {n} decent pick{s} if you hurry',
-      'ar': '{day} — {n} اختيار كويس لو لحقت',
-    },
-    'bt_sub_quiet': {
-      'en': '{day} — quiet time, plan for later',
-      'ar': '{day} — وقت هادي، خطط لبعدين',
-    },
-    'day_mon': {'en': 'Mon', 'ar': 'الاتنين'},
-    'day_tue': {'en': 'Tue', 'ar': 'التلات'},
-    'day_wed': {'en': 'Wed', 'ar': 'الأربع'},
-    'day_thu': {'en': 'Thu', 'ar': 'الخميس'},
-    'day_fri': {'en': 'Fri', 'ar': 'الجمعة'},
-    'day_sat': {'en': 'Sat', 'ar': 'السبت'},
-    'day_sun': {'en': 'Sun', 'ar': 'الحد'},
-    'bt_sunrise': {'en': 'Sunrise', 'ar': 'الشروق'},
-    'bt_daylight': {'en': 'Daylight', 'ar': 'النهار'},
-    'bt_sunset': {'en': 'Sunset', 'ar': 'الغروب'},
 
     'emg_title': {'en': 'Emergency', 'ar': 'الطوارئ'},
     'admin_title': {'en': 'Admin Panel', 'ar': 'لوحة الإدارة'},
@@ -1685,7 +1346,6 @@ class AppStrings {
       'en': 'Category is required (e.g. ATM, Hotel, Cafe)',
       'ar': 'الفئة مطلوبة (مثلاً ATM, Hotel, Cafe)',
     },
-    'admin_err_address': {'en': 'Address is required', 'ar': 'العنوان مطلوب'},
     'admin_submit': {'en': 'Add to map', 'ar': 'أضف للخريطة'},
     'admin_added': {'en': 'Added', 'ar': 'اتضاف'},
     'admin_failed': {'en': 'Failed', 'ar': 'فشل'},
@@ -1751,7 +1411,6 @@ class AppStrings {
       'ar': 'فشل تسجيل جوجل. جرّب الإيميل بدلاً من كده.',
     },
     'login_full_name': {'en': 'Full Name', 'ar': 'الاسم الكامل'},
-    'login_name_hint': {'en': 'e.g. Ahmed Hassan', 'ar': 'مثال: أحمد حسن'},
     'login_err_name': {
       'en': 'Please enter your name',
       'ar': 'من فضلك أدخل اسمك',
@@ -1824,10 +1483,6 @@ class AppStrings {
     },
     'login_or': {'en': 'or', 'ar': 'أو'},
     'login_google': {'en': 'Google', 'ar': 'جوجل'},
-    'login_google_signed_in': {
-      'en': 'Signed in with Google (local).',
-      'ar': 'تم تسجيل الدخول بجوجل (محلي).',
-    },
     'login_google_unavailable': {
       'en': 'Google sign-in unavailable. Use email or continue as guest.',
       'ar': 'جوجل مش متاح دلوقتي. استخدم الإيميل أو كمّل كضيف.',
@@ -1840,19 +1495,6 @@ class AppStrings {
       'en': 'Google sign-in failed. Check your Supabase redirect URL settings.',
       'ar':
           'فشل تسجيل الدخول بجوجل. تأكد من إعدادات الـ redirect URL في Supabase.',
-    },
-    'login_just_exploring': {'en': 'Just exploring? ', 'ar': 'بتستكشف بس؟ '},
-    'login_continue_guest': {'en': 'Continue as Guest', 'ar': 'ادخل كضيف'},
-    'login_guest_name': {'en': 'Guest Explorer', 'ar': 'مستكشف زائر'},
-    'guest_dialog_title': {
-      'en': 'Pick a display name',
-      'ar': 'اختار اسم للعرض',
-    },
-    'guest_dialog_sub': {
-      'en':
-          'Other travellers will see this name on the leaderboard. You can change it later.',
-      'ar':
-          'المسافرين التانيين هيشوفوا الاسم ده في الترتيب. ممكن تغيّره بعدين.',
     },
     'sign_in_continue': {'en': 'Continue', 'ar': 'كمّل'},
     'edit_name': {'en': 'Edit name', 'ar': 'غيّر الاسم'},
@@ -1911,11 +1553,9 @@ class AppStrings {
     'bt_reason_often_closing': {'en': 'Often closing', 'ar': 'بيقفل غالباً'},
     'bt_reason_closed': {'en': 'Closed', 'ar': 'مقفول'},
     'bt_reason_breakfast': {'en': 'Breakfast spots', 'ar': 'وقت الفطار'},
-    'bt_reason_brunch': {'en': 'Brunch time', 'ar': 'وقت البرانش'},
     'bt_reason_lunch': {'en': 'Lunch rush', 'ar': 'وقت الغدا'},
     'bt_reason_dinner': {'en': 'Dinner vibes', 'ar': 'وقت العشا'},
     'bt_reason_too_early': {'en': 'Too early', 'ar': 'بدري أوي'},
-    'bt_reason_too_late': {'en': 'Too late', 'ar': 'متأخر أوي'},
 
     'tour_guide_hint': {'en': 'Ask about {name}...', 'ar': 'اسأل عن {name}...'},
 
@@ -1942,15 +1582,6 @@ class AppStrings {
     },
     'open_settings': {'en': 'Open settings', 'ar': 'افتح الإعدادات'},
 
-    'offline_downloaded_n': {
-      'en': 'Saved {n} place{s} for offline use',
-      'ar': 'تم حفظ {n} مكان{s} للاستخدام أوفلاين',
-    },
-    'offline_no_places': {
-      'en':
-          'No matching places found for this pack. The data may still be loading.',
-      'ar': 'مفيش أماكن مطابقة للحزمة. البيانات ممكن تكون لسه بتتحمل.',
-    },
   };
 
   static String level(BuildContext context, String levelName) =>

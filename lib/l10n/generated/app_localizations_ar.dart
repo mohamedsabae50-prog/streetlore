@@ -47,20 +47,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get suggest_place_success => 'تم إرسال اقتراح المكان.';
 
   @override
-  String get ai_add_all => 'ضيف الكل لمخطط الرحلة';
-
-  @override
-  String ai_added_to_planner(String n) {
-    return 'اتضاف $n مكان لمخطط رحلتك';
-  }
-
-  @override
-  String get ai_budget => 'الميزانية';
-
-  @override
-  String get ai_days => 'الأيام';
-
-  @override
   String get ai_daily_limit_body =>
       'يتجدد رصيدك المجاني عند منتصف الليل بتوقيت UTC. اشترك في برو للحصول على حد أعلى.';
 
@@ -75,76 +61,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get ai_quota_reset_utc => 'يتجدد عند منتصف الليل بتوقيت UTC';
 
   @override
-  String ai_days_count(String n) {
-    return '$n يوم';
-  }
-
-  @override
-  String get ai_err_empty => 'من فضلك صف نوع الرحلة اللي عايزها.';
-
-  @override
-  String ai_err_failed(String e) {
-    return 'فشل التوليد: $e';
-  }
-
-  @override
-  String get ai_generate => 'خطّط رحلتي';
-
-  @override
-  String get ai_generating => 'جارٍ التخطيط...';
-
-  @override
-  String get ai_local_tips => 'نصايح من أهل البلد';
-
-  @override
-  String get ai_planner_title => 'مخطط الرحلات الذكي';
-
-  @override
-  String get ai_prompt_hint => 'مثال: يومين، ميزانية متوسطة، بحب التاريخ';
-
-  @override
-  String get ai_prompt_title => 'قولنا عن رحلتك';
-
-  @override
-  String get ai_sugg_1 => 'يومين، ميزانية متوسطة، بحب التاريخ والسي فود';
-
-  @override
-  String get ai_sugg_2 => 'يوم واحد هادي على القهاوي والكورنيش';
-
-  @override
-  String get ai_sugg_3 => 'تلات أيام بعيد عن الزحمة، جواهر مخفية بس';
-
-  @override
-  String get ai_sugg_4 => 'يوم عائلي مع متاحف مناسبة للأطفال وشاطئ';
-
-  @override
   String get all_places => 'كل الأماكن';
-
-  @override
-  String get badge_streak_10 => '10 زيارات';
-
-  @override
-  String get badge_streak_25 => '25 زيارة';
-
-  @override
-  String get badge_streak_5 => '5 زيارات';
-
-  @override
-  String get badge_streak_50 => '50 زيارة';
-
-  @override
-  String badge_unlocked(String name) {
-    return 'شارة جديدة: $name 🏅';
-  }
 
   @override
   String get badges_title => 'الشارات';
 
   @override
   String get browse_tours => 'تصفح الجولات';
-
-  @override
-  String get bt_daylight => 'النهار';
 
   @override
   String get bt_label_decent_now => 'كويس دلوقتي';
@@ -156,16 +79,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get bt_label_wait => 'استنى وقت أحسن';
 
   @override
-  String get bt_ranked_now => 'مرتبة حسب الوقت الحالي';
-
-  @override
   String get bt_reason_best_photos => 'أفضل وقت للصور';
 
   @override
   String get bt_reason_breakfast => 'وقت الفطار';
-
-  @override
-  String get bt_reason_brunch => 'وقت البرانش';
 
   @override
   String get bt_reason_closed => 'مقفول';
@@ -210,34 +127,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get bt_reason_too_early => 'بدري أوي';
 
   @override
-  String get bt_reason_too_late => 'متأخر أوي';
-
-  @override
   String get bt_reason_warm_ok => 'دافي بس مقبول';
-
-  @override
-  String bt_sub_great(String day, String n, String s) {
-    return '$day — $n مكان متألق دلوقتي';
-  }
-
-  @override
-  String bt_sub_okay(String day, String n, String s) {
-    return '$day — $n اختيار كويس لو لحقت';
-  }
-
-  @override
-  String bt_sub_quiet(String day) {
-    return '$day — وقت هادي، خطط لبعدين';
-  }
-
-  @override
-  String get bt_sunrise => 'الشروق';
-
-  @override
-  String get bt_sunset => 'الغروب';
-
-  @override
-  String get bt_title => 'أفضل وقت للزيارة';
 
   @override
   String get budget_friendly => 'مناسب للميزانية';
@@ -331,15 +221,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get community_reviews => 'تقييمات المجتمع';
 
   @override
-  String get compass_sub => 'اكتشف المدينة ببوصلة متحركة تنساب إلى مكانها.';
-
-  @override
-  String get compass_title => 'اتجاه البوصلة';
-
-  @override
-  String get copy_link => 'نسخ الرابط';
-
-  @override
   String get cur_amount => 'المبلغ';
 
   @override
@@ -367,27 +248,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dark_theme_on => 'الوضع الداكن مفعّل';
-
-  @override
-  String get day_fri => 'الجمعة';
-
-  @override
-  String get day_mon => 'الاتنين';
-
-  @override
-  String get day_sat => 'السبت';
-
-  @override
-  String get day_sun => 'الحد';
-
-  @override
-  String get day_thu => 'الخميس';
-
-  @override
-  String get day_tue => 'التلات';
-
-  @override
-  String get day_wed => 'الأربع';
 
   @override
   String get delete => 'حذف';
@@ -495,9 +355,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get admin_err_category => 'الفئة مطلوبة (مثلاً ATM, Hotel, Cafe)';
 
   @override
-  String get admin_err_address => 'العنوان مطلوب';
-
-  @override
   String get admin_submit => 'أضف للخريطة';
 
   @override
@@ -534,31 +391,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get featured => 'مميز';
 
   @override
-  String get filter_cheapest => 'الأرخص';
-
-  @override
   String get filter_free => 'المجاني فقط';
 
   @override
   String get filter_hidden_gems => 'جواهر مخفية';
 
   @override
-  String get filter_nearest => 'الأقرب';
-
-  @override
-  String get filter_open_now => 'مفتوح الآن';
-
-  @override
   String get first_photo => 'كن أول من يشارك صورة';
 
   @override
   String get foreigners => 'أجانب';
-
-  @override
-  String get free_banner_sub => 'كل الجولات والأماكن والمرشدين متاحين للجميع.';
-
-  @override
-  String get free_banner_title => 'كل حاجة مجانية';
 
   @override
   String get passion_banner_title => 'بوصلة كل قصة تستاهل أن تُروى';
@@ -608,16 +450,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get greet_morning => 'صباح الخير';
-
-  @override
-  String get greet_night => 'ليلة سعيدة';
-
-  @override
-  String get guest_dialog_sub =>
-      'المسافرين التانيين هيشوفوا الاسم ده في الترتيب. ممكن تغيّره بعدين.';
-
-  @override
-  String get guest_dialog_title => 'اختار اسم للعرض';
 
   @override
   String get help_center => 'مركز المساعدة';
@@ -690,14 +522,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String lb_row_sub(String v, String r) {
-    return '$v زيارة · $r تقييم';
-  }
-
-  @override
-  String get lb_subtitle => 'الأكثر تنقلًا حول العالم';
-
-  @override
   String get lb_title => 'الترتيب';
 
   @override
@@ -730,16 +554,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'خدمات الموقع مقفولة. شغّلها عشان تشوف اللي حواليك.';
 
   @override
-  String get location_denied => 'تم رفض إذن الموقع. فعّله لعرض طقس منطقتك.';
-
-  @override
   String get location_services => 'خدمات الموقع';
 
   @override
   String get location_services_sub => 'تُستخدم لاقتراح أماكن قريبة';
-
-  @override
-  String get login_continue_guest => 'ادخل كضيف';
 
   @override
   String get login_email => 'البريد الإلكتروني';
@@ -790,9 +608,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get login_google => 'جوجل';
 
   @override
-  String get login_google_signed_in => 'تم تسجيل الدخول بجوجل (محلي).';
-
-  @override
   String get login_google_unavailable =>
       'جوجل مش متاح دلوقتي. استخدم الإيميل أو كمّل كضيف.';
 
@@ -833,15 +648,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get login_sign_up => 'إنشاء حساب';
 
   @override
-  String get login_guest_name => 'مستكشف زائر';
-
-  @override
-  String get login_just_exploring => 'بتستكشف بس؟ ';
-
-  @override
-  String get login_name_hint => 'مثال: أحمد حسن';
-
-  @override
   String get login_or => 'أو';
 
   @override
@@ -858,23 +664,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get map_close => 'إغلاق';
 
   @override
-  String get map_err_location => 'حدث خطأ أثناء تحديد الموقع.';
-
-  @override
-  String get map_err_location_denied =>
-      'يجب الموافقة على صلاحية الموقع لعرض المسار.';
-
-  @override
-  String get map_err_location_denied_forever =>
-      'صلاحية الموقع مرفوضة دائماً، يرجى تفعيلها من الإعدادات.';
-
-  @override
-  String get map_err_offline => 'تأكد من اتصالك بالإنترنت.';
-
-  @override
-  String get map_err_route => 'فشل في تحميل مسار الطريق.';
-
-  @override
   String get map_my_location => 'موقعي';
 
   @override
@@ -889,9 +678,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get map_view => 'عرض الخريطة';
 
   @override
-  String get map_view_sub => 'كل الأماكن على خريطة تفاعلية';
-
-  @override
   String get message => 'رسالة';
 
   @override
@@ -901,22 +687,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get nav_profile => 'حسابي';
 
   @override
-  String get nav_saved => 'المحفوظات';
-
-  @override
   String get nav_tours => 'الجولات';
-
-  @override
-  String get nearby_gems => 'جواهر مخفية قريبة';
 
   @override
   String get nearby_places => 'أماكن قريبة';
 
   @override
   String get trip_visited => 'تمت زيارتها';
-
-  @override
-  String get trip_planned => 'في الرحلة';
 
   @override
   String get trip_visited_badge => 'تمت الزيارة';
@@ -995,31 +772,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get ob_title_3 => 'احفظ وارجع تاني';
 
   @override
-  String get offline_available => 'متاحة للتحميل';
-
-  @override
-  String get offline_download => 'تحميل';
-
-  @override
-  String get offline_downloaded => 'المحمّلة';
-
-  @override
-  String get offline_hero_title => 'سافر من غير شبكة';
-
-  @override
-  String offline_mb_downloaded(String n) {
-    return '$n ميجابايت محمّلة';
-  }
-
-  @override
-  String offline_pack_size(String mb, String n) {
-    return '$mb ميجابايت · $n مكان';
-  }
-
-  @override
-  String get offline_title => 'الوضع دون اتصال';
-
-  @override
   String get open_now => 'مفتوح الآن';
 
   @override
@@ -1082,9 +834,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get push_notif_sub => 'نصائح واكتشافات جديدة';
 
   @override
-  String get quick_ai_trip => 'رحلة ذكية';
-
-  @override
   String get quick_badges => 'إنجازات';
 
   @override
@@ -1094,28 +843,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get best_time_admin_hint => 'حددها فريق التحرير';
 
   @override
-  String get quick_chat => 'دردشة مباشرة';
-
-  @override
-  String get quick_journal => 'اليوميات';
-
-  @override
   String get quick_map => 'الخريطة';
-
-  @override
-  String get quick_offline => 'أوفلاين';
-
-  @override
-  String get quick_prayer => 'الصلاة';
 
   @override
   String get quick_ranking => 'الترتيب';
 
   @override
   String get quick_routes => 'مسارات';
-
-  @override
-  String get quick_transport => 'المواصلات';
 
   @override
   String get rate_app => 'قيّم إيجيبت لور';
@@ -1182,9 +916,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get section_app_settings => 'إعدادات التطبيق';
-
-  @override
-  String get see_all => 'عرض الكل';
 
   @override
   String get share_app => 'شارك إيجيبت لور';
@@ -1254,21 +985,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tour_duration => 'المدة';
 
   @override
-  String get tour_filter_all => 'الكل';
-
-  @override
-  String get tour_filter_full => 'يوم كامل';
-
-  @override
-  String get tour_filter_half => 'نصف يوم';
-
-  @override
-  String get tour_filter_short => 'حتى 3 ساعات';
-
-  @override
-  String get tour_free => 'مجاني';
-
-  @override
   String tour_guide_hint(String name) {
     return 'اسأل عن $name...';
   }
@@ -1283,9 +999,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tour_no_locations => 'لا توجد مواقع متاحة لهذه الجولة.';
-
-  @override
-  String get tour_none_in_filter => 'لا توجد جولات في هذه الفئة';
 
   @override
   String get tour_removed_offline => 'تمت إزالة الجولة من الوصول دون اتصال';
@@ -1327,80 +1040,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tours_title => 'جولات إرشادية';
 
   @override
-  String get transport_bus_routes => 'خطوط الأتوبيس';
-
-  @override
-  String get transport_hero =>
-      'اتنقل في إسكندرية بالميكروباص والأتوبيس والتاكسي';
-
-  @override
-  String get transport_micro_desc =>
-      'ميكروباص ١٤ راكب مشترك. خطوط ثابتة ورخيصة.';
-
-  @override
-  String get transport_micro_s1 => 'خطوط ثابتة';
-
-  @override
-  String get transport_micro_s2 => 'لوّح عشان تركب';
-
-  @override
-  String get transport_micro_title => 'ميكروباص (سيرفيس)';
-
-  @override
-  String get transport_pro_tip =>
-      'نصيحة: الميكروباص (السيرفيس) أرخص وسيلة على الكورنيش — لوّح عشان تركب، وادفع للسواق مباشرة لما تنزل.';
-
-  @override
-  String get transport_stops => 'المحطات:';
-
-  @override
-  String get transport_taxi => 'تاكسي';
-
-  @override
-  String get transport_taxi_desc =>
-      'اطلبه من الشارع أو بالتليفون. اطلب العداد أو اتفق على الأجرة قبل ما تركب.';
-
-  @override
-  String get transport_taxi_price => 'العداد: ٧-١٠ جنيه أساسي + ٣ جنيه لكل كم';
-
-  @override
-  String get transport_taxi_s1 => 'متاح في كل المدينة';
-
-  @override
-  String get transport_taxi_s2 => 'تاكسي أسود وأصفر';
-
-  @override
-  String get transport_taxi_section => 'التاكسي والميكروباص';
-
-  @override
-  String get transport_uber_desc =>
-      'بالتطبيق. كاش أو كارت. أسعار أعلى في أوقات الذروة.';
-
-  @override
-  String get transport_uber_price => '٣٠-١٠٠+ جنيه حسب المسافة';
-
-  @override
-  String get transport_uber_s1 => 'حمّل التطبيق';
-
-  @override
-  String get transport_uber_s2 => 'حدد مكان الركوب والنزول';
-
-  @override
   String get travel_journal => 'يوميات السفر';
 
   @override
   String get travel_journal_sub => 'احفظ الذكريات والملاحظات والصور';
-
-  @override
-  String get trip_clear_all => 'مسح الكل';
-
-  @override
-  String get trip_empty => 'رحلتك فاضية.\\nضيف أماكن من شاشة الاستكشاف!';
-
-  @override
-  String trip_places_planned(String n) {
-    return '$n مكان مخطط';
-  }
 
   @override
   String get trip_title => 'مخطط رحلتي';
@@ -1571,4 +1214,881 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get ach_completionist_desc => 'افتح 20 إنجازات مختلفة';
+
+  @override
+  String get downloaded => 'تم التحميل';
+
+  @override
+  String get downloading_offline => 'جاري التحميل...';
+
+  @override
+  String get download_failed =>
+      'تعذر التحميل للاستخدام دون اتصال. حاول مرة أخرى.';
+
+  @override
+  String get downloading_tour_offline =>
+      'جارٍ تحميل الجولة للاستخدام دون اتصال…';
+
+  @override
+  String get no_internet_title => 'لا يوجد اتصال بالإنترنت';
+
+  @override
+  String get no_internet_message =>
+      'أعد الاتصال بالإنترنت لتحميل أحدث الأماكن والحكايات.';
+
+  @override
+  String get no_internet_retry => 'إعادة المحاولة';
+
+  @override
+  String get offline_mode_notice => 'وضع عدم الاتصال: الأماكن المحفوظة متاحة.';
+
+  @override
+  String get ai_tour_guide => 'مساعد إيجيبت لور الذكي';
+
+  @override
+  String get ai_guide_general_title => 'مساعد إيجيبت لور الذكي';
+
+  @override
+  String get ai_guide_welcome_en =>
+      'أهلاً! أنا مساعد إيجيبت لور الذكي. اسألني عن أي حاجة — أماكن للزيارة، ';
+
+  @override
+  String get ai_guide_thinking => 'بفكر…';
+
+  @override
+  String get ai_guide_hint => 'اسأل عن أماكن، أكل، تاريخ…';
+
+  @override
+  String get ai_quota_loading => 'جارٍ تحميل رصيد الذكاء الاصطناعي…';
+
+  @override
+  String get ai_quota_unavailable => 'رصيد الذكاء الاصطناعي غير متاح';
+
+  @override
+  String ai_quota_remaining(String remaining, String limit) {
+    return 'متبقي $remaining من $limit طلبات للذكاء الاصطناعي';
+  }
+
+  @override
+  String get ai_quota_retry => 'إعادة المحاولة';
+
+  @override
+  String get admin_ai_chat_logs => 'سجل محادثات الذكاء الاصطناعي';
+
+  @override
+  String admin_ai_chat_exchange(String count) {
+    return '$count محادثة';
+  }
+
+  @override
+  String admin_ai_chat_exchanges(String count) {
+    return '$count محادثات';
+  }
+
+  @override
+  String get admin_ai_chat_user => 'المستخدم';
+
+  @override
+  String get admin_ai_chat_assistant => 'الذكاء الاصطناعي';
+
+  @override
+  String get admin_ai_chat_empty => 'لا توجد محادثات ذكاء اصطناعي بعد';
+
+  @override
+  String admin_ai_chat_retry_error(String error) {
+    return 'تعذر تحميل المزيد من المحادثات: $error';
+  }
+
+  @override
+  String get max_route_places => 'أقصى عدد 5 أماكن في المسار';
+
+  @override
+  String get weather_unavailable =>
+      'الطقس الحالي غير متاح. تحقق من الموقع والاتصال بالإنترنت.';
+
+  @override
+  String get pro_monthly_reward_title =>
+      'أنه الشهر في المركز الأول كأفضل زائر واربح شهرًا من برو مجانًا!';
+
+  @override
+  String pro_monthly_reward_countdown(String days, String hours) {
+    return 'متبقي $days يوم و$hours ساعة على نهاية الشهر';
+  }
+
+  @override
+  String get pro_monthly_reward_cta => 'اقترح جوهرة مخفية';
+
+  @override
+  String get pro_hidden_gem_reward =>
+      'إذا وافق فريقنا على جوهرتك المخفية، سنضيف تلقائيًا 30 يومًا من برو إلى حسابك مجانًا.';
+
+  @override
+  String get share_place => 'شارك هذا المكان';
+
+  @override
+  String get weather_clear_sky => 'سماء صافية';
+
+  @override
+  String get weather_mainly_clear => 'صحو غالبًا';
+
+  @override
+  String get weather_partly_cloudy => 'غائم جزئيًا';
+
+  @override
+  String get weather_overcast => 'غائم';
+
+  @override
+  String get weather_rain_possible => 'احتمال هطول أمطار';
+
+  @override
+  String get weather_rain => 'ممطر';
+
+  @override
+  String get weather_drizzle => 'رذاذ';
+
+  @override
+  String get weather_thunderstorm => 'عاصفة رعدية';
+
+  @override
+  String get weather_snow => 'ثلوج';
+
+  @override
+  String get weather_fog => 'ضباب';
+
+  @override
+  String get weather_unknown => 'الطقس الحالي';
+
+  @override
+  String get lb_city_title => 'ملك الإسكندرية';
+
+  @override
+  String get lb_period_week => 'أسبوعي';
+
+  @override
+  String get lb_period_month => 'شهري';
+
+  @override
+  String get lb_period_all_time => 'طوال الوقت';
+
+  @override
+  String get lb_metric_checkins => 'الزيارات';
+
+  @override
+  String get lb_metric_streak => 'أطول سلسلة';
+
+  @override
+  String get lb_metric_gems => 'الجواهر المخفية';
+
+  @override
+  String get lb_stat_checkins => 'زيارات';
+
+  @override
+  String get lb_stat_streak => 'أيام متتالية';
+
+  @override
+  String get lb_stat_gems => 'جواهر مخفية';
+
+  @override
+  String lb_badge_rank(String level) {
+    return 'رتبة $level';
+  }
+
+  @override
+  String get lb_try_again => 'حاول مرة أخرى';
+
+  @override
+  String get username_title => 'اختر اسم المستخدم';
+
+  @override
+  String get username_subtitle =>
+      'يساعد هذا الاسم الفريد المستكشفين الآخرين في العثور عليك ومتابعتك.';
+
+  @override
+  String get username_label => 'اسم المستخدم';
+
+  @override
+  String get username_requirements =>
+      'استخدم ٣ إلى ٢٠ حرفًا أو رقمًا أو نقطة أو شرطة سفلية أو واصلة، وابدأ بحرف أو رقم.';
+
+  @override
+  String get username_continue => 'متابعة';
+
+  @override
+  String get username_taken =>
+      'اسم المستخدم هذا مستخدم بالفعل. جرّب اسمًا آخر.';
+
+  @override
+  String get username_save_failed => 'تعذر حفظ اسم المستخدم. حاول مرة أخرى.';
+
+  @override
+  String get username_check_failed =>
+      'تعذر التحقق من ملفك الشخصي. تحقق من الاتصال وحاول مرة أخرى.';
+
+  @override
+  String get users_search_title => 'البحث عن مستخدمين';
+
+  @override
+  String get users_suggested_title => 'مستكشفون مقترحون';
+
+  @override
+  String get users_suggestions_empty => 'لا يوجد مستكشفون متاحون بعد.';
+
+  @override
+  String get suggest_hidden_gem => 'اقترح جوهرة مخفية';
+
+  @override
+  String get suggest_hidden_gem_subtitle => 'شارك مكاناً مميزاً مع فريقنا';
+
+  @override
+  String get users_search_subtitle => 'اعثر على مستكشفين وأدر طلبات الصداقة';
+
+  @override
+  String get users_search_hint => 'ابحث عن أسماء المستخدمين';
+
+  @override
+  String get users_search_min_length => 'أدخل حرفين على الأقل للبحث.';
+
+  @override
+  String get users_search_failed => 'تعذر البحث عن المستخدمين. حاول مرة أخرى.';
+
+  @override
+  String get users_search_empty =>
+      'لم يتم العثور على مستخدمين. جرّب اسمًا آخر.';
+
+  @override
+  String get users_search_results => 'نتائج البحث';
+
+  @override
+  String get users_sign_in_required =>
+      'سجّل الدخول للعثور على مستكشفين آخرين وإضافتهم كأصدقاء.';
+
+  @override
+  String get user_profile_title => 'ملف المستكشف';
+
+  @override
+  String get profile_visited_places => 'الأماكن التي زارها';
+
+  @override
+  String get profile_no_visits => 'لا توجد زيارات متاحة للمشاركة بعد.';
+
+  @override
+  String get profile_visits_failed =>
+      'تعذر تحميل الأماكن التي تمت زيارتها. حاول مرة أخرى.';
+
+  @override
+  String get send_friend_request => 'إرسال طلب صداقة';
+
+  @override
+  String get incoming_request => 'طلب وارد';
+
+  @override
+  String get friend_request_pending => 'الطلب قيد الانتظار';
+
+  @override
+  String get cancel_friend_request => 'إلغاء الطلب';
+
+  @override
+  String get incoming_friend_requests => 'طلبات الصداقة الواردة';
+
+  @override
+  String get sent_friend_requests => 'الطلبات المرسلة';
+
+  @override
+  String get friends_list_title => 'الأصدقاء';
+
+  @override
+  String get accept_friend_request => 'قبول';
+
+  @override
+  String get decline_friend_request => 'رفض';
+
+  @override
+  String get remove_friend => 'إزالة الصديق';
+
+  @override
+  String get remove_friend_title => 'إزالة هذا الصديق؟';
+
+  @override
+  String get remove_friend_confirmation =>
+      'لن تتم مشاركة النشاط بينكما بعد الآن.';
+
+  @override
+  String get friend_location_activity_sharing =>
+      'مشاركة موقعي ونشاطي مع هذا الصديق';
+
+  @override
+  String get friends_load_failed => 'تعذر تحميل الأصدقاء والطلبات.';
+
+  @override
+  String get friend_action_failed => 'تعذر تحديث طلب الصداقة. حاول مرة أخرى.';
+
+  @override
+  String get follow_action_failed => 'تعذر تحديث حالة المتابعة. حاول مرة أخرى.';
+
+  @override
+  String get share_location_activity => 'مشاركة موقعي ونشاطي مع الأصدقاء';
+
+  @override
+  String get share_location_activity_subtitle =>
+      'يمكن للأصدقاء رؤية الأماكن التي زرتها ونشاطك عند تفعيل هذا الخيار فقط.';
+
+  @override
+  String get privacy_settings_failed => 'تعذر تحميل إعدادات الخصوصية.';
+
+  @override
+  String get privacy_settings_save_failed =>
+      'تعذر حفظ إعدادات الخصوصية. حاول مرة أخرى.';
+
+  @override
+  String get avatar_upload_failed =>
+      'تعذر تحميل صورة الملف الشخصي. حاول مرة أخرى.';
+
+  @override
+  String get profile_friends => 'أصدقاء';
+
+  @override
+  String get profile_no_public_badges => 'لا توجد شارات مكتسبة بعد';
+
+  @override
+  String get badge_earned_fallback => 'شارة مستكشف';
+
+  @override
+  String get feed_title => 'النشاط';
+
+  @override
+  String get feed_header_subtitle => 'تابع ما يستكشفه مجتمعك';
+
+  @override
+  String get feed_header_title => 'مجتمعك';
+
+  @override
+  String get feed_updates => 'تحديثات';
+
+  @override
+  String get feed_filter_all => 'الكل';
+
+  @override
+  String get feed_filter_checkin => 'الزيارات';
+
+  @override
+  String get feed_filter_badge => 'الشارات';
+
+  @override
+  String get feed_filter_suggestion => 'الاقتراحات';
+
+  @override
+  String get feed_filter_empty => 'لا يوجد نشاط في هذه الفئة بعد.';
+
+  @override
+  String get feed_today => 'اليوم';
+
+  @override
+  String get feed_yesterday => 'أمس';
+
+  @override
+  String get feed_empty =>
+      'لا يوجد نشاط حديث بعد. أضف أصدقاء لرؤية زياراتهم وشاراتهم واقتراحات الأماكن المقبولة.';
+
+  @override
+  String get feed_load_failed => 'تعذر تحميل موجز النشاط. حاول مرة أخرى.';
+
+  @override
+  String get feed_action_checkin => 'زار';
+
+  @override
+  String get feed_action_badge => 'حصل على شارة';
+
+  @override
+  String get feed_action_suggestion => 'اقترح مكانًا';
+
+  @override
+  String get report_title => 'الإبلاغ عن محتوى';
+
+  @override
+  String get report_photo_title => 'إبلاغ عن الصورة';
+
+  @override
+  String get photo_report_reason_inappropriate => 'محتوى غير لائق';
+
+  @override
+  String get photo_report_reason_unrelated => 'غير مرتبطة بهذا المكان';
+
+  @override
+  String get photo_report_reason_offensive => 'محتوى مسيء أو ينطوي على إساءة';
+
+  @override
+  String get photo_report_reason_other => 'سبب آخر';
+
+  @override
+  String get photo_report_submitted =>
+      'تم الإبلاغ عن الصورة وإخفاؤها من معرضك.';
+
+  @override
+  String get photo_report_failed => 'تعذر الإبلاغ عن الصورة. حاول مرة أخرى.';
+
+  @override
+  String get report_reason_prompt => 'لماذا تريد الإبلاغ عن هذا المحتوى؟';
+
+  @override
+  String get report_reason_inappropriate => 'محتوى غير لائق';
+
+  @override
+  String get report_reason_spam => 'رسائل مزعجة';
+
+  @override
+  String get report_reason_harassment => 'مضايقة';
+
+  @override
+  String get report_reason_false_info => 'معلومات مضللة';
+
+  @override
+  String get report_reason_other => 'سبب آخر';
+
+  @override
+  String get report_submit => 'إرسال البلاغ';
+
+  @override
+  String get report_submitted => 'شكرًا. تم إرسال بلاغك للمراجعة.';
+
+  @override
+  String get report_failed => 'تعذر إرسال البلاغ. حاول مرة أخرى.';
+
+  @override
+  String get block_user => 'حظر المستخدم';
+
+  @override
+  String get unblock_user => 'إلغاء حظر المستخدم';
+
+  @override
+  String get block_user_title => 'حظر هذا المستخدم؟';
+
+  @override
+  String get block_user_confirmation =>
+      'ستُخفى صور المجتمع ونشاط هذا المستخدم عنك.';
+
+  @override
+  String get user_blocked => 'تم حظر المستخدم وإخفاء محتواه.';
+
+  @override
+  String get block_user_failed => 'تعذر تحديث قائمة الحظر. حاول مرة أخرى.';
+
+  @override
+  String get blocked_profile_hidden =>
+      'هذا المستخدم محظور. ألغِ حظره لعرض ملفه الشخصي ونشاطه.';
+
+  @override
+  String get smart_alerts_title => 'تنبيهات الموقع الذكية';
+
+  @override
+  String get smart_alerts_subtitle =>
+      'احصل على تنبيه عند الاقتراب حتى ١٥٠ مترًا من جوهرة مخفية';
+
+  @override
+  String get smart_alerts_consent =>
+      'يستخدم EgyptLore موقعك في الخلفية لتنبيهك عند الاقتراب لمسافة ١٥٠ مترًا من جوهرة مخفية. يمكنك إيقاف ذلك في أي وقت.';
+
+  @override
+  String get smart_alerts_no_gems =>
+      'لا توجد جواهر مخفية متاحة للتنبيه عنها حاليًا.';
+
+  @override
+  String get no_visited_places => 'لا توجد أماكن تمت زيارتها';
+
+  @override
+  String get empty_visited_places_sub => 'ستظهر هنا الأماكن التي تسجل زيارتها.';
+
+  @override
+  String get no_visited_tours => 'لا توجد جولات تمت زيارتها';
+
+  @override
+  String get empty_visited_tours_sub => 'ستظهر هنا الجولات التي تكملها.';
+
+  @override
+  String get ach_squad_explorer_name => 'مستكشف الفريق';
+
+  @override
+  String get ach_squad_explorer_desc =>
+      'سجّل زيارتك أثناء الاستكشاف مع فريق نشط';
+
+  @override
+  String get squad_title => 'استكشاف جماعي';
+
+  @override
+  String get squad_active_title => 'فريقك النشط';
+
+  @override
+  String get squad_invite_subtitle => 'ادعُ أصدقاءك واستكشفوا معًا';
+
+  @override
+  String get squad_start_subtitle =>
+      'أنشئ فريقًا أو انضم إليه باستخدام رمز قصير';
+
+  @override
+  String get squad_create => 'أنشئ فريقًا';
+
+  @override
+  String get squad_join => 'انضم إلى فريق';
+
+  @override
+  String get squad_code_label => 'رمز الفريق من 4 إلى 6 أرقام';
+
+  @override
+  String get squad_copy_code => 'انسخ الرمز';
+
+  @override
+  String get squad_leave => 'غادر الفريق';
+
+  @override
+  String squad_members(String n) {
+    return '$n أعضاء';
+  }
+
+  @override
+  String get squad_roster => 'أعضاء الفريق';
+
+  @override
+  String get squad_leader => 'قائد الفريق';
+
+  @override
+  String get squad_you_leader => 'قائد الفريق · أنت';
+
+  @override
+  String get squad_you => 'أنت';
+
+  @override
+  String get squad_sign_in => 'سجّل الدخول لإنشاء فريق أو الانضمام إليه.';
+
+  @override
+  String get share_tour => 'شارك الجولة المكتملة';
+
+  @override
+  String get share_completed_tour => 'جولة مكتملة';
+
+  @override
+  String share_tour_details(String places, String duration) {
+    return '$places أماكن · $duration';
+  }
+
+  @override
+  String get share_photo => 'مشاركة الصورة';
+
+  @override
+  String get share_place_photo => 'لحظة من هذا المكان';
+
+  @override
+  String get share_card_footer => 'اكتشف حكاية كل مكان';
+
+  @override
+  String get share_failed => 'تعذر تجهيز صورة المشاركة. حاول مرة أخرى.';
+
+  @override
+  String get geo_select_first =>
+      'اختر مكانًا واحدًا على الأقل قبل تفعيل التنبيهات القريبة.';
+
+  @override
+  String get geo_background_title => 'السماح بالموقع في الخلفية؟';
+
+  @override
+  String get geo_background_explanation =>
+      'يجمع EgyptLore بيانات الموقع في الخلفية لتمكين الإشعارات المحددة ';
+
+  @override
+  String get privacy_policy_title => 'سياسة الخصوصية';
+
+  @override
+  String get delete_account_public => 'تعليمات حذف الحساب';
+
+  @override
+  String get public_link_failed => 'تعذر فتح الصفحة. حاول مرة أخرى لاحقًا.';
+
+  @override
+  String get subscription_disclosure =>
+      'تتجدد الاشتراكات تلقائيًا ما لم تُلغَ قبل 24 ساعة على الأقل من نهاية الفترة الحالية. يُحصّل الدفع عبر حسابك في Google Play عند التأكيد. يمكنك إدارة الاشتراك أو إلغاؤه من Google Play > الدفعات والاشتراكات. حذف حساب EgyptLore لا يلغي الاشتراك النشط.';
+
+  @override
+  String get terms_of_service_title => 'شروط الخدمة';
+
+  @override
+  String get profile_legal_title => 'الإعدادات والشؤون القانونية';
+
+  @override
+  String get delete_account_title => 'حذف الحساب';
+
+  @override
+  String get delete_account_warning =>
+      'سيؤدي ذلك إلى حذف حسابك وبياناتك الشخصية والعناصر المحفوظة وتسجيلات الوصول نهائيًا. ستفقد إمكانية الوصول إلى إيجيبت لور برو. حذف الحساب لا يلغي أو يسترد المدفوعات التي تديرها Apple أو Google؛ ألغِ أي اشتراك نشط من إعدادات المتجر أولًا. لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get delete_account_confirm => 'احذف حسابي';
+
+  @override
+  String get delete_account_failed => 'تعذر حذف حسابك. حاول مرة أخرى.';
+
+  @override
+  String get geo_enable => 'متابعة';
+
+  @override
+  String get geo_read_privacy_policy => 'اقرأ سياسة الخصوصية';
+
+  @override
+  String get geo_background_denied =>
+      'لم يتم السماح بالموقع في الخلفية. يمكنك تفعيله من الإعدادات.';
+
+  @override
+  String get geo_notifications_denied =>
+      'الإشعارات معطلة. فعّلها من الإعدادات لاستلام تنبيهات الأماكن القريبة.';
+
+  @override
+  String get geo_unsupported =>
+      'تنبيهات الأماكن القريبة غير مدعومة على هذا الجهاز.';
+
+  @override
+  String get geo_start_failed =>
+      'تعذر تشغيل تنبيهات الأماكن القريبة. حاول مرة أخرى.';
+
+  @override
+  String get checkin_too_far =>
+      'يجب أن تكون على بُعد ١٠٠ متر من هذا المكان لتسجيل الزيارة.';
+
+  @override
+  String get checkin_location_permission =>
+      'اسمح بالوصول إلى الموقع للتحقق من تسجيل زيارتك.';
+
+  @override
+  String get checkin_location_disabled => 'فعّل خدمات الموقع لتسجيل زيارتك.';
+
+  @override
+  String get checkin_location_unavailable =>
+      'تعذر التحقق من موقعك. حاول مرة أخرى.';
+
+  @override
+  String get checkin_save_failed => 'تعذر حفظ تسجيل الزيارة';
+
+  @override
+  String tour_progress(String done, String total) {
+    return 'تمت زيارة $done من $total أماكن';
+  }
+
+  @override
+  String get chat_send_failed => 'تعذر إرسال رسالتك. حاول مرة أخرى.';
+
+  @override
+  String get chat_sign_in_required => 'سجّل الدخول بحساب للمشاركة في الدردشة.';
+
+  @override
+  String get map_offline_fallback =>
+      'إرشاد دون اتصال: يظهر المسار المباشر إلى وجهتك.';
+
+  @override
+  String get map_cached_road_route =>
+      'خريطة دون اتصال: يظهر مسار الطريق المحفوظ إلى وجهتك.';
+
+  @override
+  String map_straight_line_distance(String distance, String bearing) {
+    return 'يبعد $distance · الاتجاه $bearing°';
+  }
+
+  @override
+  String get tour_pro => 'إيجيبت لور برو';
+
+  @override
+  String get tour_pro_locked =>
+      'هذه الجولة متاحة ضمن إيجيبت لور برو. الجواهر المخفية والجولات المميزة حصرية لأعضاء برو.';
+
+  @override
+  String get pro_title => 'إيجيبت لور برو';
+
+  @override
+  String get pro_detected_offerings => 'العروض المكتشفة:';
+
+  @override
+  String get pro_subtitle => 'اكتشف المزيد من الحكايات وراء مدينتك.';
+
+  @override
+  String get pro_benefit_hidden_gems => 'الجواهر المخفية والجولات المميزة';
+
+  @override
+  String get pro_benefit_premium_tours => 'جولات مميزة مختارة من خبراء محليين';
+
+  @override
+  String get pro_benefit_ai => '٥٠ سؤالًا للذكاء الاصطناعي يوميًا';
+
+  @override
+  String get pro_benefit_offline => 'التنزيلات دون اتصال';
+
+  @override
+  String get pro_benefit_badges => 'شارات برو حصرية';
+
+  @override
+  String get pro_weekly => 'باقة المستكشف';
+
+  @override
+  String get pro_weekly_description => 'وصول برو لمدة أسبوع';
+
+  @override
+  String get pro_weekly_badge => 'باقة أسبوعية';
+
+  @override
+  String get pro_weekly_price => '49 جنيهًا مصريًا / أسبوع';
+
+  @override
+  String get pro_monthly => 'اشتراك برو شهري';
+
+  @override
+  String get pro_monthly_description => 'مثالي للرحلات القصيرة';
+
+  @override
+  String get pro_monthly_badge => 'الأكثر شيوعًا';
+
+  @override
+  String get pro_monthly_price => '99 جنيهًا مصريًا / شهر';
+
+  @override
+  String get pro_annual => 'اشتراك برو سنوي';
+
+  @override
+  String get pro_annual_description => 'عام كامل من مزايا برو';
+
+  @override
+  String get pro_annual_badge => 'أفضل قيمة · وفّر ٤٠٪';
+
+  @override
+  String get pro_annual_price => '699 جنيهًا مصريًا / سنة';
+
+  @override
+  String get pro_annual_monthly_equivalent =>
+      'ما يعادل نحو 58 جنيهًا مصريًا / شهر';
+
+  @override
+  String pro_billing_period(String period) {
+    return 'يتم التجديد كل $period';
+  }
+
+  @override
+  String get pro_period_day => 'يوم';
+
+  @override
+  String pro_period_days(String count) {
+    return '$count أيام';
+  }
+
+  @override
+  String get pro_period_week => 'أسبوع';
+
+  @override
+  String pro_period_weeks(String count) {
+    return '$count أسابيع';
+  }
+
+  @override
+  String get pro_period_month => 'شهر';
+
+  @override
+  String pro_period_months(String count) {
+    return '$count أشهر';
+  }
+
+  @override
+  String get pro_period_year => 'سنة';
+
+  @override
+  String pro_period_years(String count) {
+    return '$count سنوات';
+  }
+
+  @override
+  String get pro_includes_free => 'كل مزايا الخطة المجانية، بالإضافة إلى:';
+
+  @override
+  String get pro_subscribe => 'اختر هذه الخطة';
+
+  @override
+  String get pro_store_note => 'شراء آمن عبر App Store أو Google Play.';
+
+  @override
+  String get pro_setup_note =>
+      'اشتراكات برو قادمة قريباً. ترقّبوا الإطلاق الرسمي!';
+
+  @override
+  String get pro_coming_soon => 'قريباً';
+
+  @override
+  String get pro_setup_required =>
+      'لم يتم إعداد عمليات الشراء بعد. أضف مفاتيح RevenueCat العامة لتفعيلها.';
+
+  @override
+  String get pro_sign_in_required => 'سجّل الدخول للاشتراك في إيجيبت لور برو.';
+
+  @override
+  String get pro_offering_unavailable => 'خيار الشراء هذا غير متاح حاليًا.';
+
+  @override
+  String get pro_purchase_success =>
+      'تم تفعيل إيجيبت لور برو. استمتع بالاكتشاف!';
+
+  @override
+  String get pro_purchase_pending =>
+      'تم استلام الشراء. سيتم تفعيل برو بعد التحقق.';
+
+  @override
+  String get pro_purchase_failed => 'تعذر إكمال عملية الشراء. حاول مرة أخرى.';
+
+  @override
+  String get pro_member => 'عضو إيجيبت لور برو';
+
+  @override
+  String get pro_tier_weekly => 'أسبوعي';
+
+  @override
+  String get pro_tier_monthly => 'شهري';
+
+  @override
+  String get pro_tier_annual => 'سنوي';
+
+  @override
+  String get pro_tier_lifetime => 'مدى الحياة';
+
+  @override
+  String get pro_member_subtitle => 'عضويتك فعّالة';
+
+  @override
+  String get restore_purchases => 'استعادة المشتريات';
+
+  @override
+  String get restore_sign_in_required =>
+      'سجّل الدخول لاستعادة مشتريات إيجيبت لور برو.';
+
+  @override
+  String get restore_setup_required => 'استعادة المشتريات غير متاحة حاليًا.';
+
+  @override
+  String get restore_none_found => 'لم يتم العثور على مشتريات سابقة لبرو.';
+
+  @override
+  String get restore_success => 'تمت استعادة مشتريات إيجيبت لور برو.';
+
+  @override
+  String get restore_pending =>
+      'تمت استعادة الشراء. سيتم تفعيل برو بعد التحقق.';
+
+  @override
+  String get restore_failed => 'تعذرت استعادة المشتريات. حاول مرة أخرى.';
+
+  @override
+  String get tour_visited => 'تمت الزيارة';
+
+  @override
+  String get google_sha1_error =>
+      'خطأ إعدادات تسجيل جوجل (كود 10). تواصل مع المطور.';
+
+  @override
+  String get google_config_error =>
+      'تسجيل جوجل غير مُعد بشكل صحيح. جرّب الإيميل.';
+
+  @override
+  String get google_network_error => 'خطأ في الشبكة. تأكد من اتصالك بالإنترنت.';
+
+  @override
+  String get google_general_error =>
+      'فشل تسجيل جوجل. جرّب الإيميل بدلاً من كده.';
 }

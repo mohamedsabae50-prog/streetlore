@@ -1,7 +1,16 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val localSigningProperties = Properties().apply {
+    val propertiesFile = rootProject.file("key.properties")
+    if (propertiesFile.isFile) {
+        propertiesFile.inputStream().use { load(it) }
+    }
 }
 
 android {
@@ -27,14 +36,21 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("release_v2.keystore")
+            storeFile = file(
+                localSigningProperties.getProperty("storeFile") ?: "release_v2.keystore",
+            )
             storePassword = providers.gradleProperty("STREETLORE_KEYSTORE_PASSWORD")
                 .orElse(providers.environmentVariable("STREETLORE_KEYSTORE_PASSWORD"))
-                .orNull ?: ""
-            keyAlias = "streetlore"
+                .orNull
+                ?: localSigningProperties.getProperty("storePassword")
+                ?: ""
+            keyAlias = localSigningProperties.getProperty("keyAlias") ?: "streetlore"
             keyPassword = providers.gradleProperty("STREETLORE_KEY_PASSWORD")
                 .orElse(providers.environmentVariable("STREETLORE_KEY_PASSWORD"))
-                .orNull ?: ""
+                .orNull
+                ?: localSigningProperties.getProperty("keyPassword")
+                ?: localSigningProperties.getProperty("storePassword")
+                ?: ""
         }
     }
 

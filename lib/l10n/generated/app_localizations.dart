@@ -170,30 +170,6 @@ abstract class AppLocalizations {
   /// **'Your place suggestion was submitted.'**
   String get suggest_place_success;
 
-  /// Translation key: ai_add_all
-  ///
-  /// In en, this message translates to:
-  /// **'Add all to Trip Planner'**
-  String get ai_add_all;
-
-  /// Translation key: ai_added_to_planner
-  ///
-  /// In en, this message translates to:
-  /// **'Added {n} places to your Trip Planner'**
-  String ai_added_to_planner(String n);
-
-  /// Translation key: ai_budget
-  ///
-  /// In en, this message translates to:
-  /// **'Budget'**
-  String get ai_budget;
-
-  /// Translation key: ai_days
-  ///
-  /// In en, this message translates to:
-  /// **'Days'**
-  String get ai_days;
-
   /// Translation key: ai_daily_limit_body
   ///
   /// In en, this message translates to:
@@ -218,119 +194,11 @@ abstract class AppLocalizations {
   /// **'Resets at midnight UTC'**
   String get ai_quota_reset_utc;
 
-  /// Translation key: ai_days_count
-  ///
-  /// In en, this message translates to:
-  /// **'{n} days'**
-  String ai_days_count(String n);
-
-  /// Translation key: ai_err_empty
-  ///
-  /// In en, this message translates to:
-  /// **'Please describe what kind of trip you want.'**
-  String get ai_err_empty;
-
-  /// Translation key: ai_err_failed
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to generate: {e}'**
-  String ai_err_failed(String e);
-
-  /// Translation key: ai_generate
-  ///
-  /// In en, this message translates to:
-  /// **'Generate Itinerary'**
-  String get ai_generate;
-
-  /// Translation key: ai_generating
-  ///
-  /// In en, this message translates to:
-  /// **'Generating...'**
-  String get ai_generating;
-
-  /// Translation key: ai_local_tips
-  ///
-  /// In en, this message translates to:
-  /// **'Local tips'**
-  String get ai_local_tips;
-
-  /// Translation key: ai_planner_title
-  ///
-  /// In en, this message translates to:
-  /// **'Smart Trip Planner'**
-  String get ai_planner_title;
-
-  /// Translation key: ai_prompt_hint
-  ///
-  /// In en, this message translates to:
-  /// **'e.g. two days, mid-budget, love history'**
-  String get ai_prompt_hint;
-
-  /// Translation key: ai_prompt_title
-  ///
-  /// In en, this message translates to:
-  /// **'Tell us about your trip'**
-  String get ai_prompt_title;
-
-  /// Translation key: ai_sugg_1
-  ///
-  /// In en, this message translates to:
-  /// **'Two days, mid-budget, love history and seafood'**
-  String get ai_sugg_1;
-
-  /// Translation key: ai_sugg_2
-  ///
-  /// In en, this message translates to:
-  /// **'One relaxed day focused on cafés and the corniche'**
-  String get ai_sugg_2;
-
-  /// Translation key: ai_sugg_3
-  ///
-  /// In en, this message translates to:
-  /// **'Three days off the beaten path, hidden gems only'**
-  String get ai_sugg_3;
-
-  /// Translation key: ai_sugg_4
-  ///
-  /// In en, this message translates to:
-  /// **'A family day with kid-friendly museums and a beach'**
-  String get ai_sugg_4;
-
   /// Translation key: all_places
   ///
   /// In en, this message translates to:
   /// **'All Places'**
   String get all_places;
-
-  /// Translation key: badge_streak_10
-  ///
-  /// In en, this message translates to:
-  /// **'10 Visits'**
-  String get badge_streak_10;
-
-  /// Translation key: badge_streak_25
-  ///
-  /// In en, this message translates to:
-  /// **'25 Visits'**
-  String get badge_streak_25;
-
-  /// Translation key: badge_streak_5
-  ///
-  /// In en, this message translates to:
-  /// **'5 Visits'**
-  String get badge_streak_5;
-
-  /// Translation key: badge_streak_50
-  ///
-  /// In en, this message translates to:
-  /// **'50 Visits'**
-  String get badge_streak_50;
-
-  /// Translation key: badge_unlocked
-  ///
-  /// In en, this message translates to:
-  /// **'Badge unlocked: {name} 🏅'**
-  String badge_unlocked(String name);
 
   /// Translation key: badges_title
   ///
@@ -343,12 +211,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Browse Tours'**
   String get browse_tours;
-
-  /// Translation key: bt_daylight
-  ///
-  /// In en, this message translates to:
-  /// **'Daylight'**
-  String get bt_daylight;
 
   /// Translation key: bt_label_decent_now
   ///
@@ -368,12 +230,6 @@ abstract class AppLocalizations {
   /// **'Wait for a better window'**
   String get bt_label_wait;
 
-  /// Translation key: bt_ranked_now
-  ///
-  /// In en, this message translates to:
-  /// **'Ranked for right now'**
-  String get bt_ranked_now;
-
   /// Translation key: bt_reason_best_photos
   ///
   /// In en, this message translates to:
@@ -385,12 +241,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Breakfast spots'**
   String get bt_reason_breakfast;
-
-  /// Translation key: bt_reason_brunch
-  ///
-  /// In en, this message translates to:
-  /// **'Brunch time'**
-  String get bt_reason_brunch;
 
   /// Translation key: bt_reason_closed
   ///
@@ -476,53 +326,11 @@ abstract class AppLocalizations {
   /// **'Too early'**
   String get bt_reason_too_early;
 
-  /// Translation key: bt_reason_too_late
-  ///
-  /// In en, this message translates to:
-  /// **'Too late'**
-  String get bt_reason_too_late;
-
   /// Translation key: bt_reason_warm_ok
   ///
   /// In en, this message translates to:
   /// **'Warm but ok'**
   String get bt_reason_warm_ok;
-
-  /// Translation key: bt_sub_great
-  ///
-  /// In en, this message translates to:
-  /// **'{day} — {n} place{s} glowing right now'**
-  String bt_sub_great(String day, String n, String s);
-
-  /// Translation key: bt_sub_okay
-  ///
-  /// In en, this message translates to:
-  /// **'{day} — {n} decent pick{s} if you hurry'**
-  String bt_sub_okay(String day, String n, String s);
-
-  /// Translation key: bt_sub_quiet
-  ///
-  /// In en, this message translates to:
-  /// **'{day} — quiet time, plan for later'**
-  String bt_sub_quiet(String day);
-
-  /// Translation key: bt_sunrise
-  ///
-  /// In en, this message translates to:
-  /// **'Sunrise'**
-  String get bt_sunrise;
-
-  /// Translation key: bt_sunset
-  ///
-  /// In en, this message translates to:
-  /// **'Sunset'**
-  String get bt_sunset;
-
-  /// Translation key: bt_title
-  ///
-  /// In en, this message translates to:
-  /// **'Best Time to Visit'**
-  String get bt_title;
 
   /// Translation key: budget_friendly
   ///
@@ -698,24 +506,6 @@ abstract class AppLocalizations {
   /// **'Community Reviews'**
   String get community_reviews;
 
-  /// Translation key: compass_sub
-  ///
-  /// In en, this message translates to:
-  /// **'Discover the city with a sweeping animated compass that grows into place.'**
-  String get compass_sub;
-
-  /// Translation key: compass_title
-  ///
-  /// In en, this message translates to:
-  /// **'Compass direction'**
-  String get compass_title;
-
-  /// Translation key: copy_link
-  ///
-  /// In en, this message translates to:
-  /// **'Copy Link'**
-  String get copy_link;
-
   /// Translation key: cur_amount
   ///
   /// In en, this message translates to:
@@ -769,48 +559,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dark theme enabled'**
   String get dark_theme_on;
-
-  /// Translation key: day_fri
-  ///
-  /// In en, this message translates to:
-  /// **'Fri'**
-  String get day_fri;
-
-  /// Translation key: day_mon
-  ///
-  /// In en, this message translates to:
-  /// **'Mon'**
-  String get day_mon;
-
-  /// Translation key: day_sat
-  ///
-  /// In en, this message translates to:
-  /// **'Sat'**
-  String get day_sat;
-
-  /// Translation key: day_sun
-  ///
-  /// In en, this message translates to:
-  /// **'Sun'**
-  String get day_sun;
-
-  /// Translation key: day_thu
-  ///
-  /// In en, this message translates to:
-  /// **'Thu'**
-  String get day_thu;
-
-  /// Translation key: day_tue
-  ///
-  /// In en, this message translates to:
-  /// **'Tue'**
-  String get day_tue;
-
-  /// Translation key: day_wed
-  ///
-  /// In en, this message translates to:
-  /// **'Wed'**
-  String get day_wed;
 
   /// Translation key: delete
   ///
@@ -1016,12 +764,6 @@ abstract class AppLocalizations {
   /// **'Category is required (e.g. ATM, Hotel, Cafe)'**
   String get admin_err_category;
 
-  /// Translation key: admin_err_address
-  ///
-  /// In en, this message translates to:
-  /// **'Address is required'**
-  String get admin_err_address;
-
   /// Translation key: admin_submit
   ///
   /// In en, this message translates to:
@@ -1088,12 +830,6 @@ abstract class AppLocalizations {
   /// **'Featured'**
   String get featured;
 
-  /// Translation key: filter_cheapest
-  ///
-  /// In en, this message translates to:
-  /// **'Cheapest'**
-  String get filter_cheapest;
-
   /// Translation key: filter_free
   ///
   /// In en, this message translates to:
@@ -1106,18 +842,6 @@ abstract class AppLocalizations {
   /// **'Hidden Gems'**
   String get filter_hidden_gems;
 
-  /// Translation key: filter_nearest
-  ///
-  /// In en, this message translates to:
-  /// **'Nearest'**
-  String get filter_nearest;
-
-  /// Translation key: filter_open_now
-  ///
-  /// In en, this message translates to:
-  /// **'Open Now'**
-  String get filter_open_now;
-
   /// Translation key: first_photo
   ///
   /// In en, this message translates to:
@@ -1129,18 +853,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Foreigners'**
   String get foreigners;
-
-  /// Translation key: free_banner_sub
-  ///
-  /// In en, this message translates to:
-  /// **'All tours, places & guides are unlocked for everyone.'**
-  String get free_banner_sub;
-
-  /// Translation key: free_banner_title
-  ///
-  /// In en, this message translates to:
-  /// **'Everything is free'**
-  String get free_banner_title;
 
   /// Translation key: passion_banner_title
   ///
@@ -1231,24 +943,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Good Morning'**
   String get greet_morning;
-
-  /// Translation key: greet_night
-  ///
-  /// In en, this message translates to:
-  /// **'Good night'**
-  String get greet_night;
-
-  /// Translation key: guest_dialog_sub
-  ///
-  /// In en, this message translates to:
-  /// **'Other travellers will see this name on the leaderboard. You can change it later.'**
-  String get guest_dialog_sub;
-
-  /// Translation key: guest_dialog_title
-  ///
-  /// In en, this message translates to:
-  /// **'Pick a display name'**
-  String get guest_dialog_title;
 
   /// Translation key: help_center
   ///
@@ -1376,18 +1070,6 @@ abstract class AppLocalizations {
   /// **'{p} points · {l}'**
   String lb_points_level(String p, String l);
 
-  /// Translation key: lb_row_sub
-  ///
-  /// In en, this message translates to:
-  /// **'{v} visited · {r} reviews'**
-  String lb_row_sub(String v, String r);
-
-  /// Translation key: lb_subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'Most travelled around the world'**
-  String get lb_subtitle;
-
   /// Translation key: lb_title
   ///
   /// In en, this message translates to:
@@ -1448,12 +1130,6 @@ abstract class AppLocalizations {
   /// **'Location services are off. Turn them on to see what is around you.'**
   String get loc_service_off;
 
-  /// Translation key: location_denied
-  ///
-  /// In en, this message translates to:
-  /// **'Location permission denied. Enable it to see local weather.'**
-  String get location_denied;
-
   /// Translation key: location_services
   ///
   /// In en, this message translates to:
@@ -1465,12 +1141,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Used for nearby recommendations'**
   String get location_services_sub;
-
-  /// Translation key: login_continue_guest
-  ///
-  /// In en, this message translates to:
-  /// **'Continue as Guest'**
-  String get login_continue_guest;
 
   /// Translation key: login_email
   ///
@@ -1562,12 +1232,6 @@ abstract class AppLocalizations {
   /// **'Google'**
   String get login_google;
 
-  /// Translation key: login_google_signed_in
-  ///
-  /// In en, this message translates to:
-  /// **'Signed in with Google (local).'**
-  String get login_google_signed_in;
-
   /// Translation key: login_google_unavailable
   ///
   /// In en, this message translates to:
@@ -1640,24 +1304,6 @@ abstract class AppLocalizations {
   /// **'Sign Up'**
   String get login_sign_up;
 
-  /// Translation key: login_guest_name
-  ///
-  /// In en, this message translates to:
-  /// **'Guest Explorer'**
-  String get login_guest_name;
-
-  /// Translation key: login_just_exploring
-  ///
-  /// In en, this message translates to:
-  /// **'Just exploring? '**
-  String get login_just_exploring;
-
-  /// Translation key: login_name_hint
-  ///
-  /// In en, this message translates to:
-  /// **'e.g. Ahmed Hassan'**
-  String get login_name_hint;
-
   /// Translation key: login_or
   ///
   /// In en, this message translates to:
@@ -1688,36 +1334,6 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get map_close;
 
-  /// Translation key: map_err_location
-  ///
-  /// In en, this message translates to:
-  /// **'Something went wrong while locating you.'**
-  String get map_err_location;
-
-  /// Translation key: map_err_location_denied
-  ///
-  /// In en, this message translates to:
-  /// **'Location permission is required to show the route.'**
-  String get map_err_location_denied;
-
-  /// Translation key: map_err_location_denied_forever
-  ///
-  /// In en, this message translates to:
-  /// **'Location permission is permanently denied. Please enable it in Settings.'**
-  String get map_err_location_denied_forever;
-
-  /// Translation key: map_err_offline
-  ///
-  /// In en, this message translates to:
-  /// **'Check your internet connection.'**
-  String get map_err_offline;
-
-  /// Translation key: map_err_route
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to load the road route.'**
-  String get map_err_route;
-
   /// Translation key: map_my_location
   ///
   /// In en, this message translates to:
@@ -1742,12 +1358,6 @@ abstract class AppLocalizations {
   /// **'Map View'**
   String get map_view;
 
-  /// Translation key: map_view_sub
-  ///
-  /// In en, this message translates to:
-  /// **'All places on interactive map'**
-  String get map_view_sub;
-
   /// Translation key: message
   ///
   /// In en, this message translates to:
@@ -1766,23 +1376,11 @@ abstract class AppLocalizations {
   /// **'Profile'**
   String get nav_profile;
 
-  /// Translation key: nav_saved
-  ///
-  /// In en, this message translates to:
-  /// **'Saved'**
-  String get nav_saved;
-
   /// Translation key: nav_tours
   ///
   /// In en, this message translates to:
   /// **'Tours'**
   String get nav_tours;
-
-  /// Translation key: nearby_gems
-  ///
-  /// In en, this message translates to:
-  /// **'Nearby Hidden Gems'**
-  String get nearby_gems;
 
   /// Translation key: nearby_places
   ///
@@ -1795,12 +1393,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Visited'**
   String get trip_visited;
-
-  /// Translation key: trip_planned
-  ///
-  /// In en, this message translates to:
-  /// **'Planned'**
-  String get trip_planned;
 
   /// Translation key: trip_visited_badge
   ///
@@ -1940,48 +1532,6 @@ abstract class AppLocalizations {
   /// **'Save & Revisit'**
   String get ob_title_3;
 
-  /// Translation key: offline_available
-  ///
-  /// In en, this message translates to:
-  /// **'Available to download'**
-  String get offline_available;
-
-  /// Translation key: offline_download
-  ///
-  /// In en, this message translates to:
-  /// **'Download'**
-  String get offline_download;
-
-  /// Translation key: offline_downloaded
-  ///
-  /// In en, this message translates to:
-  /// **'Downloaded'**
-  String get offline_downloaded;
-
-  /// Translation key: offline_hero_title
-  ///
-  /// In en, this message translates to:
-  /// **'Travel without signal'**
-  String get offline_hero_title;
-
-  /// Translation key: offline_mb_downloaded
-  ///
-  /// In en, this message translates to:
-  /// **'{n} MB downloaded'**
-  String offline_mb_downloaded(String n);
-
-  /// Translation key: offline_pack_size
-  ///
-  /// In en, this message translates to:
-  /// **'{mb} MB · {n} places'**
-  String offline_pack_size(String mb, String n);
-
-  /// Translation key: offline_title
-  ///
-  /// In en, this message translates to:
-  /// **'Offline Mode'**
-  String get offline_title;
-
   /// Translation key: open_now
   ///
   /// In en, this message translates to:
@@ -2102,12 +1652,6 @@ abstract class AppLocalizations {
   /// **'Get tips and discoveries'**
   String get push_notif_sub;
 
-  /// Translation key: quick_ai_trip
-  ///
-  /// In en, this message translates to:
-  /// **'AI Trip'**
-  String get quick_ai_trip;
-
   /// Translation key: quick_badges
   ///
   /// In en, this message translates to:
@@ -2126,35 +1670,11 @@ abstract class AppLocalizations {
   /// **'Set by the editorial team'**
   String get best_time_admin_hint;
 
-  /// Translation key: quick_chat
-  ///
-  /// In en, this message translates to:
-  /// **'Live Chat'**
-  String get quick_chat;
-
-  /// Translation key: quick_journal
-  ///
-  /// In en, this message translates to:
-  /// **'Journal'**
-  String get quick_journal;
-
   /// Translation key: quick_map
   ///
   /// In en, this message translates to:
   /// **'Map'**
   String get quick_map;
-
-  /// Translation key: quick_offline
-  ///
-  /// In en, this message translates to:
-  /// **'Offline'**
-  String get quick_offline;
-
-  /// Translation key: quick_prayer
-  ///
-  /// In en, this message translates to:
-  /// **'Prayer'**
-  String get quick_prayer;
 
   /// Translation key: quick_ranking
   ///
@@ -2167,12 +1687,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Routes'**
   String get quick_routes;
-
-  /// Translation key: quick_transport
-  ///
-  /// In en, this message translates to:
-  /// **'Transport'**
-  String get quick_transport;
 
   /// Translation key: rate_app
   ///
@@ -2293,12 +1807,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'App Settings'**
   String get section_app_settings;
-
-  /// Translation key: see_all
-  ///
-  /// In en, this message translates to:
-  /// **'See all'**
-  String get see_all;
 
   /// Translation key: share_app
   ///
@@ -2426,36 +1934,6 @@ abstract class AppLocalizations {
   /// **'Duration'**
   String get tour_duration;
 
-  /// Translation key: tour_filter_all
-  ///
-  /// In en, this message translates to:
-  /// **'All'**
-  String get tour_filter_all;
-
-  /// Translation key: tour_filter_full
-  ///
-  /// In en, this message translates to:
-  /// **'Full day'**
-  String get tour_filter_full;
-
-  /// Translation key: tour_filter_half
-  ///
-  /// In en, this message translates to:
-  /// **'Half day'**
-  String get tour_filter_half;
-
-  /// Translation key: tour_filter_short
-  ///
-  /// In en, this message translates to:
-  /// **'Up to 3h'**
-  String get tour_filter_short;
-
-  /// Translation key: tour_free
-  ///
-  /// In en, this message translates to:
-  /// **'Free'**
-  String get tour_free;
-
   /// Translation key: tour_guide_hint
   ///
   /// In en, this message translates to:
@@ -2479,12 +1957,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No locations available for this tour.'**
   String get tour_no_locations;
-
-  /// Translation key: tour_none_in_filter
-  ///
-  /// In en, this message translates to:
-  /// **'No tours in this category'**
-  String get tour_none_in_filter;
 
   /// Translation key: tour_removed_offline
   ///
@@ -2552,114 +2024,6 @@ abstract class AppLocalizations {
   /// **'Guided Tours'**
   String get tours_title;
 
-  /// Translation key: transport_bus_routes
-  ///
-  /// In en, this message translates to:
-  /// **'Bus Routes'**
-  String get transport_bus_routes;
-
-  /// Translation key: transport_hero
-  ///
-  /// In en, this message translates to:
-  /// **'Get around Alexandria with microbuses, buses, and taxis'**
-  String get transport_hero;
-
-  /// Translation key: transport_micro_desc
-  ///
-  /// In en, this message translates to:
-  /// **'Shared 14-seater vans. Fixed routes, cheap.'**
-  String get transport_micro_desc;
-
-  /// Translation key: transport_micro_s1
-  ///
-  /// In en, this message translates to:
-  /// **'Set routes'**
-  String get transport_micro_s1;
-
-  /// Translation key: transport_micro_s2
-  ///
-  /// In en, this message translates to:
-  /// **'Wave to board'**
-  String get transport_micro_s2;
-
-  /// Translation key: transport_micro_title
-  ///
-  /// In en, this message translates to:
-  /// **'Microbus (Servis)'**
-  String get transport_micro_title;
-
-  /// Translation key: transport_pro_tip
-  ///
-  /// In en, this message translates to:
-  /// **'Pro tip: Microbuses (servis) are the cheapest way along the Corniche — wave to board, and pay the driver directly when you get off.'**
-  String get transport_pro_tip;
-
-  /// Translation key: transport_stops
-  ///
-  /// In en, this message translates to:
-  /// **'Stops:'**
-  String get transport_stops;
-
-  /// Translation key: transport_taxi
-  ///
-  /// In en, this message translates to:
-  /// **'Taxi'**
-  String get transport_taxi;
-
-  /// Translation key: transport_taxi_desc
-  ///
-  /// In en, this message translates to:
-  /// **'Hail on the street or order by phone. Ask for the meter or agree the fare before you ride.'**
-  String get transport_taxi_desc;
-
-  /// Translation key: transport_taxi_price
-  ///
-  /// In en, this message translates to:
-  /// **'Meter: EGP 7-10 base + EGP 3/km'**
-  String get transport_taxi_price;
-
-  /// Translation key: transport_taxi_s1
-  ///
-  /// In en, this message translates to:
-  /// **'Available citywide'**
-  String get transport_taxi_s1;
-
-  /// Translation key: transport_taxi_s2
-  ///
-  /// In en, this message translates to:
-  /// **'Black & yellow cabs'**
-  String get transport_taxi_s2;
-
-  /// Translation key: transport_taxi_section
-  ///
-  /// In en, this message translates to:
-  /// **'Taxis & Microbuses'**
-  String get transport_taxi_section;
-
-  /// Translation key: transport_uber_desc
-  ///
-  /// In en, this message translates to:
-  /// **'App-based. Cash or card. Surge pricing at peak hours.'**
-  String get transport_uber_desc;
-
-  /// Translation key: transport_uber_price
-  ///
-  /// In en, this message translates to:
-  /// **'EGP 30-100+ depending on distance'**
-  String get transport_uber_price;
-
-  /// Translation key: transport_uber_s1
-  ///
-  /// In en, this message translates to:
-  /// **'Download app'**
-  String get transport_uber_s1;
-
-  /// Translation key: transport_uber_s2
-  ///
-  /// In en, this message translates to:
-  /// **'Set pickup & drop-off'**
-  String get transport_uber_s2;
-
   /// Translation key: travel_journal
   ///
   /// In en, this message translates to:
@@ -2671,24 +2035,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save memories, notes & photos'**
   String get travel_journal_sub;
-
-  /// Translation key: trip_clear_all
-  ///
-  /// In en, this message translates to:
-  /// **'Clear All'**
-  String get trip_clear_all;
-
-  /// Translation key: trip_empty
-  ///
-  /// In en, this message translates to:
-  /// **'Your trip is empty.\\nAdd places from the explore screen!'**
-  String get trip_empty;
-
-  /// Translation key: trip_places_planned
-  ///
-  /// In en, this message translates to:
-  /// **'{n} Places Planned'**
-  String trip_places_planned(String n);
 
   /// Translation key: trip_title
   ///
@@ -3025,6 +2371,1596 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unlock 20 different achievements'**
   String get ach_completionist_desc;
+
+  /// No description provided for @downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get downloaded;
+
+  /// No description provided for @downloading_offline.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading...'**
+  String get downloading_offline;
+
+  /// No description provided for @download_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline download failed. Please try again.'**
+  String get download_failed;
+
+  /// No description provided for @downloading_tour_offline.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading tour for offline use…'**
+  String get downloading_tour_offline;
+
+  /// No description provided for @no_internet_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No Internet Connection'**
+  String get no_internet_title;
+
+  /// No description provided for @no_internet_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Please reconnect to the internet to load the latest places and stories.'**
+  String get no_internet_message;
+
+  /// No description provided for @no_internet_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get no_internet_retry;
+
+  /// No description provided for @offline_mode_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline Mode: Your saved places are available.'**
+  String get offline_mode_notice;
+
+  /// No description provided for @ai_tour_guide.
+  ///
+  /// In en, this message translates to:
+  /// **'EgyptLore AI'**
+  String get ai_tour_guide;
+
+  /// No description provided for @ai_guide_general_title.
+  ///
+  /// In en, this message translates to:
+  /// **'EgyptLore AI'**
+  String get ai_guide_general_title;
+
+  /// No description provided for @ai_guide_welcome_en.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi! I\'m EgyptLore AI. Ask me anything about places to '**
+  String get ai_guide_welcome_en;
+
+  /// No description provided for @ai_guide_thinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking…'**
+  String get ai_guide_thinking;
+
+  /// No description provided for @ai_guide_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about places, food, history…'**
+  String get ai_guide_hint;
+
+  /// No description provided for @ai_quota_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading AI quota…'**
+  String get ai_quota_loading;
+
+  /// No description provided for @ai_quota_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'AI quota unavailable'**
+  String get ai_quota_unavailable;
+
+  /// Translation key: ai_quota_remaining
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} of {limit} AI calls remaining'**
+  String ai_quota_remaining(String remaining, String limit);
+
+  /// No description provided for @ai_quota_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get ai_quota_retry;
+
+  /// No description provided for @admin_ai_chat_logs.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Chat Logs'**
+  String get admin_ai_chat_logs;
+
+  /// Translation key: admin_ai_chat_exchange
+  ///
+  /// In en, this message translates to:
+  /// **'{count} AI exchange'**
+  String admin_ai_chat_exchange(String count);
+
+  /// Translation key: admin_ai_chat_exchanges
+  ///
+  /// In en, this message translates to:
+  /// **'{count} AI exchanges'**
+  String admin_ai_chat_exchanges(String count);
+
+  /// No description provided for @admin_ai_chat_user.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get admin_ai_chat_user;
+
+  /// No description provided for @admin_ai_chat_assistant.
+  ///
+  /// In en, this message translates to:
+  /// **'AI'**
+  String get admin_ai_chat_assistant;
+
+  /// No description provided for @admin_ai_chat_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No AI chat sessions yet'**
+  String get admin_ai_chat_empty;
+
+  /// Translation key: admin_ai_chat_retry_error
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load more chat threads: {error}'**
+  String admin_ai_chat_retry_error(String error);
+
+  /// No description provided for @max_route_places.
+  ///
+  /// In en, this message translates to:
+  /// **'Max 5 places per route'**
+  String get max_route_places;
+
+  /// No description provided for @weather_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Current weather is unavailable. Check your location and connection.'**
+  String get weather_unavailable;
+
+  /// No description provided for @pro_monthly_reward_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish #1 Top Visitor of the Month and earn 1 Month of Pro FREE!'**
+  String get pro_monthly_reward_title;
+
+  /// Translation key: pro_monthly_reward_countdown
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d {hours}h left this month'**
+  String pro_monthly_reward_countdown(String days, String hours);
+
+  /// No description provided for @pro_monthly_reward_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest a Hidden Gem'**
+  String get pro_monthly_reward_cta;
+
+  /// No description provided for @pro_hidden_gem_reward.
+  ///
+  /// In en, this message translates to:
+  /// **'If our team approves your Hidden Gem, we’ll automatically add 30 days of Pro to your account for FREE.'**
+  String get pro_hidden_gem_reward;
+
+  /// No description provided for @share_place.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this place'**
+  String get share_place;
+
+  /// No description provided for @weather_clear_sky.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear sky'**
+  String get weather_clear_sky;
+
+  /// No description provided for @weather_mainly_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Mainly clear'**
+  String get weather_mainly_clear;
+
+  /// No description provided for @weather_partly_cloudy.
+  ///
+  /// In en, this message translates to:
+  /// **'Partly cloudy'**
+  String get weather_partly_cloudy;
+
+  /// No description provided for @weather_overcast.
+  ///
+  /// In en, this message translates to:
+  /// **'Overcast'**
+  String get weather_overcast;
+
+  /// No description provided for @weather_rain_possible.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain possible'**
+  String get weather_rain_possible;
+
+  /// No description provided for @weather_rain.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain'**
+  String get weather_rain;
+
+  /// No description provided for @weather_drizzle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drizzle'**
+  String get weather_drizzle;
+
+  /// No description provided for @weather_thunderstorm.
+  ///
+  /// In en, this message translates to:
+  /// **'Thunderstorm'**
+  String get weather_thunderstorm;
+
+  /// No description provided for @weather_snow.
+  ///
+  /// In en, this message translates to:
+  /// **'Snow'**
+  String get weather_snow;
+
+  /// No description provided for @weather_fog.
+  ///
+  /// In en, this message translates to:
+  /// **'Fog'**
+  String get weather_fog;
+
+  /// No description provided for @weather_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Current conditions'**
+  String get weather_unknown;
+
+  /// No description provided for @lb_city_title.
+  ///
+  /// In en, this message translates to:
+  /// **'King of Alexandria'**
+  String get lb_city_title;
+
+  /// No description provided for @lb_period_week.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get lb_period_week;
+
+  /// No description provided for @lb_period_month.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get lb_period_month;
+
+  /// No description provided for @lb_period_all_time.
+  ///
+  /// In en, this message translates to:
+  /// **'All time'**
+  String get lb_period_all_time;
+
+  /// No description provided for @lb_metric_checkins.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-ins'**
+  String get lb_metric_checkins;
+
+  /// No description provided for @lb_metric_streak.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest streak'**
+  String get lb_metric_streak;
+
+  /// No description provided for @lb_metric_gems.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden gems'**
+  String get lb_metric_gems;
+
+  /// No description provided for @lb_stat_checkins.
+  ///
+  /// In en, this message translates to:
+  /// **'check-ins'**
+  String get lb_stat_checkins;
+
+  /// No description provided for @lb_stat_streak.
+  ///
+  /// In en, this message translates to:
+  /// **'day streak'**
+  String get lb_stat_streak;
+
+  /// No description provided for @lb_stat_gems.
+  ///
+  /// In en, this message translates to:
+  /// **'hidden gems'**
+  String get lb_stat_gems;
+
+  /// Translation key: lb_badge_rank
+  ///
+  /// In en, this message translates to:
+  /// **'{level} rank'**
+  String lb_badge_rank(String level);
+
+  /// No description provided for @lb_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get lb_try_again;
+
+  /// No description provided for @username_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your username'**
+  String get username_title;
+
+  /// No description provided for @username_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This unique name helps other explorers find and follow you.'**
+  String get username_subtitle;
+
+  /// No description provided for @username_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get username_label;
+
+  /// No description provided for @username_requirements.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 3-20 letters, numbers, dots, underscores, or hyphens. Start with a letter or number.'**
+  String get username_requirements;
+
+  /// No description provided for @username_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get username_continue;
+
+  /// No description provided for @username_taken.
+  ///
+  /// In en, this message translates to:
+  /// **'That username is already taken. Try another.'**
+  String get username_taken;
+
+  /// No description provided for @username_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not save your username. Please try again.'**
+  String get username_save_failed;
+
+  /// No description provided for @username_check_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not verify your account profile. Check your connection and try again.'**
+  String get username_check_failed;
+
+  /// No description provided for @users_search_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Users'**
+  String get users_search_title;
+
+  /// No description provided for @users_suggested_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested explorers'**
+  String get users_suggested_title;
+
+  /// No description provided for @users_suggestions_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No explorers are available yet.'**
+  String get users_suggestions_empty;
+
+  /// No description provided for @suggest_hidden_gem.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest a Hidden Gem'**
+  String get suggest_hidden_gem;
+
+  /// No description provided for @suggest_hidden_gem_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share a special place with our team'**
+  String get suggest_hidden_gem_subtitle;
+
+  /// No description provided for @users_search_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find explorers and manage your friend requests'**
+  String get users_search_subtitle;
+
+  /// No description provided for @users_search_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search usernames'**
+  String get users_search_hint;
+
+  /// No description provided for @users_search_min_length.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least two characters to search.'**
+  String get users_search_min_length;
+
+  /// No description provided for @users_search_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'User search failed. Please try again.'**
+  String get users_search_failed;
+
+  /// No description provided for @users_search_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found. Try another username.'**
+  String get users_search_empty;
+
+  /// No description provided for @users_search_results.
+  ///
+  /// In en, this message translates to:
+  /// **'Search results'**
+  String get users_search_results;
+
+  /// No description provided for @users_sign_in_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to find and add other explorers as friends.'**
+  String get users_sign_in_required;
+
+  /// No description provided for @user_profile_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Explorer Profile'**
+  String get user_profile_title;
+
+  /// No description provided for @profile_visited_places.
+  ///
+  /// In en, this message translates to:
+  /// **'Places visited'**
+  String get profile_visited_places;
+
+  /// No description provided for @profile_no_visits.
+  ///
+  /// In en, this message translates to:
+  /// **'No shared visits to show yet.'**
+  String get profile_no_visits;
+
+  /// No description provided for @profile_visits_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load visited places. Please try again.'**
+  String get profile_visits_failed;
+
+  /// No description provided for @send_friend_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Add friend'**
+  String get send_friend_request;
+
+  /// No description provided for @incoming_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming request'**
+  String get incoming_request;
+
+  /// No description provided for @friend_request_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Request pending'**
+  String get friend_request_pending;
+
+  /// No description provided for @cancel_friend_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel request'**
+  String get cancel_friend_request;
+
+  /// No description provided for @incoming_friend_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming Friend Requests'**
+  String get incoming_friend_requests;
+
+  /// No description provided for @sent_friend_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent Requests'**
+  String get sent_friend_requests;
+
+  /// No description provided for @friends_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends'**
+  String get friends_list_title;
+
+  /// No description provided for @accept_friend_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get accept_friend_request;
+
+  /// No description provided for @decline_friend_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get decline_friend_request;
+
+  /// No description provided for @remove_friend.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove friend'**
+  String get remove_friend;
+
+  /// No description provided for @remove_friend_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this friend?'**
+  String get remove_friend_title;
+
+  /// No description provided for @remove_friend_confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'You will no longer share friend activity with each other.'**
+  String get remove_friend_confirmation;
+
+  /// No description provided for @friend_location_activity_sharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Share my location and activity with this friend'**
+  String get friend_location_activity_sharing;
+
+  /// No description provided for @friends_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load friends and requests.'**
+  String get friends_load_failed;
+
+  /// No description provided for @friend_action_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update this friend request. Please try again.'**
+  String get friend_action_failed;
+
+  /// No description provided for @follow_action_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update follow status. Please try again.'**
+  String get follow_action_failed;
+
+  /// No description provided for @share_location_activity.
+  ///
+  /// In en, this message translates to:
+  /// **'Share my location & activity with friends'**
+  String get share_location_activity;
+
+  /// No description provided for @share_location_activity_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends can see visited places and activity only while this is on.'**
+  String get share_location_activity_subtitle;
+
+  /// No description provided for @privacy_settings_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load privacy settings.'**
+  String get privacy_settings_failed;
+
+  /// No description provided for @privacy_settings_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save privacy settings. Please try again.'**
+  String get privacy_settings_save_failed;
+
+  /// No description provided for @avatar_upload_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not upload your profile picture. Please try again.'**
+  String get avatar_upload_failed;
+
+  /// No description provided for @profile_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'friends'**
+  String get profile_friends;
+
+  /// No description provided for @profile_no_public_badges.
+  ///
+  /// In en, this message translates to:
+  /// **'No badges earned yet'**
+  String get profile_no_public_badges;
+
+  /// No description provided for @badge_earned_fallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Explorer badge'**
+  String get badge_earned_fallback;
+
+  /// No description provided for @feed_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get feed_title;
+
+  /// No description provided for @feed_header_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See what your community is exploring'**
+  String get feed_header_subtitle;
+
+  /// No description provided for @feed_header_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your community'**
+  String get feed_header_title;
+
+  /// No description provided for @feed_updates.
+  ///
+  /// In en, this message translates to:
+  /// **'updates'**
+  String get feed_updates;
+
+  /// No description provided for @feed_filter_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get feed_filter_all;
+
+  /// No description provided for @feed_filter_checkin.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-ins'**
+  String get feed_filter_checkin;
+
+  /// No description provided for @feed_filter_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'Badges'**
+  String get feed_filter_badge;
+
+  /// No description provided for @feed_filter_suggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions'**
+  String get feed_filter_suggestion;
+
+  /// No description provided for @feed_filter_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity in this category yet.'**
+  String get feed_filter_empty;
+
+  /// No description provided for @feed_today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get feed_today;
+
+  /// No description provided for @feed_yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get feed_yesterday;
+
+  /// No description provided for @feed_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent activity yet. Add friends to see their check-ins, badges, and approved place suggestions.'**
+  String get feed_empty;
+
+  /// No description provided for @feed_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the activity feed. Please try again.'**
+  String get feed_load_failed;
+
+  /// No description provided for @feed_action_checkin.
+  ///
+  /// In en, this message translates to:
+  /// **'visited'**
+  String get feed_action_checkin;
+
+  /// No description provided for @feed_action_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'unlocked a badge'**
+  String get feed_action_badge;
+
+  /// No description provided for @feed_action_suggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'suggested a place'**
+  String get feed_action_suggestion;
+
+  /// No description provided for @report_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Report content'**
+  String get report_title;
+
+  /// No description provided for @report_photo_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Photo'**
+  String get report_photo_title;
+
+  /// No description provided for @photo_report_reason_inappropriate.
+  ///
+  /// In en, this message translates to:
+  /// **'Inappropriate content'**
+  String get photo_report_reason_inappropriate;
+
+  /// No description provided for @photo_report_reason_unrelated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not related to this place'**
+  String get photo_report_reason_unrelated;
+
+  /// No description provided for @photo_report_reason_offensive.
+  ///
+  /// In en, this message translates to:
+  /// **'Offensive/Abuse'**
+  String get photo_report_reason_offensive;
+
+  /// No description provided for @photo_report_reason_other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get photo_report_reason_other;
+
+  /// No description provided for @photo_report_submitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo reported. It has been hidden from your gallery.'**
+  String get photo_report_submitted;
+
+  /// No description provided for @photo_report_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not report this photo. Please try again.'**
+  String get photo_report_failed;
+
+  /// No description provided for @report_reason_prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Why are you reporting this?'**
+  String get report_reason_prompt;
+
+  /// No description provided for @report_reason_inappropriate.
+  ///
+  /// In en, this message translates to:
+  /// **'Inappropriate content'**
+  String get report_reason_inappropriate;
+
+  /// No description provided for @report_reason_spam.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam'**
+  String get report_reason_spam;
+
+  /// No description provided for @report_reason_harassment.
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment'**
+  String get report_reason_harassment;
+
+  /// No description provided for @report_reason_false_info.
+  ///
+  /// In en, this message translates to:
+  /// **'False information'**
+  String get report_reason_false_info;
+
+  /// No description provided for @report_reason_other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get report_reason_other;
+
+  /// No description provided for @report_submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit report'**
+  String get report_submit;
+
+  /// No description provided for @report_submitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks. Your report was submitted for review.'**
+  String get report_submitted;
+
+  /// No description provided for @report_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit your report. Please try again.'**
+  String get report_failed;
+
+  /// No description provided for @block_user.
+  ///
+  /// In en, this message translates to:
+  /// **'Block user'**
+  String get block_user;
+
+  /// No description provided for @unblock_user.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock user'**
+  String get unblock_user;
+
+  /// No description provided for @block_user_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Block this user?'**
+  String get block_user_title;
+
+  /// No description provided for @block_user_confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Their community photos and activity will be hidden from you.'**
+  String get block_user_confirmation;
+
+  /// No description provided for @user_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'User blocked. Their content is now hidden.'**
+  String get user_blocked;
+
+  /// No description provided for @block_user_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the block list. Please try again.'**
+  String get block_user_failed;
+
+  /// No description provided for @blocked_profile_hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'This user is blocked. Unblock them to view their profile and activity.'**
+  String get blocked_profile_hidden;
+
+  /// No description provided for @smart_alerts_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Location Alerts'**
+  String get smart_alerts_title;
+
+  /// No description provided for @smart_alerts_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get notified within 150 m of a hidden gem'**
+  String get smart_alerts_subtitle;
+
+  /// No description provided for @smart_alerts_consent.
+  ///
+  /// In en, this message translates to:
+  /// **'EgyptLore uses background location to alert you when you are within 150 m of a hidden gem. You can turn this off at any time.'**
+  String get smart_alerts_consent;
+
+  /// No description provided for @smart_alerts_no_gems.
+  ///
+  /// In en, this message translates to:
+  /// **'No hidden gems are available to monitor right now.'**
+  String get smart_alerts_no_gems;
+
+  /// No description provided for @no_visited_places.
+  ///
+  /// In en, this message translates to:
+  /// **'No Visited Places'**
+  String get no_visited_places;
+
+  /// No description provided for @empty_visited_places_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Places you check in at will appear here.'**
+  String get empty_visited_places_sub;
+
+  /// No description provided for @no_visited_tours.
+  ///
+  /// In en, this message translates to:
+  /// **'No Visited Tours'**
+  String get no_visited_tours;
+
+  /// No description provided for @empty_visited_tours_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Tours you complete will appear here.'**
+  String get empty_visited_tours_sub;
+
+  /// No description provided for @ach_squad_explorer_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Squad Explorer'**
+  String get ach_squad_explorer_name;
+
+  /// No description provided for @ach_squad_explorer_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in while exploring with an active squad'**
+  String get ach_squad_explorer_desc;
+
+  /// No description provided for @squad_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Co-op Exploration'**
+  String get squad_title;
+
+  /// No description provided for @squad_active_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your active squad'**
+  String get squad_active_title;
+
+  /// No description provided for @squad_invite_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite friends and explore together'**
+  String get squad_invite_subtitle;
+
+  /// No description provided for @squad_start_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create or join a squad with a short code'**
+  String get squad_start_subtitle;
+
+  /// No description provided for @squad_create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a squad'**
+  String get squad_create;
+
+  /// No description provided for @squad_join.
+  ///
+  /// In en, this message translates to:
+  /// **'Join squad'**
+  String get squad_join;
+
+  /// No description provided for @squad_code_label.
+  ///
+  /// In en, this message translates to:
+  /// **'4-6 digit squad code'**
+  String get squad_code_label;
+
+  /// No description provided for @squad_copy_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy code'**
+  String get squad_copy_code;
+
+  /// No description provided for @squad_leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave squad'**
+  String get squad_leave;
+
+  /// Translation key: squad_members
+  ///
+  /// In en, this message translates to:
+  /// **'{n} members'**
+  String squad_members(String n);
+
+  /// No description provided for @squad_roster.
+  ///
+  /// In en, this message translates to:
+  /// **'Squad members'**
+  String get squad_roster;
+
+  /// No description provided for @squad_leader.
+  ///
+  /// In en, this message translates to:
+  /// **'Leader'**
+  String get squad_leader;
+
+  /// No description provided for @squad_you_leader.
+  ///
+  /// In en, this message translates to:
+  /// **'Leader · You'**
+  String get squad_you_leader;
+
+  /// No description provided for @squad_you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get squad_you;
+
+  /// No description provided for @squad_sign_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to create or join a squad.'**
+  String get squad_sign_in;
+
+  /// No description provided for @share_tour.
+  ///
+  /// In en, this message translates to:
+  /// **'Share completed tour'**
+  String get share_tour;
+
+  /// No description provided for @share_completed_tour.
+  ///
+  /// In en, this message translates to:
+  /// **'Tour completed'**
+  String get share_completed_tour;
+
+  /// Translation key: share_tour_details
+  ///
+  /// In en, this message translates to:
+  /// **'{places} places · {duration}'**
+  String share_tour_details(String places, String duration);
+
+  /// No description provided for @share_photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Share photo'**
+  String get share_photo;
+
+  /// No description provided for @share_place_photo.
+  ///
+  /// In en, this message translates to:
+  /// **'A moment from this place'**
+  String get share_place_photo;
+
+  /// No description provided for @share_card_footer.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover the story behind every place'**
+  String get share_card_footer;
+
+  /// No description provided for @share_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not prepare this share image. Please try again.'**
+  String get share_failed;
+
+  /// No description provided for @geo_select_first.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one place before enabling nearby alerts.'**
+  String get geo_select_first;
+
+  /// No description provided for @geo_background_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow background location?'**
+  String get geo_background_title;
+
+  /// No description provided for @geo_background_explanation.
+  ///
+  /// In en, this message translates to:
+  /// **'EgyptLore collects location data in the background to enable '**
+  String get geo_background_explanation;
+
+  /// No description provided for @privacy_policy_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacy_policy_title;
+
+  /// No description provided for @delete_account_public.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deletion instructions'**
+  String get delete_account_public;
+
+  /// No description provided for @public_link_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the page. Please try again later.'**
+  String get public_link_failed;
+
+  /// No description provided for @subscription_disclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Payment is charged to your Google Play account at confirmation. Manage or cancel anytime in Google Play > Payments & subscriptions. Deleting your EgyptLore account does not cancel an active subscription.'**
+  String get subscription_disclosure;
+
+  /// No description provided for @terms_of_service_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get terms_of_service_title;
+
+  /// No description provided for @profile_legal_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings & Legal'**
+  String get profile_legal_title;
+
+  /// No description provided for @delete_account_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get delete_account_title;
+
+  /// No description provided for @delete_account_warning.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes your account, personal data, saved items, and check-ins. Your EgyptLore Pro access will be lost. Deleting the account does not cancel or refund billing managed by Apple or Google; cancel any active subscription in your store settings first. This action cannot be undone.'**
+  String get delete_account_warning;
+
+  /// No description provided for @delete_account_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my account'**
+  String get delete_account_confirm;
+
+  /// No description provided for @delete_account_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account could not be deleted. Please try again.'**
+  String get delete_account_failed;
+
+  /// No description provided for @geo_enable.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get geo_enable;
+
+  /// No description provided for @geo_read_privacy_policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the Privacy Policy'**
+  String get geo_read_privacy_policy;
+
+  /// No description provided for @geo_background_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Background location was not allowed. You can enable it in Settings.'**
+  String get geo_background_denied;
+
+  /// No description provided for @geo_notifications_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are disabled. Enable them in Settings to receive nearby alerts.'**
+  String get geo_notifications_denied;
+
+  /// No description provided for @geo_unsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby alerts are not supported on this device.'**
+  String get geo_unsupported;
+
+  /// No description provided for @geo_start_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby alerts could not be started. Please try again.'**
+  String get geo_start_failed;
+
+  /// No description provided for @checkin_too_far.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to be within 100 meters of this place to check in.'**
+  String get checkin_too_far;
+
+  /// No description provided for @checkin_location_permission.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow location access to verify your check-in.'**
+  String get checkin_location_permission;
+
+  /// No description provided for @checkin_location_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on location services to check in.'**
+  String get checkin_location_disabled;
+
+  /// No description provided for @checkin_location_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Your location could not be verified. Please try again.'**
+  String get checkin_location_unavailable;
+
+  /// No description provided for @checkin_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in could not be saved'**
+  String get checkin_save_failed;
+
+  /// Translation key: tour_progress
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} places visited'**
+  String tour_progress(String done, String total);
+
+  /// No description provided for @chat_send_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send your message. Please try again.'**
+  String get chat_send_failed;
+
+  /// No description provided for @chat_sign_in_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with an account to join the chat.'**
+  String get chat_sign_in_required;
+
+  /// No description provided for @map_offline_fallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline guidance: showing a straight-line route to your destination.'**
+  String get map_offline_fallback;
+
+  /// No description provided for @map_cached_road_route.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline map: showing the cached road route to your destination.'**
+  String get map_cached_road_route;
+
+  /// Translation key: map_straight_line_distance
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} away · bearing {bearing}°'**
+  String map_straight_line_distance(String distance, String bearing);
+
+  /// No description provided for @tour_pro.
+  ///
+  /// In en, this message translates to:
+  /// **'EgyptLore Pro'**
+  String get tour_pro;
+
+  /// No description provided for @tour_pro_locked.
+  ///
+  /// In en, this message translates to:
+  /// **'This tour is part of EgyptLore Pro. Hidden Gems and Premium Tours are for Pro members.'**
+  String get tour_pro_locked;
+
+  /// No description provided for @pro_title.
+  ///
+  /// In en, this message translates to:
+  /// **'EgyptLore Pro'**
+  String get pro_title;
+
+  /// No description provided for @pro_detected_offerings.
+  ///
+  /// In en, this message translates to:
+  /// **'Detected offerings:'**
+  String get pro_detected_offerings;
+
+  /// No description provided for @pro_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover more of the stories behind your city.'**
+  String get pro_subtitle;
+
+  /// No description provided for @pro_benefit_hidden_gems.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden Gems and Premium Tours'**
+  String get pro_benefit_hidden_gems;
+
+  /// No description provided for @pro_benefit_premium_tours.
+  ///
+  /// In en, this message translates to:
+  /// **'Curated Premium Tours from local experts'**
+  String get pro_benefit_premium_tours;
+
+  /// No description provided for @pro_benefit_ai.
+  ///
+  /// In en, this message translates to:
+  /// **'50 AI Questions daily'**
+  String get pro_benefit_ai;
+
+  /// No description provided for @pro_benefit_offline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline Downloads'**
+  String get pro_benefit_offline;
+
+  /// No description provided for @pro_benefit_badges.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclusive Pro Badges'**
+  String get pro_benefit_badges;
+
+  /// No description provided for @pro_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Explorer Pass'**
+  String get pro_weekly;
+
+  /// No description provided for @pro_weekly_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro access for one week'**
+  String get pro_weekly_description;
+
+  /// No description provided for @pro_weekly_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'WEEKLY PLAN'**
+  String get pro_weekly_badge;
+
+  /// No description provided for @pro_weekly_price.
+  ///
+  /// In en, this message translates to:
+  /// **'49 EGP / week'**
+  String get pro_weekly_price;
+
+  /// No description provided for @pro_monthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly Pro Plan'**
+  String get pro_monthly;
+
+  /// No description provided for @pro_monthly_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect for short trips'**
+  String get pro_monthly_description;
+
+  /// No description provided for @pro_monthly_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'MOST POPULAR'**
+  String get pro_monthly_badge;
+
+  /// No description provided for @pro_monthly_price.
+  ///
+  /// In en, this message translates to:
+  /// **'99 EGP / month'**
+  String get pro_monthly_price;
+
+  /// No description provided for @pro_annual.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual Pro Plan'**
+  String get pro_annual;
+
+  /// No description provided for @pro_annual_description.
+  ///
+  /// In en, this message translates to:
+  /// **'One year of complete Pro access'**
+  String get pro_annual_description;
+
+  /// No description provided for @pro_annual_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'BEST VALUE · SAVE 40%'**
+  String get pro_annual_badge;
+
+  /// No description provided for @pro_annual_price.
+  ///
+  /// In en, this message translates to:
+  /// **'699 EGP / year'**
+  String get pro_annual_price;
+
+  /// No description provided for @pro_annual_monthly_equivalent.
+  ///
+  /// In en, this message translates to:
+  /// **'Equivalent to ~58 EGP / month'**
+  String get pro_annual_monthly_equivalent;
+
+  /// Translation key: pro_billing_period
+  ///
+  /// In en, this message translates to:
+  /// **'Billed every {period}'**
+  String pro_billing_period(String period);
+
+  /// No description provided for @pro_period_day.
+  ///
+  /// In en, this message translates to:
+  /// **'day'**
+  String get pro_period_day;
+
+  /// Translation key: pro_period_days
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String pro_period_days(String count);
+
+  /// No description provided for @pro_period_week.
+  ///
+  /// In en, this message translates to:
+  /// **'week'**
+  String get pro_period_week;
+
+  /// Translation key: pro_period_weeks
+  ///
+  /// In en, this message translates to:
+  /// **'{count} weeks'**
+  String pro_period_weeks(String count);
+
+  /// No description provided for @pro_period_month.
+  ///
+  /// In en, this message translates to:
+  /// **'month'**
+  String get pro_period_month;
+
+  /// Translation key: pro_period_months
+  ///
+  /// In en, this message translates to:
+  /// **'{count} months'**
+  String pro_period_months(String count);
+
+  /// No description provided for @pro_period_year.
+  ///
+  /// In en, this message translates to:
+  /// **'year'**
+  String get pro_period_year;
+
+  /// Translation key: pro_period_years
+  ///
+  /// In en, this message translates to:
+  /// **'{count} years'**
+  String pro_period_years(String count);
+
+  /// No description provided for @pro_includes_free.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in Free, plus:'**
+  String get pro_includes_free;
+
+  /// No description provided for @pro_subscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose this plan'**
+  String get pro_subscribe;
+
+  /// No description provided for @pro_store_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure purchase through the App Store or Google Play.'**
+  String get pro_store_note;
+
+  /// No description provided for @pro_setup_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro subscriptions are coming soon. Stay tuned for the official launch!'**
+  String get pro_setup_note;
+
+  /// No description provided for @pro_coming_soon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get pro_coming_soon;
+
+  /// No description provided for @pro_setup_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases are not configured yet. Add the RevenueCat public SDK keys to enable them.'**
+  String get pro_setup_required;
+
+  /// No description provided for @pro_sign_in_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to subscribe to EgyptLore Pro.'**
+  String get pro_sign_in_required;
+
+  /// No description provided for @pro_offering_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This purchase option is not available right now.'**
+  String get pro_offering_unavailable;
+
+  /// No description provided for @pro_purchase_success.
+  ///
+  /// In en, this message translates to:
+  /// **'EgyptLore Pro is active. Enjoy exploring!'**
+  String get pro_purchase_success;
+
+  /// No description provided for @pro_purchase_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase received. Pro access will activate after verification.'**
+  String get pro_purchase_pending;
+
+  /// No description provided for @pro_purchase_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The purchase could not be completed. Please try again.'**
+  String get pro_purchase_failed;
+
+  /// No description provided for @pro_member.
+  ///
+  /// In en, this message translates to:
+  /// **'EgyptLore Pro Member'**
+  String get pro_member;
+
+  /// No description provided for @pro_tier_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get pro_tier_weekly;
+
+  /// No description provided for @pro_tier_monthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get pro_tier_monthly;
+
+  /// No description provided for @pro_tier_annual.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual'**
+  String get pro_tier_annual;
+
+  /// No description provided for @pro_tier_lifetime.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifetime'**
+  String get pro_tier_lifetime;
+
+  /// No description provided for @pro_member_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your membership is active'**
+  String get pro_member_subtitle;
+
+  /// No description provided for @restore_purchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Purchases'**
+  String get restore_purchases;
+
+  /// No description provided for @restore_sign_in_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to restore your EgyptLore Pro purchases.'**
+  String get restore_sign_in_required;
+
+  /// No description provided for @restore_setup_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase restoration is not available right now.'**
+  String get restore_setup_required;
+
+  /// No description provided for @restore_none_found.
+  ///
+  /// In en, this message translates to:
+  /// **'No previous Pro purchases were found.'**
+  String get restore_none_found;
+
+  /// No description provided for @restore_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Your EgyptLore Pro purchases have been restored.'**
+  String get restore_success;
+
+  /// No description provided for @restore_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase restored. Pro access will activate after verification.'**
+  String get restore_pending;
+
+  /// No description provided for @restore_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases could not be restored. Please try again.'**
+  String get restore_failed;
+
+  /// No description provided for @tour_visited.
+  ///
+  /// In en, this message translates to:
+  /// **'Visited'**
+  String get tour_visited;
+
+  /// No description provided for @google_sha1_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-In setup error (Code 10). Contact developer.'**
+  String get google_sha1_error;
+
+  /// No description provided for @google_config_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-In not configured properly. Try email login.'**
+  String get google_config_error;
+
+  /// No description provided for @google_network_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Check your connection.'**
+  String get google_network_error;
+
+  /// No description provided for @google_general_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-In failed. Try email login instead.'**
+  String get google_general_error;
 }
 
 class _AppLocalizationsDelegate

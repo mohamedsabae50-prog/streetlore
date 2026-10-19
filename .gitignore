@@ -70,6 +70,7 @@ keystore.b64
 *.jks
 *.keystore
 release_v2.keystore
+/android/key.properties
 android/build/
 reports/
 scripts/sync_authentic_place_images.dryrun.log

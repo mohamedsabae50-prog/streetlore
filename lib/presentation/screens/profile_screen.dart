@@ -324,75 +324,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _editName(BuildContext context, AuthProvider auth) async {
     final ctrl = TextEditingController(text: auth.userName);
     final formKey = GlobalKey<FormState>();
-    final newName = await showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: Theme.of(ctx).cardColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            context.tr('edit_name_dialog_title'),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-          ),
-          content: Form(
-            key: formKey,
-            child: TextFormField(
-              controller: ctrl,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              maxLength: 24,
-              decoration: InputDecoration(
-                labelText: context.tr('login_full_name'),
-                prefixIcon: const Icon(Icons.badge_outlined),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+    String? newName;
+    try {
+      newName = await showDialog<String>(
+        context: context,
+        builder: (ctx) {
+          return AlertDialog(
+            backgroundColor: Theme.of(ctx).cardColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text(
+              context.tr('edit_name_dialog_title'),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            content: Form(
+              key: formKey,
+              child: TextFormField(
+                controller: ctrl,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                maxLength: 24,
+                decoration: InputDecoration(
+                  labelText: context.tr('login_full_name'),
+                  prefixIcon: const Icon(Icons.badge_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  counterText: '',
                 ),
-                counterText: '',
-              ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return context.tr('login_err_name');
-                }
-                return null;
-              },
-              onFieldSubmitted: (_) {
-                if (formKey.currentState!.validate()) {
-                  Navigator.of(ctx).pop(ctrl.text);
-                }
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(
-                context.tr('cancel'),
-                style: TextStyle(color: context.textSec),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return context.tr('login_err_name');
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (_) {
+                  if (formKey.currentState!.validate()) {
+                    Navigator.of(ctx).pop(ctrl.text);
+                  }
+                },
               ),
             ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(
+                  context.tr('cancel'),
+                  style: TextStyle(color: context.textSec),
                 ),
               ),
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.of(ctx).pop(ctrl.text);
-                }
-              },
-              child: Text(
-                context.tr('sign_in_continue'),
-                style: const TextStyle(fontWeight: FontWeight.w700),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    Navigator.of(ctx).pop(ctrl.text);
+                  }
+                },
+                child: Text(
+                  context.tr('sign_in_continue'),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
-            ),
-          ],
-        );
-      },
-    );
+            ],
+          );
+        },
+      );
+    } finally {
+      ctrl.dispose();
+    }
     if (newName == null || newName.trim().isEmpty) return;
     if (!mounted) return;
     await auth.updateGuestName(newName);

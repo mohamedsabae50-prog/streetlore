@@ -48,20 +48,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get suggest_place_success => 'Your place suggestion was submitted.';
 
   @override
-  String get ai_add_all => 'Add all to Trip Planner';
-
-  @override
-  String ai_added_to_planner(String n) {
-    return 'Added $n places to your Trip Planner';
-  }
-
-  @override
-  String get ai_budget => 'Budget';
-
-  @override
-  String get ai_days => 'Days';
-
-  @override
   String get ai_daily_limit_body =>
       'Your free messages reset at midnight UTC. Upgrade to Pro for higher AI limits.';
 
@@ -76,76 +62,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ai_quota_reset_utc => 'Resets at midnight UTC';
 
   @override
-  String ai_days_count(String n) {
-    return '$n days';
-  }
-
-  @override
-  String get ai_err_empty => 'Please describe what kind of trip you want.';
-
-  @override
-  String ai_err_failed(String e) {
-    return 'Failed to generate: $e';
-  }
-
-  @override
-  String get ai_generate => 'Generate Itinerary';
-
-  @override
-  String get ai_generating => 'Generating...';
-
-  @override
-  String get ai_local_tips => 'Local tips';
-
-  @override
-  String get ai_planner_title => 'Smart Trip Planner';
-
-  @override
-  String get ai_prompt_hint => 'e.g. two days, mid-budget, love history';
-
-  @override
-  String get ai_prompt_title => 'Tell us about your trip';
-
-  @override
-  String get ai_sugg_1 => 'Two days, mid-budget, love history and seafood';
-
-  @override
-  String get ai_sugg_2 => 'One relaxed day focused on cafés and the corniche';
-
-  @override
-  String get ai_sugg_3 => 'Three days off the beaten path, hidden gems only';
-
-  @override
-  String get ai_sugg_4 => 'A family day with kid-friendly museums and a beach';
-
-  @override
   String get all_places => 'All Places';
-
-  @override
-  String get badge_streak_10 => '10 Visits';
-
-  @override
-  String get badge_streak_25 => '25 Visits';
-
-  @override
-  String get badge_streak_5 => '5 Visits';
-
-  @override
-  String get badge_streak_50 => '50 Visits';
-
-  @override
-  String badge_unlocked(String name) {
-    return 'Badge unlocked: $name 🏅';
-  }
 
   @override
   String get badges_title => 'Badges';
 
   @override
   String get browse_tours => 'Browse Tours';
-
-  @override
-  String get bt_daylight => 'Daylight';
 
   @override
   String get bt_label_decent_now => 'Decent now';
@@ -157,16 +80,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bt_label_wait => 'Wait for a better window';
 
   @override
-  String get bt_ranked_now => 'Ranked for right now';
-
-  @override
   String get bt_reason_best_photos => 'Best for photos';
 
   @override
   String get bt_reason_breakfast => 'Breakfast spots';
-
-  @override
-  String get bt_reason_brunch => 'Brunch time';
 
   @override
   String get bt_reason_closed => 'Closed';
@@ -211,34 +128,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bt_reason_too_early => 'Too early';
 
   @override
-  String get bt_reason_too_late => 'Too late';
-
-  @override
   String get bt_reason_warm_ok => 'Warm but ok';
-
-  @override
-  String bt_sub_great(String day, String n, String s) {
-    return '$day — $n place$s glowing right now';
-  }
-
-  @override
-  String bt_sub_okay(String day, String n, String s) {
-    return '$day — $n decent pick$s if you hurry';
-  }
-
-  @override
-  String bt_sub_quiet(String day) {
-    return '$day — quiet time, plan for later';
-  }
-
-  @override
-  String get bt_sunrise => 'Sunrise';
-
-  @override
-  String get bt_sunset => 'Sunset';
-
-  @override
-  String get bt_title => 'Best Time to Visit';
 
   @override
   String get budget_friendly => 'Budget-friendly';
@@ -332,16 +222,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get community_reviews => 'Community Reviews';
 
   @override
-  String get compass_sub =>
-      'Discover the city with a sweeping animated compass that grows into place.';
-
-  @override
-  String get compass_title => 'Compass direction';
-
-  @override
-  String get copy_link => 'Copy Link';
-
-  @override
   String get cur_amount => 'Amount';
 
   @override
@@ -368,27 +248,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dark_theme_on => 'Dark theme enabled';
-
-  @override
-  String get day_fri => 'Fri';
-
-  @override
-  String get day_mon => 'Mon';
-
-  @override
-  String get day_sat => 'Sat';
-
-  @override
-  String get day_sun => 'Sun';
-
-  @override
-  String get day_thu => 'Thu';
-
-  @override
-  String get day_tue => 'Tue';
-
-  @override
-  String get day_wed => 'Wed';
 
   @override
   String get delete => 'Delete';
@@ -498,9 +357,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Category is required (e.g. ATM, Hotel, Cafe)';
 
   @override
-  String get admin_err_address => 'Address is required';
-
-  @override
   String get admin_submit => 'Add to map';
 
   @override
@@ -540,32 +396,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get featured => 'Featured';
 
   @override
-  String get filter_cheapest => 'Cheapest';
-
-  @override
   String get filter_free => 'Free only';
 
   @override
   String get filter_hidden_gems => 'Hidden Gems';
 
   @override
-  String get filter_nearest => 'Nearest';
-
-  @override
-  String get filter_open_now => 'Open Now';
-
-  @override
   String get first_photo => 'Be the first to share a photo';
 
   @override
   String get foreigners => 'Foreigners';
-
-  @override
-  String get free_banner_sub =>
-      'All tours, places & guides are unlocked for everyone.';
-
-  @override
-  String get free_banner_title => 'Everything is free';
 
   @override
   String get passion_banner_title => 'A compass for every story worth telling';
@@ -615,16 +455,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get greet_morning => 'Good Morning';
-
-  @override
-  String get greet_night => 'Good night';
-
-  @override
-  String get guest_dialog_sub =>
-      'Other travellers will see this name on the leaderboard. You can change it later.';
-
-  @override
-  String get guest_dialog_title => 'Pick a display name';
 
   @override
   String get help_center => 'Help Center';
@@ -697,14 +527,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String lb_row_sub(String v, String r) {
-    return '$v visited · $r reviews';
-  }
-
-  @override
-  String get lb_subtitle => 'Most travelled around the world';
-
-  @override
   String get lb_title => 'Leaderboard';
 
   @override
@@ -737,17 +559,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Location services are off. Turn them on to see what is around you.';
 
   @override
-  String get location_denied =>
-      'Location permission denied. Enable it to see local weather.';
-
-  @override
   String get location_services => 'Location Services';
 
   @override
   String get location_services_sub => 'Used for nearby recommendations';
-
-  @override
-  String get login_continue_guest => 'Continue as Guest';
 
   @override
   String get login_email => 'Email Address';
@@ -798,9 +613,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get login_google => 'Google';
 
   @override
-  String get login_google_signed_in => 'Signed in with Google (local).';
-
-  @override
   String get login_google_unavailable =>
       'Google sign-in unavailable. Use email or continue as guest.';
 
@@ -842,15 +654,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get login_sign_up => 'Sign Up';
 
   @override
-  String get login_guest_name => 'Guest Explorer';
-
-  @override
-  String get login_just_exploring => 'Just exploring? ';
-
-  @override
-  String get login_name_hint => 'e.g. Ahmed Hassan';
-
-  @override
   String get login_or => 'or';
 
   @override
@@ -867,23 +670,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get map_close => 'Close';
 
   @override
-  String get map_err_location => 'Something went wrong while locating you.';
-
-  @override
-  String get map_err_location_denied =>
-      'Location permission is required to show the route.';
-
-  @override
-  String get map_err_location_denied_forever =>
-      'Location permission is permanently denied. Please enable it in Settings.';
-
-  @override
-  String get map_err_offline => 'Check your internet connection.';
-
-  @override
-  String get map_err_route => 'Failed to load the road route.';
-
-  @override
   String get map_my_location => 'My location';
 
   @override
@@ -898,9 +684,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get map_view => 'Map View';
 
   @override
-  String get map_view_sub => 'All places on interactive map';
-
-  @override
   String get message => 'Message';
 
   @override
@@ -910,22 +693,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nav_profile => 'Profile';
 
   @override
-  String get nav_saved => 'Saved';
-
-  @override
   String get nav_tours => 'Tours';
-
-  @override
-  String get nearby_gems => 'Nearby Hidden Gems';
 
   @override
   String get nearby_places => 'Nearby Places';
 
   @override
   String get trip_visited => 'Visited';
-
-  @override
-  String get trip_planned => 'Planned';
 
   @override
   String get trip_visited_badge => 'Visited';
@@ -1004,31 +778,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ob_title_3 => 'Save & Revisit';
 
   @override
-  String get offline_available => 'Available to download';
-
-  @override
-  String get offline_download => 'Download';
-
-  @override
-  String get offline_downloaded => 'Downloaded';
-
-  @override
-  String get offline_hero_title => 'Travel without signal';
-
-  @override
-  String offline_mb_downloaded(String n) {
-    return '$n MB downloaded';
-  }
-
-  @override
-  String offline_pack_size(String mb, String n) {
-    return '$mb MB · $n places';
-  }
-
-  @override
-  String get offline_title => 'Offline Mode';
-
-  @override
   String get open_now => 'Open Now';
 
   @override
@@ -1091,9 +840,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get push_notif_sub => 'Get tips and discoveries';
 
   @override
-  String get quick_ai_trip => 'AI Trip';
-
-  @override
   String get quick_badges => 'Badges';
 
   @override
@@ -1103,28 +849,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get best_time_admin_hint => 'Set by the editorial team';
 
   @override
-  String get quick_chat => 'Live Chat';
-
-  @override
-  String get quick_journal => 'Journal';
-
-  @override
   String get quick_map => 'Map';
-
-  @override
-  String get quick_offline => 'Offline';
-
-  @override
-  String get quick_prayer => 'Prayer';
 
   @override
   String get quick_ranking => 'Ranking';
 
   @override
   String get quick_routes => 'Routes';
-
-  @override
-  String get quick_transport => 'Transport';
 
   @override
   String get rate_app => 'Rate EgyptLore';
@@ -1191,9 +922,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get section_app_settings => 'App Settings';
-
-  @override
-  String get see_all => 'See all';
 
   @override
   String get share_app => 'Share EgyptLore';
@@ -1264,21 +992,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tour_duration => 'Duration';
 
   @override
-  String get tour_filter_all => 'All';
-
-  @override
-  String get tour_filter_full => 'Full day';
-
-  @override
-  String get tour_filter_half => 'Half day';
-
-  @override
-  String get tour_filter_short => 'Up to 3h';
-
-  @override
-  String get tour_free => 'Free';
-
-  @override
   String tour_guide_hint(String name) {
     return 'Ask about $name...';
   }
@@ -1293,9 +1006,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tour_no_locations => 'No locations available for this tour.';
-
-  @override
-  String get tour_none_in_filter => 'No tours in this category';
 
   @override
   String get tour_removed_offline => 'Tour removed from offline access';
@@ -1337,81 +1047,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tours_title => 'Guided Tours';
 
   @override
-  String get transport_bus_routes => 'Bus Routes';
-
-  @override
-  String get transport_hero =>
-      'Get around Alexandria with microbuses, buses, and taxis';
-
-  @override
-  String get transport_micro_desc =>
-      'Shared 14-seater vans. Fixed routes, cheap.';
-
-  @override
-  String get transport_micro_s1 => 'Set routes';
-
-  @override
-  String get transport_micro_s2 => 'Wave to board';
-
-  @override
-  String get transport_micro_title => 'Microbus (Servis)';
-
-  @override
-  String get transport_pro_tip =>
-      'Pro tip: Microbuses (servis) are the cheapest way along the Corniche — wave to board, and pay the driver directly when you get off.';
-
-  @override
-  String get transport_stops => 'Stops:';
-
-  @override
-  String get transport_taxi => 'Taxi';
-
-  @override
-  String get transport_taxi_desc =>
-      'Hail on the street or order by phone. Ask for the meter or agree the fare before you ride.';
-
-  @override
-  String get transport_taxi_price => 'Meter: EGP 7-10 base + EGP 3/km';
-
-  @override
-  String get transport_taxi_s1 => 'Available citywide';
-
-  @override
-  String get transport_taxi_s2 => 'Black & yellow cabs';
-
-  @override
-  String get transport_taxi_section => 'Taxis & Microbuses';
-
-  @override
-  String get transport_uber_desc =>
-      'App-based. Cash or card. Surge pricing at peak hours.';
-
-  @override
-  String get transport_uber_price => 'EGP 30-100+ depending on distance';
-
-  @override
-  String get transport_uber_s1 => 'Download app';
-
-  @override
-  String get transport_uber_s2 => 'Set pickup & drop-off';
-
-  @override
   String get travel_journal => 'Travel Journal';
 
   @override
   String get travel_journal_sub => 'Save memories, notes & photos';
-
-  @override
-  String get trip_clear_all => 'Clear All';
-
-  @override
-  String get trip_empty =>
-      'Your trip is empty.\\nAdd places from the explore screen!';
-
-  @override
-  String trip_places_planned(String n) {
-    return '$n Places Planned';
-  }
 
   @override
   String get trip_title => 'My Trip Planner';
@@ -1583,4 +1222,901 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ach_completionist_desc => 'Unlock 20 different achievements';
+
+  @override
+  String get downloaded => 'Downloaded';
+
+  @override
+  String get downloading_offline => 'Downloading...';
+
+  @override
+  String get download_failed => 'Offline download failed. Please try again.';
+
+  @override
+  String get downloading_tour_offline => 'Downloading tour for offline use…';
+
+  @override
+  String get no_internet_title => 'No Internet Connection';
+
+  @override
+  String get no_internet_message =>
+      'Please reconnect to the internet to load the latest places and stories.';
+
+  @override
+  String get no_internet_retry => 'Try Again';
+
+  @override
+  String get offline_mode_notice =>
+      'Offline Mode: Your saved places are available.';
+
+  @override
+  String get ai_tour_guide => 'EgyptLore AI';
+
+  @override
+  String get ai_guide_general_title => 'EgyptLore AI';
+
+  @override
+  String get ai_guide_welcome_en =>
+      'Hi! I\'m EgyptLore AI. Ask me anything about places to ';
+
+  @override
+  String get ai_guide_thinking => 'Thinking…';
+
+  @override
+  String get ai_guide_hint => 'Ask about places, food, history…';
+
+  @override
+  String get ai_quota_loading => 'Loading AI quota…';
+
+  @override
+  String get ai_quota_unavailable => 'AI quota unavailable';
+
+  @override
+  String ai_quota_remaining(String remaining, String limit) {
+    return '$remaining of $limit AI calls remaining';
+  }
+
+  @override
+  String get ai_quota_retry => 'Retry';
+
+  @override
+  String get admin_ai_chat_logs => 'AI Chat Logs';
+
+  @override
+  String admin_ai_chat_exchange(String count) {
+    return '$count AI exchange';
+  }
+
+  @override
+  String admin_ai_chat_exchanges(String count) {
+    return '$count AI exchanges';
+  }
+
+  @override
+  String get admin_ai_chat_user => 'User';
+
+  @override
+  String get admin_ai_chat_assistant => 'AI';
+
+  @override
+  String get admin_ai_chat_empty => 'No AI chat sessions yet';
+
+  @override
+  String admin_ai_chat_retry_error(String error) {
+    return 'Could not load more chat threads: $error';
+  }
+
+  @override
+  String get max_route_places => 'Max 5 places per route';
+
+  @override
+  String get weather_unavailable =>
+      'Current weather is unavailable. Check your location and connection.';
+
+  @override
+  String get pro_monthly_reward_title =>
+      'Finish #1 Top Visitor of the Month and earn 1 Month of Pro FREE!';
+
+  @override
+  String pro_monthly_reward_countdown(String days, String hours) {
+    return '${days}d ${hours}h left this month';
+  }
+
+  @override
+  String get pro_monthly_reward_cta => 'Suggest a Hidden Gem';
+
+  @override
+  String get pro_hidden_gem_reward =>
+      'If our team approves your Hidden Gem, we’ll automatically add 30 days of Pro to your account for FREE.';
+
+  @override
+  String get share_place => 'Share this place';
+
+  @override
+  String get weather_clear_sky => 'Clear sky';
+
+  @override
+  String get weather_mainly_clear => 'Mainly clear';
+
+  @override
+  String get weather_partly_cloudy => 'Partly cloudy';
+
+  @override
+  String get weather_overcast => 'Overcast';
+
+  @override
+  String get weather_rain_possible => 'Rain possible';
+
+  @override
+  String get weather_rain => 'Rain';
+
+  @override
+  String get weather_drizzle => 'Drizzle';
+
+  @override
+  String get weather_thunderstorm => 'Thunderstorm';
+
+  @override
+  String get weather_snow => 'Snow';
+
+  @override
+  String get weather_fog => 'Fog';
+
+  @override
+  String get weather_unknown => 'Current conditions';
+
+  @override
+  String get lb_city_title => 'King of Alexandria';
+
+  @override
+  String get lb_period_week => 'Weekly';
+
+  @override
+  String get lb_period_month => 'Monthly';
+
+  @override
+  String get lb_period_all_time => 'All time';
+
+  @override
+  String get lb_metric_checkins => 'Check-ins';
+
+  @override
+  String get lb_metric_streak => 'Longest streak';
+
+  @override
+  String get lb_metric_gems => 'Hidden gems';
+
+  @override
+  String get lb_stat_checkins => 'check-ins';
+
+  @override
+  String get lb_stat_streak => 'day streak';
+
+  @override
+  String get lb_stat_gems => 'hidden gems';
+
+  @override
+  String lb_badge_rank(String level) {
+    return '$level rank';
+  }
+
+  @override
+  String get lb_try_again => 'Try again';
+
+  @override
+  String get username_title => 'Choose your username';
+
+  @override
+  String get username_subtitle =>
+      'This unique name helps other explorers find and follow you.';
+
+  @override
+  String get username_label => 'Username';
+
+  @override
+  String get username_requirements =>
+      'Use 3-20 letters, numbers, dots, underscores, or hyphens. Start with a letter or number.';
+
+  @override
+  String get username_continue => 'Continue';
+
+  @override
+  String get username_taken => 'That username is already taken. Try another.';
+
+  @override
+  String get username_save_failed =>
+      'We could not save your username. Please try again.';
+
+  @override
+  String get username_check_failed =>
+      'We could not verify your account profile. Check your connection and try again.';
+
+  @override
+  String get users_search_title => 'Search Users';
+
+  @override
+  String get users_suggested_title => 'Suggested explorers';
+
+  @override
+  String get users_suggestions_empty => 'No explorers are available yet.';
+
+  @override
+  String get suggest_hidden_gem => 'Suggest a Hidden Gem';
+
+  @override
+  String get suggest_hidden_gem_subtitle =>
+      'Share a special place with our team';
+
+  @override
+  String get users_search_subtitle =>
+      'Find explorers and manage your friend requests';
+
+  @override
+  String get users_search_hint => 'Search usernames';
+
+  @override
+  String get users_search_min_length =>
+      'Enter at least two characters to search.';
+
+  @override
+  String get users_search_failed => 'User search failed. Please try again.';
+
+  @override
+  String get users_search_empty => 'No users found. Try another username.';
+
+  @override
+  String get users_search_results => 'Search results';
+
+  @override
+  String get users_sign_in_required =>
+      'Sign in to find and add other explorers as friends.';
+
+  @override
+  String get user_profile_title => 'Explorer Profile';
+
+  @override
+  String get profile_visited_places => 'Places visited';
+
+  @override
+  String get profile_no_visits => 'No shared visits to show yet.';
+
+  @override
+  String get profile_visits_failed =>
+      'Could not load visited places. Please try again.';
+
+  @override
+  String get send_friend_request => 'Add friend';
+
+  @override
+  String get incoming_request => 'Incoming request';
+
+  @override
+  String get friend_request_pending => 'Request pending';
+
+  @override
+  String get cancel_friend_request => 'Cancel request';
+
+  @override
+  String get incoming_friend_requests => 'Incoming Friend Requests';
+
+  @override
+  String get sent_friend_requests => 'Sent Requests';
+
+  @override
+  String get friends_list_title => 'Friends';
+
+  @override
+  String get accept_friend_request => 'Accept';
+
+  @override
+  String get decline_friend_request => 'Decline';
+
+  @override
+  String get remove_friend => 'Remove friend';
+
+  @override
+  String get remove_friend_title => 'Remove this friend?';
+
+  @override
+  String get remove_friend_confirmation =>
+      'You will no longer share friend activity with each other.';
+
+  @override
+  String get friend_location_activity_sharing =>
+      'Share my location and activity with this friend';
+
+  @override
+  String get friends_load_failed => 'Could not load friends and requests.';
+
+  @override
+  String get friend_action_failed =>
+      'Could not update this friend request. Please try again.';
+
+  @override
+  String get follow_action_failed =>
+      'Could not update follow status. Please try again.';
+
+  @override
+  String get share_location_activity =>
+      'Share my location & activity with friends';
+
+  @override
+  String get share_location_activity_subtitle =>
+      'Friends can see visited places and activity only while this is on.';
+
+  @override
+  String get privacy_settings_failed => 'Could not load privacy settings.';
+
+  @override
+  String get privacy_settings_save_failed =>
+      'Could not save privacy settings. Please try again.';
+
+  @override
+  String get avatar_upload_failed =>
+      'Could not upload your profile picture. Please try again.';
+
+  @override
+  String get profile_friends => 'friends';
+
+  @override
+  String get profile_no_public_badges => 'No badges earned yet';
+
+  @override
+  String get badge_earned_fallback => 'Explorer badge';
+
+  @override
+  String get feed_title => 'Activity';
+
+  @override
+  String get feed_header_subtitle => 'See what your community is exploring';
+
+  @override
+  String get feed_header_title => 'Your community';
+
+  @override
+  String get feed_updates => 'updates';
+
+  @override
+  String get feed_filter_all => 'All';
+
+  @override
+  String get feed_filter_checkin => 'Check-ins';
+
+  @override
+  String get feed_filter_badge => 'Badges';
+
+  @override
+  String get feed_filter_suggestion => 'Suggestions';
+
+  @override
+  String get feed_filter_empty => 'No activity in this category yet.';
+
+  @override
+  String get feed_today => 'Today';
+
+  @override
+  String get feed_yesterday => 'Yesterday';
+
+  @override
+  String get feed_empty =>
+      'No recent activity yet. Add friends to see their check-ins, badges, and approved place suggestions.';
+
+  @override
+  String get feed_load_failed =>
+      'Could not load the activity feed. Please try again.';
+
+  @override
+  String get feed_action_checkin => 'visited';
+
+  @override
+  String get feed_action_badge => 'unlocked a badge';
+
+  @override
+  String get feed_action_suggestion => 'suggested a place';
+
+  @override
+  String get report_title => 'Report content';
+
+  @override
+  String get report_photo_title => 'Report Photo';
+
+  @override
+  String get photo_report_reason_inappropriate => 'Inappropriate content';
+
+  @override
+  String get photo_report_reason_unrelated => 'Not related to this place';
+
+  @override
+  String get photo_report_reason_offensive => 'Offensive/Abuse';
+
+  @override
+  String get photo_report_reason_other => 'Other';
+
+  @override
+  String get photo_report_submitted =>
+      'Photo reported. It has been hidden from your gallery.';
+
+  @override
+  String get photo_report_failed =>
+      'Could not report this photo. Please try again.';
+
+  @override
+  String get report_reason_prompt => 'Why are you reporting this?';
+
+  @override
+  String get report_reason_inappropriate => 'Inappropriate content';
+
+  @override
+  String get report_reason_spam => 'Spam';
+
+  @override
+  String get report_reason_harassment => 'Harassment';
+
+  @override
+  String get report_reason_false_info => 'False information';
+
+  @override
+  String get report_reason_other => 'Other';
+
+  @override
+  String get report_submit => 'Submit report';
+
+  @override
+  String get report_submitted =>
+      'Thanks. Your report was submitted for review.';
+
+  @override
+  String get report_failed => 'Could not submit your report. Please try again.';
+
+  @override
+  String get block_user => 'Block user';
+
+  @override
+  String get unblock_user => 'Unblock user';
+
+  @override
+  String get block_user_title => 'Block this user?';
+
+  @override
+  String get block_user_confirmation =>
+      'Their community photos and activity will be hidden from you.';
+
+  @override
+  String get user_blocked => 'User blocked. Their content is now hidden.';
+
+  @override
+  String get block_user_failed =>
+      'Could not update the block list. Please try again.';
+
+  @override
+  String get blocked_profile_hidden =>
+      'This user is blocked. Unblock them to view their profile and activity.';
+
+  @override
+  String get smart_alerts_title => 'Smart Location Alerts';
+
+  @override
+  String get smart_alerts_subtitle =>
+      'Get notified within 150 m of a hidden gem';
+
+  @override
+  String get smart_alerts_consent =>
+      'EgyptLore uses background location to alert you when you are within 150 m of a hidden gem. You can turn this off at any time.';
+
+  @override
+  String get smart_alerts_no_gems =>
+      'No hidden gems are available to monitor right now.';
+
+  @override
+  String get no_visited_places => 'No Visited Places';
+
+  @override
+  String get empty_visited_places_sub =>
+      'Places you check in at will appear here.';
+
+  @override
+  String get no_visited_tours => 'No Visited Tours';
+
+  @override
+  String get empty_visited_tours_sub => 'Tours you complete will appear here.';
+
+  @override
+  String get ach_squad_explorer_name => 'Squad Explorer';
+
+  @override
+  String get ach_squad_explorer_desc =>
+      'Check in while exploring with an active squad';
+
+  @override
+  String get squad_title => 'Co-op Exploration';
+
+  @override
+  String get squad_active_title => 'Your active squad';
+
+  @override
+  String get squad_invite_subtitle => 'Invite friends and explore together';
+
+  @override
+  String get squad_start_subtitle => 'Create or join a squad with a short code';
+
+  @override
+  String get squad_create => 'Create a squad';
+
+  @override
+  String get squad_join => 'Join squad';
+
+  @override
+  String get squad_code_label => '4-6 digit squad code';
+
+  @override
+  String get squad_copy_code => 'Copy code';
+
+  @override
+  String get squad_leave => 'Leave squad';
+
+  @override
+  String squad_members(String n) {
+    return '$n members';
+  }
+
+  @override
+  String get squad_roster => 'Squad members';
+
+  @override
+  String get squad_leader => 'Leader';
+
+  @override
+  String get squad_you_leader => 'Leader · You';
+
+  @override
+  String get squad_you => 'You';
+
+  @override
+  String get squad_sign_in => 'Sign in to create or join a squad.';
+
+  @override
+  String get share_tour => 'Share completed tour';
+
+  @override
+  String get share_completed_tour => 'Tour completed';
+
+  @override
+  String share_tour_details(String places, String duration) {
+    return '$places places · $duration';
+  }
+
+  @override
+  String get share_photo => 'Share photo';
+
+  @override
+  String get share_place_photo => 'A moment from this place';
+
+  @override
+  String get share_card_footer => 'Discover the story behind every place';
+
+  @override
+  String get share_failed =>
+      'Could not prepare this share image. Please try again.';
+
+  @override
+  String get geo_select_first =>
+      'Choose at least one place before enabling nearby alerts.';
+
+  @override
+  String get geo_background_title => 'Allow background location?';
+
+  @override
+  String get geo_background_explanation =>
+      'EgyptLore collects location data in the background to enable ';
+
+  @override
+  String get privacy_policy_title => 'Privacy Policy';
+
+  @override
+  String get delete_account_public => 'Account deletion instructions';
+
+  @override
+  String get public_link_failed =>
+      'Could not open the page. Please try again later.';
+
+  @override
+  String get subscription_disclosure =>
+      'Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Payment is charged to your Google Play account at confirmation. Manage or cancel anytime in Google Play > Payments & subscriptions. Deleting your EgyptLore account does not cancel an active subscription.';
+
+  @override
+  String get terms_of_service_title => 'Terms of Service';
+
+  @override
+  String get profile_legal_title => 'Settings & Legal';
+
+  @override
+  String get delete_account_title => 'Delete Account';
+
+  @override
+  String get delete_account_warning =>
+      'This permanently deletes your account, personal data, saved items, and check-ins. Your EgyptLore Pro access will be lost. Deleting the account does not cancel or refund billing managed by Apple or Google; cancel any active subscription in your store settings first. This action cannot be undone.';
+
+  @override
+  String get delete_account_confirm => 'Delete my account';
+
+  @override
+  String get delete_account_failed =>
+      'Your account could not be deleted. Please try again.';
+
+  @override
+  String get geo_enable => 'Continue';
+
+  @override
+  String get geo_read_privacy_policy => 'Read the Privacy Policy';
+
+  @override
+  String get geo_background_denied =>
+      'Background location was not allowed. You can enable it in Settings.';
+
+  @override
+  String get geo_notifications_denied =>
+      'Notifications are disabled. Enable them in Settings to receive nearby alerts.';
+
+  @override
+  String get geo_unsupported =>
+      'Nearby alerts are not supported on this device.';
+
+  @override
+  String get geo_start_failed =>
+      'Nearby alerts could not be started. Please try again.';
+
+  @override
+  String get checkin_too_far =>
+      'You need to be within 100 meters of this place to check in.';
+
+  @override
+  String get checkin_location_permission =>
+      'Allow location access to verify your check-in.';
+
+  @override
+  String get checkin_location_disabled =>
+      'Turn on location services to check in.';
+
+  @override
+  String get checkin_location_unavailable =>
+      'Your location could not be verified. Please try again.';
+
+  @override
+  String get checkin_save_failed => 'Check-in could not be saved';
+
+  @override
+  String tour_progress(String done, String total) {
+    return '$done of $total places visited';
+  }
+
+  @override
+  String get chat_send_failed =>
+      'Could not send your message. Please try again.';
+
+  @override
+  String get chat_sign_in_required =>
+      'Sign in with an account to join the chat.';
+
+  @override
+  String get map_offline_fallback =>
+      'Offline guidance: showing a straight-line route to your destination.';
+
+  @override
+  String get map_cached_road_route =>
+      'Offline map: showing the cached road route to your destination.';
+
+  @override
+  String map_straight_line_distance(String distance, String bearing) {
+    return '$distance away · bearing $bearing°';
+  }
+
+  @override
+  String get tour_pro => 'EgyptLore Pro';
+
+  @override
+  String get tour_pro_locked =>
+      'This tour is part of EgyptLore Pro. Hidden Gems and Premium Tours are for Pro members.';
+
+  @override
+  String get pro_title => 'EgyptLore Pro';
+
+  @override
+  String get pro_detected_offerings => 'Detected offerings:';
+
+  @override
+  String get pro_subtitle => 'Discover more of the stories behind your city.';
+
+  @override
+  String get pro_benefit_hidden_gems => 'Hidden Gems and Premium Tours';
+
+  @override
+  String get pro_benefit_premium_tours =>
+      'Curated Premium Tours from local experts';
+
+  @override
+  String get pro_benefit_ai => '50 AI Questions daily';
+
+  @override
+  String get pro_benefit_offline => 'Offline Downloads';
+
+  @override
+  String get pro_benefit_badges => 'Exclusive Pro Badges';
+
+  @override
+  String get pro_weekly => 'Explorer Pass';
+
+  @override
+  String get pro_weekly_description => 'Pro access for one week';
+
+  @override
+  String get pro_weekly_badge => 'WEEKLY PLAN';
+
+  @override
+  String get pro_weekly_price => '49 EGP / week';
+
+  @override
+  String get pro_monthly => 'Monthly Pro Plan';
+
+  @override
+  String get pro_monthly_description => 'Perfect for short trips';
+
+  @override
+  String get pro_monthly_badge => 'MOST POPULAR';
+
+  @override
+  String get pro_monthly_price => '99 EGP / month';
+
+  @override
+  String get pro_annual => 'Annual Pro Plan';
+
+  @override
+  String get pro_annual_description => 'One year of complete Pro access';
+
+  @override
+  String get pro_annual_badge => 'BEST VALUE · SAVE 40%';
+
+  @override
+  String get pro_annual_price => '699 EGP / year';
+
+  @override
+  String get pro_annual_monthly_equivalent => 'Equivalent to ~58 EGP / month';
+
+  @override
+  String pro_billing_period(String period) {
+    return 'Billed every $period';
+  }
+
+  @override
+  String get pro_period_day => 'day';
+
+  @override
+  String pro_period_days(String count) {
+    return '$count days';
+  }
+
+  @override
+  String get pro_period_week => 'week';
+
+  @override
+  String pro_period_weeks(String count) {
+    return '$count weeks';
+  }
+
+  @override
+  String get pro_period_month => 'month';
+
+  @override
+  String pro_period_months(String count) {
+    return '$count months';
+  }
+
+  @override
+  String get pro_period_year => 'year';
+
+  @override
+  String pro_period_years(String count) {
+    return '$count years';
+  }
+
+  @override
+  String get pro_includes_free => 'Everything in Free, plus:';
+
+  @override
+  String get pro_subscribe => 'Choose this plan';
+
+  @override
+  String get pro_store_note =>
+      'Secure purchase through the App Store or Google Play.';
+
+  @override
+  String get pro_setup_note =>
+      'Pro subscriptions are coming soon. Stay tuned for the official launch!';
+
+  @override
+  String get pro_coming_soon => 'Coming soon';
+
+  @override
+  String get pro_setup_required =>
+      'Purchases are not configured yet. Add the RevenueCat public SDK keys to enable them.';
+
+  @override
+  String get pro_sign_in_required => 'Sign in to subscribe to EgyptLore Pro.';
+
+  @override
+  String get pro_offering_unavailable =>
+      'This purchase option is not available right now.';
+
+  @override
+  String get pro_purchase_success =>
+      'EgyptLore Pro is active. Enjoy exploring!';
+
+  @override
+  String get pro_purchase_pending =>
+      'Purchase received. Pro access will activate after verification.';
+
+  @override
+  String get pro_purchase_failed =>
+      'The purchase could not be completed. Please try again.';
+
+  @override
+  String get pro_member => 'EgyptLore Pro Member';
+
+  @override
+  String get pro_tier_weekly => 'Weekly';
+
+  @override
+  String get pro_tier_monthly => 'Monthly';
+
+  @override
+  String get pro_tier_annual => 'Annual';
+
+  @override
+  String get pro_tier_lifetime => 'Lifetime';
+
+  @override
+  String get pro_member_subtitle => 'Your membership is active';
+
+  @override
+  String get restore_purchases => 'Restore Purchases';
+
+  @override
+  String get restore_sign_in_required =>
+      'Sign in to restore your EgyptLore Pro purchases.';
+
+  @override
+  String get restore_setup_required =>
+      'Purchase restoration is not available right now.';
+
+  @override
+  String get restore_none_found => 'No previous Pro purchases were found.';
+
+  @override
+  String get restore_success =>
+      'Your EgyptLore Pro purchases have been restored.';
+
+  @override
+  String get restore_pending =>
+      'Purchase restored. Pro access will activate after verification.';
+
+  @override
+  String get restore_failed =>
+      'Purchases could not be restored. Please try again.';
+
+  @override
+  String get tour_visited => 'Visited';
+
+  @override
+  String get google_sha1_error =>
+      'Google Sign-In setup error (Code 10). Contact developer.';
+
+  @override
+  String get google_config_error =>
+      'Google Sign-In not configured properly. Try email login.';
+
+  @override
+  String get google_network_error => 'Network error. Check your connection.';
+
+  @override
+  String get google_general_error =>
+      'Google Sign-In failed. Try email login instead.';
 }

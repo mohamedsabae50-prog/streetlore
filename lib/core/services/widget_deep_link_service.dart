@@ -16,11 +16,17 @@ class WidgetDeepLinkService {
 
   static bool handleUri(Uri uri) {
     if (uri.scheme != 'streetlore' || uri.host != 'place') return false;
-    final placeId = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '';
-    if (placeId.isEmpty) return true;
+    final placeId = placeIdFromUri(uri);
+    if (placeId == null) return true;
     _pendingPlaceId = placeId;
     unawaited(openPendingPlace());
     return true;
+  }
+
+  static String? placeIdFromUri(Uri uri) {
+    if (uri.scheme != 'streetlore' || uri.host != 'place') return null;
+    final placeId = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '';
+    return placeId.isEmpty ? null : placeId;
   }
 
   static Future<void> openPendingPlace() async {
