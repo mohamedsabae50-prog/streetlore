@@ -110,10 +110,6 @@ jobs:
 
       - name: Decode Keystore
         env:
-          # v1.0.73: passwords now sourced from secrets instead of
-          # being baked into the keystore / build script. The literal
-          # password is still the fallback for local dev (kept in
-          # sync with the comment in app/build.gradle.kts).
           STREETLORE_KEYSTORE_PASSWORD: ${{ secrets.STREETLORE_KEYSTORE_PASSWORD }}
           STREETLORE_KEY_PASSWORD: ${{ secrets.STREETLORE_KEY_PASSWORD }}
         run: |
@@ -141,7 +137,8 @@ jobs:
           STREETLORE_KEYSTORE_PASSWORD: ${{ secrets.STREETLORE_KEYSTORE_PASSWORD }}
         run: |
           set -e
-          SHA=$(keytool -list -v -keystore android/app/release_v2.keystore -storepass "${STREETLORE_KEYSTORE_PASSWORD:-streetlore2026}" 2>&1 | grep -E '^\s*SHA1:' | head -n 1 | awk '{print $2}')
+          : "${STREETLORE_KEYSTORE_PASSWORD:?STREETLORE_KEYSTORE_PASSWORD secret is required}"
+          SHA=$(keytool -list -v -keystore android/app/release_v2.keystore -storepass "$STREETLORE_KEYSTORE_PASSWORD" 2>&1 | grep -E '^\s*SHA1:' | head -n 1 | awk '{print $2}')
           echo "Keystore cert SHA-1: ${SHA}"
           # v1.0.73: the expected SHA-1 below is the SHA-1 of the
           # v1.0.30+ production keystore. To regenerate from a brand-

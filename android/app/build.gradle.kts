@@ -16,7 +16,6 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.alsaba.egyptlore"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -28,22 +27,14 @@ android {
 
     signingConfigs {
         create("release") {
-            // v1.0.73: keystore + passwords now sourced from
-            //   - a release_v2.keystore file written by release.yml
-            //     from the STREETLORE_KEYSTORE_BASE64 secret
-            //   - the STREETLORE_KEYSTORE_PASSWORD + STREETLORE_KEY_PASSWORD
-            //     secrets (fall back to the in-tree literals for local dev)
-            // The release workflow writes the keystore from a base64
-            // secret BEFORE this file is loaded, so on CI we always
-            // have a non-empty file. Local debug builds still work
-            // because the literal fallback matches a checked-in dev
-            // keystore if present.
             storeFile = file("release_v2.keystore")
-            storePassword =
-                System.getenv("STREETLORE_KEYSTORE_PASSWORD") ?: "streetlore2026"
+            storePassword = providers.gradleProperty("STREETLORE_KEYSTORE_PASSWORD")
+                .orElse(providers.environmentVariable("STREETLORE_KEYSTORE_PASSWORD"))
+                .orNull ?: ""
             keyAlias = "streetlore"
-            keyPassword =
-                System.getenv("STREETLORE_KEY_PASSWORD") ?: "streetlore2026"
+            keyPassword = providers.gradleProperty("STREETLORE_KEY_PASSWORD")
+                .orElse(providers.environmentVariable("STREETLORE_KEY_PASSWORD"))
+                .orNull ?: ""
         }
     }
 
