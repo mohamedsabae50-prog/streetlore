@@ -399,20 +399,28 @@ class _SavedPlacesTab extends StatelessWidget {
   }
 }
 
-class _VisitedPlacesTab extends StatelessWidget {
+class _VisitedPlacesTab extends StatefulWidget {
   const _VisitedPlacesTab();
+
+  @override
+  State<_VisitedPlacesTab> createState() => _VisitedPlacesTabState();
+}
+
+class _VisitedPlacesTabState extends State<_VisitedPlacesTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<TripProvider>().refreshVisited();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer2<TripProvider, PlaceProvider>(
       builder: (context, tripProvider, placeProvider, _) {
-        final isPro = context.watch<AuthProvider>().isPro;
         final places = placeProvider.places
-            .where(
-              (place) =>
-                  tripProvider.isVisited(place.id) &&
-                  (isPro || !place.isHiddenGem),
-            )
+            .where((place) => tripProvider.isVisited(place.id))
             .toList();
 
         if (places.isEmpty) {

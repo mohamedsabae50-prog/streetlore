@@ -12,6 +12,8 @@ class TripProvider extends ChangeNotifier {
   /// Refreshed on login + every check-in via [markVisited].
   final Set<String> _visitedPlaceIds = <String>{};
   Set<String> get visitedPlaceIds => Set.unmodifiable(_visitedPlaceIds);
+  String? _visitedUserId;
+  int _visitedRefreshGeneration = 0;
 
   TripProvider() {
     _loadTrip();
@@ -27,28 +29,53 @@ class TripProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Pull every place_id the current user has ever checked in at. Safe to
-  /// call multiple times — silent no-op if no user is signed in yet.
+  /// Reconcile checked-in place IDs from the current user's server records.
   Future<void> _loadVisitedFromSupabase() async {
     final client = SupabaseService.instance.clientOrNull;
-    if (client == null) return;
+    if (client == null) {
+      _replaceVisitedPlaces('', const <String>{});
+      return;
+    }
     final userId = client.auth.currentUser?.id ?? '';
-    if (userId.isEmpty) return;
+    if (userId.isEmpty) {
+      _replaceVisitedPlaces('', const <String>{});
+      return;
+    }
+    final generation = ++_visitedRefreshGeneration;
+    if (_visitedUserId != userId) {
+      _replaceVisitedPlaces(userId, const <String>{});
+    }
     try {
       final rows = await client
           .from('place_checkins')
           .select('place_id')
           .eq('user_id', userId);
-      _visitedPlaceIds
-        ..clear()
-        ..addAll(rows.map((r) => r['place_id'].toString()));
-      notifyListeners();
+      if (generation != _visitedRefreshGeneration ||
+          client.auth.currentUser?.id != userId) {
+        return;
+      }
+      _replaceVisitedPlaces(
+        userId,
+        rows.map((row) => row['place_id'].toString()).toSet(),
+      );
     } catch (e) {
       debugPrint('TripProvider._loadVisitedFromSupabase: $e');
     }
   }
 
-  /// Public re-fresh — call after sign-in / sign-out so visited set is current.
+  void _replaceVisitedPlaces(String userId, Set<String> placeIds) {
+    final changed =
+        _visitedUserId != userId ||
+        _visitedPlaceIds.length != placeIds.length ||
+        !_visitedPlaceIds.containsAll(placeIds);
+    _visitedUserId = userId;
+    _visitedPlaceIds
+      ..clear()
+      ..addAll(placeIds);
+    if (changed) notifyListeners();
+  }
+
+  /// Public refresh — call after sign-in / sign-out or when syncing visits.
   Future<void> refreshVisited() => _loadVisitedFromSupabase();
 
   /// Add a freshly-checked-in place id so the trip planner can show the badge

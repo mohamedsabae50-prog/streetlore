@@ -172,6 +172,7 @@ Future<void> _runApplication() async {
     );
     if (id.isEmpty) {
       _lastBootstrappedUserId = null;
+      unawaited(tripProvider.refreshVisited());
       tourProvider.clearCheckedInPlaces();
       unawaited(streak.setUserId(''));
       return;

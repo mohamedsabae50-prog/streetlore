@@ -153,8 +153,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         .toList();
   }
 
-  List<PlaceModel> _filtered(List<PlaceModel> all) {
-    final base = _isSearching ? _searchResults(all) : _categoryFiltered(all);
+  List<PlaceModel> _filtered(
+    List<PlaceModel> all,
+    Set<String> visitedPlaceIds,
+  ) {
+    final unvisited = all
+        .where((place) => !visitedPlaceIds.contains(place.id))
+        .toList(growable: false);
+    final base = _isSearching
+        ? _searchResults(unvisited)
+        : _categoryFiltered(unvisited);
     final isPro = context.read<AuthProvider>().isPro;
     var result = isPro
         ? base
@@ -213,7 +221,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final placeProvider = context.watch<PlaceProvider>();
-    final filtered = _filtered(placeProvider.places);
+    final tripProvider = context.watch<TripProvider>();
+    final filtered = _filtered(
+      placeProvider.places,
+      tripProvider.visitedPlaceIds,
+    );
     final isSearching = _isSearching;
 
     return Scaffold(
@@ -428,6 +440,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         await context.read<PlaceProvider>().refresh();
         if (!mounted) return;
         await context.read<TourProvider>().refresh();
+        if (!mounted) return;
+        await context.read<TripProvider>().refreshVisited();
       },
       child: CustomScrollView(
         controller: _scrollCtrl,
