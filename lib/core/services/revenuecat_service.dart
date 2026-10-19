@@ -21,12 +21,15 @@ class RevenueCatService {
   static const entitlementId = 'pro';
   static const weeklyProductId = String.fromEnvironment(
     'REVENUECAT_WEEKLY_PRODUCT_ID',
+    defaultValue: 'weekly',
   );
   static const monthlyProductId = String.fromEnvironment(
     'REVENUECAT_MONTHLY_PRODUCT_ID',
+    defaultValue: 'monthly',
   );
   static const annualProductId = String.fromEnvironment(
     'REVENUECAT_ANNUAL_PRODUCT_ID',
+    defaultValue: 'annual',
   );
 
   bool get isConfigured =>

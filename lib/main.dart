@@ -21,6 +21,7 @@ import 'logic/auth_provider.dart';
 import 'logic/locale_provider.dart';
 import 'logic/place_photos_provider.dart';
 import 'core/services/widget_sync_service.dart';
+import 'core/services/widget_deep_link_service.dart';
 import 'logic/blocked_users_provider.dart';
 import 'logic/streak_provider.dart';
 import 'logic/squad_provider.dart';
@@ -229,11 +230,13 @@ Future<void> _bindAuthDeepLink(AuthProvider auth) async {
   try {
     final links = AppLinks();
     final initial = await links.getInitialLink();
-    if (initial != null) {
+    if (initial != null && !WidgetDeepLinkService.handleUri(initial)) {
       await auth.handleAuthCallback(initial);
     }
     links.uriLinkStream.listen((uri) async {
-      await auth.handleAuthCallback(uri);
+      if (!WidgetDeepLinkService.handleUri(uri)) {
+        await auth.handleAuthCallback(uri);
+      }
     });
   } catch (e) {
     debugPrint('Deep link bind failed: $e');
@@ -292,17 +295,19 @@ class _EgyptLoreAppState extends State<EgyptLoreApp>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ThemeProvider, LocaleProvider>(
-      builder: (context, themeProvider, localeProvider, _) {
+    return Consumer3<ThemeProvider, LocaleProvider, PlaceProvider>(
+      builder: (context, themeProvider, localeProvider, placeProvider, _) {
         // After the first frame of the app build, update the Android widget
         // with the current Place of the Day and cached weather.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           try {
             WidgetSyncService.updateWidgetData(context);
+            WidgetDeepLinkService.openPendingPlace();
           } catch (_) {}
         });
 
         return MaterialApp(
+          navigatorKey: WidgetDeepLinkService.navigatorKey,
           scaffoldMessengerKey: _scaffoldMessengerKey,
           title: 'EgyptLore',
           debugShowCheckedModeBanner: false,

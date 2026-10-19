@@ -48,6 +48,13 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="io.supabase.streetlore" android:host="login-callback" />
             </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="streetlore" android:host="place" />
+            </intent-filter>
         </activity>
         
         <meta-data
@@ -56,7 +63,7 @@
 
         <!-- Home screen widget provider for Place of the Day -->
         <receiver android:name=".PlaceOfDayWidgetProvider"
-                  android:exported="false">
+                  android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

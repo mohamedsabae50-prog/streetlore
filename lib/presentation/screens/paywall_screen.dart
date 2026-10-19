@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:provider/provider.dart';
@@ -73,32 +74,24 @@ class _PaywallScreenState extends State<PaywallScreen> {
     };
 
     for (final package in packages) {
-      // Primary: match by package type
       if (package.packageType == type) return package;
-    // Fallback: attempt to extract store id dynamically (supporting different Purchases SDK versions)
-    String storeId = '';
-    try {
-      final sp = package.storeProduct;
-      if (sp != null) {
-        final dyn = sp as dynamic;
-        storeId = (dyn.identifier ?? dyn.productId ?? dyn.productIdentifier ?? '') as String;
-      }
-    } catch (_) {
-      storeId = '';
-    }
-
-    if (storeId.isNotEmpty && expectedId.isNotEmpty && storeId == expectedId) {
-      return package;
-    }
-    // Fallback 2: common RevenueCat naming ($rc_weekly etc.)
-    if (storeId.startsWith(r'$rc_')) {
-      final lc = storeId.toLowerCase();
-      if ((type == PackageType.weekly && lc.contains('weekly')) ||
-          (type == PackageType.monthly && lc.contains('monthly')) ||
-          (type == PackageType.annual && (lc.contains('annual') || lc.contains('annual')))) {
+      final aliases = switch (type) {
+        PackageType.weekly => const ['weekly', r'$rc_weekly'],
+        PackageType.monthly => const ['monthly', r'$rc_monthly'],
+        PackageType.annual => const ['annual', 'yearly', r'$rc_annual'],
+        _ => const <String>[],
+      };
+      final identifiers = [
+        package.identifier.toLowerCase(),
+        package.storeProduct.identifier.toLowerCase(),
+      ];
+      if (identifiers.any(
+        (identifier) =>
+            identifier == expectedId.toLowerCase() ||
+            aliases.any(identifier.contains),
+      )) {
         return package;
       }
-    }
     }
     return null;
   }
@@ -199,7 +192,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
       RevenueCatSubscriptionState? state;
       if (activated) {
         try {
-          state = await RevenueCatService.instance.syncSubscription(auth.userId);
+          state = await RevenueCatService.instance.syncSubscription(
+            auth.userId,
+          );
         } catch (error) {
           debugPrint(
             'PaywallScreen: RevenueCat purchase sync is pending: $error',
@@ -404,26 +399,32 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     : Text(context.tr('restore_purchases')),
               ),
             ),
-                  const SizedBox(height: 10),
-                  // Debug / verification summary of detected offering / product ids
-                  if (RevenueCatService.instance.isConfigured) ...[
-                    const SizedBox(height: 6),
+            const SizedBox(height: 10),
+            // Debug / verification summary of detected offering / product ids
+            if (kDebugMode && RevenueCatService.instance.isConfigured) ...[
+              const SizedBox(height: 6),
+              Text(
+                context.tr('pro_detected_offerings'),
+                style: TextStyle(color: context.textSec, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Center(
+                child: Column(
+                  children: [
                     Text(
-                      context.tr('pro_detected_offerings'),
-                      style: TextStyle(color: context.textSec, fontSize: 12),
-                      textAlign: TextAlign.center,
+                      'weekly: ${_weeklyPackage?.storeProduct.identifier ?? RevenueCatService.weeklyProductId}',
                     ),
-                    const SizedBox(height: 6),
-                    Center(
-                      child: Column(
-                        children: [
-                          Text('weekly: ${_weeklyPackage != null ? ((){ try { final dyn = _weeklyPackage!.storeProduct as dynamic; return (dyn.identifier ?? dyn.productId ?? dyn.productIdentifier ?? RevenueCatService.weeklyProductId) as String; } catch (_) { return RevenueCatService.weeklyProductId; } })() : RevenueCatService.weeklyProductId}'),
-                          Text('monthly: ${_monthlyPackage != null ? ((){ try { final dyn = _monthlyPackage!.storeProduct as dynamic; return (dyn.identifier ?? dyn.productId ?? dyn.productIdentifier ?? RevenueCatService.monthlyProductId) as String; } catch (_) { return RevenueCatService.monthlyProductId; } })() : RevenueCatService.monthlyProductId}'),
-                          Text('annual: ${_annualPackage != null ? ((){ try { final dyn = _annualPackage!.storeProduct as dynamic; return (dyn.identifier ?? dyn.productId ?? dyn.productIdentifier ?? RevenueCatService.annualProductId) as String; } catch (_) { return RevenueCatService.annualProductId; } })() : RevenueCatService.annualProductId}'),
-                        ],
-                      ),
+                    Text(
+                      'monthly: ${_monthlyPackage?.storeProduct.identifier ?? RevenueCatService.monthlyProductId}',
+                    ),
+                    Text(
+                      'annual: ${_annualPackage?.storeProduct.identifier ?? RevenueCatService.annualProductId}',
                     ),
                   ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

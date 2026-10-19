@@ -37,10 +37,10 @@ class _WeatherWidgetState extends State<WeatherWidget> {
             .fetchForDeviceLocation();
         if (mounted && refreshed != null) {
           setState(() => _data = refreshed);
-        // update native widget after a successful refresh (fire-and-forget)
-        try {
-          WidgetSyncService.updateWidgetData(context);
-        } catch (_) {}
+          // update native widget after a successful refresh (fire-and-forget)
+          try {
+            WidgetSyncService.updateWidgetData(context);
+          } catch (_) {}
         }
       }
       return;
@@ -54,7 +54,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
       });
       if (d != null) {
         try {
-        WidgetSyncService.updateWidgetData(context);
+          WidgetSyncService.updateWidgetData(context);
         } catch (_) {}
       }
     }
@@ -74,7 +74,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     });
     if (d != null) {
       try {
-        await WidgetSyncService.updateWidgetData(context);
+        WidgetSyncService.updateWidgetData(context);
       } catch (_) {}
     }
     if (d == null) {

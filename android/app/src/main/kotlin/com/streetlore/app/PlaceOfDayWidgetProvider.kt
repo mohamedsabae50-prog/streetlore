@@ -35,11 +35,24 @@ class PlaceOfDayWidgetProvider : AppWidgetProvider() {
     }
 
     private fun updateWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
-        val prefs = context.getSharedPreferences("streetlore_widget_v1", Context.MODE_PRIVATE)
-        val title = prefs.getString("streetlore_widget_v1.place_title_en", "") ?: ""
-        val snippet = prefs.getString("streetlore_widget_v1.place_snippet_en", "") ?: ""
-        val temp = prefs.getFloat("streetlore_widget_v1.weather_temp_c", Float.NaN)
-        val condition = prefs.getString("streetlore_widget_v1.weather_condition", "") ?: ""
+        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val isArabic = prefs.getString("flutter.streetlore_widget_v1.locale", "en") == "ar"
+        val titleKey = if (isArabic) {
+            "flutter.streetlore_widget_v1.place_title_ar"
+        } else {
+            "flutter.streetlore_widget_v1.place_title_en"
+        }
+        val snippetKey = if (isArabic) {
+            "flutter.streetlore_widget_v1.place_snippet_ar"
+        } else {
+            "flutter.streetlore_widget_v1.place_snippet_en"
+        }
+        val title = prefs.getString(titleKey, "") ?: ""
+        val snippet = prefs.getString(snippetKey, "") ?: ""
+        val temp = prefs.getString("flutter.streetlore_widget_v1.weather_temp_c", null)
+            ?.toFloatOrNull() ?: Float.NaN
+        val conditionKey = prefs.getString("flutter.streetlore_widget_v1.weather_condition", "") ?: ""
+        val condition = weatherCondition(conditionKey, isArabic)
 
         val views = RemoteViews(context.packageName, R.layout.widget_place_of_day)
         views.setTextViewText(R.id.widget_title, title)
@@ -51,7 +64,7 @@ class PlaceOfDayWidgetProvider : AppWidgetProvider() {
         }
         views.setTextViewText(R.id.widget_condition, condition)
 
-        val placeId = prefs.getString("streetlore_widget_v1.place_id", null)
+        val placeId = prefs.getString("flutter.streetlore_widget_v1.place_id", null)
         val intent = if (placeId != null) {
             Intent(Intent.ACTION_VIEW).apply {
                 data = Uri.parse("streetlore://place/$placeId")
@@ -64,5 +77,40 @@ class PlaceOfDayWidgetProvider : AppWidgetProvider() {
         views.setOnClickPendingIntent(R.id.widget_root, pending)
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
+    }
+
+    private fun weatherCondition(key: String, isArabic: Boolean): String {
+        val labels = if (isArabic) {
+            mapOf(
+                "weather_clear_sky" to "سماء صافية",
+                "weather_mainly_clear" to "غائم جزئياً",
+                "weather_partly_cloudy" to "غائم جزئياً",
+                "weather_overcast" to "غائم",
+                "weather_fog" to "ضباب",
+                "weather_drizzle" to "رذاذ",
+                "weather_rain" to "ممطر",
+                "weather_rain_possible" to "احتمال هطول أمطار",
+                "weather_snow" to "ثلوج",
+                "weather_showers" to "زخات مطر",
+                "weather_thunderstorm" to "عاصفة رعدية",
+                "weather_unknown" to "غير معروف",
+            )
+        } else {
+            mapOf(
+                "weather_clear_sky" to "Clear sky",
+                "weather_mainly_clear" to "Mainly clear",
+                "weather_partly_cloudy" to "Partly cloudy",
+                "weather_overcast" to "Overcast",
+                "weather_fog" to "Fog",
+                "weather_drizzle" to "Drizzle",
+                "weather_rain" to "Rain",
+                "weather_rain_possible" to "Rain possible",
+                "weather_snow" to "Snow",
+                "weather_showers" to "Showers",
+                "weather_thunderstorm" to "Thunderstorm",
+                "weather_unknown" to "Unknown",
+            )
+        }
+        return labels[key] ?: key
     }
 }
