@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/models/place_model.dart';
 import '../data/achievement_catalog.dart';
 import '../data/models/gamification_stats.dart';
+import '../core/services/supabase_service.dart';
 import 'auth_provider.dart';
 import 'gamification_provider.dart';
 import 'place_provider.dart';
@@ -58,6 +59,8 @@ class AchievementProvider extends ChangeNotifier {
   Map<String, AchievementProgress> _progress = {};
   bool _initialized = false;
   int _loadGeneration = 0;
+  int _friendCount = 0;
+  int _friendCountGeneration = 0;
   static const _kPrefix = 'achievements_v2';
   String get _kKey => '${_kPrefix}_$_userKey';
 
@@ -73,6 +76,7 @@ class AchievementProvider extends ChangeNotifier {
     places.addListener(_onSourceChanged);
     streak.addListener(_onSourceChanged);
     tours.addListener(_onSourceChanged);
+    unawaited(refreshFriendCount());
   }
 
   @override
@@ -99,6 +103,31 @@ class AchievementProvider extends ChangeNotifier {
     _initialized = false;
     _progress = {};
     unawaited(_load());
+    unawaited(refreshFriendCount());
+  }
+
+  Future<void> refreshFriendCount() async {
+    final generation = ++_friendCountGeneration;
+    if (auth.userId.isEmpty) {
+      _friendCount = 0;
+      if (_initialized) _recalculateAll();
+      return;
+    }
+    try {
+      final friendships = await SupabaseService.instance.fetchFriendships();
+      if (generation != _friendCountGeneration || auth.userId != _userKey) {
+        return;
+      }
+      _friendCount = friendships
+          .where((friendship) => friendship['status'] == 'accepted')
+          .length;
+      if (_initialized) _recalculateAll();
+    } catch (error, stackTrace) {
+      debugPrint(
+        'AchievementProvider: failed to refresh friend count: '
+        '$error\n$stackTrace',
+      );
+    }
   }
 
   Future<void> _load() async {
@@ -223,6 +252,8 @@ class AchievementProvider extends ChangeNotifier {
       int cur = 0;
       if (def.id == 'squad_explorer') {
         cur = stats.badges.any((badge) => badge.id == def.id) ? def.target : 0;
+      } else if (def.id == 'social_explorer') {
+        cur = _friendCount;
       } else if (visitedCount == 0) {
         cur = 0;
       } else {
@@ -232,18 +263,29 @@ class AchievementProvider extends ChangeNotifier {
         case 'explorer_10':
         case 'explorer_25':
         case 'lorekeeper':
+        case 'street_explorer':
+        case 'lore_master':
+        case 'alexandria_legend':
           cur = visitedCount;
           break;
         case 'culture_buff':
         case 'history_nerd':
-          cur = _countVisitedIn(checkedInPlaces, [
-            'Culture',
-            'Historical',
-          ]);
+        case 'time_traveler':
+          cur = _countVisitedIn(checkedInPlaces, ['Historical']);
+          if (def.id == 'culture_buff' || def.id == 'history_nerd') {
+            cur += _countVisitedIn(checkedInPlaces, ['Culture']);
+          }
+          break;
+        case 'culture_vulture':
+          cur = _countVisitedIn(checkedInPlaces, ['Culture']);
           break;
         case 'foodie':
         case 'gourmet':
+        case 'alex_foodie':
           cur = _countVisitedIn(checkedInPlaces, ['Food']);
+          break;
+        case 'nature_lover':
+          cur = _countVisitedIn(checkedInPlaces, ['Nature']);
           break;
         case 'shopaholic':
           cur = _countVisitedIn(checkedInPlaces, ['Shopping']);

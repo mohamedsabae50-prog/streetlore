@@ -22,6 +22,7 @@ class GamificationStats {
   final String userId;
   final String userName;
   final String? avatarColorHex;
+  final String avatarUrl;
   final int totalPoints;
   final int placesVisited;
   final int reviewsPosted;
@@ -40,6 +41,7 @@ class GamificationStats {
     required this.userId,
     required this.userName,
     this.avatarColorHex,
+    this.avatarUrl = '',
     this.totalPoints = 0,
     this.placesVisited = 0,
     this.reviewsPosted = 0,
@@ -68,6 +70,7 @@ class GamificationStats {
     userId: userId,
     userName: userName,
     avatarColorHex: avatarColorHex,
+    avatarUrl: avatarUrl,
     totalPoints: totalPoints ?? this.totalPoints,
     placesVisited: placesVisited ?? this.placesVisited,
     reviewsPosted: reviewsPosted ?? this.reviewsPosted,
@@ -115,6 +118,7 @@ class GamificationStats {
         userId: json['user_id'] as String,
         userName: json['user_name'] as String,
         avatarColorHex: json['avatar_color_hex'] as String?,
+        avatarUrl: json['avatar_url'] as String? ?? '',
         totalPoints: (json['total_points'] as num?)?.toInt() ?? 0,
         placesVisited: (json['places_visited'] as num?)?.toInt() ?? 0,
         reviewsPosted: (json['reviews_posted'] as num?)?.toInt() ?? 0,

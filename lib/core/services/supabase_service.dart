@@ -414,6 +414,57 @@ class SupabaseService {
     );
   }
 
+  Future<List<Map<String, dynamic>>> fetchNotifications({
+    int limit = 100,
+  }) async {
+    final client = _client;
+    final userId = client?.auth.currentUser?.id;
+    if (client == null || userId == null) {
+      throw StateError('Sign in to load notifications.');
+    }
+    final result = await client
+        .from('notifications')
+        .select(
+          'id,recipient_id,actor_id,type,friendship_id,title,body,metadata,'
+          'created_at,read_at',
+        )
+        .eq('recipient_id', userId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return (result as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList(growable: false);
+  }
+
+  Stream<List<Map<String, dynamic>>>? watchNotifications(String userId) {
+    final client = _client;
+    if (client == null || userId.isEmpty) return null;
+    return client
+        .from('notifications')
+        .stream(primaryKey: ['id'])
+        .eq('recipient_id', userId)
+        .order('created_at', ascending: false)
+        .map(
+          (rows) => rows
+              .map((row) => Map<String, dynamic>.from(row))
+              .toList(growable: false),
+        );
+  }
+
+  Future<void> markNotificationRead(String notificationId) async {
+    final client = _client;
+    final userId = client?.auth.currentUser?.id;
+    if (client == null || userId == null) {
+      throw StateError('Sign in to update notifications.');
+    }
+    await client
+        .from('notifications')
+        .update({'read_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('id', notificationId)
+        .eq('recipient_id', userId)
+        .isFilter('read_at', null);
+  }
+
   Future<void> cancelFriendRequest(String targetUserId) async {
     final client = _client;
     final userId = client?.auth.currentUser?.id;
@@ -482,11 +533,11 @@ class SupabaseService {
     if (client == null || userId == null) {
       throw StateError('Sign in to load privacy settings.');
     }
-    final row = await client
-        .from('profiles')
-        .select('share_location_activity')
-        .eq('user_id', userId)
-        .single();
+    final response = await client.rpc('get_my_profile_private');
+    if (response is! Map) {
+      throw const FormatException('Profile privacy response was invalid.');
+    }
+    final row = Map<String, dynamic>.from(response);
     return row['share_location_activity'] as bool? ?? true;
   }
 

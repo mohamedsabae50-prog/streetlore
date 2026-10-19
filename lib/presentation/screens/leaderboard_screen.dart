@@ -15,6 +15,7 @@ import '../../logic/leaderboard_provider.dart';
 import '../../core/services/supabase_service.dart';
 import 'user_profile_screen.dart';
 import '../widgets/monthly_pro_reward_banner.dart';
+import '../widgets/social_user_widgets.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -593,19 +594,12 @@ class _Row extends StatelessWidget {
                     ),
             ),
             const SizedBox(width: 12),
-            CircleAvatar(
+            ExplorerAvatar(
+              avatarUrl: stats.avatarUrl,
+              displayName: stats.userName,
               radius: 18,
-              backgroundColor: avatarColor ?? AppColors.primary,
-              child: Text(
-                stats.userName.isNotEmpty
-                    ? stats.userName[0].toUpperCase()
-                    : '?',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+              fallbackColor: avatarColor ?? AppColors.primary,
               ),
-            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,6 +35,7 @@ import 'legal_document_screen.dart';
 import 'paywall_screen.dart';
 import 'suggest_place_screen.dart';
 import 'search_users_screen.dart';
+import '../widgets/social_user_widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -137,45 +137,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _pickAvatar(BuildContext context, AuthProvider auth) async {
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera_rounded),
-              title: Text(context.tr('take_photo')),
-              onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_rounded),
-              title: Text(context.tr('choose_gallery')),
-              onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (source == null || !context.mounted) return;
+  Future<void> _pickAvatar(
+    BuildContext context,
+    AuthProvider auth, {
+    ImageSource source = ImageSource.gallery,
+  }) async {
     SupabaseClient? avatarClient;
     String? uploadedAvatarPath;
     try {
       final selectedImage = await ImagePicker().pickImage(
         source: source,
-        maxWidth: 1200,
-        imageQuality: 85,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 75,
       );
       if (selectedImage == null || !context.mounted) return;
       setState(() => _isUploadingAvatar = true);
-      final compressed = await FlutterImageCompress.compressWithList(
-        await selectedImage.readAsBytes(),
-        minWidth: 512,
-        minHeight: 512,
-        quality: 82,
-        format: CompressFormat.jpeg,
-      );
+      final compressed = await selectedImage.readAsBytes();
       final client = SupabaseService.instance.clientOrNull;
       final userId = client?.auth.currentUser?.id;
       if (client == null || userId == null || userId != auth.userId) {
@@ -183,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
       avatarClient = client;
       final objectPath =
-          '$userId/avatar_${DateTime.now().microsecondsSinceEpoch}.jpg';
+          '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.jpg';
       await client.storage
           .from('avatars')
           .uploadBinary(
@@ -191,7 +169,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             compressed,
             fileOptions: const FileOptions(
               contentType: 'image/jpeg',
-              upsert: false,
+              upsert: true,
             ),
           );
       uploadedAvatarPath = objectPath;
@@ -222,16 +200,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Widget _profileAvatarFallback(AuthProvider auth) => Center(
-    child: Text(
-      auth.userName.isNotEmpty ? auth.userName[0].toUpperCase() : 'E',
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 38,
-        fontWeight: FontWeight.w900,
+  Future<void> _selectBuiltInAvatar(AuthProvider auth, String avatar) async {
+    try {
+      await auth.updateAvatarUrl(avatar);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ProfileScreen: built-in avatar update failed: $error\n$stackTrace',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('avatar_upload_failed'))),
+        );
+      }
+    }
+  }
+
+  Future<void> _showAvatarChoices(
+    BuildContext context,
+    AuthProvider auth,
+  ) async {
+    final choice = await showModalBottomSheet<Object>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr('avatar_choose_title'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_rounded),
+                title: Text(context.tr('take_photo')),
+                onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded),
+                title: Text(context.tr('choose_gallery')),
+                onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+              ),
+              const Divider(),
+              Wrap(
+                alignment: WrapAlignment.spaceAround,
+                children: [
+                  for (final preset in ExplorerAvatar.presetUrls)
+                    IconButton(
+                      tooltip: context.tr(
+                        'avatar_preset_${preset.split(':').last}',
+                      ),
+                      onPressed: () => Navigator.pop(sheetContext, preset),
+                      icon: ExplorerAvatar(
+                        avatarUrl: preset,
+                        displayName: auth.userName,
+                        radius: 24,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
-    ),
-  );
+    );
+    if (!context.mounted || choice == null) return;
+    if (choice is ImageSource) {
+      await _pickAvatar(context, auth, source: choice);
+    } else if (choice is String) {
+      await _selectBuiltInAvatar(auth, choice);
+    }
+  }
 
   Future<void> _openPublicPage(Uri uri) async {
     try {
@@ -578,33 +620,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   width: 3,
                                 ),
                               ),
-                              child: ClipOval(
-                                child:
-                                    auth.avatarUrl.startsWith('https://') ||
-                                        auth.avatarUrl.startsWith('http://')
-                                    ? Image.network(
-                                        auth.avatarUrl,
-                                        width: 90,
-                                        height: 90,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, _, _) =>
-                                            _profileAvatarFallback(auth),
-                                      )
-                                    : _profileAvatarFallback(auth),
+                              child: ExplorerAvatar(
+                                avatarUrl: auth.avatarUrl,
+                                displayName: auth.userName,
+                                radius: 45,
+                                fallbackColor: Colors.white,
                               ),
                             ),
                           ),
                           if (auth.isLoggedIn && !auth.isGuest)
-                            const Positioned(
+                            Positioned(
                               bottom: 2,
                               right: 2,
-                              child: CircleAvatar(
-                                radius: 13,
-                                backgroundColor: Colors.white,
-                                child: Icon(
-                                  Icons.camera_alt_rounded,
-                                  size: 15,
-                                  color: AppColors.primary,
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: () => _showAvatarChoices(context, auth),
+                                child: const CircleAvatar(
+                                  radius: 13,
+                                  backgroundColor: Colors.white,
+                                  child: Icon(
+                                    Icons.camera_alt_rounded,
+                                    size: 15,
+                                    color: AppColors.primary,
+                                  ),
                                 ),
                               ),
                             ),
@@ -629,6 +667,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                         ],
                       ),
+                      if (auth.isLoggedIn && !auth.isGuest)
+                        TextButton.icon(
+                          onPressed: _isUploadingAvatar
+                              ? null
+                              : () => _showAvatarChoices(context, auth),
+                          icon: const Icon(
+                            Icons.face_retouching_natural_rounded,
+                          ),
+                          label: Text(context.tr('avatar_choose_title')),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
                       const SizedBox(height: 14),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

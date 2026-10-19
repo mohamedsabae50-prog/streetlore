@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/compass_service.dart';
 import '../../core/services/qibla_service.dart';
@@ -16,7 +17,6 @@ class _CompassCardState extends State<CompassCard>
     with TickerProviderStateMixin {
   late final AnimationController _introCtrl;
   late final Animation<double> _introScale;
-  late final Animation<double> _introRotation;
   late final Animation<double> _introOffset;
 
   late final AnimationController _pulseCtrl;
@@ -26,7 +26,9 @@ class _CompassCardState extends State<CompassCard>
   late final Animation<double> _iconRotation;
 
   double _qiblaBearingDeg = 0;
+  double _currentHeadingDeg = 0;
   bool _qiblaAvailable = false;
+  bool _wasQiblaAligned = false;
 
   StreamSubscription<double>? _compassSub;
   StreamSubscription<double>? _qiblaSub;
@@ -41,12 +43,6 @@ class _CompassCardState extends State<CompassCard>
     _introScale = TweenSequence<double>([
       TweenSequenceItem(tween: Tween(begin: 0.65, end: 1.1), weight: 55),
       TweenSequenceItem(tween: Tween(begin: 1.1, end: 1.0), weight: 45),
-    ]).animate(CurvedAnimation(parent: _introCtrl, curve: Curves.easeOut));
-
-    _introRotation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: -0.45, end: 0.35), weight: 45),
-      TweenSequenceItem(tween: Tween(begin: 0.35, end: -0.15), weight: 30),
-      TweenSequenceItem(tween: Tween(begin: -0.15, end: 0.0), weight: 25),
     ]).animate(CurvedAnimation(parent: _introCtrl, curve: Curves.easeOut));
 
     _introOffset = Tween<double>(
@@ -79,10 +75,12 @@ class _CompassCardState extends State<CompassCard>
     CompassService.instance.start();
     _compassSub = CompassService.instance.headingStream.listen((deg) {
       if (!mounted) return;
+      _currentHeadingDeg = deg;
+      _checkQiblaAlignment();
       final working = CompassService.instance.isActuallyWorking;
       final iconShouldSpin = !working && !_iconCtrl.isAnimating;
       final iconShouldStop = working && _iconCtrl.isAnimating;
-      
+
       // Do NOT call setState() for heading updates!
       if (iconShouldSpin) {
         _iconCtrl.repeat();
@@ -98,6 +96,7 @@ class _CompassCardState extends State<CompassCard>
         _qiblaBearingDeg = bearing;
         _qiblaAvailable = true;
       });
+      _checkQiblaAlignment();
     });
 
     // Kick off location fetch (cached if location already known).
@@ -126,6 +125,25 @@ class _CompassCardState extends State<CompassCard>
     return dirs[i];
   }
 
+  bool get _isQiblaAligned {
+    final difference = (_qiblaBearingDeg - _currentHeadingDeg) % 360;
+    final normalizedDifference = (difference + 360) % 360;
+    final shortestDifference = normalizedDifference > 180
+        ? normalizedDifference - 360
+        : normalizedDifference;
+    return _qiblaAvailable && shortestDifference.abs() <= 5;
+  }
+
+  void _checkQiblaAlignment() {
+    final aligned = _isQiblaAligned;
+    final alignmentChanged = aligned != _wasQiblaAligned;
+    if (aligned && !_wasQiblaAligned) {
+      HapticFeedback.mediumImpact();
+    }
+    _wasQiblaAligned = aligned;
+    if (alignmentChanged && mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -136,245 +154,250 @@ class _CompassCardState extends State<CompassCard>
           final pulseValue = _pulse.value;
           final pulseScale = 1.0 + pulseValue * 0.03;
           final glowAlpha = (pulseValue * 32).clamp(0, 32).toInt();
-          
+
           return Transform.translate(
             offset: Offset(0, _introOffset.value),
-            child: Transform.rotate(
-              angle: _introRotation.value,
-              child: Transform.scale(
-                scale: _introScale.value * pulseScale,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: context.cardColor,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: context.textSec.withValues(alpha: 0.1),
+            child: Transform.scale(
+              scale: _introScale.value * pulseScale,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: context.cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+                  ],
+                  border: Border.all(
+                    color: _isQiblaAligned
+                        ? const Color(0xFF22C55E)
+                        : _qiblaAvailable
+                        ? const Color(0xFFEAB308).withValues(alpha: 0.65)
+                        : context.textSec.withValues(alpha: 0.1),
+                    width: _isQiblaAligned ? 2 : 1,
                   ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 84,
-                        height: 84,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Static outer disc (gradient + N label stay still)
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 84,
+                      height: 84,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Static outer disc (gradient + N label stay still)
+                          Container(
+                            width: 84,
+                            height: 84,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF4F46E5), Color(0xFF22C55E)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color.fromARGB(glowAlpha, 79, 70, 229),
+                                  blurRadius: 16 + pulseValue * 8,
+                                  spreadRadius: pulseValue * 2,
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                const Positioned(
+                                  top: 4,
+                                  child: Text(
+                                    'N',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                                // Only the arrow icon inside rotates
+                                AnimatedBuilder(
+                                  animation: _iconCtrl,
+                                  builder: (context, _) {
+                                    return StreamBuilder<double>(
+                                      stream:
+                                          CompassService.instance.headingStream,
+                                      builder: (context, snapshot) {
+                                        final heading = snapshot.data ?? 0.0;
+                                        final qiblaRelative =
+                                            _qiblaBearingDeg - heading;
+                                        final hasCompass = CompassService
+                                            .instance
+                                            .isActuallyWorking;
+                                        return Transform.rotate(
+                                          angle: hasCompass
+                                              ? (_qiblaAvailable
+                                                    ? qiblaRelative *
+                                                          (pi / 180.0)
+                                                    : -heading * (pi / 180.0))
+                                              : _iconRotation.value,
+                                          child: Icon(
+                                            Icons.navigation_rounded,
+                                            color: _isQiblaAligned
+                                                ? const Color(0xFF22C55E)
+                                                : Colors.white,
+                                            size: 30,
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Qibla arrow indicator (NOT rotated with disc;
+                          // fixed at the top-center of the compass)
+                          if (_qiblaAvailable)
                             Container(
                               width: 84,
                               height: 84,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF4F46E5),
-                                    Color(0xFF22C55E)
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Color.fromARGB(
-                                        glowAlpha, 79, 70, 229),
-                                    blurRadius: 16 + pulseValue * 8,
-                                    spreadRadius: pulseValue * 2,
-                                  ),
-                                ],
-                              ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  const Positioned(
-                                    top: 4,
-                                    child: Text(
-                                      'N',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w900,
+                              alignment: Alignment.topCenter,
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 1),
+                                child: Container(
+                                  width: 14,
+                                  height: 18,
+                                  decoration: BoxDecoration(
+                                    color: _isQiblaAligned
+                                        ? const Color(0xFF22C55E)
+                                        : const Color(0xFFEAB308),
+                                    borderRadius: BorderRadius.circular(3),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color:
+                                            (_isQiblaAligned
+                                                    ? const Color(0xFF22C55E)
+                                                    : const Color(0xFFEAB308))
+                                                .withValues(alpha: 0.8),
+                                        blurRadius: 6,
+                                        spreadRadius: 1,
                                       ),
+                                    ],
+                                  ),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.mosque_rounded,
+                                      color: Colors.white,
+                                      size: 11,
                                     ),
                                   ),
-                                  // Only the arrow icon inside rotates
-                                  AnimatedBuilder(
-                                    animation: _iconCtrl,
-                                    builder: (context, _) {
-                                      return StreamBuilder<double>(
-                                        stream: CompassService.instance.headingStream,
-                                        builder: (context, snapshot) {
-                                          final heading = snapshot.data ?? 0.0;
-                                          final hasCompass = CompassService.instance.isActuallyWorking;
-                                          final discRotation = -heading * (pi / 180.0);
-                                          return Transform.rotate(
-                                            angle: hasCompass
-                                                ? discRotation
-                                                : _iconRotation.value,
-                                            child: const Icon(
-                                              Icons.navigation_rounded,
-                                              color: Colors.white,
-                                              size: 30,
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
-                            // Qibla arrow indicator (NOT rotated with disc;
-                            // its rotation = qiblaRelDeg)
-                            if (_qiblaAvailable)
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Compass',
+                                style: TextStyle(
+                                  color: context.textPri,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                ),
+                              ),
                               StreamBuilder<double>(
                                 stream: CompassService.instance.headingStream,
                                 builder: (context, snapshot) {
                                   final heading = snapshot.data ?? 0.0;
-                                  final qiblaRelDeg = _qiblaBearingDeg - heading;
-                                  return Transform.rotate(
-                                    angle: qiblaRelDeg * (pi / 180.0),
+                                  final hasCompass =
+                                      CompassService.instance.isActuallyWorking;
+                                  if (!hasCompass) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.only(left: 8.0),
                                     child: Container(
-                                      width: 84,
-                                      height: 84,
-                                      alignment: Alignment.topCenter,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(top: 1),
-                                        child: Container(
-                                          width: 14,
-                                          height: 18,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFEAB308),
-                                            borderRadius:
-                                                BorderRadius.circular(3),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: const Color(0xFFEAB308)
-                                                    .withValues(alpha: 0.8),
-                                                blurRadius: 6,
-                                                spreadRadius: 1,
-                                              ),
-                                            ],
-                                          ),
-                                          child: const Center(
-                                            child: Icon(
-                                              Icons.mosque_rounded,
-                                              color: Colors.white,
-                                              size: 11,
-                                            ),
-                                          ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF22C55E,
+                                        ).withValues(alpha: 0.18),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        _dirLabel(heading),
+                                        style: const TextStyle(
+                                          color: Color(0xFF22C55E),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
                                     ),
                                   );
                                 },
                               ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          StreamBuilder<double>(
+                            stream: CompassService.instance.headingStream,
+                            builder: (context, snapshot) {
+                              final heading = snapshot.data ?? 0.0;
+                              final hasCompass =
+                                  CompassService.instance.isActuallyWorking;
+                              return Text(
+                                hasCompass
+                                    ? '${heading.round()}° · Heading'
+                                    : 'Calibrating…',
+                                style: TextStyle(
+                                  color: context.textSec,
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
+                              );
+                            },
+                          ),
+                          if (_qiblaAvailable) ...[
+                            const SizedBox(height: 4),
                             Row(
                               children: [
-                                Text(
-                                  'Compass',
-                                  style: TextStyle(
-                                    color: context.textPri,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                  ),
+                                const Icon(
+                                  Icons.mosque_rounded,
+                                  color: Color(0xFFEAB308),
+                                  size: 13,
                                 ),
-                                StreamBuilder<double>(
-                                  stream: CompassService.instance.headingStream,
-                                  builder: (context, snapshot) {
-                                    final heading = snapshot.data ?? 0.0;
-                                    final hasCompass = CompassService.instance.isActuallyWorking;
-                                    if (!hasCompass) return const SizedBox.shrink();
-                                    return Padding(
-                                      padding: const EdgeInsets.only(left: 8.0),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(
-                                            0xFF22C55E,
-                                          ).withValues(alpha: 0.18),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          _dirLabel(heading),
-                                          style: const TextStyle(
-                                            color: Color(0xFF22C55E),
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
+                                const SizedBox(width: 5),
+                                Text(
+                                  'Qibla ${_qiblaBearingDeg.round()}°',
+                                  style: TextStyle(
+                                    color: context.textSec,
+                                    fontSize: 11,
+                                    height: 1.3,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
-                            StreamBuilder<double>(
-                              stream: CompassService.instance.headingStream,
-                              builder: (context, snapshot) {
-                                final heading = snapshot.data ?? 0.0;
-                                final hasCompass = CompassService.instance.isActuallyWorking;
-                                return Text(
-                                  hasCompass
-                                      ? '${heading.round()}° · Heading'
-                                      : 'Calibrating…',
-                                  style: TextStyle(
-                                    color: context.textSec,
-                                    fontSize: 12,
-                                    height: 1.4,
-                                  ),
-                                );
-                              },
-                            ),
-                            if (_qiblaAvailable) ...[
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.mosque_rounded,
-                                    color: Color(0xFFEAB308),
-                                    size: 13,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    'Qibla ${_qiblaBearingDeg.round()}°',
-                                    style: TextStyle(
-                                      color: context.textSec,
-                                      fontSize: 11,
-                                      height: 1.3,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
                           ],
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

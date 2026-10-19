@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/supabase_service.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import 'paywall_screen.dart';
@@ -239,6 +240,12 @@ class _NavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final notificationStream = item.label == 'feed_title' &&
+            auth.isLoggedIn &&
+            !auth.isGuest
+        ? SupabaseService.instance.watchNotifications(auth.userId)
+        : null;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -255,11 +262,44 @@ class _NavBarItem extends StatelessWidget {
               curve: Curves.easeOutBack,
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  isSelected ? item.activeIcon : item.icon,
+                child: Stack(
                   key: ValueKey(isSelected),
-                  color: isSelected ? context.navSelected : context.textSec,
-                  size: 24,
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      isSelected ? item.activeIcon : item.icon,
+                      color: isSelected ? context.navSelected : context.textSec,
+                      size: 24,
+                    ),
+                    if (notificationStream != null)
+                      Positioned(
+                        right: -5,
+                        top: -4,
+                        child: StreamBuilder<List<Map<String, dynamic>>>(
+                          stream: notificationStream,
+                          builder: (context, snapshot) {
+                            final hasUnread = snapshot.data?.any(
+                                  (notification) =>
+                                      notification['read_at'] == null,
+                                ) ??
+                                false;
+                            if (!hasUnread) return const SizedBox.shrink();
+                            return Container(
+                              width: 9,
+                              height: 9,
+                              decoration: BoxDecoration(
+                                color: AppColors.error,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Theme.of(context).cardColor,
+                                  width: 1.5,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),

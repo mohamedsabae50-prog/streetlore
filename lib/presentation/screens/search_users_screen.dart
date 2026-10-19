@@ -9,6 +9,7 @@ import '../../core/services/supabase_service.dart';
 import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/achievement_provider.dart';
 import 'login_screen.dart';
 import 'user_profile_screen.dart';
 import '../widgets/social_user_widgets.dart';
@@ -233,12 +234,16 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   Future<void> _respondToRequest(SocialUser user, bool accept) async {
     final requestId = _incomingRequestIds[user.userId];
     if (requestId == null) return;
+    final achievements = context.read<AchievementProvider>();
     setState(() => _updatingRelationship.add(user.userId));
     try {
       await SupabaseService.instance.respondToFriendRequest(
         user.userId,
         accept: accept,
       );
+      if (accept) {
+        await achievements.refreshFriendCount();
+      }
       await _loadRelationships();
     } catch (error, stackTrace) {
       debugPrint(

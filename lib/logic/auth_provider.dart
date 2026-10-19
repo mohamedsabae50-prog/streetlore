@@ -52,11 +52,12 @@ class AuthProvider extends ChangeNotifier {
     }
     await _restoreCachedProStatus(_userId);
     try {
-      final profile = await Supabase.instance.client
-          .from('profiles')
-          .select('is_pro, subscription_tier, subscription_end_date')
-          .eq('user_id', _userId)
-          .maybeSingle();
+      final response = await Supabase.instance.client.rpc(
+        'get_my_profile_private',
+      );
+      final profile = response is Map
+          ? Map<String, dynamic>.from(response)
+          : null;
       _isPro = profileGrantsPro(profile);
       _subscriptionTier = profile?['subscription_tier'] as String?;
       await _persistCachedProStatus(_userId);
@@ -333,14 +334,12 @@ class AuthProvider extends ChangeNotifier {
     _username = await _readCachedUsername(user.id);
     _userEmail = user.email ?? _userEmail;
     try {
-      final profile = await Supabase.instance.client
-          .from('profiles')
-          .select(
-            'is_pro, subscription_tier, subscription_end_date, username, avatar_url',
-          )
-          .eq('user_id', user.id)
-          .maybeSingle()
+      final response = await Supabase.instance.client
+          .rpc('get_my_profile_private')
           .timeout(const Duration(seconds: 2));
+      final profile = response is Map
+          ? Map<String, dynamic>.from(response)
+          : null;
       if (profile != null) {
         _isPro = profileGrantsPro(profile);
         _subscriptionTier = profile['subscription_tier'] as String?;
@@ -372,10 +371,26 @@ class AuthProvider extends ChangeNotifier {
     if (_userId.isEmpty || _isGuest || !AppConfig.supabaseEnabled) {
       throw StateError('Sign in to update your profile picture.');
     }
+    final avatarUri = Uri.tryParse(avatarUrl);
+    final cacheBuster = DateTime.now().millisecondsSinceEpoch;
+    final cacheBustedUrl =
+        avatarUri != null &&
+            (avatarUri.scheme == 'https' || avatarUri.scheme == 'http')
+        ? avatarUri
+              .replace(
+                queryParameters: {
+                  ...avatarUri.queryParameters,
+                  't': '$cacheBuster',
+                },
+              )
+              .toString()
+        : avatarUrl.startsWith('builtin:')
+        ? '$avatarUrl?t=$cacheBuster'
+        : avatarUrl;
     final updatedProfile = await Supabase.instance.client
         .from('profiles')
         .update({
-          'avatar_url': avatarUrl,
+          'avatar_url': cacheBustedUrl,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         })
         .eq('user_id', _userId)
@@ -384,11 +399,11 @@ class AuthProvider extends ChangeNotifier {
     if (updatedProfile == null) {
       throw StateError('The profile picture could not be saved.');
     }
-    _avatarUrl = avatarUrl;
+    _avatarUrl = cacheBustedUrl;
     notifyListeners();
     try {
       final preferences = await SharedPreferences.getInstance();
-      await preferences.setString('user_avatar_url_$_userId', avatarUrl);
+      await preferences.setString('user_avatar_url_$_userId', cacheBustedUrl);
     } catch (error, stackTrace) {
       debugPrint(
         'AuthProvider: could not cache profile picture: $error\n$stackTrace',

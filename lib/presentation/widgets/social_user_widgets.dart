@@ -5,6 +5,80 @@ import '../../core/widgets/image_defaults.dart';
 import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
 
+class ExplorerAvatar extends StatelessWidget {
+  const ExplorerAvatar({
+    required this.avatarUrl,
+    required this.displayName,
+    required this.radius,
+    this.fallbackColor = AppColors.primary,
+    super.key,
+  });
+
+  final String avatarUrl;
+  final String displayName;
+  final double radius;
+  final Color fallbackColor;
+
+  static const presets = <String, ({IconData icon, Color color})>{
+    'builtin:explorer': (icon: Icons.explore_rounded, color: Color(0xFF0F766E)),
+    'builtin:historian': (
+      icon: Icons.account_balance_rounded,
+      color: Color(0xFF92400E),
+    ),
+    'builtin:scholar': (
+      icon: Icons.auto_stories_rounded,
+      color: Color(0xFF4338CA),
+    ),
+    'builtin:sailor': (icon: Icons.sailing_rounded, color: Color(0xFF0369A1)),
+  };
+
+  static const presetUrls = <String>[
+    'builtin:explorer',
+    'builtin:historian',
+    'builtin:scholar',
+    'builtin:sailor',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final initialsSource = displayName.trim();
+    final initials = initialsSource.isEmpty
+        ? '?'
+        : initialsSource.characters.first.toUpperCase();
+    final preset = presets[avatarUrl.split('?').first];
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: preset?.color ?? fallbackColor.withValues(alpha: 0.12),
+      child: ClipOval(
+        child: preset != null
+            ? Icon(preset.icon, color: Colors.white, size: radius)
+            : avatarUrl.startsWith('https://') ||
+                  avatarUrl.startsWith('http://')
+            ? Image.network(
+                avatarUrl,
+                width: radius * 2,
+                height: radius * 2,
+                fit: BoxFit.cover,
+                headers: streetloreImageHeaders,
+                errorBuilder: (_, _, _) => _initials(initials),
+              )
+            : _initials(initials),
+      ),
+    );
+  }
+
+  Widget _initials(String initials) => Center(
+    child: Text(
+      initials,
+      style: TextStyle(
+        color: fallbackColor,
+        fontSize: radius * 0.8,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+  );
+}
+
 class SocialUserAvatar extends StatelessWidget {
   const SocialUserAvatar({required this.user, this.radius = 24, super.key});
 
@@ -13,41 +87,14 @@ class SocialUserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initialsSource = user.displayName.trim().isNotEmpty
-        ? user.displayName.trim()
-        : user.username.trim();
-    final initials = initialsSource.isEmpty
-        ? '?'
-        : initialsSource.characters.first.toUpperCase();
-    final imageUrl = user.avatarUrl.trim();
-    return CircleAvatar(
+    return ExplorerAvatar(
+      avatarUrl: user.avatarUrl,
+      displayName: user.displayName.trim().isNotEmpty
+          ? user.displayName
+          : user.username,
       radius: radius,
-      backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-      child: ClipOval(
-        child: imageUrl.startsWith('https://') || imageUrl.startsWith('http://')
-            ? Image.network(
-                imageUrl,
-                width: radius * 2,
-                height: radius * 2,
-                fit: BoxFit.cover,
-                headers: streetloreImageHeaders,
-                errorBuilder: (_, _, _) => _initials(initials, radius),
-              )
-            : _initials(initials, radius),
-      ),
     );
   }
-
-  Widget _initials(String initials, double radius) => Center(
-    child: Text(
-      initials,
-      style: TextStyle(
-        color: AppColors.primary,
-        fontSize: radius * 0.8,
-        fontWeight: FontWeight.w800,
-      ),
-    ),
-  );
 }
 
 class SocialBadges extends StatelessWidget {

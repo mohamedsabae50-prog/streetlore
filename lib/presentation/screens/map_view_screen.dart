@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/atm_service.dart';
 import '../../data/models/map_poi.dart';
 import '../../data/models/map_seed.dart';
 import '../../data/models/place_model.dart';
@@ -54,6 +55,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
   bool _initialCentered = false;
 
   bool _showAtms = false;
+  List<MapPoi> _atms = const [];
+  bool _loadingAtms = false;
 
   final Set<String> _extraLayers = <String>{};
 
@@ -96,6 +99,49 @@ class _MapViewScreenState extends State<MapViewScreen> {
       ),
       builder: (ctx) => AtmSheet(atm: atm),
     );
+  }
+
+  Future<void> _toggleAtms() async {
+    final show = !_showAtms;
+    setState(() {
+      _showAtms = show;
+      _loadingAtms = show;
+      if (show) _atms = const [];
+    });
+    if (!show) return;
+    if (_userLocation == null) await _locateUser();
+    if (!mounted) return;
+    final center = _userLocation ?? _alexCenter;
+    try {
+      final atms = await AtmService.fetchNearby(
+        latitude: center.latitude,
+        longitude: center.longitude,
+      );
+      if (!mounted) return;
+      setState(() {
+        _atms = atms;
+        _loadingAtms = false;
+      });
+      if (atms.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No nearby ATMs were found in OpenStreetMap.'),
+          ),
+        );
+      }
+    } catch (error, stackTrace) {
+      debugPrint('MapViewScreen: nearby ATM lookup failed: $error\n$stackTrace');
+      if (!mounted) return;
+      setState(() {
+        _atms = const [];
+        _loadingAtms = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not load nearby ATMs from OpenStreetMap.'),
+        ),
+      );
+    }
   }
 
   IconData _iconForCategory(String category) {
@@ -239,7 +285,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       ),
                     ),
                   if (_showAtms)
-                    for (final atm in getSeedAtms())
+                    for (final atm in _atms)
                       Marker(
                         point: LatLng(atm.lat, atm.lng),
                         width: 40,
@@ -434,7 +480,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 });
               },
               showAtms: _showAtms,
-              onToggleAtms: () => setState(() => _showAtms = !_showAtms),
+              onToggleAtms: _toggleAtms,
+              loadingAtms: _loadingAtms,
             ),
           ),
         ],
@@ -561,6 +608,7 @@ class _CategoryFilter extends StatelessWidget {
   final Set<String> activeLayers;
   final ValueChanged<String> onToggleExtraLayer;
   final bool showAtms;
+  final bool loadingAtms;
   final VoidCallback onToggleAtms;
 
   const _CategoryFilter({
@@ -572,6 +620,7 @@ class _CategoryFilter extends StatelessWidget {
     required this.activeLayers,
     required this.onToggleExtraLayer,
     required this.showAtms,
+    required this.loadingAtms,
     required this.onToggleAtms,
   });
 
@@ -689,14 +738,14 @@ class _CategoryFilter extends StatelessWidget {
         padding: const EdgeInsets.only(right: 8),
         child: FilterChip(
           selected: showAtms,
-          onSelected: (_) => onToggleAtms(),
+          onSelected: loadingAtms ? null : (_) => onToggleAtms(),
           avatar: Icon(
-            Icons.atm_rounded,
+            loadingAtms ? Icons.hourglass_top_rounded : Icons.atm_rounded,
             size: 16,
             color: showAtms ? Colors.white : const Color(0xFF10B981),
           ),
           label: Text(
-            'ATMs',
+            loadingAtms ? 'Loading…' : 'ATMs',
             style: TextStyle(
               color: showAtms ? Colors.white : context.textPri,
               fontWeight: FontWeight.w800,

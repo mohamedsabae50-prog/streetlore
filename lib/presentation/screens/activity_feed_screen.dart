@@ -12,7 +12,9 @@ import '../../data/models/place_model.dart';
 import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/achievement_provider.dart';
 import '../../logic/blocked_users_provider.dart';
+import '../../logic/gamification_provider.dart';
 import 'login_screen.dart';
 import 'place_details_screen.dart';
 import 'user_profile_screen.dart';
@@ -28,6 +30,8 @@ class ActivityFeedScreen extends StatefulWidget {
 
 class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
   List<Map<String, dynamic>> _activities = const [];
+  List<Map<String, dynamic>> _notifications = const [];
+  StreamSubscription<List<Map<String, dynamic>>>? _notificationSubscription;
   bool _loading = true;
   String? _error;
   String? _requestedUserId;
@@ -41,55 +45,91 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     final userId = auth.isLoggedIn && !auth.isGuest ? auth.userId : '';
     if (_requestedUserId == userId) return;
     _requestedUserId = userId;
+    unawaited(_notificationSubscription?.cancel());
+    _notificationSubscription = null;
     if (userId.isEmpty) {
       _activities = const [];
+      _notifications = const [];
       _loading = false;
       _error = null;
       return;
     }
+    _notificationSubscription = SupabaseService.instance
+        .watchNotifications(userId)
+        ?.listen(
+          (notifications) {
+            if (!mounted || _requestedUserId != userId) return;
+            final oldNotificationIds = _notifications
+                .map((notification) => notification['id']?.toString() ?? '')
+                .toSet();
+            final received = notifications
+                .where(
+                  (notification) =>
+                      !oldNotificationIds.contains(
+                        notification['id']?.toString() ?? '',
+                      ),
+                )
+                .toList(growable: false);
+            setState(() => _notifications = notifications);
+            unawaited(_loadNotificationActors(notifications));
+            if (received.any(
+              (notification) => notification['type'] == 'friend_accepted',
+            )) {
+              unawaited(context.read<AchievementProvider>().refreshFriendCount());
+            }
+            if (received.any(
+              (notification) => notification['type'] == 'badge_unlocked',
+            )) {
+              unawaited(
+                _refreshRemoteStats(
+                  context.read<GamificationProvider>(),
+                  userId,
+                ),
+              );
+            }
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            debugPrint(
+              'ActivityFeedScreen: notification stream failed: '
+              '$error\n$stackTrace',
+            );
+          },
+        );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _requestedUserId == userId) _load();
     });
   }
 
   Future<void> _load() async {
+    final achievements = context.read<AchievementProvider>();
+    final gamification = context.read<GamificationProvider>();
+    final currentUserId = context.read<AuthProvider>().userId;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final activities = await SupabaseService.instance
-          .fetchFollowingActivity();
+      final activities = await SupabaseService.instance.fetchFollowingActivity();
+      final notifications = await SupabaseService.instance.fetchNotifications();
       if (!mounted) return;
       setState(() {
         _activities = activities;
-        _actorProfiles = const {};
+        _notifications = notifications;
       });
-      final actorIds = activities
-          .map((activity) => activity['actor_id']?.toString() ?? '')
-          .where((id) => id.isNotEmpty)
-          .toSet()
-          .toList(growable: false);
-      try {
-        final profiles = await SupabaseService.instance.getSocialUsers(
-          actorIds,
-        );
-        if (mounted) {
-          setState(() {
-            _actorProfiles = {
-              for (final profile in profiles) profile.userId: profile,
-            };
-          });
-        }
-      } catch (error, stackTrace) {
-        debugPrint(
-          'ActivityFeedScreen: actor profiles failed: $error\n$stackTrace',
-        );
+      if (notifications.any(
+        (notification) => notification['type'] == 'friend_accepted',
+      )) {
+        await achievements.refreshFriendCount();
       }
+      if (!mounted) return;
+      if (notifications.any(
+        (notification) => notification['type'] == 'badge_unlocked',
+      )) {
+        await _refreshRemoteStats(gamification, currentUserId);
+      }
+      if (!mounted) return;
+      await _loadNotificationActors(notifications, activities: activities);
     } catch (error, stackTrace) {
-      // Always log to the console with full detail. When Sentry is wired
-      // up (it is in main.dart) we also report the exception so it shows
-      // up in the Sentry dashboard with the Postgrest code/message.
       debugPrint('ActivityFeedScreen: load failed: $error\n$stackTrace');
       unawaited(
         Sentry.captureException(
@@ -106,6 +146,117 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _refreshRemoteStats(
+    GamificationProvider gamification,
+    String userId,
+  ) async {
+    try {
+      await gamification.bootstrapForUser(userId);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ActivityFeedScreen: remote badge sync failed: $error\n$stackTrace',
+      );
+    }
+  }
+
+  Future<void> _loadNotificationActors(
+    List<Map<String, dynamic>> notifications, {
+    List<Map<String, dynamic>>? activities,
+  }) async {
+    final actorIds = <String>{
+      ...notifications.map((item) => item['actor_id']?.toString() ?? ''),
+      ...(activities ?? _activities)
+          .map((item) => item['actor_id']?.toString() ?? ''),
+    }..removeWhere((id) => id.isEmpty);
+    final auth = context.read<AuthProvider>();
+    final ownActor = actorIds.remove(auth.userId)
+        ? SocialUser(
+            userId: auth.userId,
+            username: auth.username,
+            displayName: auth.userName,
+            avatarUrl: auth.avatarUrl,
+          )
+        : null;
+    if (actorIds.isEmpty && ownActor == null) return;
+    try {
+      final profiles = actorIds.isEmpty
+          ? const <SocialUser>[]
+          : await SupabaseService.instance.getSocialUsers(
+              actorIds.toList(growable: false),
+            );
+      if (!mounted) return;
+      setState(() {
+        _actorProfiles = {
+          for (final profile in profiles) profile.userId: profile,
+          if (ownActor != null) ownActor.userId: ownActor,
+        };
+      });
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ActivityFeedScreen: actor profiles failed: $error\n$stackTrace',
+      );
+    }
+  }
+
+  Future<void> _respondToNotification(
+    Map<String, dynamic> notification, {
+    required bool accept,
+  }) async {
+    final actorId = notification['actor_id']?.toString() ?? '';
+    final id = notification['id']?.toString() ?? '';
+    if (actorId.isEmpty || id.isEmpty) return;
+    final achievements = context.read<AchievementProvider>();
+    try {
+      await SupabaseService.instance.respondToFriendRequest(
+        actorId,
+        accept: accept,
+      );
+      await SupabaseService.instance.markNotificationRead(id);
+      if (!mounted) return;
+      setState(() {
+        _notifications = _notifications
+            .map(
+              (item) => item['id'] == id
+                  ? {...item, 'read_at': DateTime.now().toUtc().toIso8601String()}
+                  : item,
+            )
+            .toList(growable: false);
+      });
+      await achievements.refreshFriendCount();
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ActivityFeedScreen: friend request response failed: '
+        '$error\n$stackTrace',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('friend_action_failed'))),
+        );
+      }
+    }
+  }
+
+  Future<void> _markNotificationRead(
+    Map<String, dynamic> notification,
+  ) async {
+    final id = notification['id']?.toString() ?? '';
+    if (id.isEmpty || notification['read_at'] != null) return;
+    try {
+      await SupabaseService.instance.markNotificationRead(id);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ActivityFeedScreen: mark notification read failed: '
+        '$error\n$stackTrace',
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _notificationSubscription?.cancel();
+    super.dispose();
   }
 
   /// Builds an on-screen diagnostic that ALWAYS includes the raw error so
@@ -170,7 +321,9 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                       child: Text(context.tr('login_sign_in')),
                     ),
                   )
-                : _loading && visibleActivities.isEmpty
+                : _loading &&
+                      visibleActivities.isEmpty &&
+                      _notifications.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
                 ? _FeedMessage(
@@ -180,18 +333,50 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                       child: Text(context.tr('no_internet_retry')),
                     ),
                   )
-                : visibleActivities.isEmpty
+                : visibleActivities.isEmpty && _notifications.isEmpty
                 ? _FeedMessage(text: context.tr('feed_empty'))
                 : RefreshIndicator(
                     onRefresh: _load,
                     child: CustomScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       slivers: [
+                        if (_notifications.isNotEmpty)
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                            sliver: SliverList.separated(
+                              itemCount: _notifications.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                final notification = _notifications[index];
+                                final actorId =
+                                    notification['actor_id']?.toString() ?? '';
+                                return _NotificationCard(
+                                  notification: notification,
+                                  actor: _actorProfiles[actorId],
+                                  onAccept: () => _respondToNotification(
+                                    notification,
+                                    accept: true,
+                                  ),
+                                  onDecline: () => _respondToNotification(
+                                    notification,
+                                    accept: false,
+                                  ),
+                                  onTap:
+                                      notification['type'] == 'friend_request'
+                                      ? () {}
+                                      : () =>
+                                            _markNotificationRead(notification),
+                                );
+                              },
+                            ),
+                          ),
                         SliverToBoxAdapter(
                           child: _feedHeader(context, visibleActivities.length),
                         ),
                         SliverToBoxAdapter(child: _feedFilters(context)),
-                        if (filteredActivities.isEmpty)
+                        if (filteredActivities.isEmpty &&
+                            _notifications.isEmpty)
                           SliverFillRemaining(
                             hasScrollBody: false,
                             child: _FeedMessage(
@@ -580,6 +765,135 @@ class _ActivityCard extends StatelessWidget {
       );
     }
     return CategoryImageFallback(category: category, width: 54, height: 62);
+  }
+}
+
+class _NotificationCard extends StatelessWidget {
+  const _NotificationCard({
+    required this.notification,
+    required this.actor,
+    required this.onAccept,
+    required this.onDecline,
+    required this.onTap,
+  });
+
+  final Map<String, dynamic> notification;
+  final SocialUser? actor;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = notification['type']?.toString() ?? '';
+    final pending = type == 'friend_request' && notification['read_at'] == null;
+    final actorName = actor?.displayName.trim().isNotEmpty == true
+        ? actor!.displayName.trim()
+        : '@${actor?.username ?? 'explorer'}';
+    final title = switch (type) {
+      'friend_request' => context.tr(
+        'notification_friend_request',
+        {'name': actorName},
+      ),
+      'friend_accepted' => context.tr(
+        'notification_friend_accepted',
+        {'name': actorName},
+      ),
+      'badge_unlocked' => context.tr(
+        'notification_badge_unlocked',
+        {'name': actorName},
+      ),
+      _ => notification['title']?.toString() ?? '',
+    };
+    final createdAt = DateTime.tryParse(
+      notification['created_at']?.toString() ?? '',
+    );
+    final timestamp = createdAt == null
+        ? ''
+        : '${MaterialLocalizations.of(context).formatMediumDate(createdAt.toLocal())} '
+              '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(createdAt.toLocal()))}';
+    final unread = notification['read_at'] == null;
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      color: unread
+          ? AppColors.primary.withValues(alpha: 0.055)
+          : context.cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: unread ? AppColors.primary.withValues(alpha: 0.35) : context.borderColor,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (actor != null)
+                SocialUserAvatar(user: actor!, radius: 22)
+              else
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                  child: const Icon(Icons.notifications_rounded),
+                ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: context.textPri,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (timestamp.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        timestamp,
+                        style: TextStyle(color: context.textSec, fontSize: 11),
+                      ),
+                    ],
+                    if (pending) ...[
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          FilledButton(
+                            onPressed: onAccept,
+                            child: Text(context.tr('friend_accept')),
+                          ),
+                          OutlinedButton(
+                            onPressed: onDecline,
+                            child: Text(context.tr('friend_decline')),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (unread)
+                Container(
+                  width: 9,
+                  height: 9,
+                  margin: const EdgeInsets.only(top: 5, left: 8),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

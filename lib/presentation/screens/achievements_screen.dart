@@ -114,10 +114,14 @@ class AchievementsScreen extends StatelessWidget {
     switch (cat) {
       case AchievementCategory.exploration:
         return Icons.explore_rounded;
+      case AchievementCategory.historical:
+        return Icons.history_edu_rounded;
       case AchievementCategory.culture:
         return Icons.museum_rounded;
       case AchievementCategory.food:
         return Icons.restaurant_rounded;
+      case AchievementCategory.nature:
+        return Icons.nature_rounded;
       case AchievementCategory.social:
         return Icons.people_rounded;
       case AchievementCategory.streak:
@@ -133,10 +137,14 @@ class AchievementsScreen extends StatelessWidget {
     switch (cat) {
       case AchievementCategory.exploration:
         return 'Exploration';
+      case AchievementCategory.historical:
+        return 'Historical';
       case AchievementCategory.culture:
         return 'Culture';
       case AchievementCategory.food:
         return 'Food';
+      case AchievementCategory.nature:
+        return 'Nature';
       case AchievementCategory.social:
         return 'Social';
       case AchievementCategory.streak:

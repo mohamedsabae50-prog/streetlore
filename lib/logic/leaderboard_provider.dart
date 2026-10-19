@@ -83,7 +83,24 @@ class LeaderboardProvider extends ChangeNotifier {
         limit: limit,
       );
       if (generation != _requestGeneration) return;
-      _entries = rows.map(CityLeaderboardEntry.fromJson).toList();
+      final profiles = await SupabaseService.instance.getSocialUsers(
+        rows.map((row) => row['user_id']?.toString() ?? '').toList(),
+      );
+      final profilesById = {
+        for (final profile in profiles) profile.userId: profile,
+      };
+      _entries = rows.map((row) {
+        final profile = profilesById[row['user_id']?.toString()];
+        return CityLeaderboardEntry.fromJson({
+          ...row,
+          if (profile != null) ...{
+            'avatar_url': profile.avatarUrl,
+            'user_name': profile.displayName.isNotEmpty
+                ? profile.displayName
+                : profile.username,
+          },
+        });
+      }).toList();
     } catch (error, stackTrace) {
       if (generation != _requestGeneration) return;
       _entries = [];

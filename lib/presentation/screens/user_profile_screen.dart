@@ -9,6 +9,7 @@ import '../../data/models/place_model.dart';
 import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/achievement_provider.dart';
 import '../../logic/blocked_users_provider.dart';
 import 'place_details_screen.dart';
 import '../widgets/report_content_sheet.dart';
@@ -79,6 +80,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Future<void> _toggleFollow() async {
     final state = _friendshipState ?? 'none';
+    final achievements = context.read<AchievementProvider>();
     setState(() {
       _isUpdating = true;
       _error = null;
@@ -98,6 +100,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             widget.user.userId,
             accept: true,
           );
+          await achievements.refreshFriendCount();
           break;
         default:
           await SupabaseService.instance.sendFriendRequest(widget.user.userId);

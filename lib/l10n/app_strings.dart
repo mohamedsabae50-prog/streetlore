@@ -10,6 +10,28 @@ class AppStrings {
     'nav_explore': {'en': 'Explore', 'ar': 'استكشاف'},
     'nav_tours': {'en': 'Tours', 'ar': 'الجولات'},
     'nav_profile': {'en': 'Profile', 'ar': 'حسابي'},
+    'avatar_choose_title': {
+      'en': 'Choose a profile avatar',
+      'ar': 'اختر صورة للحساب',
+    },
+    'avatar_preset_explorer': {'en': 'Explorer', 'ar': 'مستكشف'},
+    'avatar_preset_historian': {'en': 'Historian', 'ar': 'مؤرخ'},
+    'avatar_preset_scholar': {'en': 'Scholar', 'ar': 'باحث'},
+    'avatar_preset_sailor': {'en': 'Sailor', 'ar': 'بحّار'},
+    'notification_friend_request': {
+      'en': '{name} sent you a friend request.',
+      'ar': 'أرسل {name} إليك طلب صداقة.',
+    },
+    'notification_friend_accepted': {
+      'en': '{name} accepted your friend request.',
+      'ar': 'وافق {name} على طلب صداقتك.',
+    },
+    'notification_badge_unlocked': {
+      'en': '{name} unlocked a new badge.',
+      'ar': 'حصل {name} على شارة جديدة.',
+    },
+    'friend_accept': {'en': 'Accept', 'ar': 'قبول'},
+    'friend_decline': {'en': 'Decline', 'ar': 'رفض'},
 
     'greet_morning': {'en': 'Good Morning', 'ar': 'صباح الخير'},
     'greet_afternoon': {'en': 'Good Afternoon', 'ar': 'مساء الخير'},
@@ -721,6 +743,27 @@ class AppStrings {
       'en': 'Check in at your first place',
       'ar': 'سجّل دخولك في أول مكان',
     },
+    'ach_street_explorer_name': {
+      'en': 'Street Explorer',
+      'ar': 'مستكشف الشوارع',
+    },
+    'ach_street_explorer_desc': {
+      'en': 'Visit 5 different places in Alexandria',
+      'ar': 'زُر 5 أماكن مختلفة في الإسكندرية',
+    },
+    'ach_lore_master_name': {'en': 'Lore Master', 'ar': 'خبير الحكايات'},
+    'ach_lore_master_desc': {
+      'en': 'Visit 15 places and uncover their stories',
+      'ar': 'زُر 15 مكانًا واكتشف حكاياتها',
+    },
+    'ach_alexandria_legend_name': {
+      'en': 'Alexandria Legend',
+      'ar': 'أسطورة الإسكندرية',
+    },
+    'ach_alexandria_legend_desc': {
+      'en': 'Visit 30 places across Alexandria',
+      'ar': 'زُر 30 مكانًا في أنحاء الإسكندرية',
+    },
     'ach_explorer_5_name': {'en': 'Curious', 'ar': 'فضولي'},
     'ach_explorer_5_desc': {
       'en': 'Visit 5 different places',
@@ -746,6 +789,19 @@ class AppStrings {
       'en': 'Visit 5 cultural spots',
       'ar': 'زُر 5 أماكن ثقافية',
     },
+    'ach_time_traveler_name': {'en': 'Time Traveler', 'ar': 'مسافر عبر الزمن'},
+    'ach_time_traveler_desc': {
+      'en': 'Visit 5 Historical places',
+      'ar': 'زُر 5 أماكن تاريخية',
+    },
+    'ach_culture_vulture_name': {
+      'en': 'Culture Vulture',
+      'ar': 'عاشق الثقافة',
+    },
+    'ach_culture_vulture_desc': {
+      'en': 'Visit 5 Culture places',
+      'ar': 'زُر 5 أماكن ثقافية',
+    },
     'ach_history_nerd_name': {'en': 'History Nerd', 'ar': 'مهووس بالتاريخ'},
     'ach_history_nerd_desc': {
       'en': 'Visit 10 historical spots',
@@ -755,6 +811,16 @@ class AppStrings {
     'ach_foodie_desc': {
       'en': 'Check in at 3 food spots',
       'ar': 'سجّل دخولك في 3 أماكن أكل',
+    },
+    'ach_alex_foodie_name': {'en': 'Alex Foodie', 'ar': 'ذوّاق إسكندراني'},
+    'ach_alex_foodie_desc': {
+      'en': 'Visit 4 Food places in Alexandria',
+      'ar': 'زُر 4 أماكن للطعام في الإسكندرية',
+    },
+    'ach_nature_lover_name': {'en': 'Nature Lover', 'ar': 'محب الطبيعة'},
+    'ach_nature_lover_desc': {
+      'en': 'Visit 3 Nature places',
+      'ar': 'زُر 3 أماكن طبيعية',
     },
     'ach_gourmet_name': {'en': 'Gourmet', 'ar': 'خبير أكل'},
     'ach_gourmet_desc': {
@@ -828,6 +894,14 @@ class AppStrings {
     'ach_squad_explorer_desc': {
       'en': 'Check in while exploring with an active squad',
       'ar': 'سجّل زيارتك أثناء الاستكشاف مع فريق نشط',
+    },
+    'ach_social_explorer_name': {
+      'en': 'Social Explorer',
+      'ar': 'مستكشف اجتماعي',
+    },
+    'ach_social_explorer_desc': {
+      'en': 'Make friends with 3 explorers',
+      'ar': 'كوّن صداقات مع 3 مستكشفين',
     },
     'squad_title': {'en': 'Co-op Exploration', 'ar': 'استكشاف جماعي'},
     'squad_active_title': {'en': 'Your active squad', 'ar': 'فريقك النشط'},
