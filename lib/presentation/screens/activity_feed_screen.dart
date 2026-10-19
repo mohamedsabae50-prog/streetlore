@@ -68,7 +68,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                       !oldNotificationIds.contains(
                         notification['id']?.toString() ?? '',
                       ),
-                  ),
                 )
                 .toList(growable: false);
             setState(() => _notifications = notifications);
