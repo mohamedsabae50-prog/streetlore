@@ -593,7 +593,7 @@ class AppStrings {
       'ar':
           'صور الأماكن من Wikimedia Commons، مستخدمة وفق شروط الرخصة المفتوحة لكل صورة.',
     },
-    'version': {'en': 'Version 2.1.14', 'ar': 'الإصدار 2.1.14'},
+    'version': {'en': 'Version', 'ar': 'الإصدار'},
     'saved_cleared': {
       'en': 'All saved places cleared.',
       'ar': 'تم مسح كل الأماكن المحفوظة.',

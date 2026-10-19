@@ -1,15 +1,10 @@
-/// Single source of truth for the app version displayed in the UI.
+/// Single source of truth for the semantic app version displayed in the UI.
 ///
-/// Bump this whenever you tag a release. The CI workflow (`release.yml`)
-/// tags v2.x.y from main and bumps `pubspec.yaml` to that same version;
-/// keep these two numbers in sync so the About screen and the version
-/// helper both show the correct value.
+/// Keep this in sync with the semantic version in `pubspec.yaml`.
 ///
-/// The build number (`+NN`) is the Android versionCode / iOS build
-/// number; the version string (`2.x.y`) is the human-readable name.
-const String kAppVersion = '2.1.17';
-const String kAppBuildNumber = '217';
-const String kAppVersionFull = '$kAppVersion+$kAppBuildNumber';
+/// The build number (`+NN`) is for platform release metadata and must not
+/// be included in user-facing version labels.
+const String kAppVersion = '2.1.22';
 
 /// Human-friendly label for the About screen.
-String formatAppVersionLabel() => 'Version $kAppVersionFull';
+String formatAppVersionLabel() => 'Version $kAppVersion';

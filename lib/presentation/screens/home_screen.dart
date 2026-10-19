@@ -18,6 +18,7 @@ import '../widgets/place_card.dart';
 import '../widgets/weather_widget.dart';
 import '../widgets/compass_card.dart';
 import '../widgets/alexandria_mastery_bar.dart';
+import '../widgets/social_user_widgets.dart';
 import '../../l10n/app_strings.dart';
 import 'place_details_screen.dart';
 import 'leaderboard_screen.dart';
@@ -322,31 +323,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    GestureDetector(
-                      child: Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.25),
-                            width: 2,
-                          ),
-                          gradient: const LinearGradient(
-                            colors: [AppColors.primary, Color(0xFF4F46E5)],
-                          ),
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.25),
+                          width: 2,
                         ),
-                        child: Center(
-                          child: Text(
-                            auth.userName.isNotEmpty
-                                ? auth.userName[0].toUpperCase()
-                                : 'E',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(2),
+                        child: ExplorerAvatar(
+                          avatarUrl: auth.avatarUrl,
+                          displayName: auth.userName.isNotEmpty
+                              ? auth.userName
+                              : 'Alexandria',
+                          radius: 18,
+                          fallbackColor: AppColors.primary,
                         ),
                       ),
                     ),

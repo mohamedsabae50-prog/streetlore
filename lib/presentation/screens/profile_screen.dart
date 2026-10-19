@@ -1490,7 +1490,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onTap: () => showAboutDialog(
                             context: context,
                             applicationName: 'EgyptLore',
-                            applicationVersion: kAppVersionFull,
+                            applicationVersion: kAppVersion,
                             applicationIcon: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(

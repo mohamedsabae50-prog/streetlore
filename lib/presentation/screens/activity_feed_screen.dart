@@ -68,6 +68,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                       !oldNotificationIds.contains(
                         notification['id']?.toString() ?? '',
                       ),
+                  ),
                 )
                 .toList(growable: false);
             setState(() => _notifications = notifications);
@@ -213,18 +214,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
         actorId,
         accept: accept,
       );
-      await SupabaseService.instance.markNotificationRead(id);
-      if (!mounted) return;
-      setState(() {
-        _notifications = _notifications
-            .map(
-              (item) => item['id'] == id
-                  ? {...item, 'read_at': DateTime.now().toUtc().toIso8601String()}
-                  : item,
-            )
-            .toList(growable: false);
-      });
-      await achievements.refreshFriendCount();
     } catch (error, stackTrace) {
       debugPrint(
         'ActivityFeedScreen: friend request response failed: '
@@ -235,7 +224,28 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           SnackBar(content: Text(context.tr('friend_action_failed'))),
         );
       }
+      return;
     }
+
+    if (!mounted) return;
+    setState(() {
+      _notifications = _notifications
+          .map(
+            (item) => item['id'] == id
+                ? {...item, 'read_at': DateTime.now().toUtc().toIso8601String()}
+                : item,
+          )
+          .toList(growable: false);
+    });
+    try {
+      await SupabaseService.instance.markNotificationRead(id);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ActivityFeedScreen: failed to mark responded request read: '
+        '$error\n$stackTrace',
+      );
+    }
+    await achievements.refreshFriendCount();
   }
 
   Future<void> _markNotificationRead(
