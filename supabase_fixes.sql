@@ -648,6 +648,7 @@ FROM (VALUES
   ('Bibliotheca Alexandrina', 31.2089::double precision, 29.9092::double precision),
   ('Pompey''s Pillar', 31.1825::double precision, 29.8967::double precision),
   ('Catacombs of Kom el Shoqafa', 31.1784::double precision, 29.8928::double precision),
+  ('El-Ma''amoura Beach', 31.2911405::double precision, 30.0309325::double precision),
   ('Montaza Palace Gardens', 31.2890::double precision, 30.0160::double precision),
   ('Alexandria National Museum', 31.1989::double precision, 29.9065::double precision),
   ('Graeco-Roman Museum', 31.1982::double precision, 29.9027::double precision),
