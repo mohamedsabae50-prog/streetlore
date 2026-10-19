@@ -47,3 +47,6 @@
     public static int v(...);
     public static int i(...);
 }
+
+# Keep the widget provider (AppWidgetProvider) so R8 doesn't strip it
+-keep class com.streetlore.app.PlaceOfDayWidgetProvider { *; }

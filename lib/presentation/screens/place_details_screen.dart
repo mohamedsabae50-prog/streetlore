@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/social_share_service.dart';
 import '../../core/services/checkin_location_service.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../core/services/app_review_service.dart';
@@ -51,6 +52,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
   late final Animation<double> _contentFade;
   late final Animation<Offset> _contentSlide;
   final ConfettiController _confetti = ConfettiController();
+  final GlobalKey _shareButtonKey = GlobalKey();
 
   bool _isVisited = false;
   // Blocks a second check-in tap while GPS verification / the save is running.
@@ -188,8 +190,32 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _ShareSheet(place: widget.place),
+      builder: (ctx) =>
+          _ShareSheet(onShare: _sharePlace, shareButtonKey: _shareButtonKey),
     );
+  }
+
+  Future<void> _sharePlace(Rect sharePositionOrigin) async {
+    final locale = Localizations.localeOf(context).languageCode;
+    Navigator.of(context).pop();
+    try {
+      await SocialShareService.sharePlace(
+        context: context,
+        place: widget.place,
+        locale: locale,
+        category: context.tr('share_place'),
+        footer: context.tr('share_card_footer'),
+        sharePositionOrigin: sharePositionOrigin,
+      );
+    } catch (error, stackTrace) {
+      debugPrint(
+        'PlaceDetailsScreen: could not share place: $error\n$stackTrace',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('share_failed'))));
+    }
   }
 
   @override
@@ -1618,8 +1644,9 @@ class _NearbyCard extends StatelessWidget {
 }
 
 class _ShareSheet extends StatelessWidget {
-  final PlaceModel place;
-  const _ShareSheet({required this.place});
+  final ValueChanged<Rect> onShare;
+  final GlobalKey shareButtonKey;
+  const _ShareSheet({required this.onShare, required this.shareButtonKey});
 
   @override
   Widget build(BuildContext context) {
@@ -1637,42 +1664,22 @@ class _ShareSheet extends StatelessWidget {
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _ShareIcon(icon: Icons.link, label: context.tr('copy_link')),
-              _ShareIcon(icon: Icons.message, label: context.tr('message')),
-              _ShareIcon(icon: Icons.email, label: context.tr('email')),
-            ],
+          SizedBox(
+            key: shareButtonKey,
+            child: FilledButton.icon(
+              onPressed: () => onShare(
+                SocialShareService.sharePositionOriginFor(
+                  context,
+                  shareButtonKey: shareButtonKey,
+                ),
+              ),
+              icon: const Icon(Icons.ios_share_rounded),
+              label: Text(context.tr('share_place')),
+            ),
           ),
           const SizedBox(height: 24),
         ],
       ),
-    );
-  }
-}
-
-class _ShareIcon extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _ShareIcon({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: context.bgAlt,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: context.textPri),
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontSize: 12)),
-      ],
     );
   }
 }

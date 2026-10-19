@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/weather_service.dart';
+import '../../core/services/widget_sync_service.dart';
 import '../../l10n/app_strings.dart';
 
 class WeatherWidget extends StatefulWidget {
@@ -36,6 +37,10 @@ class _WeatherWidgetState extends State<WeatherWidget> {
             .fetchForDeviceLocation();
         if (mounted && refreshed != null) {
           setState(() => _data = refreshed);
+        // update native widget after a successful refresh (fire-and-forget)
+        try {
+          WidgetSyncService.updateWidgetData(context);
+        } catch (_) {}
         }
       }
       return;
@@ -47,6 +52,11 @@ class _WeatherWidgetState extends State<WeatherWidget> {
         _data = d;
         _loading = false;
       });
+      if (d != null) {
+        try {
+        WidgetSyncService.updateWidgetData(context);
+        } catch (_) {}
+      }
     }
   }
 
@@ -62,6 +72,11 @@ class _WeatherWidgetState extends State<WeatherWidget> {
       _loading = false;
       if (d != null) _data = d;
     });
+    if (d != null) {
+      try {
+        await WidgetSyncService.updateWidgetData(context);
+      } catch (_) {}
+    }
     if (d == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.tr('weather_unavailable'))),

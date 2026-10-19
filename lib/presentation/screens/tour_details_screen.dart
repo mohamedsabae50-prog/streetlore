@@ -32,6 +32,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
   late final AnimationController _contentController;
   late final Animation<double> _contentFade;
   late final Animation<Offset> _contentSlide;
+  final GlobalKey _shareButtonKey = GlobalKey();
 
   @override
   void initState() {
@@ -145,6 +146,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
         context: context,
         tour: widget.tour,
         locale: locale,
+        shareButtonKey: _shareButtonKey,
         category: context.tr('share_completed_tour'),
         completedDetails: context.tr('share_tour_details', {
           'places': '${widget.tour.places.length}',
@@ -451,7 +453,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                               },
                           child: Material(
                             type: MaterialType.transparency,
-                            child:                             Text(
+                            child: Text(
                               tour.localizedTitle(locale),
                               textDirection: textDirection,
                               style: const TextStyle(
@@ -757,13 +759,16 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
               ],
               if (visited) ...[
                 const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: _shareCompletedTour,
-                  icon: const Icon(Icons.ios_share_rounded, size: 18),
-                  label: Text(context.tr('share_tour')),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: color,
-                    side: BorderSide(color: color.withValues(alpha: 0.55)),
+                SizedBox(
+                  key: _shareButtonKey,
+                  child: OutlinedButton.icon(
+                    onPressed: _shareCompletedTour,
+                    icon: const Icon(Icons.ios_share_rounded, size: 18),
+                    label: Text(context.tr('share_tour')),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: color,
+                      side: BorderSide(color: color.withValues(alpha: 0.55)),
+                    ),
                   ),
                 ),
               ],

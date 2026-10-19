@@ -17,6 +17,7 @@ import 'login_screen.dart';
 import 'place_details_screen.dart';
 import 'user_profile_screen.dart';
 import '../widgets/social_user_widgets.dart';
+import '../widgets/monthly_pro_reward_banner.dart';
 
 class ActivityFeedScreen extends StatefulWidget {
   const ActivityFeedScreen({super.key});
@@ -153,66 +154,78 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
           ),
         ],
       ),
-      body: needsSignIn
-          ? _FeedMessage(
-              text: context.tr('users_sign_in_required'),
-              action: FilledButton(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-                ),
-                child: Text(context.tr('login_sign_in')),
-              ),
-            )
-          : _loading && visibleActivities.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? _FeedMessage(
-              text: _error!,
-              action: FilledButton.tonal(
-                onPressed: _load,
-                child: Text(context.tr('no_internet_retry')),
-              ),
-            )
-          : visibleActivities.isEmpty
-          ? _FeedMessage(text: context.tr('feed_empty'))
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: _feedHeader(context, visibleActivities.length),
-                  ),
-                  SliverToBoxAdapter(child: _feedFilters(context)),
-                  if (filteredActivities.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _FeedMessage(
-                        text: context.tr(
-                          _filter == 'all' ? 'feed_empty' : 'feed_filter_empty',
+      body: Column(
+        children: [
+          const MonthlyProRewardBanner(),
+          Expanded(
+            child: needsSignIn
+                ? _FeedMessage(
+                    text: context.tr('users_sign_in_required'),
+                    action: FilledButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const LoginScreen(),
                         ),
                       ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                      sliver: SliverList.separated(
-                        itemCount: filteredActivities.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final activity = filteredActivities[index];
-                          return _ActivityCard(
-                            activity: activity,
-                            actor:
-                                _actorProfiles[activity['actor_id']
-                                    ?.toString()],
-                          );
-                        },
-                      ),
+                      child: Text(context.tr('login_sign_in')),
                     ),
-                ],
-              ),
-            ),
+                  )
+                : _loading && visibleActivities.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                ? _FeedMessage(
+                    text: _error!,
+                    action: FilledButton.tonal(
+                      onPressed: _load,
+                      child: Text(context.tr('no_internet_retry')),
+                    ),
+                  )
+                : visibleActivities.isEmpty
+                ? _FeedMessage(text: context.tr('feed_empty'))
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: CustomScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: _feedHeader(context, visibleActivities.length),
+                        ),
+                        SliverToBoxAdapter(child: _feedFilters(context)),
+                        if (filteredActivities.isEmpty)
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: _FeedMessage(
+                              text: context.tr(
+                                _filter == 'all'
+                                    ? 'feed_empty'
+                                    : 'feed_filter_empty',
+                              ),
+                            ),
+                          )
+                        else
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                            sliver: SliverList.separated(
+                              itemCount: filteredActivities.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: 10),
+                              itemBuilder: (context, index) {
+                                final activity = filteredActivities[index];
+                                return _ActivityCard(
+                                  activity: activity,
+                                  actor:
+                                      _actorProfiles[activity['actor_id']
+                                          ?.toString()],
+                                );
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 

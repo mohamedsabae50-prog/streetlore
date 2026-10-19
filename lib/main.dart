@@ -20,6 +20,7 @@ import 'logic/theme_provider.dart';
 import 'logic/auth_provider.dart';
 import 'logic/locale_provider.dart';
 import 'logic/place_photos_provider.dart';
+import 'core/services/widget_sync_service.dart';
 import 'logic/blocked_users_provider.dart';
 import 'logic/streak_provider.dart';
 import 'logic/squad_provider.dart';
@@ -293,6 +294,14 @@ class _EgyptLoreAppState extends State<EgyptLoreApp>
   Widget build(BuildContext context) {
     return Consumer2<ThemeProvider, LocaleProvider>(
       builder: (context, themeProvider, localeProvider, _) {
+        // After the first frame of the app build, update the Android widget
+        // with the current Place of the Day and cached weather.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            WidgetSyncService.updateWidgetData(context);
+          } catch (_) {}
+        });
+
         return MaterialApp(
           scaffoldMessengerKey: _scaffoldMessengerKey,
           title: 'EgyptLore',

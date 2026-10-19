@@ -11,7 +11,7 @@ class RevenueCatService {
 
   static const bool _enabled = bool.fromEnvironment(
     'ENABLE_REVENUECAT',
-    defaultValue: false,
+    defaultValue: true,
   );
   static const _apiKey = String.fromEnvironment('REVENUECAT_API_KEY');
   static const _androidApiKey = String.fromEnvironment(
@@ -19,6 +19,15 @@ class RevenueCatService {
   );
   static const _iosApiKey = String.fromEnvironment('REVENUECAT_IOS_API_KEY');
   static const entitlementId = 'pro';
+  static const weeklyProductId = String.fromEnvironment(
+    'REVENUECAT_WEEKLY_PRODUCT_ID',
+  );
+  static const monthlyProductId = String.fromEnvironment(
+    'REVENUECAT_MONTHLY_PRODUCT_ID',
+  );
+  static const annualProductId = String.fromEnvironment(
+    'REVENUECAT_ANNUAL_PRODUCT_ID',
+  );
 
   bool get isConfigured =>
       _enabled &&
@@ -70,7 +79,7 @@ class RevenueCatService {
     return customerInfo.entitlements.active.containsKey(entitlementId);
   }
 
-  Future<bool> syncSubscription(String userId) async {
+  Future<RevenueCatSubscriptionState> syncSubscription(String userId) async {
     final client = Supabase.instance.client;
     if (client.auth.currentUser?.id != userId) {
       throw StateError('Cannot sync a subscription for a different user.');
@@ -84,9 +93,28 @@ class RevenueCatService {
         '${detail == null ? '' : ': $detail'}',
       );
     }
-    if (response.data is! Map || response.data['is_pro'] is! bool) {
+    if (response.data is! Map ||
+        response.data['is_pro'] is! bool ||
+        response.data['subscription_tier'] is! String) {
       throw const FormatException('Invalid subscription sync response.');
     }
-    return response.data['is_pro'] as bool;
+    final endDateValue = response.data['subscription_end_date'];
+    return RevenueCatSubscriptionState(
+      isPro: response.data['is_pro'] as bool,
+      tier: response.data['subscription_tier'] as String,
+      endDate: endDateValue is String ? DateTime.tryParse(endDateValue) : null,
+    );
   }
+}
+
+class RevenueCatSubscriptionState {
+  const RevenueCatSubscriptionState({
+    required this.isPro,
+    required this.tier,
+    required this.endDate,
+  });
+
+  final bool isPro;
+  final String tier;
+  final DateTime? endDate;
 }

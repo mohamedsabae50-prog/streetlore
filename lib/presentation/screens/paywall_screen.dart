@@ -65,8 +65,40 @@ class _PaywallScreenState extends State<PaywallScreen> {
   }
 
   Package? _packageOf(List<Package> packages, PackageType type) {
+    final expectedId = switch (type) {
+      PackageType.weekly => RevenueCatService.weeklyProductId,
+      PackageType.monthly => RevenueCatService.monthlyProductId,
+      PackageType.annual => RevenueCatService.annualProductId,
+      _ => '',
+    };
+
     for (final package in packages) {
+      // Primary: match by package type
       if (package.packageType == type) return package;
+    // Fallback: attempt to extract store id dynamically (supporting different Purchases SDK versions)
+    String storeId = '';
+    try {
+      final sp = package.storeProduct;
+      if (sp != null) {
+        final dyn = sp as dynamic;
+        storeId = (dyn.identifier ?? dyn.productId ?? dyn.productIdentifier ?? '') as String;
+      }
+    } catch (_) {
+      storeId = '';
+    }
+
+    if (storeId.isNotEmpty && expectedId.isNotEmpty && storeId == expectedId) {
+      return package;
+    }
+    // Fallback 2: common RevenueCat naming ($rc_weekly etc.)
+    if (storeId.startsWith(r'$rc_')) {
+      final lc = storeId.toLowerCase();
+      if ((type == PackageType.weekly && lc.contains('weekly')) ||
+          (type == PackageType.monthly && lc.contains('monthly')) ||
+          (type == PackageType.annual && (lc.contains('annual') || lc.contains('annual')))) {
+        return package;
+      }
+    }
     }
     return null;
   }
@@ -93,12 +125,17 @@ class _PaywallScreenState extends State<PaywallScreen> {
         return;
       }
 
+      RevenueCatSubscriptionState? state;
       try {
-        await RevenueCatService.instance.syncSubscription(auth.userId);
+        state = await RevenueCatService.instance.syncSubscription(auth.userId);
+        if (state.isPro) {
+          // server already reports this user as Pro
+        }
       } catch (error) {
         debugPrint('PaywallScreen: RevenueCat restore sync is pending: $error');
       }
-      var profileActivated = false;
+
+      var profileActivated = state?.isPro ?? false;
       for (var attempt = 0; attempt < 5 && !profileActivated; attempt++) {
         try {
           await auth.refreshProStatus();
@@ -159,16 +196,18 @@ class _PaywallScreenState extends State<PaywallScreen> {
         auth.userId,
       );
       if (!mounted) return;
+      RevenueCatSubscriptionState? state;
       if (activated) {
         try {
-          await RevenueCatService.instance.syncSubscription(auth.userId);
+          state = await RevenueCatService.instance.syncSubscription(auth.userId);
         } catch (error) {
           debugPrint(
             'PaywallScreen: RevenueCat purchase sync is pending: $error',
           );
         }
       }
-      var profileActivated = false;
+
+      var profileActivated = state?.isPro ?? false;
       for (var attempt = 0; attempt < 5 && !profileActivated; attempt++) {
         try {
           await auth.refreshProStatus();
@@ -365,6 +404,26 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     : Text(context.tr('restore_purchases')),
               ),
             ),
+                  const SizedBox(height: 10),
+                  // Debug / verification summary of detected offering / product ids
+                  if (RevenueCatService.instance.isConfigured) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      context.tr('pro_detected_offerings'),
+                      style: TextStyle(color: context.textSec, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Center(
+                      child: Column(
+                        children: [
+                          Text('weekly: ${_weeklyPackage != null ? ((){ try { final dyn = _weeklyPackage!.storeProduct as dynamic; return (dyn.identifier ?? dyn.productId ?? dyn.productIdentifier ?? RevenueCatService.weeklyProductId) as String; } catch (_) { return RevenueCatService.weeklyProductId; } })() : RevenueCatService.weeklyProductId}'),
+                          Text('monthly: ${_monthlyPackage != null ? ((){ try { final dyn = _monthlyPackage!.storeProduct as dynamic; return (dyn.identifier ?? dyn.productId ?? dyn.productIdentifier ?? RevenueCatService.monthlyProductId) as String; } catch (_) { return RevenueCatService.monthlyProductId; } })() : RevenueCatService.monthlyProductId}'),
+                          Text('annual: ${_annualPackage != null ? ((){ try { final dyn = _annualPackage!.storeProduct as dynamic; return (dyn.identifier ?? dyn.productId ?? dyn.productIdentifier ?? RevenueCatService.annualProductId) as String; } catch (_) { return RevenueCatService.annualProductId; } })() : RevenueCatService.annualProductId}'),
+                        ],
+                      ),
+                    ),
+                  ],
           ],
         ),
       ),

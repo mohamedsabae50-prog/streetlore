@@ -220,6 +220,38 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
             children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, Color(0xFF1E3A5F)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.workspace_premium_rounded,
+                      color: Colors.amber,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        context.tr('pro_hidden_gem_reward'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               Text(
                 'Tell us about a place more travelers should discover.',
                 style: TextStyle(color: context.textSec, height: 1.4),

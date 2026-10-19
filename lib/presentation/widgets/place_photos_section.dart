@@ -28,6 +28,7 @@ class PlacePhotosSection extends StatefulWidget {
 
 class _PlacePhotosSectionState extends State<PlacePhotosSection> {
   bool _isUploading = false;
+  final Map<String, GlobalKey> _shareButtonKeys = {};
 
   Future<void> _addPhoto(BuildContext context) async {
     if (!widget.place.enableGallery || _isUploading) return;
@@ -213,8 +214,16 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
     }
   }
 
-  Future<void> _sharePhoto(BuildContext context, PlacePhoto photo) async {
+  Future<void> _sharePhoto(
+    BuildContext context,
+    PlacePhoto photo,
+    GlobalKey shareButtonKey,
+  ) async {
     final locale = Localizations.localeOf(context).languageCode;
+    final sharePositionOrigin = SocialShareService.sharePositionOriginFor(
+      context,
+      shareButtonKey: shareButtonKey,
+    );
     try {
       await SocialShareService.sharePlacePhoto(
         context: context,
@@ -223,6 +232,7 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
         locale: locale,
         category: context.tr('share_place_photo'),
         footer: context.tr('share_card_footer'),
+        sharePositionOrigin: sharePositionOrigin,
       );
     } catch (error, stackTrace) {
       debugPrint(
@@ -425,12 +435,17 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
               );
             }
           }
+          final shareButtonKey = _shareButtonKeys.putIfAbsent(
+            photo.id,
+            GlobalKey.new,
+          );
           return _PhotoCard(
             photo: photo,
             placeId: widget.place.id,
             fallbackCategory: widget.place.category,
             canDelete: context.read<AuthProvider>().owns(photo.userId),
-            onShare: () => _sharePhoto(context, photo),
+            shareButtonKey: shareButtonKey,
+            onShare: () => _sharePhoto(context, photo, shareButtonKey),
             onLike: () {
               HapticFeedback.lightImpact();
               context.read<PlacePhotosProvider>().toggleLike(
@@ -458,6 +473,7 @@ class _PhotoCard extends StatelessWidget {
   final String placeId;
   final String fallbackCategory;
   final bool canDelete;
+  final GlobalKey shareButtonKey;
   final VoidCallback onShare;
   final VoidCallback onLike;
   final VoidCallback onDelete;
@@ -469,6 +485,7 @@ class _PhotoCard extends StatelessWidget {
     required this.placeId,
     required this.fallbackCategory,
     required this.canDelete,
+    required this.shareButtonKey,
     required this.onShare,
     required this.onLike,
     required this.onDelete,
@@ -586,6 +603,7 @@ class _PhotoCard extends StatelessWidget {
                     icon: Icons.ios_share_rounded,
                     tooltip: context.tr('share_photo'),
                     onTap: onShare,
+                    buttonKey: shareButtonKey,
                   ),
                   if (canDelete) ...[
                     const SizedBox(width: 6),
@@ -666,27 +684,32 @@ class _PhotoActionButton extends StatelessWidget {
   final IconData icon;
   final String tooltip;
   final VoidCallback onTap;
+  final GlobalKey? buttonKey;
 
   const _PhotoActionButton({
     required this.icon,
     required this.tooltip,
     required this.onTap,
+    this.buttonKey,
   });
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
       message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.4),
-            shape: BoxShape.circle,
+      child: SizedBox(
+        key: buttonKey,
+        width: 28,
+        height: 28,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.4),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 15),
           ),
-          child: Icon(icon, color: Colors.white, size: 15),
         ),
       ),
     );

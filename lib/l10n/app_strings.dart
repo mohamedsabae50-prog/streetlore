@@ -197,6 +197,25 @@ class AppStrings {
       'en': 'Your place suggestion was submitted.',
       'ar': 'تم إرسال اقتراح المكان.',
     },
+    'pro_monthly_reward_title': {
+      'en': 'Finish #1 Top Visitor of the Month and earn 1 Month of Pro FREE!',
+      'ar': 'أنه الشهر في المركز الأول كأفضل زائر واربح شهرًا من برو مجانًا!',
+    },
+    'pro_monthly_reward_countdown': {
+      'en': '{days}d {hours}h left this month',
+      'ar': 'متبقي {days} يوم و{hours} ساعة على نهاية الشهر',
+    },
+    'pro_monthly_reward_cta': {
+      'en': 'Suggest a Hidden Gem',
+      'ar': 'اقترح جوهرة مخفية',
+    },
+    'pro_hidden_gem_reward': {
+      'en':
+          'If our team approves your Hidden Gem, we’ll automatically add 30 days of Pro to your account for FREE.',
+      'ar':
+          'إذا وافق فريقنا على جوهرتك المخفية، سنضيف تلقائيًا 30 يومًا من برو إلى حسابك مجانًا.',
+    },
+    'share_place': {'en': 'Share this place', 'ar': 'شارك هذا المكان'},
     'weather_clear_sky': {'en': 'Clear sky', 'ar': 'سماء صافية'},
     'weather_mainly_clear': {'en': 'Mainly clear', 'ar': 'صحو غالبًا'},
     'weather_partly_cloudy': {'en': 'Partly cloudy', 'ar': 'غائم جزئيًا'},

@@ -51,6 +51,23 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Approval did not promote a live hidden gem';
   END IF;
+  IF NOT EXISTS (
+    SELECT 1
+      FROM public.suggested_places
+     WHERE id = v_approved_id
+       AND reward_granted = true
+  ) THEN
+    RAISE EXCEPTION 'Approval did not mark the Pro reward as granted';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+      FROM public.profiles
+     WHERE user_id = auth.uid()
+       AND is_pro = true
+       AND subscription_end_date >= now() + interval '29 days'
+  ) THEN
+    RAISE EXCEPTION 'Approval did not grant 30 days of Pro';
+  END IF;
 
   INSERT INTO public.suggested_places (
     user_id, title, description, category, lat, lng, status

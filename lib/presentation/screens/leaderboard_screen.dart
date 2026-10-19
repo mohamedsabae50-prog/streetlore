@@ -14,6 +14,7 @@ import '../../logic/gamification_provider.dart';
 import '../../logic/leaderboard_provider.dart';
 import '../../core/services/supabase_service.dart';
 import 'user_profile_screen.dart';
+import '../widgets/monthly_pro_reward_banner.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -127,6 +128,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         ),
                       ],
                     ),
+                    const SliverToBoxAdapter(child: MonthlyProRewardBanner()),
                     SliverToBoxAdapter(
                       child: _MyCard(
                         stats: myStats,
@@ -667,9 +669,7 @@ class _Row extends StatelessWidget {
       );
       if (user == null || !context.mounted) return;
       await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => UserProfileScreen(user: user),
-        ),
+        MaterialPageRoute<void>(builder: (_) => UserProfileScreen(user: user)),
       );
     } catch (error, stackTrace) {
       debugPrint('LeaderboardScreen: profile load failed: $error\n$stackTrace');
