@@ -459,19 +459,28 @@ class SupabaseService {
     if (client == null || userId == null) {
       throw StateError('Sign in to load notifications.');
     }
-    final result = await client
-        .from('notifications')
-        .select(
-          'id,recipient_id,actor_id,type,friendship_id,title,body,metadata,'
-          'created_at,read_at',
-        )
-        .eq('recipient_id', userId)
-        .neq('actor_id', userId)
-        .order('created_at', ascending: false)
-        .limit(limit);
-    return (result as List)
-        .map((row) => Map<String, dynamic>.from(row as Map))
-        .toList(growable: false);
+    try {
+      final result = await client
+          .from('notifications')
+          .select(
+            'id,recipient_id,actor_id,type,friendship_id,title,body,metadata,'
+            'created_at,read_at',
+          )
+          .eq('recipient_id', userId)
+          .neq('actor_id', userId)
+          .order('created_at', ascending: false)
+          .limit(limit);
+      return (result as List)
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList(growable: false);
+    } catch (error, stackTrace) {
+      if (!isTransientSupabaseError(error)) rethrow;
+      debugPrint(
+        'SupabaseService.fetchNotifications transient network failure: '
+        '$error\n$stackTrace',
+      );
+      return const [];
+    }
   }
 
   Stream<List<Map<String, dynamic>>>? watchNotifications(String userId) {
@@ -730,7 +739,7 @@ class SupabaseService {
         'details=${error.details} hint=${error.hint}$elapsed',
       );
       debugPrint('$stackTrace');
-      if (_isTransientPostgrestError(error)) return const [];
+      if (isTransientSupabaseError(error)) return const [];
       rethrow;
     } on TimeoutException catch (error, stackTrace) {
       debugPrint(
@@ -755,16 +764,9 @@ class SupabaseService {
         'SupabaseService.fetchFollowingActivity unexpected error: '
         '$error\n$stackTrace',
       );
+      if (isTransientSupabaseError(error)) return const [];
       rethrow;
     }
-  }
-
-  static bool _isTransientPostgrestError(PostgrestException error) {
-    final code = error.code;
-    return code == '502' ||
-        code == '503' ||
-        code == '504' ||
-        (code?.startsWith('PGRST') ?? false);
   }
 
   Future<void> submitReport({

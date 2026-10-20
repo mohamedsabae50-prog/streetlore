@@ -48,9 +48,9 @@ class PlaceProvider extends ChangeNotifier {
   int get remoteSavedCount => _remoteSavedCount;
   int get remoteCheckinCount => _remoteCheckinCount;
 
-  PlaceProvider() {
+  PlaceProvider({bool watchRemoteUpdates = true}) {
     _loadSavedPlaces();
-    _watchPlaceUpdates();
+    if (watchRemoteUpdates) _watchPlaceUpdates();
   }
 
   void _watchPlaceUpdates() {

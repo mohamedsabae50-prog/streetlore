@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../data/models/itinerary_model.dart';
 import '../../l10n/app_strings.dart';
+import '../../logic/place_provider.dart';
+import '../../logic/tour_provider.dart';
+import '../../logic/trip_provider.dart';
 
 class TourCard extends StatelessWidget {
   final ItineraryModel tour;
@@ -48,6 +52,11 @@ class TourCard extends StatelessWidget {
     final textDirection = locale == 'ar'
         ? TextDirection.rtl
         : TextDirection.ltr;
+    final visitedIds = context.watch<TripProvider>().visitedPlaceIds;
+    final allPlaces = context.watch<PlaceProvider>().places;
+    final isVisited =
+        context.watch<TourProvider>().isTourVisited(tour.id) ||
+        isTourAutomaticallyVisited(tour, visitedIds, allPlaces);
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: SizedBox(
@@ -175,27 +184,61 @@ class TourCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    if (tour.requiresPro)
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.ratingGold.withValues(alpha: 0.92),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.lock_rounded,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
             ),
+            if (isVisited)
+              Positioned(
+                bottom: 12,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        color: Colors.white,
+                        size: 13,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        context.tr('tour_visited_badge'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (tour.requiresPro)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.ratingGold.withValues(alpha: 0.92),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.lock_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -207,6 +250,9 @@ class TourCard extends StatelessWidget {
     final textDirection = locale == 'ar'
         ? TextDirection.rtl
         : TextDirection.ltr;
+    final visitedIds = context.watch<TripProvider>().visitedPlaceIds;
+    final allPlaces = context.watch<PlaceProvider>().places;
+    final visitedCount = visitedStopsCountForTour(tour, visitedIds, allPlaces);
     return Padding(
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -251,9 +297,7 @@ class TourCard extends StatelessWidget {
                 child: _buildTag(
                   context,
                   icon: Icons.timer_outlined,
-                  label: tour.localizedDuration(
-                    locale,
-                  ),
+                  label: tour.localizedDuration(locale),
                 ),
               ),
               const SizedBox(width: 10),
@@ -280,6 +324,30 @@ class TourCard extends StatelessWidget {
               ),
             ],
           ),
+          if (tour.places.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(
+                  Icons.check_circle_outline_rounded,
+                  size: 14,
+                  color: context.quickActionSuccess,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  context.tr('tour_progress', {
+                    'visited': '$visitedCount',
+                    'total': '${tour.places.length}',
+                  }),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: context.textSec,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -304,8 +372,8 @@ class TourCard extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              textDirection: Localizations.localeOf(context).languageCode ==
-                      'ar'
+              textDirection:
+                  Localizations.localeOf(context).languageCode == 'ar'
                   ? TextDirection.rtl
                   : TextDirection.ltr,
               style: TextStyle(

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -8,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/offline_tile_provider.dart';
@@ -126,6 +124,7 @@ class _MapScreenState extends State<MapScreen> {
   final bool _isLoading = false;
   bool _routeUnavailable = true;
   bool _usingCachedRoadRoute = false;
+  bool _usingCorridorFallback = false;
 
   StreamSubscription<Position>? _positionSub;
   final MapController _mapController = MapController();
@@ -149,9 +148,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    _routePoints = _effectiveWaypoints
-        .map((waypoint) => LatLng(waypoint.lat, waypoint.lng))
-        .toList(growable: false);
+    _routePoints = const [];
     _initializeMap();
   }
 
@@ -251,148 +248,61 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _getRoute() async {
     final List<PlaceWaypoint> waypoints = _effectiveWaypoints;
-    if (_currentLocation == null && waypoints.isEmpty) return;
+    if (waypoints.isEmpty) return;
+    final origin = _currentLocation ?? const LatLng(31.2001, 29.9187);
     final waypointPoints = waypoints
         .map((waypoint) => LatLng(waypoint.lat, waypoint.lng))
+        .take(_osrmMaxWaypoints - 1)
         .toList(growable: false);
+    final routeLocations = <LatLng>[origin, ...waypointPoints];
     final storage = OfflineStorageService.instance;
-    final cachedRoute =
-        (widget.cachedRouteKey == null
-            ? null
-            : await storage.getCachedRouteGeometry(widget.cachedRouteKey!)) ??
-        (waypointPoints.length < 2
-            ? null
-            : await storage.getCachedRouteGeometry(
-                storage.routeCacheKey(waypointPoints),
-              ));
-    if (!mounted) return;
-    final cachedRoadRoute = cachedRoute == null
-        ? null
-        : <LatLng>[
-            if (_currentLocation != null &&
-                _distanceMeters(_currentLocation!, cachedRoute.first) > 5)
-              _currentLocation!,
-            ...cachedRoute,
-          ];
-
-    final coords = <String>[];
-    if (_currentLocation != null) {
-      coords.add(
-        '${_currentLocation!.longitude},${_currentLocation!.latitude}',
-      );
-    }
-
-    for (var i = 0; i < waypoints.length; i++) {
-      final w = waypoints[i];
-      if (coords.length >= _osrmMaxWaypoints) break;
-      coords.add('${w.lng},${w.lat}');
-    }
-
-    if (coords.length < 2) {
-      if (!mounted) return;
-      setState(() {
-        _routePoints =
-            cachedRoadRoute ??
-            [
-              if (_currentLocation != null) _currentLocation!,
-              ...waypointPoints,
-            ];
-        _routeUnavailable = cachedRoadRoute == null;
-        _usingCachedRoadRoute = cachedRoadRoute != null;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _fitToRoute();
-      });
-      return;
-    }
-
-    final fallbackRoute =
-        cachedRoadRoute ??
-        [if (_currentLocation != null) _currentLocation!, ...waypointPoints];
-    if (mounted) {
-      setState(() {
-        _routePoints = fallbackRoute;
-        _routeUnavailable = cachedRoadRoute == null;
-        _usingCachedRoadRoute = cachedRoadRoute != null;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _fitToRoute();
-      });
-    }
-
-    final url = Uri.parse(
-      'https://router.project-osrm.org/route/v1/driving/'
-      '${coords.join(';')}?geometries=geojson&overview=full',
-    );
-
+    final cacheKey =
+        widget.cachedRouteKey ?? storage.routeCacheKey(routeLocations);
     try {
-      final response = await http
-          .get(
-            url,
-            headers: const {
-              'User-Agent':
-                  'EgyptLoreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)',
-            },
-          )
-          .timeout(const Duration(seconds: 3));
+      final liveRoute = await storage.fetchAndCacheRouteGeometry(
+        cacheKey,
+        routeLocations,
+      );
       if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        final dynamic decoded = json.decode(response.body);
-        if (decoded != null && decoded is Map) {
-          final dynamic routesList = decoded['routes'];
-          if (routesList != null &&
-              routesList is List &&
-              routesList.isNotEmpty) {
-            final dynamic firstRoute = routesList[0];
-            if (firstRoute != null && firstRoute is Map) {
-              final dynamic geometry = firstRoute['geometry'];
-              if (geometry != null && geometry is Map) {
-                final dynamic coordinates = geometry['coordinates'];
-                if (coordinates != null && coordinates is List) {
-                  final List<LatLng> newRoutePoints = [];
-                  for (var i = 0; i < coordinates.length; i++) {
-                    final dynamic c = coordinates[i];
-                    if (c != null && c is List && c.length >= 2) {
-                      final dynamic lng = c[0];
-                      final dynamic lat = c[1];
-                      if (lng is num && lat is num) {
-                        newRoutePoints.add(
-                          LatLng(lat.toDouble(), lng.toDouble()),
-                        );
-                      }
-                    }
-                  }
-                  setState(() {
-                    _routePoints = newRoutePoints;
-                    _routeUnavailable = false;
-                    _usingCachedRoadRoute = false;
-                  });
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) _fitToRoute();
-                  });
-                  return;
-                }
-              }
-            }
-          }
-        }
-        throw Exception('Malformed OSRM response');
-      } else {
-        throw Exception('API status ${response.statusCode}');
+      if (liveRoute != null && liveRoute.length >= 2) {
+        setState(() {
+          _routePoints = liveRoute;
+          _routeUnavailable = false;
+          _usingCachedRoadRoute = false;
+          _usingCorridorFallback = false;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _fitToRoute();
+        });
+        return;
       }
     } catch (e) {
-      debugPrint('OSRM Error: $e');
-      if (!mounted) return;
-      setState(() {
-        _routePoints = fallbackRoute;
-        _routeUnavailable = cachedRoadRoute == null;
-        _usingCachedRoadRoute = cachedRoadRoute != null;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _fitToRoute();
-      });
+      debugPrint('MapScreen: live street routing failed: $e');
     }
+    if (!mounted) return;
+
+    final cachedRoute = await storage.getCachedRouteGeometry(cacheKey);
+    if (!mounted) return;
+    final cachedRouteMatchesOrigin =
+        cachedRoute != null &&
+        cachedRoute.length >= 3 &&
+        (_currentLocation == null ||
+            _distanceMeters(origin, cachedRoute.first) <= 300);
+    final fallbackRoute = cachedRouteMatchesOrigin
+        ? <LatLng>[
+            if (_distanceMeters(origin, cachedRoute.first) > 5) origin,
+            ...cachedRoute,
+          ]
+        : storage.buildOfflineRoadCorridor(origin, waypointPoints);
+    setState(() {
+      _routePoints = fallbackRoute;
+      _routeUnavailable = false;
+      _usingCachedRoadRoute = cachedRouteMatchesOrigin;
+      _usingCorridorFallback = !cachedRouteMatchesOrigin;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fitToRoute();
+    });
   }
 
   @override
@@ -555,7 +465,9 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   ),
                 ),
-                if (_routeUnavailable || _usingCachedRoadRoute)
+                if (_routeUnavailable ||
+                    _usingCachedRoadRoute ||
+                    _usingCorridorFallback)
                   Positioned(
                     top: 78,
                     left: 12,
@@ -572,6 +484,8 @@ class _MapScreenState extends State<MapScreen> {
                           context.tr(
                             _usingCachedRoadRoute
                                 ? 'map_cached_road_route'
+                                : _usingCorridorFallback
+                                ? 'map_offline_corridor'
                                 : 'map_offline_fallback',
                           ),
                           style: const TextStyle(color: Colors.black87),

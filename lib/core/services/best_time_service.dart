@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../data/mock_data.dart';
 import '../../data/models/place_model.dart';
 
 class BestTimeRecommendation {
@@ -7,8 +8,7 @@ class BestTimeRecommendation {
   final String hintKey;
   final IconData icon;
   final Color color;
-  
-  
+
   final String? customLabel;
 
   const BestTimeRecommendation({
@@ -31,18 +31,41 @@ class BestTimeService {
 
   BestTimeRecommendation recommend(PlaceModel place, {DateTime? now}) {
     final t = now ?? DateTime.now();
+    final categoryForRestrictions = '${place.category} ${place.categoryAr ?? ''}'
+        .toLowerCase();
+    final isOutdoor =
+        categoryForRestrictions.contains('beach') ||
+        categoryForRestrictions.contains('nature') ||
+        categoryForRestrictions.contains('park') ||
+        categoryForRestrictions.contains('outdoor') ||
+        categoryForRestrictions.contains('garden') ||
+        categoryForRestrictions.contains('شاطئ') ||
+        categoryForRestrictions.contains('شواطئ') ||
+        categoryForRestrictions.contains('حديقة') ||
+        categoryForRestrictions.contains('متنزه');
+    final isNight = t.hour >= 18 || t.hour < 6;
+    final isNightRestricted = isOutdoor && isNight;
 
-    
-    
-    
+    if (isNightRestricted || !MockData.isOpenNow(place.openHours, now: t)) {
+      return BestTimeRecommendation(
+        score: 0,
+        labelKey: isNightRestricted ? 'bt_closed_at_night' : 'bt_closed_now',
+        hintKey: isNightRestricted ? 'bt_best_morning' : 'bt_best_daylight',
+        icon: isNightRestricted
+            ? Icons.nightlight_round
+            : Icons.access_time_rounded,
+        color: Colors.amberAccent,
+      );
+    }
+
     final adminLabel = place.bestTimeToVisit?.trim();
     if (adminLabel != null && adminLabel.isNotEmpty) {
       return BestTimeRecommendation(
-        score: 100,
-        labelKey: 'bt_label_go_now',
+        score: 50,
+        labelKey: 'bt_label_decent_now',
         hintKey: 'bt_reason_admin_set',
         icon: _iconForLabel(adminLabel),
-        color: const Color(0xFF10B981),
+        color: const Color(0xFFF59E0B),
         customLabel: adminLabel,
       );
     }
@@ -55,7 +78,7 @@ class BestTimeService {
     final category = place.category.toLowerCase();
 
     final slot = _slotFor(hour);
-    
+
     final windows = place.bestTimeOverride != null
         ? _windowsFromOverride(place.bestTimeOverride!, category)
         : _windowsFor(category);
@@ -82,7 +105,7 @@ class BestTimeService {
       return BestTimeRecommendation(
         score: bestScore,
         labelKey: 'bt_label_go_now',
-        hintKey: best.reasonKey,
+        hintKey: 'bt_reason_great_time',
         icon: best.icon,
         color: const Color(0xFF10B981),
       );
@@ -100,7 +123,7 @@ class BestTimeService {
         labelKey: nextWindow.titleKey,
         hintKey: nextWindow.bodyKey,
         icon: best.icon,
-        color: const Color(0xFFEF4444),
+        color: const Color(0xFFF59E0B),
       );
     }
   }
@@ -315,20 +338,19 @@ class BestTimeService {
     }
   }
 
-  
-  
-  
   List<_Window> _windowsFromOverride(
     Map<String, int> override,
     String category,
   ) {
     final fallback = _windowsFor(category);
-    return fallback.map((w) {
-      final v = override[w.slot];
-      return v == null
-          ? w
-          : _Window(w.slot, v.clamp(0, 100), w.reasonKey, w.icon);
-    }).toList(growable: false);
+    return fallback
+        .map((w) {
+          final v = override[w.slot];
+          return v == null
+              ? w
+              : _Window(w.slot, v.clamp(0, 100), w.reasonKey, w.icon);
+        })
+        .toList(growable: false);
   }
 }
 

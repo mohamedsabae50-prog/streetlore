@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +10,72 @@ import '../core/services/supabase_service.dart';
 import '../data/models/itinerary_model.dart';
 import '../data/models/place_model.dart';
 import '../data/mock_data.dart' show fallbackTours;
+
+int visitedStopsCountForTour(
+  Tour tour,
+  Set<String> visitedPlaceIds,
+  List<PlaceModel> allPlaces,
+) {
+  final visitedPlaces = allPlaces
+      .where((place) => visitedPlaceIds.contains(place.id))
+      .toList(growable: false);
+  return tour.places.where((stop) {
+    if (visitedPlaceIds.contains(stop.id)) return true;
+    return visitedPlaces.any((visited) => _placesMatch(stop, visited));
+  }).length;
+}
+
+bool isTourAutomaticallyVisited(
+  Tour tour,
+  Set<String> visitedPlaceIds,
+  List<PlaceModel> allPlaces,
+) {
+  final status = tour.status.trim().toLowerCase();
+  if (status == 'completed' || status == 'visited') return true;
+  return tour.places.isNotEmpty &&
+      visitedStopsCountForTour(tour, visitedPlaceIds, allPlaces) ==
+          tour.places.length;
+}
+
+bool _placesMatch(PlaceModel a, PlaceModel b) {
+  if (a.id.isNotEmpty && a.id == b.id) return true;
+  final aNames = [a.nameEn, a.nameAr]
+      .whereType<String>()
+      .map(_normalizePlaceName)
+      .where((name) => name.isNotEmpty);
+  final bNames = [b.nameEn, b.nameAr]
+      .whereType<String>()
+      .map(_normalizePlaceName)
+      .where((name) => name.isNotEmpty)
+      .toSet();
+  if (aNames.any(bNames.contains)) return true;
+  if (!_hasValidCoordinates(a) || !_hasValidCoordinates(b)) return false;
+  return _placeDistanceMeters(a, b) <= 120;
+}
+
+bool _hasValidCoordinates(PlaceModel place) =>
+    place.lat.isFinite &&
+    place.lng.isFinite &&
+    place.lat >= -90 &&
+    place.lat <= 90 &&
+    place.lng >= -180 &&
+    place.lng <= 180 &&
+    (place.lat != 0 || place.lng != 0);
+
+String _normalizePlaceName(String value) =>
+    value.toLowerCase().replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), '');
+
+double _placeDistanceMeters(PlaceModel a, PlaceModel b) {
+  const earthRadius = 6371000.0;
+  final lat1 = a.lat * 0.017453292519943295;
+  final lat2 = b.lat * 0.017453292519943295;
+  final dLat = (b.lat - a.lat) * 0.017453292519943295;
+  final dLng = (b.lng - a.lng) * 0.017453292519943295;
+  final h =
+      math.sin(dLat / 2) * math.sin(dLat / 2) +
+      math.cos(lat1) * math.cos(lat2) * math.sin(dLng / 2) * math.sin(dLng / 2);
+  return 2 * earthRadius * math.atan2(math.sqrt(h), math.sqrt(1 - h));
+}
 
 class TourProvider extends ChangeNotifier {
   SupabaseClient get _client => Supabase.instance.client;
@@ -25,36 +93,35 @@ class TourProvider extends ChangeNotifier {
   List<ItineraryModel> get savedTours => _savedTours;
   final Set<String> _downloadingTourIds = <String>{};
 
-  bool isDownloadingTour(String tourId) =>
-      _downloadingTourIds.contains(tourId);
+  bool isDownloadingTour(String tourId) => _downloadingTourIds.contains(tourId);
 
   final Set<String> _checkedInPlaceIds = <String>{};
+  final Set<String> _automaticallyVisitedTourIds = <String>{};
+  List<PlaceModel> _allPlaces = const [];
   String? _checkInUserId;
   Set<String> get checkedInPlaceIds => Set.unmodifiable(_checkedInPlaceIds);
   bool _checkInsLoaded = false;
   bool get checkInsLoaded => _checkInsLoaded;
   Set<String> get visitedTourIds => Set.unmodifiable(
-    _tours
-        .where((tour) => tour.places.isNotEmpty && isTourVisited(tour.id))
-        .map((tour) => tour.id),
+    _tours.where((tour) => isTourVisited(tour.id)).map((tour) => tour.id),
   );
   int get visitedToursCount => visitedTourIds.length;
 
   bool isTourVisited(String tourId) {
     final matches = _tours.where((tour) => tour.id == tourId);
-    if (matches.isEmpty || matches.first.places.isEmpty) return false;
-    return matches.first.places.every(
-      (place) => _checkedInPlaceIds.contains(place.id),
-    );
+    if (matches.isEmpty) return false;
+    final tour = matches.first;
+    return _automaticallyVisitedTourIds.contains(tourId) ||
+        isTourAutomaticallyVisited(tour, _checkedInPlaceIds, _allPlaces);
   }
 
-  int checkedInPlaceCount(ItineraryModel tour) => tour.places
-      .where((place) => _checkedInPlaceIds.contains(place.id))
-      .length;
+  int checkedInPlaceCount(ItineraryModel tour) =>
+      visitedStopsCountForTour(tour, _checkedInPlaceIds, _allPlaces);
 
   void markPlaceCheckedIn(String placeId) {
     _checkInsLoaded = true;
     if (placeId.isNotEmpty && _checkedInPlaceIds.add(placeId)) {
+      _updateAutomaticallyVisitedTours();
       notifyListeners();
     }
   }
@@ -62,15 +129,69 @@ class TourProvider extends ChangeNotifier {
   void unmarkPlaceCheckedIn(String placeId) {
     _checkInsLoaded = true;
     if (placeId.isNotEmpty && _checkedInPlaceIds.remove(placeId)) {
+      _updateAutomaticallyVisitedTours();
       notifyListeners();
+    }
+  }
+
+  void syncVisitedPlaces(
+    Set<String> visitedPlaceIds,
+    List<PlaceModel> allPlaces,
+  ) {
+    final changed =
+        !_checkedInPlaceIds.containsAll(visitedPlaceIds) ||
+        !visitedPlaceIds.containsAll(_checkedInPlaceIds) ||
+        !listEquals(_allPlaces, allPlaces);
+    _checkedInPlaceIds
+      ..clear()
+      ..addAll(visitedPlaceIds);
+    _allPlaces = List.unmodifiable(allPlaces);
+    _checkInsLoaded = true;
+    final completionChanged = _updateAutomaticallyVisitedTours();
+    if (changed || completionChanged) notifyListeners();
+  }
+
+  bool _updateAutomaticallyVisitedTours() {
+    final completed = _tours
+        .where(
+          (tour) =>
+              tour.places.isNotEmpty &&
+              visitedStopsCountForTour(tour, _checkedInPlaceIds, _allPlaces) ==
+                  tour.places.length,
+        )
+        .map((tour) => tour.id)
+        .toSet();
+    if (setEquals(_automaticallyVisitedTourIds, completed)) return false;
+    _automaticallyVisitedTourIds
+      ..clear()
+      ..addAll(completed);
+    unawaited(_persistAutomaticallyVisitedTours());
+    return true;
+  }
+
+  Future<void> _persistAutomaticallyVisitedTours() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        'automatically_visited_tour_ids',
+        _automaticallyVisitedTourIds.toList(growable: false),
+      );
+    } catch (error, stackTrace) {
+      debugPrint(
+        'TourProvider: failed to persist completed tours: '
+        '$error\n$stackTrace',
+      );
     }
   }
 
   void clearCheckedInPlaces() {
     _checkInUserId = null;
     _checkInsLoaded = false;
-    if (_checkedInPlaceIds.isEmpty) return;
+    if (_checkedInPlaceIds.isEmpty && _automaticallyVisitedTourIds.isEmpty) {
+      return;
+    }
     _checkedInPlaceIds.clear();
+    _updateAutomaticallyVisitedTours();
     notifyListeners();
   }
 
@@ -116,6 +237,7 @@ class TourProvider extends ChangeNotifier {
       } else {
         _tours = loaded;
       }
+      _updateAutomaticallyVisitedTours();
       _error = null;
     } catch (e) {
       _error = 'Failed to load tours: $e';
@@ -125,6 +247,7 @@ class TourProvider extends ChangeNotifier {
       }
     } finally {
       _loading = false;
+      _updateAutomaticallyVisitedTours();
       notifyListeners();
     }
   }
@@ -306,6 +429,7 @@ class TourProvider extends ChangeNotifier {
           ..clear()
           ..addAll(checkedInPlaceIds);
       }
+      _updateAutomaticallyVisitedTours();
       if (changed || !wasLoaded) {
         notifyListeners();
         debugPrint(
@@ -372,6 +496,10 @@ class TourProvider extends ChangeNotifier {
           routeOrigin,
           ...stops.map((place) => LatLng(place.lat, place.lng)),
         ];
+        await storage.fetchAndCacheRouteGeometry(
+          storage.entityRouteCacheKey('tour', tour.id),
+          routePoints,
+        );
         await storage.prefetchOfflineRouteCoverage(
           storage.entityRouteCacheKey('tour', tour.id),
           routePoints,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/social_share_service.dart';
@@ -224,6 +225,48 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
     );
   }
 
+  Future<void> _openGoogleMaps(PlaceModel place) async {
+    final locale = Localizations.localeOf(context).languageCode;
+    final uri = Uri.https('www.google.com', '/maps/search/', {
+      'api': '1',
+      'query':
+          '${place.lat},${place.lng} '
+          '${place.localizedName(locale)}',
+    });
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              locale == 'ar'
+                  ? 'تعذر فتح خرائط جوجل'
+                  : 'Could not open Google Maps',
+            ),
+          ),
+        );
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        'PlaceDetailsScreen: opening Google Maps failed: '
+        '$error\n$stackTrace',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            locale == 'ar'
+                ? 'تعذر فتح خرائط جوجل'
+                : 'Could not open Google Maps',
+          ),
+        ),
+      );
+    }
+  }
+
   void _showShareSheet() {
     showModalBottomSheet(
       context: context,
@@ -360,20 +403,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
             ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: Consumer<PlaceProvider>(
-              builder: (context, pp, _) {
-                final saved = pp.isSaved(place.id);
-                return _GlassBtn(
-                  icon: saved
-                      ? Icons.bookmark_rounded
-                      : Icons.bookmark_border_rounded,
-                  iconColor: saved ? AppColors.ratingGold : Colors.white,
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    pp.toggleSave(place);
-                  },
-                );
-              },
+            child: _GlassBtn(
+              icon: Icons.map_outlined,
+              tooltip: locale == 'ar' ? 'خرائط جوجل' : 'Google Maps',
+              onTap: () => _openGoogleMaps(place),
             ),
           ),
           Padding(
@@ -1241,17 +1274,17 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
 
 class _GlassBtn extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
   final VoidCallback onTap;
+  final String? tooltip;
   const _GlassBtn({
     required this.icon,
-    this.iconColor = Colors.white,
     required this.onTap,
+    this.tooltip,
   });
 
   @override
   Widget build(BuildContext context) {
-    return PressScale(
+    final button = PressScale(
       onTap: () {
         HapticFeedback.lightImpact();
         onTap();
@@ -1265,9 +1298,10 @@ class _GlassBtn extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
-        child: Icon(icon, color: iconColor, size: 20),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
+    return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
   }
 }
 

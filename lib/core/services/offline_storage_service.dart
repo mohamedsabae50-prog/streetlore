@@ -28,6 +28,33 @@ class OfflineStorageService {
   ];
   static const _tileUserAgent =
       'EgyptLoreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)';
+  static const _routeEndpoints = [
+    'https://routing.openstreetmap.de/routed-foot/route/v1/driving/',
+    'https://routing.openstreetmap.de/routed-car/route/v1/driving/',
+    'https://router.project-osrm.org/route/v1/driving/',
+  ];
+  static const _alexandriaRoadSpines = <List<LatLng>>[
+    [
+      LatLng(31.2135, 29.8750),
+      LatLng(31.2150, 29.8900),
+      LatLng(31.2160, 29.9050),
+      LatLng(31.2155, 29.9200),
+      LatLng(31.2145, 29.9350),
+      LatLng(31.2130, 29.9500),
+      LatLng(31.2110, 29.9650),
+      LatLng(31.2085, 29.9800),
+    ],
+    [
+      LatLng(31.1970, 29.8750),
+      LatLng(31.1980, 29.8900),
+      LatLng(31.1985, 29.9050),
+      LatLng(31.1980, 29.9200),
+      LatLng(31.1970, 29.9350),
+      LatLng(31.1955, 29.9500),
+      LatLng(31.1935, 29.9650),
+      LatLng(31.1910, 29.9800),
+    ],
+  ];
 
   bool _ready = false;
   String? _tileDirectoryPath;
@@ -375,34 +402,9 @@ class OfflineStorageService {
     final file = File('$directory/${_safeSegment(routeKey)}.json');
     if (await file.exists()) return true;
 
-    final coordinates = locations
-        .map((point) => '${point.longitude},${point.latitude}')
-        .join(';');
-    final uri = Uri.parse(
-      'https://router.project-osrm.org/route/v1/driving/'
-      '$coordinates?geometries=geojson&overview=full',
-    );
     try {
-      final response = await http
-          .get(uri, headers: const {'User-Agent': _tileUserAgent})
-          .timeout(const Duration(seconds: 6));
-      if (response.statusCode != 200) {
-        throw HttpException(
-          'OSRM route request returned ${response.statusCode}',
-        );
-      }
-      final decoded = jsonDecode(response.body);
-      if (decoded is! Map ||
-          decoded['routes'] is! List ||
-          (decoded['routes'] as List).isEmpty) {
-        throw const FormatException('OSRM response did not contain a route');
-      }
-      final route = (decoded['routes'] as List).first;
-      if (route is! Map || route['geometry'] is! Map) {
-        throw const FormatException('OSRM route geometry was missing');
-      }
-      await file.writeAsString(jsonEncode(route['geometry']), flush: true);
-      return true;
+      final geometry = await fetchAndCacheRouteGeometry(routeKey, locations);
+      return geometry != null;
     } catch (error, stackTrace) {
       debugPrint(
         'OfflineStorageService.prefetchRouteGeometry($routeKey) '
@@ -410,6 +412,211 @@ class OfflineStorageService {
       );
       return false;
     }
+  }
+
+  Future<List<LatLng>?> fetchAndCacheRouteGeometry(
+    String routeKey,
+    List<LatLng> locations,
+  ) async {
+    if (locations.length < 2) return null;
+    final points = await _fetchStreetRouteGeometry(locations);
+    if (points == null) return null;
+    if (!kIsWeb) {
+      try {
+        if (_routeDirectoryPath == null) await init();
+        final directory = _routeDirectoryPath;
+        if (directory == null) {
+          throw StateError('Offline route storage is not available');
+        }
+        final file = File('$directory/${_safeSegment(routeKey)}.json');
+        await file.writeAsString(
+          jsonEncode({
+            'coordinates': points
+                .map((point) => [point.longitude, point.latitude])
+                .toList(growable: false),
+          }),
+          flush: true,
+        );
+      } catch (error, stackTrace) {
+        debugPrint(
+          'OfflineStorageService: could not cache a live route: '
+          '$error\n$stackTrace',
+        );
+      }
+    }
+    return points;
+  }
+
+  Future<List<LatLng>?> _fetchStreetRouteGeometry(
+    List<LatLng> locations,
+  ) async {
+    final coordinates = locations
+        .map((point) => '${point.longitude},${point.latitude}')
+        .join(';');
+    for (final endpoint in _routeEndpoints) {
+      final uri = Uri.parse(
+        '$endpoint$coordinates?geometries=geojson&overview=full',
+      );
+      try {
+        final response = await http
+            .get(uri, headers: const {'User-Agent': _tileUserAgent})
+            .timeout(const Duration(seconds: 4));
+        if (response.statusCode != 200) {
+          debugPrint(
+            'OfflineStorageService: route endpoint returned '
+            '${response.statusCode}: $endpoint',
+          );
+          continue;
+        }
+        final decoded = jsonDecode(response.body);
+        if (decoded is! Map ||
+            decoded['routes'] is! List ||
+            (decoded['routes'] as List).isEmpty) {
+          debugPrint(
+            'OfflineStorageService: route endpoint returned no route: '
+            '$endpoint',
+          );
+          continue;
+        }
+        final route = (decoded['routes'] as List).first;
+        final geometry = route is Map ? route['geometry'] : null;
+        final coordinatesJson = geometry is Map
+            ? geometry['coordinates']
+            : null;
+        if (coordinatesJson is! List) {
+          debugPrint(
+            'OfflineStorageService: route endpoint returned invalid '
+            'geometry: $endpoint',
+          );
+          continue;
+        }
+        final points = coordinatesJson
+            .whereType<List>()
+            .where(
+              (coordinate) =>
+                  coordinate.length >= 2 &&
+                  coordinate[0] is num &&
+                  coordinate[1] is num,
+            )
+            .map(
+              (coordinate) => LatLng(
+                (coordinate[1] as num).toDouble(),
+                (coordinate[0] as num).toDouble(),
+              ),
+            )
+            .toList(growable: false);
+        if (points.length >= 2) return points;
+        debugPrint(
+          'OfflineStorageService: route endpoint returned too few points: '
+          '$endpoint',
+        );
+      } catch (error, stackTrace) {
+        debugPrint(
+          'OfflineStorageService: route request failed at $endpoint: '
+          '$error\n$stackTrace',
+        );
+      }
+    }
+    return null;
+  }
+
+  List<LatLng> buildOfflineRoadCorridor(
+    LatLng origin,
+    Iterable<LatLng> destinations,
+  ) {
+    final route = <LatLng>[origin];
+    var start = origin;
+    for (final destination in destinations) {
+      route.addAll(_buildOfflineRoadSegment(start, destination).skip(1));
+      start = destination;
+    }
+    return route;
+  }
+
+  List<LatLng> _buildOfflineRoadSegment(LatLng origin, LatLng destination) {
+    final inAlexandria = [origin, destination].every(
+      (point) =>
+          point.latitude >= 31.12 &&
+          point.latitude <= 31.30 &&
+          point.longitude >= 29.65 &&
+          point.longitude <= 30.15,
+    );
+    if (!inAlexandria) {
+      return [
+        origin,
+        LatLng(
+          origin.latitude + (destination.latitude - origin.latitude) * 0.25,
+          origin.longitude + (destination.longitude - origin.longitude) * 0.25,
+        ),
+        LatLng(
+          origin.latitude + (destination.latitude - origin.latitude) * 0.5,
+          origin.longitude + (destination.longitude - origin.longitude) * 0.5,
+        ),
+        LatLng(
+          origin.latitude + (destination.latitude - origin.latitude) * 0.75,
+          origin.longitude + (destination.longitude - origin.longitude) * 0.75,
+        ),
+        destination,
+      ];
+    }
+
+    List<LatLng>? bestSpine;
+    var nearestOrigin = 0;
+    var nearestDestination = 0;
+    var bestDistance = double.infinity;
+    for (final spine in _alexandriaRoadSpines) {
+      var originIndex = 0;
+      var destinationIndex = 0;
+      var originDistance = double.infinity;
+      var destinationDistance = double.infinity;
+      for (var index = 0; index < spine.length; index++) {
+        final fromOrigin = _routeDistanceMeters(origin, spine[index]);
+        final fromDestination = _routeDistanceMeters(destination, spine[index]);
+        if (fromOrigin < originDistance) {
+          originDistance = fromOrigin;
+          originIndex = index;
+        }
+        if (fromDestination < destinationDistance) {
+          destinationDistance = fromDestination;
+          destinationIndex = index;
+        }
+      }
+      final totalDistance = originDistance + destinationDistance;
+      if (totalDistance < bestDistance) {
+        bestDistance = totalDistance;
+        bestSpine = spine;
+        nearestOrigin = originIndex;
+        nearestDestination = destinationIndex;
+      }
+    }
+    final spine = bestSpine!;
+    final step = nearestOrigin <= nearestDestination ? 1 : -1;
+    return [
+      origin,
+      spine[nearestOrigin],
+      for (
+        var index = nearestOrigin + step;
+        step > 0 ? index <= nearestDestination : index >= nearestDestination;
+        index += step
+      )
+        spine[index],
+      destination,
+    ];
+  }
+
+  double _routeDistanceMeters(LatLng a, LatLng b) {
+    const earthRadius = 6371000.0;
+    final lat1 = a.latitude * math.pi / 180;
+    final lat2 = b.latitude * math.pi / 180;
+    final dLat = (b.latitude - a.latitude) * math.pi / 180;
+    final dLng = (b.longitude - a.longitude) * math.pi / 180;
+    final h =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1) *
+            math.cos(lat2) *
+            math.sin(dLng / 2) *
+            math.sin(dLng / 2);
+    return 2 * earthRadius * math.atan2(math.sqrt(h), math.sqrt(1 - h));
   }
 
   Future<List<LatLng>?> getCachedRouteGeometry(String routeKey) async {

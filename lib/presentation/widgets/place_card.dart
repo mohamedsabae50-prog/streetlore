@@ -15,12 +15,14 @@ import 'social_user_widgets.dart';
 class PlaceCard extends StatefulWidget {
   final PlaceModel place;
   final VoidCallback? onTap;
+  final DateTime? recommendationTime;
   final List<Map<String, dynamic>> friendVisitors;
 
   const PlaceCard({
     super.key,
     required this.place,
     this.onTap,
+    this.recommendationTime,
     this.friendVisitors = const [],
   });
 
@@ -131,13 +133,13 @@ class _PlaceCardState extends State<PlaceCard> {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
+                      color: AppColors.primary,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       widget.place.localizedCategory(localeCode).toUpperCase(),
                       style: TextStyle(
-                        color: AppColors.primary,
+                        color: Colors.white,
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.8,
@@ -179,7 +181,7 @@ class _PlaceCardState extends State<PlaceCard> {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 8),
-          _BestTimeHint(place: widget.place),
+          _BestTimeHint(place: widget.place, now: widget.recommendationTime),
           const SizedBox(height: 8),
           if (widget.friendVisitors.isNotEmpty)
             FriendsVisitBadge(friends: widget.friendVisitors),
@@ -294,11 +296,12 @@ class _PriceChip extends StatelessWidget {
 
 class _BestTimeHint extends StatelessWidget {
   final PlaceModel place;
-  const _BestTimeHint({required this.place});
+  final DateTime? now;
+  const _BestTimeHint({required this.place, this.now});
 
   @override
   Widget build(BuildContext context) {
-    final rec = BestTimeService.instance.recommend(place);
+    final rec = BestTimeService.instance.recommend(place, now: now);
     return Row(
       children: [
         Icon(rec.icon, color: rec.color, size: 12),

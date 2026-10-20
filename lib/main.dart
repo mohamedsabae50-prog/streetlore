@@ -57,9 +57,7 @@ Future<void> _runApplication() async {
       debugPrint('Ignoring transient unhandled network error: $error');
       return true;
     }
-    unawaited(
-      Sentry.captureException(error, stackTrace: stackTrace),
-    );
+    unawaited(Sentry.captureException(error, stackTrace: stackTrace));
     return false;
   };
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -136,6 +134,16 @@ Future<void> _runApplication() async {
   final placeProvider = PlaceProvider();
   final tourProvider = TourProvider();
   final tripProvider = TripProvider();
+  void syncTourVisitStatus() {
+    tourProvider.syncVisitedPlaces(
+      tripProvider.visitedPlaceIds,
+      placeProvider.places,
+    );
+  }
+
+  tripProvider.addListener(syncTourVisitStatus);
+  placeProvider.addListener(syncTourVisitStatus);
+  syncTourVisitStatus();
   unawaited(placeProvider.loadPlaces(force: true));
   unawaited(tourProvider.loadTours());
 

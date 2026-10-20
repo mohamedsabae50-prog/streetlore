@@ -1155,8 +1155,8 @@ class AppStrings {
       'ar': 'تعذر حفظ تسجيل الزيارة',
     },
     'tour_progress': {
-      'en': '{done} of {total} places visited',
-      'ar': 'تمت زيارة {done} من {total} أماكن',
+      'en': '{visited}/{total} visited',
+      'ar': '{visited}/{total} تمت زيارتها',
     },
 
     'chat_live': {'en': 'Live chat', 'ar': 'دردشة مباشرة'},
@@ -1179,9 +1179,12 @@ class AppStrings {
     },
 
     'map_offline_fallback': {
-      'en':
-          'Offline guidance: showing a straight-line route to your destination.',
-      'ar': 'إرشاد دون اتصال: يظهر المسار المباشر إلى وجهتك.',
+      'en': 'Offline guidance: showing an estimated road-corridor route.',
+      'ar': 'إرشاد دون اتصال: عرض مسار تقديري عبر ممرات الطرق.',
+    },
+    'map_offline_corridor': {
+      'en': 'Offline guidance: showing an estimated road-corridor route.',
+      'ar': 'إرشاد دون اتصال: عرض مسار تقديري عبر ممرات الطرق.',
     },
     'map_cached_road_route': {
       'en': 'Offline map: showing the cached road route to your destination.',
@@ -1382,6 +1385,7 @@ class AppStrings {
       'en': '{n} stops along the way',
       'ar': '{n} محطة على الطريق',
     },
+    'tour_visited_badge': {'en': 'Visited', 'ar': 'تمت الزيارة'},
     'tour_start_nav': {'en': 'Start Navigation', 'ar': 'ابدأ التنقل'},
     'tour_locations_count': {'en': '{n} locations', 'ar': '{n} موقع'},
     'tour_visited': {'en': 'Visited', 'ar': 'تمت الزيارة'},
@@ -1623,9 +1627,23 @@ class AppStrings {
     'ob_get_started': {'en': 'Get Started', 'ar': 'يلا نبدأ'},
     'ob_next': {'en': 'Next', 'ar': 'التالي'},
 
-    'bt_label_go_now': {'en': 'Go now', 'ar': 'روح دلوقتي'},
+    'bt_label_go_now': {'en': 'Open now', 'ar': 'مفتوح الآن'},
+    'bt_reason_great_time': {
+      'en': 'Great time to visit',
+      'ar': 'وقت مثالي للزيارة',
+    },
     'bt_label_decent_now': {'en': 'Decent now', 'ar': 'كويس دلوقتي'},
     'bt_label_wait': {'en': 'Wait for a better window', 'ar': 'استنى وقت أحسن'},
+    'bt_closed_now': {'en': 'Closed now', 'ar': 'مغلق حالياً'},
+    'bt_closed_at_night': {'en': 'Closed at night', 'ar': 'مغلق ليلاً'},
+    'bt_best_daylight': {
+      'en': 'Best visited in daylight',
+      'ar': 'الأفضل زيارته نهاراً',
+    },
+    'bt_best_morning': {
+      'en': 'Best visited in the morning',
+      'ar': 'يُفضل الزيارة صباحاً',
+    },
 
     'bt_reason_quietest': {
       'en': 'Quietest, best light',

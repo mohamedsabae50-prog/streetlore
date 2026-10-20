@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:streetlore/core/services/realtime_resilience.dart';
 import 'package:streetlore/core/services/supabase_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -29,24 +30,42 @@ void main() {
     expect(rows, isEmpty);
   });
 
-  test('transient realtime stream errors are swallowed and later data arrives',
-      () async {
-    final values = <int>[];
-    final errors = <Object>[];
-    final source = Stream<int>.multi((controller) {
-      controller.addError(SocketException('WebSocket HTTP status code: 500'));
-      controller.add(7);
-      controller.close();
-    });
+  test(
+    'following activity returns empty rows for wrapped DNS failures',
+    () async {
+      final rows = await SupabaseService.runFollowingActivitySafely(
+        () => Future.error(
+          http.ClientException(
+            "SocketException: Failed host lookup: "
+            "'tbivoxyxclwjjspwsgvc.supabase.co' (errno = 7)",
+          ),
+        ),
+      );
 
-    await swallowTransientRealtimeErrors(
-      source,
-      onTransientError: (error, _) => errors.add(error),
-    ).forEach(values.add);
+      expect(rows, isEmpty);
+    },
+  );
 
-    expect(values, [7]);
-    expect(errors, hasLength(1));
-  });
+  test(
+    'transient realtime stream errors are swallowed and later data arrives',
+    () async {
+      final values = <int>[];
+      final errors = <Object>[];
+      final source = Stream<int>.multi((controller) {
+        controller.addError(SocketException('WebSocket HTTP status code: 500'));
+        controller.add(7);
+        controller.close();
+      });
+
+      await swallowTransientRealtimeErrors(
+        source,
+        onTransientError: (error, _) => errors.add(error),
+      ).forEach(values.add);
+
+      expect(values, [7]);
+      expect(errors, hasLength(1));
+    },
+  );
 
   test('RealtimeSubscribeException and gateway drops are filtered', () {
     expect(
@@ -54,5 +73,15 @@ void main() {
       isTrue,
     );
     expect(isTransientNetworkError(Exception('504 Gateway Timeout')), isTrue);
+  });
+
+  test('http DNS lookup failures are classified as transient', () {
+    final error = http.ClientException(
+      "SocketException: Failed host lookup: "
+      "'tbivoxyxclwjjspwsgvc.supabase.co' (errno = 7)",
+    );
+
+    expect(isTransientSupabaseError(error), isTrue);
+    expect(isTransientNetworkError(error), isTrue);
   });
 }

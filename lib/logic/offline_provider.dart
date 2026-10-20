@@ -191,10 +191,9 @@ class OfflineProvider extends ChangeNotifier {
           await _storage.getCurrentLocationForOfflineRoute() ??
           const LatLng(31.2001, 29.9187);
       final routeKey = _storage.entityRouteCacheKey('place', place.id);
-      await _storage.prefetchOfflineRouteCoverage(routeKey, [
-        routeOrigin,
-        LatLng(place.lat, place.lng),
-      ]);
+      final routePoints = [routeOrigin, LatLng(place.lat, place.lng)];
+      await _storage.fetchAndCacheRouteGeometry(routeKey, routePoints);
+      await _storage.prefetchOfflineRouteCoverage(routeKey, routePoints);
       await _storage.prefetchMapTiles([LatLng(place.lat, place.lng)]);
       final imgResult = await _storage.prefetchImages(
         [place],

@@ -13,6 +13,8 @@ import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/tour_provider.dart';
 import '../../logic/offline_provider.dart';
+import '../../logic/place_provider.dart';
+import '../../logic/trip_provider.dart';
 import '../widgets/place_card.dart';
 import 'map_screen.dart';
 import 'paywall_screen.dart';
@@ -173,6 +175,16 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
         : TextDirection.ltr;
     final imageUrl = tour.coverImageUrl;
     final isLocked = !context.watch<AuthProvider>().isPro;
+    final visitedPlaceIds = context.watch<TripProvider>().visitedPlaceIds;
+    final allPlaces = context.watch<PlaceProvider>().places;
+    final visitedStops = visitedStopsCountForTour(
+      tour,
+      visitedPlaceIds,
+      allPlaces,
+    );
+    final isVisited =
+        context.watch<TourProvider>().isTourVisited(tour.id) ||
+        isTourAutomaticallyVisited(tour, visitedPlaceIds, allPlaces);
 
     if (isLocked) {
       return Scaffold(
@@ -510,6 +522,62 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (tour.places.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+                          child: Row(
+                            children: [
+                              if (isVisited)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: context.quickActionSuccessBg,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle_rounded,
+                                        size: 14,
+                                        color: context.quickActionSuccess,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        context.tr('tour_visited_badge'),
+                                        style: TextStyle(
+                                          color: context.quickActionSuccess,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (isVisited) const SizedBox(width: 10),
+                              Icon(
+                                Icons.route_rounded,
+                                size: 15,
+                                color: context.textSec,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                context.tr('tour_progress', {
+                                  'visited': '$visitedStops',
+                                  'total': '${tour.places.length}',
+                                }),
+                                style: TextStyle(
+                                  color: context.textSec,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
                         child: Row(
@@ -741,7 +809,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                     visited
                         ? context.tr('tour_visited')
                         : context.tr('tour_progress', {
-                            'done': '$checkedInCount',
+                            'visited': '$checkedInCount',
                             'total': '$totalPlaces',
                           }),
                     style: AppTextStyles.buttonText.copyWith(color: color),

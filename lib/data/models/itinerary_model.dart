@@ -98,9 +98,7 @@ class ItineraryModel {
           json['title'] as String? ??
           json['titleEn'] as String? ??
           '',
-      titleAr:
-          json['title_ar'] as String? ??
-          json['titleAr'] as String?,
+      titleAr: json['title_ar'] as String? ?? json['titleAr'] as String?,
       description:
           json['description_en'] as String? ??
           json['description'] as String? ??
@@ -152,3 +150,5 @@ class ItineraryModel {
     };
   }
 }
+
+typedef Tour = ItineraryModel;
