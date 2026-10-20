@@ -13,6 +13,7 @@ import '../../data/models/place_model.dart';
 import '../../core/services/offline_tile_provider.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
+import '../../logic/governorate_provider.dart';
 import '../../logic/trip_provider.dart';
 import '_atm_sheet.dart';
 import 'place_details_screen.dart';
@@ -84,11 +85,22 @@ class _MapViewScreenState extends State<MapViewScreen> {
       if (!mounted) return;
       final here = LatLng(pos.latitude, pos.longitude);
       setState(() => _userLocation = here);
+      await context.read<GovernorateProvider>().syncWithCoordinates(
+        here.latitude,
+        here.longitude,
+        availableGovernorateIds: context
+            .read<PlaceProvider>()
+            .availableGovernorateIds,
+      );
       if (move || !_initialCentered) {
         _initialCentered = true;
         _mapController.move(here, 13.5);
       }
-    } catch (_) {}
+    } catch (error, stackTrace) {
+      debugPrint(
+        'MapViewScreen: location detection failed: $error\n$stackTrace',
+      );
+    }
   }
 
   void _showAtmSheet(BuildContext context, MapPoi atm) {

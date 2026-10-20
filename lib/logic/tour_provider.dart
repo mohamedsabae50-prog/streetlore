@@ -10,6 +10,7 @@ import '../core/services/supabase_service.dart';
 import '../data/models/itinerary_model.dart';
 import '../data/models/place_model.dart';
 import '../data/mock_data.dart' show fallbackTours;
+import 'governorate_provider.dart';
 
 int visitedStopsCountForTour(
   Tour tour,
@@ -81,7 +82,13 @@ class TourProvider extends ChangeNotifier {
   SupabaseClient get _client => Supabase.instance.client;
 
   List<ItineraryModel> _tours = [];
-  List<ItineraryModel> get tours => List.unmodifiable(_tours);
+  final GovernorateProvider? governorates;
+  List<ItineraryModel> get tours => List.unmodifiable(
+    _tours.where(
+      (tour) =>
+          tour.governorate == (governorates?.activeGovernorate ?? 'alexandria'),
+    ),
+  );
 
   bool _loading = false;
   bool get loading => _loading;
@@ -90,7 +97,13 @@ class TourProvider extends ChangeNotifier {
   String? get error => _error;
 
   List<ItineraryModel> _savedTours = [];
-  List<ItineraryModel> get savedTours => _savedTours;
+  List<ItineraryModel> get savedTours => _savedTours
+      .where(
+        (tour) =>
+            tour.governorate ==
+            (governorates?.activeGovernorate ?? 'alexandria'),
+      )
+      .toList(growable: false);
   final Set<String> _downloadingTourIds = <String>{};
 
   bool isDownloadingTour(String tourId) => _downloadingTourIds.contains(tourId);
@@ -195,8 +208,17 @@ class TourProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  TourProvider() {
+  TourProvider({this.governorates}) {
+    governorates?.addListener(_onGovernorateChanged);
     _loadSavedTours();
+  }
+
+  void _onGovernorateChanged() => notifyListeners();
+
+  @override
+  void dispose() {
+    governorates?.removeListener(_onGovernorateChanged);
+    super.dispose();
   }
 
   Future<void> loadTours({bool force = false}) async {
@@ -259,6 +281,7 @@ class TourProvider extends ChangeNotifier {
     final places = placesJson
         .map((e) => _placeFromSupabaseJson(e as Map<String, dynamic>))
         .toList();
+    final governorate = (json['governorate'] as String?)?.trim().toLowerCase();
     return ItineraryModel(
       id: json['id'] as String,
       title: json['title'] as String,
@@ -269,6 +292,9 @@ class TourProvider extends ChangeNotifier {
       durationAr: json['duration_ar'] as String?,
       imageUrl: (json['image_url'] as String?) ?? '',
       status: (json['status'] as String?) ?? 'published',
+      governorate: governorate == null || governorate.isEmpty
+          ? 'alexandria'
+          : governorate,
       isPremium: (json['is_premium'] as bool?) ?? false,
       isHiddenGem: (json['is_hidden_gem'] as bool?) ?? false,
       places: places,
@@ -276,6 +302,7 @@ class TourProvider extends ChangeNotifier {
   }
 
   PlaceModel _placeFromSupabaseJson(Map<String, dynamic> json) {
+    final governorate = (json['governorate'] as String?)?.trim().toLowerCase();
     return PlaceModel(
       id: (json['id'] as String?) ?? '',
       nameEn:
@@ -297,6 +324,9 @@ class TourProvider extends ChangeNotifier {
       lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
       lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
       address: (json['address'] as String?) ?? 'Alexandria, Egypt',
+      governorate: governorate == null || governorate.isEmpty
+          ? 'alexandria'
+          : governorate,
       openHours:
           (json['open_hours'] as String?) ??
           (json['openHours'] as String?) ??

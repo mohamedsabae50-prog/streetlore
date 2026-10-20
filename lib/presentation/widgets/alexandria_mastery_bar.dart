@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../data/models/egypt_governorate.dart';
 import '../../data/models/place_model.dart';
+import '../../logic/governorate_provider.dart';
 
 class AlexandriaMasteryBar extends StatelessWidget {
   const AlexandriaMasteryBar({
@@ -22,6 +25,17 @@ class AlexandriaMasteryBar extends StatelessWidget {
         ? ((visitedCount / totalPlaces) * 100).round()
         : 0;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final activeGovernorate =
+        Provider.of<GovernorateProvider?>(context)?.activeGovernorate ??
+        'alexandria';
+    final governorate =
+        EgyptGovernorate.byId[activeGovernorate] ??
+        EgyptGovernorate.byId['alexandria']!;
+    final title = activeGovernorate == 'alexandria'
+        ? (isArabic ? 'إتقان الإسكندرية' : 'Alexandria Mastery')
+        : isArabic
+        ? 'إتقان ${governorate.nameAr}'
+        : '${governorate.nameEn} Mastery';
     final progress = totalPlaces > 0 ? visitedCount / totalPlaces : 0.0;
     final textTheme = Theme.of(context).textTheme;
 
@@ -58,7 +72,7 @@ class AlexandriaMasteryBar extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    isArabic ? 'إتقان الإسكندرية' : 'Alexandria Mastery',
+                    title,
                     style: textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -76,8 +90,8 @@ class AlexandriaMasteryBar extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               isArabic
-                  ? 'تمت زيارة $visitedCount من أصل $totalPlaces مكانًا — استكشاف $percentage٪ من الإسكندرية'
-                  : 'Visited $visitedCount / $totalPlaces Places — $percentage% of Alexandria Explored',
+                  ? 'تمت زيارة $visitedCount من أصل $totalPlaces مكانًا — استكشاف $percentage٪ من ${governorate.nameAr}'
+                  : 'Visited $visitedCount / $totalPlaces Places — $percentage% of ${governorate.nameEn} Explored',
               style: textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).textTheme.bodySmall?.color,
                 fontWeight: FontWeight.w600,

@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:ui' show PlatformDispatcher;
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import 'core/constants/app_colors.dart';
 import 'core/services/offline_storage_service.dart';
 import 'core/services/revenuecat_service.dart';
@@ -35,6 +37,7 @@ import 'logic/trip_provider.dart';
 import 'logic/review_provider.dart';
 import 'logic/ai_features_providers.dart';
 import 'logic/connectivity_provider.dart';
+import 'logic/governorate_provider.dart';
 
 Future<void> main() async {
   const sentryDsn =
@@ -131,8 +134,9 @@ Future<void> _runApplication() async {
   await _configureRevenueCat(auth.userId);
   unawaited(_bindAuthDeepLink(auth));
 
-  final placeProvider = PlaceProvider();
-  final tourProvider = TourProvider();
+  final governorateProvider = GovernorateProvider();
+  final placeProvider = PlaceProvider(governorates: governorateProvider);
+  final tourProvider = TourProvider(governorates: governorateProvider);
   final tripProvider = TripProvider();
   void syncTourVisitStatus() {
     tourProvider.syncVisitedPlaces(
@@ -144,7 +148,16 @@ Future<void> _runApplication() async {
   tripProvider.addListener(syncTourVisitStatus);
   placeProvider.addListener(syncTourVisitStatus);
   syncTourVisitStatus();
-  unawaited(placeProvider.loadPlaces(force: true));
+  unawaited(
+    placeProvider
+        .loadPlaces(force: true)
+        .then(
+          (_) => _syncGovernorateFromCurrentLocation(
+            governorateProvider,
+            placeProvider,
+          ),
+        ),
+  );
   unawaited(tourProvider.loadTours());
 
   final gamification = GamificationProvider();
@@ -223,6 +236,9 @@ Future<void> _runApplication() async {
         ChangeNotifierProvider<TripProvider>.value(value: tripProvider),
         ChangeNotifierProvider<PlaceProvider>.value(value: placeProvider),
         ChangeNotifierProvider<TourProvider>.value(value: tourProvider),
+        ChangeNotifierProvider<GovernorateProvider>.value(
+          value: governorateProvider,
+        ),
         ChangeNotifierProvider<GamificationProvider>.value(value: gamification),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => LeaderboardProvider()),
@@ -239,6 +255,35 @@ Future<void> _runApplication() async {
       child: const EgyptLoreApp(),
     ),
   );
+}
+
+Future<void> _syncGovernorateFromCurrentLocation(
+  GovernorateProvider governorates,
+  PlaceProvider places,
+) async {
+  if (kIsWeb) return;
+  try {
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever ||
+        permission == LocationPermission.unableToDetermine) {
+      return;
+    }
+    if (!await Geolocator.isLocationServiceEnabled()) return;
+
+    final position =
+        await Geolocator.getLastKnownPosition() ??
+        await Geolocator.getCurrentPosition(
+          timeLimit: const Duration(seconds: 5),
+        );
+    await governorates.syncWithCoordinates(
+      position.latitude,
+      position.longitude,
+      availableGovernorateIds: places.availableGovernorateIds,
+    );
+  } catch (error, stackTrace) {
+    debugPrint('Governorate startup GPS detection failed: $error\n$stackTrace');
+  }
 }
 
 Future<void> _configureRevenueCat(String userId) async {
@@ -320,59 +365,82 @@ class _EgyptLoreAppState extends State<EgyptLoreApp>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<ThemeProvider, LocaleProvider, PlaceProvider>(
-      builder: (context, themeProvider, localeProvider, placeProvider, _) {
-        // After the first frame of the app build, update the Android widget
-        // with the current Place of the Day and cached weather.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          try {
-            WidgetSyncService.updateWidgetData(context);
-            WidgetDeepLinkService.openPendingPlace();
-          } catch (_) {}
-        });
+    return Consumer4<
+      ThemeProvider,
+      LocaleProvider,
+      PlaceProvider,
+      GovernorateProvider
+    >(
+      builder:
+          (
+            context,
+            themeProvider,
+            localeProvider,
+            placeProvider,
+            governorateProvider,
+            _,
+          ) {
+            final governorateNotice = governorateProvider.takeNoticeMessage(
+              localeProvider.locale.languageCode,
+            );
+            if (governorateNotice != null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _scaffoldMessengerKey.currentState?.showSnackBar(
+                  SnackBar(content: Text(governorateNotice)),
+                );
+              });
+            }
+            // After the first frame of the app build, update the Android widget
+            // with the current Place of the Day and cached weather.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              try {
+                WidgetSyncService.updateWidgetData(context);
+                WidgetDeepLinkService.openPendingPlace();
+              } catch (_) {}
+            });
 
-        return MaterialApp(
-          navigatorKey: WidgetDeepLinkService.navigatorKey,
-          scaffoldMessengerKey: _scaffoldMessengerKey,
-          title: 'EgyptLore',
-          debugShowCheckedModeBanner: false,
-          locale: localeProvider.locale,
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-
-          builder: (context, child) {
-            return _LocaleScope(
+            return MaterialApp(
+              navigatorKey: WidgetDeepLinkService.navigatorKey,
+              scaffoldMessengerKey: _scaffoldMessengerKey,
+              title: 'EgyptLore',
+              debugShowCheckedModeBanner: false,
               locale: localeProvider.locale,
-              child: Consumer2<AuthProvider, ConnectivityProvider>(
-                builder: (context, auth, connectivity, app) {
-                  _updateOfflineNotice(
-                    auth.isPro && connectivity.hasInternet == false,
-                    context.tr('offline_mode_notice'),
-                  );
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      app ?? const SizedBox.shrink(),
-                      if (!auth.isPro && connectivity.hasInternet == false)
-                        const NoInternetScreen(),
-                    ],
-                  );
-                },
-                child: child,
-              ),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+
+              builder: (context, child) {
+                return _LocaleScope(
+                  locale: localeProvider.locale,
+                  child: Consumer2<AuthProvider, ConnectivityProvider>(
+                    builder: (context, auth, connectivity, app) {
+                      _updateOfflineNotice(
+                        auth.isPro && connectivity.hasInternet == false,
+                        context.tr('offline_mode_notice'),
+                      );
+                      return Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          app ?? const SizedBox.shrink(),
+                          if (!auth.isPro && connectivity.hasInternet == false)
+                            const NoInternetScreen(),
+                        ],
+                      );
+                    },
+                    child: child,
+                  ),
+                );
+              },
+              themeMode: themeProvider.themeMode,
+              theme: _lightTheme(),
+              darkTheme: _darkTheme(),
+              home: const SplashScreen(),
             );
           },
-          themeMode: themeProvider.themeMode,
-          theme: _lightTheme(),
-          darkTheme: _darkTheme(),
-          home: const SplashScreen(),
-        );
-      },
     );
   }
 

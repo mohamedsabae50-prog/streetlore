@@ -10,6 +10,7 @@ class ItineraryModel {
   final String? durationAr;
   final String imageUrl;
   final String status;
+  final String governorate;
   final bool isPremium;
   final bool isHiddenGem;
   final List<PlaceModel> places;
@@ -23,6 +24,7 @@ class ItineraryModel {
     this.durationAr,
     required this.imageUrl,
     this.status = 'published',
+    this.governorate = 'alexandria',
     this.isPremium = false,
     this.isHiddenGem = false,
     required this.places,
@@ -91,6 +93,7 @@ class ItineraryModel {
   }
 
   factory ItineraryModel.fromJson(Map<String, dynamic> json) {
+    final governorateValue = (json['governorate'] as String?)?.trim();
     return ItineraryModel(
       id: json['id'] as String,
       title:
@@ -116,6 +119,9 @@ class ItineraryModel {
       imageUrl:
           (json['imageUrl'] as String?) ?? (json['image_url'] as String?) ?? '',
       status: (json['status'] as String?) ?? 'published',
+      governorate: governorateValue == null || governorateValue.isEmpty
+          ? 'alexandria'
+          : governorateValue.toLowerCase(),
       isPremium:
           (json['is_premium'] as bool?) ??
           (json['isPremium'] as bool?) ??
@@ -144,6 +150,7 @@ class ItineraryModel {
       'durationAr': durationAr,
       'imageUrl': imageUrl,
       'status': status,
+      'governorate': governorate,
       'isPremium': isPremium,
       'isHiddenGem': isHiddenGem,
       'places': places.map((e) => e.toJson()).toList(),

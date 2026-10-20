@@ -9,6 +9,7 @@ import '../core/services/supabase_service.dart';
 import '../data/mock_data.dart' show MockData, fallbackPlaces;
 import '../data/models/map_seed.dart';
 import '../data/models/place_model.dart';
+import 'governorate_provider.dart';
 import 'offline_provider.dart';
 
 class PlaceProvider extends ChangeNotifier {
@@ -18,13 +19,17 @@ class PlaceProvider extends ChangeNotifier {
 
   List<PlaceModel> _places = [];
   RealtimeChannel? _placesChannel;
+  final GovernorateProvider? governorates;
 
   /// ALWAYS sorted by (displayOrder ASC, id ASC). Single source of truth
   /// for the UI. `_places` is the raw cache (set by loadPlaces/merge/fallback);
   /// this getter re-sorts on every read so the UI never sees out-of-order data,
   /// even after the DB backfill pushed everything to display_order=0.
   List<PlaceModel> get places {
-    final copy = [..._places];
+    final activeGovernorate = governorates?.activeGovernorate ?? 'alexandria';
+    final copy = _places
+        .where((place) => place.governorate == activeGovernorate)
+        .toList();
     copy.sort((a, b) {
       final byOrder = a.displayOrder.compareTo(b.displayOrder);
       if (byOrder != 0) return byOrder;
@@ -33,6 +38,9 @@ class PlaceProvider extends ChangeNotifier {
     return List.unmodifiable(copy);
   }
 
+  Set<String> get availableGovernorateIds =>
+      _places.map((place) => place.governorate).toSet();
+
   bool _loading = false;
   bool get loading => _loading;
 
@@ -40,7 +48,13 @@ class PlaceProvider extends ChangeNotifier {
   String? get error => _error;
 
   List<PlaceModel> _savedPlaces = [];
-  List<PlaceModel> get savedPlaces => _savedPlaces;
+  List<PlaceModel> get savedPlaces => _savedPlaces
+      .where(
+        (place) =>
+            place.governorate ==
+            (governorates?.activeGovernorate ?? 'alexandria'),
+      )
+      .toList(growable: false);
 
   int _remoteSavedCount = 0;
   int _remoteCheckinCount = 0;
@@ -48,10 +62,13 @@ class PlaceProvider extends ChangeNotifier {
   int get remoteSavedCount => _remoteSavedCount;
   int get remoteCheckinCount => _remoteCheckinCount;
 
-  PlaceProvider({bool watchRemoteUpdates = true}) {
+  PlaceProvider({bool watchRemoteUpdates = true, this.governorates}) {
+    governorates?.addListener(_onGovernorateChanged);
     _loadSavedPlaces();
     if (watchRemoteUpdates) _watchPlaceUpdates();
   }
+
+  void _onGovernorateChanged() => notifyListeners();
 
   void _watchPlaceUpdates() {
     _placesChannel = _client
@@ -86,6 +103,7 @@ class PlaceProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    governorates?.removeListener(_onGovernorateChanged);
     final channel = _placesChannel;
     if (channel != null) {
       unawaited(_client.removeChannel(channel).then<void>((_) {}));
@@ -302,8 +320,8 @@ class PlaceProvider extends ChangeNotifier {
 
   bool _hasValidCoords(double lat, double lng) {
     if (lat == 0.0 && lng == 0.0) return false;
-    if (lat < 29.5 || lat > 31.5) return false;
-    if (lng < 29.0 || lng > 30.5) return false;
+    if (lat < 21.5 || lat > 32.0) return false;
+    if (lng < 24.0 || lng > 37.0) return false;
     return true;
   }
 
@@ -538,6 +556,7 @@ class PlaceProvider extends ChangeNotifier {
 
 PlaceModel placeModelFromSupabaseRow(Map<String, dynamic> json) {
   final urlsRaw = json['image_urls'];
+  final governorate = json['governorate']?.toString().trim().toLowerCase();
   List<String> urls = const <String>[];
   if (urlsRaw is List) {
     urls = urlsRaw
@@ -564,6 +583,9 @@ PlaceModel placeModelFromSupabaseRow(Map<String, dynamic> json) {
     lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
     address: (json['address'] ?? 'Alexandria, Egypt').toString(),
     addressAr: json['address_ar']?.toString() ?? json['addressAr']?.toString(),
+    governorate: governorate == null || governorate.isEmpty
+        ? 'alexandria'
+        : governorate,
     openHours: (json['open_hours'] ?? '9:00 AM - 6:00 PM').toString(),
     reviewCount: (json['review_count'] as int?) ?? 0,
     priceLevel: _priceLevelFromStringShared(json['price_level']?.toString()),

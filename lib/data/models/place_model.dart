@@ -47,6 +47,7 @@ class PlaceModel {
   final double lng;
   final String address;
   final String? addressAr;
+  final String governorate;
   final String openHours;
   final int reviewCount;
   final PriceLevel priceLevel;
@@ -85,6 +86,7 @@ class PlaceModel {
     required this.lng,
     this.address = 'Alexandria, Egypt',
     this.addressAr,
+    this.governorate = 'alexandria',
     this.openHours = '9:00 AM - 6:00 PM',
     this.reviewCount = 0,
     this.priceLevel = PriceLevel.free,
@@ -226,6 +228,9 @@ class PlaceModel {
     } else if (urlsRaw is String && urlsRaw.isNotEmpty) {
       urls = [urlsRaw.trim()];
     }
+    final governorate = _stringValue(json, [
+      'governorate',
+    ], fallback: 'alexandria').trim();
     return PlaceModel(
       id: _stringValue(json, ['id'], fallback: ''),
       nameEn: _stringValue(json, ['name_en', 'name', 'nameEn'], fallback: ''),
@@ -245,6 +250,9 @@ class PlaceModel {
       lng: _doubleValue(json, ['lng'], fallback: 0.0),
       address: _stringValue(json, ['address'], fallback: 'Alexandria, Egypt'),
       addressAr: _stringValue(json, ['address_ar', 'addressAr']),
+      governorate: governorate.isEmpty
+          ? 'alexandria'
+          : governorate.toLowerCase(),
       openHours: _stringValue(json, [
         'openHours',
         'open_hours',
@@ -296,6 +304,7 @@ class PlaceModel {
       'lng': lng,
       'address': address,
       'address_ar': addressAr,
+      'governorate': governorate,
       'openHours': openHours,
       'reviewCount': reviewCount,
       'priceLevel': priceLevel.name,
@@ -327,6 +336,7 @@ class PlaceModel {
     double? lng,
     String? address,
     String? addressAr,
+    String? governorate,
     String? openHours,
     int? reviewCount,
     PriceLevel? priceLevel,
@@ -356,6 +366,7 @@ class PlaceModel {
       lng: lng ?? this.lng,
       address: address ?? this.address,
       addressAr: addressAr ?? this.addressAr,
+      governorate: governorate ?? this.governorate,
       openHours: openHours ?? this.openHours,
       reviewCount: reviewCount ?? this.reviewCount,
       priceLevel: priceLevel ?? this.priceLevel,

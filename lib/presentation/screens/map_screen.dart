@@ -7,11 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/offline_tile_provider.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../l10n/app_strings.dart';
+import '../../logic/governorate_provider.dart';
+import '../../logic/place_provider.dart';
 
 final Uint8List _kTransparentPng = Uint8List.fromList(<int>[
   0x89,
@@ -180,6 +183,7 @@ class _MapScreenState extends State<MapScreen> {
           if (mounted) {
             _currentLocation = LatLng(position.latitude, position.longitude);
             _lastRouteOrigin = _currentLocation;
+            await _syncGovernorate(position);
 
             _positionSub = Geolocator.getPositionStream(
               locationSettings: const LocationSettings(
@@ -205,6 +209,7 @@ class _MapScreenState extends State<MapScreen> {
 
   void _onPositionUpdate(Position position) {
     if (!mounted) return;
+    unawaited(_syncGovernorate(position));
     final newLoc = LatLng(position.latitude, position.longitude);
     setState(() => _currentLocation = newLoc);
 
@@ -215,6 +220,22 @@ class _MapScreenState extends State<MapScreen> {
     if (driftedMeters >= _reRouteMeters) {
       _lastRouteOrigin = newLoc;
       _getRoute();
+    }
+  }
+
+  Future<void> _syncGovernorate(Position position) async {
+    try {
+      await context.read<GovernorateProvider>().syncWithCoordinates(
+        position.latitude,
+        position.longitude,
+        availableGovernorateIds: context
+            .read<PlaceProvider>()
+            .availableGovernorateIds,
+      );
+    } catch (error, stackTrace) {
+      debugPrint(
+        'MapScreen: governorate detection failed: $error\n$stackTrace',
+      );
     }
   }
 
