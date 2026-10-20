@@ -77,7 +77,11 @@ class PlaceProvider extends ChangeNotifier {
             notifyListeners();
           },
         )
-        .subscribe();
+        .subscribe((status, error) {
+          if (error != null) {
+            debugPrint('PlaceProvider: realtime subscription failed: $error');
+          }
+        });
   }
 
   @override

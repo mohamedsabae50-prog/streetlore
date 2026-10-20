@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -10,6 +12,7 @@ import '../../data/models/gamification_stats.dart';
 import '../../data/models/place_model.dart';
 import '../../data/models/social_user.dart';
 import 'sync_queue_service.dart';
+import 'realtime_resilience.dart';
 
 class SupabaseService {
   SupabaseService._();
@@ -233,7 +236,7 @@ class SupabaseService {
   Stream<List<ChatMessage>>? streamMessages(String placeId) {
     if (_client == null) return null;
     try {
-      return _client!
+      return swallowTransientRealtimeErrors(_client!
           .from('place_chat')
           .stream(primaryKey: ['id'])
           .eq('place_id', placeId)
@@ -242,7 +245,7 @@ class SupabaseService {
             (rows) => rows
                 .map((j) => ChatMessage.fromJson(Map<String, dynamic>.from(j)))
                 .toList(),
-          );
+          ));
     } catch (e) {
       _logError('streamMessages', e);
       return null;
@@ -469,16 +472,54 @@ class SupabaseService {
     final client = _client;
     final recipientId = resolveUuidUserId(userId);
     if (client == null || recipientId == null) return null;
-    return client
-        .from('notifications')
-        .stream(primaryKey: ['id'])
-        .eq('recipient_id', recipientId)
-        .order('created_at', ascending: false)
-        .map(
-          (rows) => rows
-              .map((row) => Map<String, dynamic>.from(row))
-              .toList(growable: false),
-        );
+    return Stream.multi((controller) {
+      var pollInFlight = false;
+      Timer? pollTimer;
+      StreamSubscription<List<Map<String, dynamic>>>? realtimeSubscription;
+
+      Future<void> poll() async {
+        if (pollInFlight) return;
+        pollInFlight = true;
+        try {
+          controller.add(await fetchNotifications());
+        } catch (error, stackTrace) {
+          if (!isTransientNetworkError(error)) {
+            controller.addError(error, stackTrace);
+          }
+        } finally {
+          pollInFlight = false;
+        }
+      }
+
+      final realtime = client
+          .from('notifications')
+          .stream(primaryKey: ['id'])
+          .eq('recipient_id', recipientId)
+          .order('created_at', ascending: false)
+          .map(
+            (rows) => rows
+                .map((row) => Map<String, dynamic>.from(row))
+                .toList(growable: false),
+          );
+      realtimeSubscription = swallowTransientRealtimeErrors(
+        realtime,
+        onTransientError: (error, stackTrace) {
+          debugPrint('Notification realtime unavailable; polling: $error');
+          unawaited(poll());
+        },
+      ).listen(
+        controller.add,
+        onError: controller.addError,
+      );
+      pollTimer = Timer.periodic(
+        const Duration(seconds: 30),
+        (_) => unawaited(poll()),
+      );
+      controller.onCancel = () async {
+        pollTimer?.cancel();
+        await realtimeSubscription?.cancel();
+      };
+    });
   }
 
   Future<void> markNotificationRead(String notificationId) async {
@@ -646,7 +687,7 @@ class SupabaseService {
       throw StateError('Supabase is unavailable.');
     }
     final startedAt = DateTime.now();
-    try {
+    return runFollowingActivitySafely(() async {
       final result = await client.rpc(
         'get_following_activity',
         params: {'p_limit': limit},
@@ -657,27 +698,44 @@ class SupabaseService {
       return result
           .map((row) => Map<String, dynamic>.from(row as Map))
           .toList(growable: false);
+    }, startedAt: startedAt);
+  }
+
+  static Future<List<Map<String, dynamic>>> runFollowingActivitySafely(
+    Future<List<Map<String, dynamic>>> Function() request, {
+    DateTime? startedAt,
+  }) async {
+    try {
+      return await request().timeout(const Duration(seconds: 10));
     } on PostgrestException catch (error, stackTrace) {
-      // Surface the exact PostgrestException code/message so the cause is
-      // obvious in adb logcat (and Sentry). Common failure: an RLS policy
-      // missing on one of the joined tables (place_checkins,
-      // suggested_places, leaderboard, profiles).
+      final elapsed = startedAt == null
+          ? ''
+          : ' elapsed=${DateTime.now().difference(startedAt).inMilliseconds}ms';
       debugPrint(
         'SupabaseService.fetchFollowingActivity failed: '
-        'code=${error.code} '
-        'message=${error.message} '
-        'details=${error.details} '
-        'hint=${error.hint} '
-        'elapsed=${DateTime.now().difference(startedAt).inMilliseconds}ms',
+        'code=${error.code} message=${error.message} '
+        'details=${error.details} hint=${error.hint}$elapsed',
       );
       debugPrint('$stackTrace');
+      if (_isTransientPostgrestError(error)) return const [];
       rethrow;
+    } on TimeoutException catch (error, stackTrace) {
+      debugPrint(
+        'SupabaseService.fetchFollowingActivity timed out: '
+        '$error\n$stackTrace',
+      );
+      return const [];
+    } on SocketException catch (error, stackTrace) {
+      debugPrint(
+        'SupabaseService.fetchFollowingActivity network failure: '
+        '$error\n$stackTrace',
+      );
+      return const [];
     } on FormatException catch (error, stackTrace) {
       debugPrint(
         'SupabaseService.fetchFollowingActivity parse error: '
-        '${error.message}',
+        '${error.message}\n$stackTrace',
       );
-      debugPrint('$stackTrace');
       rethrow;
     } catch (error, stackTrace) {
       debugPrint(
@@ -686,6 +744,15 @@ class SupabaseService {
       );
       rethrow;
     }
+
+  }
+
+  static bool _isTransientPostgrestError(PostgrestException error) {
+    final code = error.code;
+    return code == '502' ||
+        code == '503' ||
+        code == '504' ||
+        (code?.startsWith('PGRST') ?? false);
   }
 
   Future<void> submitReport({

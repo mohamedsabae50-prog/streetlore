@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../core/services/supabase_service.dart';
+import '../core/services/realtime_resilience.dart';
 import '../data/models/chat_message.dart';
 
 class ChatProvider extends ChangeNotifier {
@@ -29,10 +30,15 @@ class ChatProvider extends ChangeNotifier {
     _subs[placeId]?.cancel();
     final stream = _supa.streamMessages(placeId);
     if (stream == null) return;
-    _subs[placeId] = stream.listen((rows) {
-      _byPlace[placeId] = rows;
-      notifyListeners();
-    });
+    _subs[placeId] = swallowTransientRealtimeErrors(stream).listen(
+      (rows) {
+        _byPlace[placeId] = rows;
+        notifyListeners();
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        debugPrint('ChatProvider: realtime stream failed: $error');
+      },
+    );
   }
 
   /// Shows [message] immediately, then posts it. If the post fails the

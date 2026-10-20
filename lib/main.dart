@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +12,7 @@ import 'core/services/offline_storage_service.dart';
 import 'core/services/revenuecat_service.dart';
 import 'core/services/supabase_service.dart';
 import 'core/services/sync_queue_service.dart';
+import 'core/services/realtime_resilience.dart';
 import 'core/config/app_config.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'l10n/app_strings.dart';
@@ -41,11 +43,25 @@ Future<void> main() async {
     // An empty DSN keeps the app runnable until a project DSN is configured.
     options.dsn = sentryDsn == 'YOUR_SENTRY_DSN_HERE' ? '' : sentryDsn;
     options.enableTombstone = true;
+    options.beforeSend = (event, hint) {
+      if (isTransientNetworkError(event.toJson().toString())) return null;
+      return event;
+    };
   }, appRunner: _runApplication);
 }
 
 Future<void> _runApplication() async {
   WidgetsFlutterBinding.ensureInitialized();
+  PlatformDispatcher.instance.onError = (error, stackTrace) {
+    if (isTransientNetworkError(error)) {
+      debugPrint('Ignoring transient unhandled network error: $error');
+      return true;
+    }
+    unawaited(
+      Sentry.captureException(error, stackTrace: stackTrace),
+    );
+    return false;
+  };
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
