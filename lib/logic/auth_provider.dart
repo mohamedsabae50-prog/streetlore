@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/config/app_config.dart';
+import '../core/services/supabase_service.dart';
 import 'subscription_status.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -72,17 +73,19 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> refreshUsernameStatus() async {
     if (!AppConfig.supabaseEnabled || _userId.isEmpty || _isGuest) return;
-    final cached = await _readCachedUsername(_userId);
+    final userId = SupabaseService.instance.resolveUuidUserId(_userId);
+    if (userId == null) return;
+    final cached = await _readCachedUsername(userId);
     try {
       final profile = await Supabase.instance.client
           .from('profiles')
           .select('username')
-          .eq('user_id', _userId)
+          .eq('user_id', userId)
           .maybeSingle();
       final remote = (profile?['username'] as String?)?.trim() ?? '';
       // Never downgrade a known username to '' because of a missing row.
       _username = remote.isNotEmpty ? remote : cached;
-      await _persistCachedUsername(_userId);
+      await _persistCachedUsername(userId);
       notifyListeners();
     } catch (error, stackTrace) {
       debugPrint(
@@ -371,6 +374,10 @@ class AuthProvider extends ChangeNotifier {
     if (_userId.isEmpty || _isGuest || !AppConfig.supabaseEnabled) {
       throw StateError('Sign in to update your profile picture.');
     }
+    final userId = SupabaseService.instance.resolveUuidUserId(_userId);
+    if (userId == null) {
+      throw StateError('Sign in to update your profile picture.');
+    }
     final avatarUri = Uri.tryParse(avatarUrl);
     final cacheBuster = DateTime.now().millisecondsSinceEpoch;
     final cacheBustedUrl =
@@ -393,7 +400,7 @@ class AuthProvider extends ChangeNotifier {
           'avatar_url': cacheBustedUrl,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         })
-        .eq('user_id', _userId)
+        .eq('user_id', userId)
         .select('user_id')
         .maybeSingle();
     if (updatedProfile == null) {
@@ -403,7 +410,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final preferences = await SharedPreferences.getInstance();
-      await preferences.setString('user_avatar_url_$_userId', cacheBustedUrl);
+      await preferences.setString('user_avatar_url_$userId', cacheBustedUrl);
     } catch (error, stackTrace) {
       debugPrint(
         'AuthProvider: could not cache profile picture: $error\n$stackTrace',

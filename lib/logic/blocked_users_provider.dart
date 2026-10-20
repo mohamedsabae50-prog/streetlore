@@ -46,18 +46,29 @@ class BlockedUsersProvider extends ChangeNotifier {
     if (blockedUserId.isEmpty || blockedUserId == _userId) {
       throw ArgumentError.value(blockedUserId, 'blockedUserId');
     }
+    final resolvedBlockedUserId = SupabaseService.instance.resolveUuidUserId(
+      blockedUserId,
+    );
     if (_blockedUserIds.add(blockedUserId)) {
       await _saveLocal();
       notifyListeners();
     }
     final client = SupabaseService.instance.clientOrNull;
     final authenticatedId = client?.auth.currentUser?.id;
-    if (authenticatedId == null || authenticatedId != _userId) return;
+    if (authenticatedId == null ||
+        authenticatedId != _userId ||
+        resolvedBlockedUserId == null ||
+        resolvedBlockedUserId == authenticatedId) {
+      return;
+    }
     try {
       await client!
           .from('blocked_users')
           .upsert(
-            {'blocker_id': authenticatedId, 'blocked_user_id': blockedUserId},
+            {
+              'blocker_id': authenticatedId,
+              'blocked_user_id': resolvedBlockedUserId,
+            },
             onConflict: 'blocker_id,blocked_user_id',
             ignoreDuplicates: true,
           );
@@ -68,15 +79,21 @@ class BlockedUsersProvider extends ChangeNotifier {
   }
 
   Future<void> unblockUser(String blockedUserId) async {
+    final resolvedBlockedUserId = SupabaseService.instance.resolveUuidUserId(
+      blockedUserId,
+    );
     final client = SupabaseService.instance.clientOrNull;
     final authenticatedId = client?.auth.currentUser?.id;
-    if (authenticatedId != null && authenticatedId == _userId) {
+    if (authenticatedId != null &&
+        authenticatedId == _userId &&
+        resolvedBlockedUserId != null &&
+        resolvedBlockedUserId != authenticatedId) {
       try {
         await client!
             .from('blocked_users')
             .delete()
             .eq('blocker_id', authenticatedId)
-            .eq('blocked_user_id', blockedUserId);
+            .eq('blocked_user_id', resolvedBlockedUserId);
       } catch (error, stackTrace) {
         debugPrint(
           'BlockedUsersProvider.unblockUser failed: $error\n$stackTrace',

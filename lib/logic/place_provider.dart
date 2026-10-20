@@ -90,10 +90,8 @@ class PlaceProvider extends ChangeNotifier {
   }
 
   Future<void> fetchRemoteCounts(String userId) async {
-    final effectiveUserId = userId.isNotEmpty
-        ? userId
-        : (Supabase.instance.client.auth.currentUser?.id ?? '');
-    if (effectiveUserId.isEmpty) {
+    final effectiveUserId = SupabaseService.instance.resolveUuidUserId(userId);
+    if (effectiveUserId == null) {
       debugPrint(
         'PlaceProvider.fetchRemoteCounts: no userId available '
         '(param empty and Supabase.currentUser null), skipping',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -57,7 +59,6 @@ class _MapViewScreenState extends State<MapViewScreen> {
 
   bool _showAtms = false;
   List<MapPoi> _atms = const [];
-  bool _loadingAtms = false;
 
   final Set<String> _extraLayers = <String>{};
 
@@ -102,47 +103,38 @@ class _MapViewScreenState extends State<MapViewScreen> {
     );
   }
 
-  Future<void> _toggleAtms() async {
+  void _toggleAtms() {
     final show = !_showAtms;
     setState(() {
       _showAtms = show;
-      _loadingAtms = show;
-      if (show) _atms = const [];
+      _atms = show ? AtmService.curatedAlexandriaAtms : const [];
     });
     if (!show) return;
-    if (_userLocation == null) await _locateUser();
-    if (!mounted) return;
     final center = _userLocation ?? _alexCenter;
+    unawaited(_loadNearbyAtms(center));
+  }
+
+  Future<void> _loadNearbyAtms(LatLng center) async {
     try {
-      final atms = await AtmService.fetchNearby(
+      final nearbyAtms = await AtmService.fetchNearby(
         latitude: center.latitude,
         longitude: center.longitude,
       );
-      if (!mounted) return;
-      setState(() {
-        _atms = atms;
-        _loadingAtms = false;
-      });
-      if (atms.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No nearby ATMs were found in OpenStreetMap.'),
-          ),
+      if (!mounted || !_showAtms) return;
+      final mergedAtms = [..._atms];
+      for (final candidate in nearbyAtms) {
+        final duplicate = mergedAtms.any(
+          (existing) =>
+              (existing.lat - candidate.lat).abs() < 0.0003 &&
+              (existing.lng - candidate.lng).abs() < 0.0003,
         );
+        if (!duplicate) mergedAtms.add(candidate);
       }
+      setState(() => _atms = mergedAtms);
     } catch (error, stackTrace) {
       debugPrint(
-        'MapViewScreen: nearby ATM lookup failed: $error\n$stackTrace',
-      );
-      if (!mounted) return;
-      setState(() {
-        _atms = const [];
-        _loadingAtms = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not load nearby ATMs from OpenStreetMap.'),
-        ),
+        'MapViewScreen: optional nearby ATM refresh failed: '
+        '$error\n$stackTrace',
       );
     }
   }
@@ -542,7 +534,6 @@ class _MapViewScreenState extends State<MapViewScreen> {
               },
               showAtms: _showAtms,
               onToggleAtms: _toggleAtms,
-              loadingAtms: _loadingAtms,
             ),
           ),
         ],
@@ -669,7 +660,6 @@ class _CategoryFilter extends StatelessWidget {
   final Set<String> activeLayers;
   final ValueChanged<String> onToggleExtraLayer;
   final bool showAtms;
-  final bool loadingAtms;
   final VoidCallback onToggleAtms;
 
   const _CategoryFilter({
@@ -681,7 +671,6 @@ class _CategoryFilter extends StatelessWidget {
     required this.activeLayers,
     required this.onToggleExtraLayer,
     required this.showAtms,
-    required this.loadingAtms,
     required this.onToggleAtms,
   });
 
@@ -799,14 +788,14 @@ class _CategoryFilter extends StatelessWidget {
         padding: const EdgeInsets.only(right: 8),
         child: FilterChip(
           selected: showAtms,
-          onSelected: loadingAtms ? null : (_) => onToggleAtms(),
+          onSelected: (_) => onToggleAtms(),
           avatar: Icon(
-            loadingAtms ? Icons.hourglass_top_rounded : Icons.atm_rounded,
+            Icons.atm_rounded,
             size: 16,
             color: showAtms ? Colors.white : const Color(0xFF10B981),
           ),
           label: Text(
-            loadingAtms ? 'Loading…' : 'ATMs',
+            'ATMs',
             style: TextStyle(
               color: showAtms ? Colors.white : context.textPri,
               fontWeight: FontWeight.w800,

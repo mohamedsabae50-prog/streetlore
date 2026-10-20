@@ -14,12 +14,23 @@ import 'sync_queue_service.dart';
 class SupabaseService {
   SupabaseService._();
   static final SupabaseService instance = SupabaseService._();
+  static final RegExp _uuidPattern = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+    caseSensitive: false,
+  );
 
   SupabaseClient? _client;
   bool _initialised = false;
 
   SupabaseClient? get clientOrNull => _client;
   bool get isLive => _client != null;
+
+  String? resolveUuidUserId(String? userId) {
+    final candidate = userId?.trim() ?? '';
+    if (_uuidPattern.hasMatch(candidate)) return candidate;
+    final authenticatedId = _client?.auth.currentUser?.id ?? '';
+    return _uuidPattern.hasMatch(authenticatedId) ? authenticatedId : null;
+  }
 
   static Map<String, dynamic> normalizeAiChatLogsResponse(Object? response) {
     final envelope = response is Map
@@ -278,6 +289,9 @@ class SupabaseService {
       }
       return result
           .map((row) => Map<String, dynamic>.from(row as Map))
+          .where(
+            (row) => _uuidPattern.hasMatch(row['user_id']?.toString() ?? ''),
+          )
           .toList(growable: false);
     } catch (e) {
       _logError('fetchCityLeaderboard($period, $metric)', e);
@@ -309,9 +323,11 @@ class SupabaseService {
     if (client == null) {
       throw StateError('Supabase is unavailable.');
     }
+    final targetUserId = resolveUuidUserId(userId);
+    if (targetUserId == null) return null;
     final result = await client.rpc(
       'get_public_profile',
-      params: {'target_user_id': userId},
+      params: {'target_user_id': targetUserId},
     );
     if (result is! Map) {
       throw const FormatException('Public profile response was not an object.');
@@ -328,10 +344,15 @@ class SupabaseService {
     if (client == null) {
       throw StateError('Supabase is unavailable.');
     }
-    if (userIds.isEmpty) return const [];
+    final resolvedUserIds = userIds
+        .map(resolveUuidUserId)
+        .whereType<String>()
+        .toSet()
+        .toList(growable: false);
+    if (resolvedUserIds.isEmpty) return const [];
     final result = await client.rpc(
       'get_public_profiles',
-      params: {'p_user_ids': userIds},
+      params: {'p_user_ids': resolvedUserIds},
     );
     if (result is! List) {
       throw const FormatException('Public profiles response was not a list.');
@@ -379,9 +400,13 @@ class SupabaseService {
   Future<String> sendFriendRequest(String targetUserId) async {
     final client = _client;
     if (client == null) throw StateError('Supabase is unavailable.');
+    final resolvedTargetId = resolveUuidUserId(targetUserId);
+    if (resolvedTargetId == null) {
+      throw StateError('Sign in to send friend requests.');
+    }
     final result = await client.rpc(
       'send_friend_request',
-      params: {'target_user_id': targetUserId},
+      params: {'target_user_id': resolvedTargetId},
     );
     if (result is! String) {
       throw const FormatException('Friend request response was invalid.');
@@ -394,14 +419,18 @@ class SupabaseService {
     required bool accept,
   }) async {
     final client = _client;
-    final userId = client?.auth.currentUser?.id;
+    final userId = resolveUuidUserId(client?.auth.currentUser?.id);
     if (client == null || userId == null) {
+      throw StateError('Sign in to respond to friend requests.');
+    }
+    final resolvedRequesterId = resolveUuidUserId(requesterId);
+    if (resolvedRequesterId == null) {
       throw StateError('Sign in to respond to friend requests.');
     }
     final request = await client
         .from('friendships')
         .select('id')
-        .eq('requester_id', requesterId)
+        .eq('requester_id', resolvedRequesterId)
         .eq('recipient_id', userId)
         .eq('status', 'pending')
         .maybeSingle();
@@ -438,11 +467,12 @@ class SupabaseService {
 
   Stream<List<Map<String, dynamic>>>? watchNotifications(String userId) {
     final client = _client;
-    if (client == null || userId.isEmpty) return null;
+    final recipientId = resolveUuidUserId(userId);
+    if (client == null || recipientId == null) return null;
     return client
         .from('notifications')
         .stream(primaryKey: ['id'])
-        .eq('recipient_id', userId)
+        .eq('recipient_id', recipientId)
         .order('created_at', ascending: false)
         .map(
           (rows) => rows
@@ -467,15 +497,19 @@ class SupabaseService {
 
   Future<void> cancelFriendRequest(String targetUserId) async {
     final client = _client;
-    final userId = client?.auth.currentUser?.id;
+    final userId = resolveUuidUserId(client?.auth.currentUser?.id);
     if (client == null || userId == null) {
+      throw StateError('Sign in to cancel friend requests.');
+    }
+    final resolvedTargetId = resolveUuidUserId(targetUserId);
+    if (resolvedTargetId == null) {
       throw StateError('Sign in to cancel friend requests.');
     }
     final request = await client
         .from('friendships')
         .select('id')
         .eq('requester_id', userId)
-        .eq('recipient_id', targetUserId)
+        .eq('recipient_id', resolvedTargetId)
         .eq('status', 'pending')
         .maybeSingle();
     if (request == null) {
@@ -490,7 +524,14 @@ class SupabaseService {
   Future<void> removeFriend(String targetUserId) async {
     final client = _client;
     if (client == null) throw StateError('Supabase is unavailable.');
-    await client.rpc('remove_friend', params: {'target_user_id': targetUserId});
+    final resolvedTargetId = resolveUuidUserId(targetUserId);
+    if (resolvedTargetId == null) {
+      throw StateError('Sign in to remove friends.');
+    }
+    await client.rpc(
+      'remove_friend',
+      params: {'target_user_id': resolvedTargetId},
+    );
   }
 
   Future<Map<String, bool>> fetchFriendPrivacySettings() async {
@@ -515,13 +556,17 @@ class SupabaseService {
     bool enabled,
   ) async {
     final client = _client;
-    final userId = client?.auth.currentUser?.id;
+    final userId = resolveUuidUserId(client?.auth.currentUser?.id);
     if (client == null || userId == null) {
+      throw StateError('Sign in to update friend privacy settings.');
+    }
+    final resolvedFriendId = resolveUuidUserId(friendId);
+    if (resolvedFriendId == null) {
       throw StateError('Sign in to update friend privacy settings.');
     }
     await client.from('friend_privacy_settings').upsert({
       'user_id': userId,
-      'friend_id': friendId,
+      'friend_id': resolvedFriendId,
       'share_location_activity': enabled,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     }, onConflict: 'user_id,friend_id');
@@ -563,9 +608,11 @@ class SupabaseService {
     if (client == null) {
       throw StateError('Supabase is unavailable.');
     }
+    final resolvedTargetId = resolveUuidUserId(targetUserId);
+    if (resolvedTargetId == null) return const [];
     final result = await client.rpc(
       'get_user_visited_places',
-      params: {'target_user_id': targetUserId},
+      params: {'target_user_id': resolvedTargetId},
     );
     if (result is! List) {
       throw const FormatException('Visited places response was not a list.');
@@ -652,9 +699,12 @@ class SupabaseService {
     if (client == null) {
       throw StateError('Supabase is unavailable.');
     }
+    final resolvedReporterId = resolveUuidUserId(reporterId);
+    if (resolvedReporterId == null) {
+      throw StateError('Sign in to submit reports.');
+    }
 
-    if (reporterId.isEmpty ||
-        targetId.trim().isEmpty ||
+    if (targetId.trim().isEmpty ||
         (targetContext != null &&
             (targetType != 'ai_message' || targetContext.trim().isEmpty)) ||
         !const {'place', 'user', 'review', 'ai_message'}.contains(targetType) ||
@@ -668,7 +718,7 @@ class SupabaseService {
       throw ArgumentError('Invalid report details.');
     }
     await client.from('reports').insert({
-      'reporter_id': reporterId,
+      'reporter_id': resolvedReporterId,
       'target_id': targetId.trim(),
       'target_type': targetType,
       'reason': reason,
@@ -684,7 +734,7 @@ class SupabaseService {
 
   Future<Set<String>> fetchReportedPhotoIds() async {
     final client = _client;
-    final userId = client?.auth.currentUser?.id;
+    final userId = resolveUuidUserId(client?.auth.currentUser?.id);
     if (client == null || userId == null) return <String>{};
     final rows = await client
         .from('photo_reports')
@@ -703,15 +753,16 @@ class SupabaseService {
     required String reason,
   }) async {
     final client = _client;
-    final reporterId = client?.auth.currentUser?.id;
+    final reporterId = resolveUuidUserId(client?.auth.currentUser?.id);
+    final resolvedUploaderId = resolveUuidUserId(uploaderId);
     if (client == null || reporterId == null) {
       throw StateError('Sign in to report a photo.');
     }
     if (photoId.trim().isEmpty ||
         photoUrl.trim().isEmpty ||
-        uploaderId.trim().isEmpty ||
+        resolvedUploaderId == null ||
         placeId.trim().isEmpty ||
-        reporterId == uploaderId ||
+        reporterId == resolvedUploaderId ||
         !const {
           'Inappropriate content',
           'Not related to this place',
@@ -723,7 +774,7 @@ class SupabaseService {
     await client.from('photo_reports').insert({
       'photo_id': photoId,
       'photo_url': photoUrl,
-      'uploader_id': uploaderId,
+      'uploader_id': resolvedUploaderId,
       'reporter_id': reporterId,
       'place_id': placeId,
       'reason': reason,
@@ -731,25 +782,32 @@ class SupabaseService {
   }
 
   Future<void> pushStats(GamificationStats stats) async {
-    if (_client == null) return;
+    final client = _client;
+    final userId = resolveUuidUserId(client?.auth.currentUser?.id);
+    if (client == null || userId == null) return;
     try {
-      await _client!.from('leaderboard').upsert(stats.toJson());
+      await client.from('leaderboard').upsert({
+        ...stats.toJson(),
+        'user_id': userId,
+      });
     } catch (e) {
       _logError('pushStats', e);
     }
   }
 
   Future<GamificationStats?> pullStats(String userId) async {
-    if (_client == null) return null;
+    final client = _client;
+    final resolvedUserId = resolveUuidUserId(userId);
+    if (client == null || resolvedUserId == null) return null;
     try {
-      final res = await _client!
+      final res = await client
           .from('leaderboard')
           .select(
             'user_id,user_name,avatar_color_hex,total_points,places_visited,'
             'reviews_posted,photos_uploaded,level,badges,current_streak,'
             'longest_streak,total_visit_days',
           )
-          .eq('user_id', userId)
+          .eq('user_id', resolvedUserId)
           .maybeSingle();
       if (res == null) return null;
       return GamificationStats.fromJson(Map<String, dynamic>.from(res as Map));
@@ -760,10 +818,12 @@ class SupabaseService {
   }
 
   Future<bool> pushSavedPlace(String userId, PlaceModel place) async {
-    if (_client == null || userId.isEmpty) return false;
+    final client = _client;
+    final resolvedUserId = resolveUuidUserId(userId);
+    if (client == null || resolvedUserId == null) return false;
     try {
-      await _client!.from('saved_places').upsert({
-        'user_id': userId,
+      await client.from('saved_places').upsert({
+        'user_id': resolvedUserId,
         'place_id': place.id,
         'place_data': jsonEncode(place.toJson()),
         'saved_at': DateTime.now().toUtc().toIso8601String(),
@@ -776,12 +836,14 @@ class SupabaseService {
   }
 
   Future<bool> deleteSavedPlace(String userId, String placeId) async {
-    if (_client == null || userId.isEmpty) return false;
+    final client = _client;
+    final resolvedUserId = resolveUuidUserId(userId);
+    if (client == null || resolvedUserId == null) return false;
     try {
-      await _client!
+      await client
           .from('saved_places')
           .delete()
-          .eq('user_id', userId)
+          .eq('user_id', resolvedUserId)
           .eq('place_id', placeId);
       return true;
     } catch (e) {
@@ -794,14 +856,16 @@ class SupabaseService {
     String userId,
     String placeId,
   ) async {
-    if (_client == null || userId.isEmpty) {
+    final client = _client;
+    final resolvedUserId = resolveUuidUserId(userId);
+    if (client == null || resolvedUserId == null) {
       return (ok: false, queued: false, error: null);
     }
     final checkedInAt = DateTime.now().toUtc();
     final timestamp = checkedInAt.toIso8601String();
 
     Future<bool> queueCheckin() => SyncQueueService.instance.enqueueCheckin(
-      userId: userId,
+      userId: resolvedUserId,
       placeId: placeId,
       checkedInAt: checkedInAt,
     );
@@ -822,17 +886,17 @@ class SupabaseService {
       );
     }
     try {
-      await _client!.from('place_checkins').insert({
-        'user_id': userId,
+      await client.from('place_checkins').insert({
+        'user_id': resolvedUserId,
         'place_id': placeId,
         'checked_in_at': timestamp,
       }).select();
       return (ok: true, queued: false, error: null);
     } on PostgrestException catch (e) {
-      _logError('registerCheckin($userId, $placeId)', e);
+      _logError('registerCheckin($resolvedUserId, $placeId)', e);
       return (ok: false, queued: false, error: e);
     } catch (e) {
-      _logError('registerCheckin($userId, $placeId)', e);
+      _logError('registerCheckin($resolvedUserId, $placeId)', e);
       final queued = await queueCheckin();
       return (
         ok: queued,
@@ -854,12 +918,15 @@ class SupabaseService {
   /// Returns true if the row was deleted (or there was nothing to delete),
   /// false on hard DB error.
   Future<bool> deleteCheckin(String userId, String placeId) async {
-    if (_client == null || userId.isEmpty || placeId.isEmpty) return true;
+    final client = _client;
+    final resolvedUserId = resolveUuidUserId(userId);
+    if (client == null || placeId.isEmpty) return true;
+    if (resolvedUserId == null) return false;
     try {
-      await _client!
+      await client
           .from('place_checkins')
           .delete()
-          .eq('user_id', userId)
+          .eq('user_id', resolvedUserId)
           .eq('place_id', placeId);
       return true;
     } on PostgrestException catch (e) {
@@ -872,16 +939,18 @@ class SupabaseService {
   }
 
   Future<List<DateTime>?> pullCheckinTimestamps(String userId) async {
-    if (_client == null || userId.isEmpty) return null;
+    final client = _client;
+    final resolvedUserId = resolveUuidUserId(userId);
+    if (client == null || resolvedUserId == null) return null;
     const pageSize = 1000;
     final timestamps = <DateTime>[];
     var offset = 0;
     try {
       while (true) {
-        final rows = await _client!
+        final rows = await client
             .from('place_checkins')
             .select('checked_in_at')
-            .eq('user_id', userId)
+            .eq('user_id', resolvedUserId)
             .order('checked_in_at')
             .range(offset, offset + pageSize - 1);
         final page = rows as List;
@@ -900,26 +969,28 @@ class SupabaseService {
   }
 
   Future<({int savedPlaces, int checkIns})> countUserRows(String userId) async {
-    if (_client == null || userId.isEmpty) {
+    final client = _client;
+    final resolvedUserId = resolveUuidUserId(userId);
+    if (client == null || resolvedUserId == null) {
       return (savedPlaces: 0, checkIns: 0);
     }
     int saved = 0;
     int checkins = 0;
     try {
-      final savedRes = await _client!
+      final savedRes = await client
           .from('saved_places')
           .select('user_id')
-          .eq('user_id', userId)
+          .eq('user_id', resolvedUserId)
           .count();
       saved = (savedRes as dynamic).count as int? ?? 0;
     } catch (e) {
       _logError('countUserRows(saved_places)', e);
     }
     try {
-      final checkRes = await _client!
+      final checkRes = await client
           .from('place_checkins')
           .select('user_id')
-          .eq('user_id', userId)
+          .eq('user_id', resolvedUserId)
           .count();
       checkins = (checkRes as dynamic).count as int? ?? 0;
     } catch (e) {
@@ -929,12 +1000,14 @@ class SupabaseService {
   }
 
   Future<List<PlaceModel>> pullSavedPlaces(String userId) async {
-    if (_client == null) return const [];
+    final client = _client;
+    final resolvedUserId = resolveUuidUserId(userId);
+    if (client == null || resolvedUserId == null) return const [];
     try {
-      final res = await _client!
+      final res = await client
           .from('saved_places')
           .select('place_data')
-          .eq('user_id', userId)
+          .eq('user_id', resolvedUserId)
           .order('saved_at', ascending: false);
       final list = (res as List)
           .map((row) {
@@ -963,12 +1036,14 @@ class SupabaseService {
   }
 
   Future<List<Map<String, dynamic>>> pullSavedTours(String userId) async {
-    if (_client == null) return const [];
+    final client = _client;
+    final resolvedUserId = resolveUuidUserId(userId);
+    if (client == null || resolvedUserId == null) return const [];
     try {
-      final res = await _client!
+      final res = await client
           .from('saved_tours')
           .select('tour_data')
-          .eq('user_id', userId);
+          .eq('user_id', resolvedUserId);
       return (res as List)
           .map((row) {
             final data = (row as Map<String, dynamic>)['tour_data'];

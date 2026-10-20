@@ -19,7 +19,6 @@ import 'login_screen.dart';
 import 'place_details_screen.dart';
 import 'user_profile_screen.dart';
 import '../widgets/social_user_widgets.dart';
-import '../widgets/monthly_pro_reward_banner.dart';
 
 class ActivityFeedScreen extends StatefulWidget {
   const ActivityFeedScreen({super.key});
@@ -37,6 +36,44 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
   String? _requestedUserId;
   String _filter = 'all';
   Map<String, SocialUser> _actorProfiles = const {};
+
+  List<Map<String, dynamic>> _deduplicateNotifications(
+    List<Map<String, dynamic>> notifications,
+  ) {
+    final seen = <String>{};
+    return notifications
+        .where((notification) {
+          final type = notification['type']?.toString() ?? '';
+          final actorId = notification['actor_id']?.toString() ?? '';
+          final title = notification['title']?.toString().trim() ?? '';
+          final body = notification['body']?.toString().trim() ?? '';
+          final createdAt = DateTime.tryParse(
+            notification['created_at']?.toString() ?? '',
+          );
+          final minute = createdAt == null
+              ? notification['created_at']?.toString() ?? ''
+              : '${createdAt.toUtc().year}-'
+                    '${createdAt.toUtc().month}-'
+                    '${createdAt.toUtc().day}-'
+                    '${createdAt.toUtc().hour}-'
+                    '${createdAt.toUtc().minute}';
+          final metadata = notification['metadata'];
+          final metadataMap = metadata is Map
+              ? Map<String, dynamic>.from(metadata)
+              : const <String, dynamic>{};
+          final badgeKey = type == 'badge_unlocked'
+              ? (metadataMap['badge_id'] ??
+                            metadataMap['badgeId'] ??
+                            metadataMap['badge_name'] ??
+                            metadataMap['badgeName'])
+                        ?.toString() ??
+                    ''
+              : '';
+          final key = [type, actorId, badgeKey, title, body, minute].join('|');
+          return seen.add(key);
+        })
+        .toList(growable: false);
+  }
 
   @override
   void didChangeDependencies() {
@@ -64,18 +101,22 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                 .toSet();
             final received = notifications
                 .where(
-                  (notification) =>
-                      !oldNotificationIds.contains(
-                        notification['id']?.toString() ?? '',
-                      ),
+                  (notification) => !oldNotificationIds.contains(
+                    notification['id']?.toString() ?? '',
+                  ),
                 )
                 .toList(growable: false);
-            setState(() => _notifications = notifications);
-            unawaited(_loadNotificationActors(notifications));
+            final uniqueNotifications = _deduplicateNotifications(
+              notifications,
+            );
+            setState(() => _notifications = uniqueNotifications);
+            unawaited(_loadNotificationActors(uniqueNotifications));
             if (received.any(
               (notification) => notification['type'] == 'friend_accepted',
             )) {
-              unawaited(context.read<AchievementProvider>().refreshFriendCount());
+              unawaited(
+                context.read<AchievementProvider>().refreshFriendCount(),
+              );
             }
             if (received.any(
               (notification) => notification['type'] == 'badge_unlocked',
@@ -109,8 +150,11 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
       _error = null;
     });
     try {
-      final activities = await SupabaseService.instance.fetchFollowingActivity();
-      final notifications = await SupabaseService.instance.fetchNotifications();
+      final activities = await SupabaseService.instance
+          .fetchFollowingActivity();
+      final notifications = _deduplicateNotifications(
+        await SupabaseService.instance.fetchNotifications(),
+      );
       if (!mounted) return;
       setState(() {
         _activities = activities;
@@ -167,8 +211,9 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
   }) async {
     final actorIds = <String>{
       ...notifications.map((item) => item['actor_id']?.toString() ?? ''),
-      ...(activities ?? _activities)
-          .map((item) => item['actor_id']?.toString() ?? ''),
+      ...(activities ?? _activities).map(
+        (item) => item['actor_id']?.toString() ?? '',
+      ),
     }..removeWhere((id) => id.isEmpty);
     final auth = context.read<AuthProvider>();
     final ownActor = actorIds.remove(auth.userId)
@@ -247,9 +292,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     await achievements.refreshFriendCount();
   }
 
-  Future<void> _markNotificationRead(
-    Map<String, dynamic> notification,
-  ) async {
+  Future<void> _markNotificationRead(Map<String, dynamic> notification) async {
     final id = notification['id']?.toString() ?? '';
     if (id.isEmpty || notification['read_at'] != null) return;
     try {
@@ -316,7 +359,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
       ),
       body: Column(
         children: [
-          const MonthlyProRewardBanner(),
           Expanded(
             child: needsSignIn
                 ? _FeedMessage(
@@ -381,7 +423,10 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                             ),
                           ),
                         SliverToBoxAdapter(
-                          child: _feedHeader(context, visibleActivities.length),
+                          child: _feedHeader(
+                            context,
+                            filteredActivities.length,
+                          ),
                         ),
                         SliverToBoxAdapter(child: _feedFilters(context)),
                         if (filteredActivities.isEmpty &&
@@ -446,22 +491,23 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
             ],
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: context.cardColor,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: context.borderColor),
-          ),
-          child: Text(
-            '$count ${context.tr('feed_updates')}',
-            style: TextStyle(
-              color: context.textPri,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+        if (count > 0)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: context.cardColor,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: context.borderColor),
+            ),
+            child: Text(
+              '$count ${context.tr('feed_updates')}',
+              style: TextStyle(
+                color: context.textPri,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-        ),
       ],
     ),
   );
@@ -796,22 +842,32 @@ class _NotificationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final type = notification['type']?.toString() ?? '';
     final pending = type == 'friend_request' && notification['read_at'] == null;
+    final metadata = notification['metadata'];
+    final metadataMap = metadata is Map
+        ? Map<String, dynamic>.from(metadata)
+        : const <String, dynamic>{};
+    final badgeName =
+        (metadataMap['badge_name'] ??
+                metadataMap['badgeName'] ??
+                metadataMap['name'] ??
+                notification['badge_name'])
+            ?.toString()
+            .trim();
     final actorName = actor?.displayName.trim().isNotEmpty == true
         ? actor!.displayName.trim()
         : '@${actor?.username ?? 'explorer'}';
     final title = switch (type) {
-      'friend_request' => context.tr(
-        'notification_friend_request',
-        {'name': actorName},
-      ),
-      'friend_accepted' => context.tr(
-        'notification_friend_accepted',
-        {'name': actorName},
-      ),
-      'badge_unlocked' => context.tr(
-        'notification_badge_unlocked',
-        {'name': actorName},
-      ),
+      'friend_request' => context.tr('notification_friend_request', {
+        'name': actorName,
+      }),
+      'friend_accepted' => context.tr('notification_friend_accepted', {
+        'name': actorName,
+      }),
+      'badge_unlocked' =>
+        context.tr('notification_badge_unlocked', {'name': actorName}) +
+            (badgeName == null || badgeName.isEmpty
+                ? ''
+                : ' · ${badgeName.startsWith('ach_') ? context.tr(badgeName) : badgeName}'),
       _ => notification['title']?.toString() ?? '',
     };
     final createdAt = DateTime.tryParse(
@@ -831,7 +887,9 @@ class _NotificationCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: unread ? AppColors.primary.withValues(alpha: 0.35) : context.borderColor,
+          color: unread
+              ? AppColors.primary.withValues(alpha: 0.35)
+              : context.borderColor,
         ),
       ),
       child: InkWell(

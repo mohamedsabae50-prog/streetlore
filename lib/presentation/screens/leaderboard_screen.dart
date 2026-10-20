@@ -12,6 +12,7 @@ import '../../data/models/gamification_stats.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/gamification_provider.dart';
 import '../../logic/leaderboard_provider.dart';
+import '../../logic/auth_provider.dart';
 import '../../core/services/supabase_service.dart';
 import 'user_profile_screen.dart';
 import '../widgets/monthly_pro_reward_banner.dart';
@@ -328,6 +329,14 @@ class _MyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final uniqueBadges = <String, Badge>{};
+    for (final badge in stats.badges) {
+      uniqueBadges.putIfAbsent(
+        _badgeName(context, badge).trim().toLowerCase(),
+        () => badge,
+      );
+    }
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       padding: const EdgeInsets.all(18),
@@ -354,24 +363,15 @@ class _MyCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  stats.userName.isNotEmpty
-                      ? stats.userName[0].toUpperCase()
-                      : 'Y',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
+              ExplorerAvatar(
+                avatarUrl: auth.avatarUrl.isNotEmpty
+                    ? auth.avatarUrl
+                    : stats.avatarUrl,
+                displayName: auth.userName.isNotEmpty
+                    ? auth.userName
+                    : stats.userName,
+                radius: 25,
+                fallbackColor: Colors.white,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -463,7 +463,7 @@ class _MyCard extends StatelessWidget {
             Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: stats.badges
+              children: uniqueBadges.values
                   .map(
                     (b) => Container(
                       padding: const EdgeInsets.symmetric(
@@ -599,7 +599,7 @@ class _Row extends StatelessWidget {
               displayName: stats.userName,
               radius: 18,
               fallbackColor: avatarColor ?? AppColors.primary,
-              ),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
