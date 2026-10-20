@@ -95,9 +95,9 @@ List<MapPoi> _hotels = const [
   MapPoi(
     id: 'hotel-plaza-alex',
     name: 'Plaza Hotel Alexandria',
-    address: 'El Geish Rd, Sporting',
-    lat: 31.2472,
-    lng: 29.9588,
+    address: '394 El-Gaish Rd, Zizinia, San Stefano',
+    lat: 31.2448,
+    lng: 29.9647,
     category: 'hotel',
     brand: 'Plaza',
     stars: 3,

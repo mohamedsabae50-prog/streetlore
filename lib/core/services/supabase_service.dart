@@ -575,6 +575,22 @@ class SupabaseService {
         .toList(growable: false);
   }
 
+  Future<List<Map<String, dynamic>>> getFriendsPlaceVisits() async {
+    final client = _client;
+    if (client == null || client.auth.currentUser == null) {
+      throw StateError('Sign in to load friends’ place visits.');
+    }
+    final result = await client.rpc('get_friends_place_visits');
+    if (result is! List) {
+      throw const FormatException(
+        'Friends’ place visits response was not a list.',
+      );
+    }
+    return result
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList(growable: false);
+  }
+
   Future<List<Map<String, dynamic>>> fetchFollowingActivity({
     int limit = 50,
   }) async {

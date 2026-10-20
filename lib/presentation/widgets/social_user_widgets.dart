@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/image_defaults.dart';
 import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
+import '../../logic/locale_provider.dart';
 
 class ExplorerAvatar extends StatelessWidget {
   const ExplorerAvatar({
@@ -168,4 +170,95 @@ class SocialFriendCount extends StatelessWidget {
       ],
     ),
   );
+}
+
+class FriendsVisitBadge extends StatelessWidget {
+  const FriendsVisitBadge({required this.friends, this.onTap, super.key});
+
+  final List<Map<String, dynamic>> friends;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (friends.isEmpty) return const SizedBox.shrink();
+    return Consumer<LocaleProvider>(
+      builder: (context, _, _) => _buildBadge(context),
+    );
+  }
+
+  Widget _buildBadge(BuildContext context) {
+    final first = friends.first;
+    final username = first['username']?.toString().trim() ?? '';
+    final fullName = first['full_name']?.toString().trim() ?? '';
+    final name = username.isNotEmpty
+        ? '@$username'
+        : fullName.isNotEmpty
+        ? fullName
+        : context.tr('friend');
+    final others = friends.length - 1;
+    final label = others == 0
+        ? context.tr('visited_by_friends_single', {'name': name})
+        : context.tr('visited_by_friends_many', {
+            'name': name,
+            'count': '$others',
+          });
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 44,
+              height: 22,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  for (
+                    var index = 0;
+                    index < friends.length && index < 3;
+                    index++
+                  )
+                    PositionedDirectional(
+                      start: index * 11,
+                      child: ExplorerAvatar(
+                        avatarUrl:
+                            friends[index]['avatar_url']?.toString() ?? '',
+                        displayName:
+                            friends[index]['full_name']?.toString() ??
+                            friends[index]['username']?.toString() ??
+                            '',
+                        radius: 10,
+                        fallbackColor: AppColors.primary,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: context.textSec,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (onTap != null)
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 16,
+                color: context.textSec,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }

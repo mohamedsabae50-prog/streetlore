@@ -10,11 +10,14 @@ import '../../logic/trip_provider.dart';
 import '../../l10n/app_strings.dart';
 import '../widgets/place_card.dart';
 import '../widgets/tour_card.dart';
+import '../widgets/alexandria_mastery_bar.dart';
 import 'place_details_screen.dart';
 import 'tour_details_screen.dart';
 
 class SavedToursScreen extends StatefulWidget {
-  const SavedToursScreen({super.key});
+  const SavedToursScreen({super.key, this.initialShowVisited = false});
+
+  final bool initialShowVisited;
 
   @override
   State<SavedToursScreen> createState() => _SavedToursScreenState();
@@ -29,6 +32,7 @@ class _SavedToursScreenState extends State<SavedToursScreen>
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 2, vsync: this);
+    _showVisited = widget.initialShowVisited;
   }
 
   @override
@@ -66,6 +70,13 @@ class _SavedToursScreenState extends State<SavedToursScreen>
                     ],
                   ),
                 ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+              child: AlexandriaMasteryBar(
+                places: context.watch<PlaceProvider>().places,
+                visitedPlaceIds: context.watch<TripProvider>().visitedPlaceIds,
               ),
             ),
             Padding(

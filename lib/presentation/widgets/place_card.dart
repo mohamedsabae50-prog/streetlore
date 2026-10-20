@@ -10,12 +10,19 @@ import '../../core/widgets/animated_stars.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import 'place_image_carousel.dart';
+import 'social_user_widgets.dart';
 
 class PlaceCard extends StatefulWidget {
   final PlaceModel place;
   final VoidCallback? onTap;
+  final List<Map<String, dynamic>> friendVisitors;
 
-  const PlaceCard({super.key, required this.place, this.onTap});
+  const PlaceCard({
+    super.key,
+    required this.place,
+    this.onTap,
+    this.friendVisitors = const [],
+  });
 
   @override
   State<PlaceCard> createState() => _PlaceCardState();
@@ -174,6 +181,8 @@ class _PlaceCardState extends State<PlaceCard> {
           const SizedBox(height: 8),
           _BestTimeHint(place: widget.place),
           const SizedBox(height: 8),
+          if (widget.friendVisitors.isNotEmpty)
+            FriendsVisitBadge(friends: widget.friendVisitors),
 
           Row(
             children: [

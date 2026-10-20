@@ -11,6 +11,7 @@ import '../../core/services/social_share_service.dart';
 import '../../core/services/checkin_location_service.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../core/services/app_review_service.dart';
+import '../../core/services/supabase_service.dart';
 import '../../core/widgets/app_image.dart';
 import '../../core/widgets/confetti_overlay.dart';
 import '../../core/widgets/shimmer_image.dart';
@@ -27,16 +28,19 @@ import '../../logic/locale_provider.dart';
 import '../../logic/offline_provider.dart';
 import '../../logic/place_photos_provider.dart';
 import '../../data/models/review_model.dart';
+import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/in_flight_guard.dart';
 import '../widgets/add_review_sheet.dart';
 import '../widgets/place_image_carousel.dart';
 import '../widgets/place_photos_section.dart';
 import '../widgets/report_content_sheet.dart';
+import '../widgets/social_user_widgets.dart';
 import 'ai_tour_guide_screen.dart';
 import 'live_chat_screen.dart';
 import 'map_screen.dart';
 import 'paywall_screen.dart';
+import 'user_profile_screen.dart';
 
 class PlaceDetailsScreen extends StatefulWidget {
   final PlaceModel place;
@@ -55,6 +59,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
   final GlobalKey _shareButtonKey = GlobalKey();
 
   bool _isVisited = false;
+  List<Map<String, dynamic>> _friendVisitors = const [];
   // Blocks a second check-in tap while GPS verification / the save is running.
   late final InFlightGuard _checkInGuard = InFlightGuard(
     onChange: () {
@@ -90,7 +95,40 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
       _refreshNearby();
 
       _loadCheckinState();
+      _loadFriendVisitors();
     });
+  }
+
+  Future<void> _loadFriendVisitors() async {
+    try {
+      final visits = await SupabaseService.instance.getFriendsPlaceVisits();
+      if (!mounted) return;
+      setState(() {
+        _friendVisitors = visits
+            .where((visit) => visit['place_id']?.toString() == widget.place.id)
+            .toList(growable: false);
+      });
+    } catch (error, stackTrace) {
+      debugPrint(
+        'PlaceDetailsScreen: failed to load friends who visited '
+        '${widget.place.id}: $error\n$stackTrace',
+      );
+    }
+  }
+
+  void _openFriendProfile(Map<String, dynamic> friend) {
+    final userId = friend['friend_id']?.toString() ?? '';
+    if (userId.isEmpty) return;
+    final username = friend['username']?.toString() ?? '';
+    final user = SocialUser(
+      userId: userId,
+      username: username,
+      displayName: friend['full_name']?.toString() ?? '',
+      avatarUrl: friend['avatar_url']?.toString() ?? '',
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => UserProfileScreen(user: user)),
+    );
   }
 
   Future<void> _loadCheckinState() async {
@@ -1026,6 +1064,16 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                               ],
                             ),
                           ),
+
+                          if (_friendVisitors.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                              child: FriendsVisitBadge(
+                                friends: _friendVisitors,
+                                onTap: () =>
+                                    _openFriendProfile(_friendVisitors.first),
+                              ),
+                            ),
 
                           if ((place.bestTimeToVisit ?? '').trim().isNotEmpty)
                             Padding(

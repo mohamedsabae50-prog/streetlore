@@ -191,7 +191,6 @@ class _CompassCardState extends State<CompassCard>
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          // Static outer disc (gradient + N label stay still)
                           Container(
                             width: 84,
                             height: 84,
@@ -210,95 +209,50 @@ class _CompassCardState extends State<CompassCard>
                                 ),
                               ],
                             ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                const Positioned(
-                                  top: 4,
-                                  child: Text(
-                                    'N',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                                // Only the arrow icon inside rotates
-                                AnimatedBuilder(
-                                  animation: _iconCtrl,
-                                  builder: (context, _) {
-                                    return StreamBuilder<double>(
-                                      stream:
-                                          CompassService.instance.headingStream,
-                                      builder: (context, snapshot) {
-                                        final heading = snapshot.data ?? 0.0;
-                                        final qiblaRelative =
-                                            _qiblaBearingDeg - heading;
-                                        final hasCompass = CompassService
-                                            .instance
-                                            .isActuallyWorking;
-                                        return Transform.rotate(
-                                          angle: hasCompass
-                                              ? (_qiblaAvailable
-                                                    ? qiblaRelative *
-                                                          (pi / 180.0)
-                                                    : -heading * (pi / 180.0))
-                                              : _iconRotation.value,
-                                          child: Icon(
-                                            Icons.navigation_rounded,
-                                            color: _isQiblaAligned
-                                                ? const Color(0xFF22C55E)
-                                                : Colors.white,
-                                            size: 30,
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
                           ),
-                          // Qibla arrow indicator (NOT rotated with disc;
-                          // fixed at the top-center of the compass)
-                          if (_qiblaAvailable)
-                            Container(
-                              width: 84,
-                              height: 84,
-                              alignment: Alignment.topCenter,
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 1),
-                                child: Container(
-                                  width: 14,
-                                  height: 18,
-                                  decoration: BoxDecoration(
-                                    color: _isQiblaAligned
-                                        ? const Color(0xFF22C55E)
-                                        : const Color(0xFFEAB308),
-                                    borderRadius: BorderRadius.circular(3),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color:
-                                            (_isQiblaAligned
-                                                    ? const Color(0xFF22C55E)
-                                                    : const Color(0xFFEAB308))
-                                                .withValues(alpha: 0.8),
-                                        blurRadius: 6,
-                                        spreadRadius: 1,
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Center(
+                          StreamBuilder<double>(
+                            stream: CompassService.instance.headingStream,
+                            builder: (context, snapshot) {
+                              final heading =
+                                  snapshot.data ?? _currentHeadingDeg;
+                              return CompassDialIndicators(
+                                headingDegrees: heading,
+                                qiblaBearingDegrees: _qiblaBearingDeg,
+                                qiblaAvailable: _qiblaAvailable,
+                                qiblaAligned: _isQiblaAligned,
+                              );
+                            },
+                          ),
+                          AnimatedBuilder(
+                            animation: _iconCtrl,
+                            builder: (context, _) {
+                              return StreamBuilder<double>(
+                                stream: CompassService.instance.headingStream,
+                                builder: (context, snapshot) {
+                                  final heading =
+                                      snapshot.data ?? _currentHeadingDeg;
+                                  final hasCompass =
+                                      CompassService.instance.isActuallyWorking;
+                                  final arrowAngle = hasCompass
+                                      ? (_qiblaAvailable
+                                                ? _qiblaBearingDeg - heading
+                                                : -heading) *
+                                            (pi / 180.0)
+                                      : _iconRotation.value;
+                                  return Transform.rotate(
+                                    angle: arrowAngle,
                                     child: Icon(
-                                      Icons.mosque_rounded,
-                                      color: Colors.white,
-                                      size: 11,
+                                      Icons.navigation_rounded,
+                                      color: _isQiblaAligned
+                                          ? const Color(0xFF22C55E)
+                                          : Colors.white,
+                                      size: 30,
                                     ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -403,6 +357,89 @@ class _CompassCardState extends State<CompassCard>
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class CompassDialIndicators extends StatelessWidget {
+  const CompassDialIndicators({
+    super.key,
+    required this.headingDegrees,
+    required this.qiblaBearingDegrees,
+    required this.qiblaAvailable,
+    this.qiblaAligned = false,
+  });
+
+  final double headingDegrees;
+  final double qiblaBearingDegrees;
+  final bool qiblaAvailable;
+  final bool qiblaAligned;
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 84.0;
+    const markerSize = 18.0;
+    const radius = 31.0;
+    final bearing = qiblaBearingDegrees * pi / 180;
+    final qiblaLeft = size / 2 + radius * sin(bearing) - markerSize / 2;
+    final qiblaTop = size / 2 - radius * cos(bearing) - markerSize / 2;
+
+    return Transform.rotate(
+      angle: -headingDegrees * pi / 180,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Positioned(
+              top: 3,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Text(
+                  'N',
+                  key: ValueKey('compass-north-marker'),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+            if (qiblaAvailable)
+              Positioned(
+                left: qiblaLeft,
+                top: qiblaTop,
+                child: Container(
+                  key: const ValueKey('compass-qibla-marker'),
+                  width: markerSize,
+                  height: markerSize,
+                  decoration: BoxDecoration(
+                    color: qiblaAligned
+                        ? const Color(0xFF22C55E)
+                        : const Color(0xFFEAB308),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFEAB308).withValues(alpha: 0.8),
+                        blurRadius: 6,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.mosque_rounded,
+                    color: Colors.white,
+                    size: 11,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

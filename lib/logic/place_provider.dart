@@ -12,6 +12,8 @@ import '../data/models/place_model.dart';
 import 'offline_provider.dart';
 
 class PlaceProvider extends ChangeNotifier {
+  static const _placesCacheKey = 'supabase_places_v2';
+
   SupabaseClient get _client => Supabase.instance.client;
 
   List<PlaceModel> _places = [];
@@ -159,7 +161,7 @@ class PlaceProvider extends ChangeNotifier {
 
     final storage = OfflineStorageService.instance;
     if (_places.isEmpty) {
-      final cachedRows = storage.getCachedApiRows('supabase_places');
+      final cachedRows = storage.getCachedApiRows(_placesCacheKey);
       if (cachedRows != null && cachedRows.isNotEmpty) {
         try {
           final cached = _filterInvalidCoords(
@@ -192,7 +194,7 @@ class PlaceProvider extends ChangeNotifier {
       final rows = (res as List<dynamic>)
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList(growable: false);
-      await storage.cacheApiRows('supabase_places', rows);
+      await storage.cacheApiRows(_placesCacheKey, rows);
       final list = rows.map(_placeFromSupabase).toList();
 
       final filtered = _filterInvalidCoords(list);
@@ -216,7 +218,7 @@ class PlaceProvider extends ChangeNotifier {
       }
     } catch (e) {
       _error = 'Failed to load places: $e';
-      final cachedRows = storage.getCachedApiRows('supabase_places');
+      final cachedRows = storage.getCachedApiRows(_placesCacheKey);
       if (cachedRows != null && cachedRows.isNotEmpty) {
         try {
           final cached = _filterInvalidCoords(
@@ -305,7 +307,7 @@ class PlaceProvider extends ChangeNotifier {
 
   Future<void> _cachePlaces() {
     return OfflineStorageService.instance.cacheApiRows(
-      'supabase_places',
+      _placesCacheKey,
       _places
           .map(
             (place) => {...place.toJson(), 'display_order': place.displayOrder},
@@ -323,10 +325,28 @@ class PlaceProvider extends ChangeNotifier {
   Future<void> _loadSavedPlaces() async {
     final prefs = await SharedPreferences.getInstance();
     final savedData = prefs.getStringList('saved_places_data') ?? [];
+    final seedPlacesById = {
+      for (final place in getSeedHotelPlaces()) place.id: place,
+    };
     _savedPlaces = savedData
         .map((jsonStr) => PlaceModel.fromJson(jsonDecode(jsonStr)))
+        .map((place) => seedPlacesById[place.id] ?? place)
         .toList();
+    final correctedData = _savedPlaces
+        .map((place) => jsonEncode(place.toJson()))
+        .toList(growable: false);
+    if (!_sameSavedPlaceData(savedData, correctedData)) {
+      await prefs.setStringList('saved_places_data', correctedData);
+    }
     notifyListeners();
+  }
+
+  bool _sameSavedPlaceData(List<String> saved, List<String> corrected) {
+    if (saved.length != corrected.length) return false;
+    for (var index = 0; index < saved.length; index++) {
+      if (saved[index] != corrected[index]) return false;
+    }
+    return true;
   }
 
   Future<bool> bootstrapForUser(String userId) async {

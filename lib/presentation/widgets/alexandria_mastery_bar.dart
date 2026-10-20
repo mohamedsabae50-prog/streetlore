@@ -119,3 +119,81 @@ class AlexandriaMasteryBar extends StatelessWidget {
     );
   }
 }
+
+class CompactAlexandriaMasteryPill extends StatelessWidget {
+  const CompactAlexandriaMasteryPill({
+    super.key,
+    required this.places,
+    required this.visitedPlaceIds,
+    required this.onTap,
+  });
+
+  final List<PlaceModel> places;
+  final Set<String> visitedPlaceIds;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = places.length;
+    final visited = places
+        .where((place) => visitedPlaceIds.contains(place.id))
+        .length;
+    final progress = total == 0 ? 0.0 : visited / total;
+    final percentage = (progress * 100).round();
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final color = const Color(0xFF047857);
+
+    return Semantics(
+      button: true,
+      label: isArabic
+          ? 'تمت زيارة $visited من أصل $total مكانًا، $percentage٪'
+          : 'Visited $visited of $total places, $percentage%',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 36),
+          padding: const EdgeInsetsDirectional.fromSTEB(10, 6, 9, 6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withValues(alpha: 0.22)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.explore_rounded,
+                color: Color(0xFFD5A934),
+                size: 16,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                '$visited/$total · $percentage${isArabic ? '٪' : '%'}',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 7),
+              SizedBox(
+                width: 34,
+                height: 4,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress.clamp(0.0, 1.0).toDouble(),
+                    backgroundColor: const Color(0xFFE9E7E1),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF10B981),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -14,8 +15,10 @@ class AtmService {
     int radiusMeters = 2500,
   }) async {
     final query =
-        '[out:json][timeout:20];node["amenity"="atm"]'
-        '(around:$radiusMeters,$latitude,$longitude);out body;';
+        '[out:json][timeout:20];(node["amenity"="atm"]'
+        '(around:$radiusMeters,$latitude,$longitude);'
+        'way["highway"](around:$radiusMeters,$latitude,$longitude);'
+        ');out body geom;';
     final uri = Uri.https('overpass-api.de', '/api/interpreter', {
       'data': query,
     });
@@ -36,6 +39,15 @@ class AtmService {
       throw const FormatException('Overpass returned an invalid ATM response.');
     }
 
+    final elements = payload['elements'] as List;
+    final roads = elements
+        .whereType<Map>()
+        .where((element) => element['type'] == 'way')
+        .map((element) => element['geometry'])
+        .whereType<List>()
+        .map((geometry) => geometry.whereType<Map>().toList(growable: false))
+        .toList(growable: false);
+
     const brandColors = <String, Color>{
       'CIB': Color(0xFFED1C24),
       'NBE': Color(0xFF0033A0),
@@ -46,15 +58,23 @@ class AtmService {
       'Arab Bank': Color(0xFF00695C),
     };
     final atms = <MapPoi>[];
-    for (final element in payload['elements'] as List) {
+    for (final element in elements) {
       if (element is! Map || element['lat'] is! num || element['lon'] is! num) {
         continue;
       }
+      if (element['type'] != 'node') continue;
       final tags = element['tags'];
       if (tags is! Map) continue;
       final lat = (element['lat'] as num).toDouble();
       final lng = (element['lon'] as num).toDouble();
       if (lat < -90 || lat > 90 || lng < -180 || lng > 180) continue;
+      if (!isWithinStreetDistance(
+        latitude: lat,
+        longitude: lng,
+        roadGeometries: roads,
+      )) {
+        continue;
+      }
       final name = (tags['name'] ?? tags['brand'] ?? tags['operator'] ?? 'ATM')
           .toString()
           .trim();
@@ -87,5 +107,56 @@ class AtmService {
       );
     }
     return atms;
+  }
+
+  static bool isWithinStreetDistance({
+    required double latitude,
+    required double longitude,
+    required List<List<Map>> roadGeometries,
+    double maxDistanceMeters = 40,
+  }) {
+    if (!latitude.isFinite ||
+        !longitude.isFinite ||
+        !maxDistanceMeters.isFinite ||
+        maxDistanceMeters < 0) {
+      return false;
+    }
+    final cosLatitude = math.cos(latitude * math.pi / 180);
+    for (final geometry in roadGeometries) {
+      for (var index = 1; index < geometry.length; index++) {
+        final start = geometry[index - 1];
+        final end = geometry[index];
+        final startLat = (start['lat'] as num?)?.toDouble();
+        final startLng = (start['lon'] as num?)?.toDouble();
+        final endLat = (end['lat'] as num?)?.toDouble();
+        final endLng = (end['lon'] as num?)?.toDouble();
+        if (startLat == null ||
+            startLng == null ||
+            endLat == null ||
+            endLng == null) {
+          continue;
+        }
+
+        final startX = (startLng - longitude) * cosLatitude * 111320;
+        final startY = (startLat - latitude) * 111320;
+        final endX = (endLng - longitude) * cosLatitude * 111320;
+        final endY = (endLat - latitude) * 111320;
+        final segmentX = endX - startX;
+        final segmentY = endY - startY;
+        final segmentLengthSquared = segmentX * segmentX + segmentY * segmentY;
+        final projection = segmentLengthSquared == 0
+            ? 0.0
+            : (-(startX * segmentX + startY * segmentY) / segmentLengthSquared)
+                  .clamp(0.0, 1.0)
+                  .toDouble();
+        final distanceX = startX + projection * segmentX;
+        final distanceY = startY + projection * segmentY;
+        if (math.sqrt(distanceX * distanceX + distanceY * distanceY) <=
+            maxDistanceMeters) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

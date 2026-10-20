@@ -16,6 +16,7 @@ import '../../logic/trip_provider.dart';
 import 'place_details_screen.dart';
 import '../widgets/report_content_sheet.dart';
 import '../widgets/social_user_widgets.dart';
+import '../widgets/head_to_head_comparison_card.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final SocialUser user;
@@ -178,6 +179,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final localVisitedIds = isOwnProfile
         ? context.watch<TripProvider>().visitedPlaceIds
         : const <String>{};
+    final myVisitedIds = context.watch<TripProvider>().visitedPlaceIds;
+    final activePlaces = context.watch<PlaceProvider>().places;
+    final theirVisitedIds = _visitedPlaces
+        .map((visit) => visit['id']?.toString() ?? '')
+        .where((id) => id.isNotEmpty)
+        .toSet();
     final localPlaces = isOwnProfile
         ? context.watch<PlaceProvider>().places
         : const <PlaceModel>[];
@@ -297,6 +304,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ],
                   ),
                 ),
+                if (!isOwnProfile &&
+                    auth.isLoggedIn &&
+                    !auth.isGuest &&
+                    !_isLoadingVisits &&
+                    _visitsError == null) ...[
+                  const SizedBox(height: 20),
+                  HeadToHeadComparisonCard(
+                    places: activePlaces,
+                    myVisitedIds: myVisitedIds,
+                    theirVisitedIds: theirVisitedIds,
+                    otherUsername: widget.user.username,
+                  ),
+                ],
                 const SizedBox(height: 24),
                 Text(
                   context.tr('profile_visited_places'),

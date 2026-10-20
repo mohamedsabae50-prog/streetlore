@@ -32,6 +32,36 @@ class AppStrings {
     },
     'friend_accept': {'en': 'Accept', 'ar': 'قبول'},
     'friend_decline': {'en': 'Decline', 'ar': 'رفض'},
+    'friend': {'en': 'friend', 'ar': 'صديق'},
+    'visited_by_friends_single': {
+      'en': 'Visited by {name}',
+      'ar': 'زاره {name}',
+    },
+    'visited_by_friends_many': {
+      'en': 'Visited by {name} +{count} others',
+      'ar': 'زاره {name} و {count} آخرين',
+    },
+    'head_to_head': {'en': 'Head-to-Head', 'ar': 'مقارنة الاستكشاف'},
+    'mastery_you': {'en': 'You', 'ar': 'أنت'},
+    'mastery_them': {'en': 'Them', 'ar': 'هو'},
+    'mastery_you_ahead': {'en': '🏆 You’re ahead!', 'ar': '🏆 أنت متقدم!'},
+    'mastery_them_ahead': {
+      'en': '🔥 @{name} is ahead!',
+      'ar': '🔥 @{name} متقدم!',
+    },
+    'mastery_tied': {'en': '🤝 Tied!', 'ar': '🤝 تعادل!'},
+    'shared_places': {
+      'en': 'Places you have both visited',
+      'ar': 'أماكن مشتركة زرتموها',
+    },
+    'shared_places_count': {
+      'en': '{count} shared places',
+      'ar': '{count} أماكن مشتركة',
+    },
+    'shared_places_count_one': {
+      'en': '1 shared place',
+      'ar': 'مكان مشترك واحد',
+    },
 
     'greet_morning': {'en': 'Good Morning', 'ar': 'صباح الخير'},
     'greet_afternoon': {'en': 'Good Afternoon', 'ar': 'مساء الخير'},
@@ -794,10 +824,7 @@ class AppStrings {
       'en': 'Visit 5 Historical places',
       'ar': 'زُر 5 أماكن تاريخية',
     },
-    'ach_culture_vulture_name': {
-      'en': 'Culture Vulture',
-      'ar': 'عاشق الثقافة',
-    },
+    'ach_culture_vulture_name': {'en': 'Culture Vulture', 'ar': 'عاشق الثقافة'},
     'ach_culture_vulture_desc': {
       'en': 'Visit 5 Culture places',
       'ar': 'زُر 5 أماكن ثقافية',
@@ -1011,7 +1038,6 @@ class AppStrings {
     'edit': {'en': 'Edit', 'ar': 'تعديل'},
 
     'trip_title': {'en': 'My Trip Planner', 'ar': 'مخطط رحلتي'},
-
 
     'geo_title': {'en': 'Geofencing Alerts', 'ar': 'تنبيهات الموقع'},
     'geo_hero_title': {
@@ -1385,7 +1411,6 @@ class AppStrings {
     'journal_save_memory': {'en': 'Save memory', 'ar': 'احفظ الذكرى'},
     'journal_update_memory': {'en': 'Update memory', 'ar': 'حدّث الذكرى'},
 
-
     'cur_amount': {'en': 'Amount', 'ar': 'المبلغ'},
     'cur_enter_amount': {'en': 'Enter amount', 'ar': 'أدخل المبلغ'},
     'cur_from': {'en': 'From', 'ar': 'من'},
@@ -1396,8 +1421,6 @@ class AppStrings {
       'ar':
           'الأسعار تقريبية ومبنية على متوسطات السوق. راجع البنك أو الصرافة للأسعار الفعلية.',
     },
-
-
 
     'emg_title': {'en': 'Emergency', 'ar': 'الطوارئ'},
     'admin_title': {'en': 'Admin Panel', 'ar': 'لوحة الإدارة'},
@@ -1655,7 +1678,6 @@ class AppStrings {
       'ar': 'خدمات الموقع مقفولة. شغّلها عشان تشوف اللي حواليك.',
     },
     'open_settings': {'en': 'Open settings', 'ar': 'افتح الإعدادات'},
-
   };
 
   static String level(BuildContext context, String levelName) =>

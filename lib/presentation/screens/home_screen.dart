@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'trip_planner_screen.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/services/location_permission_service.dart';
+import '../../core/services/supabase_service.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/shimmer_image.dart';
 import '../../logic/trip_provider.dart';
@@ -47,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final FocusNode _searchFocus = FocusNode();
   final ScrollController _scrollCtrl = ScrollController();
   bool _isSearchFocused = false;
+  List<Map<String, dynamic>> _friendsPlaceVisits = const [];
 
   late final AnimationController _headerCtrl;
   late final Animation<double> _headerFade;
@@ -82,9 +84,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (mounted) setState(() => _isLoading = false);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _ensureLocationPermission();
+      if (mounted) {
+        _ensureLocationPermission();
+        _loadFriendsPlaceVisits();
+      }
     });
   }
+
+  Future<void> _loadFriendsPlaceVisits() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isLoggedIn || auth.isGuest) return;
+    try {
+      final visits = await SupabaseService.instance.getFriendsPlaceVisits();
+      if (mounted) setState(() => _friendsPlaceVisits = visits);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'HomeScreen: failed to load friends’ place visits: '
+        '$error\n$stackTrace',
+      );
+    }
+  }
+
+  List<Map<String, dynamic>> _friendVisitorsForPlace(String placeId) =>
+      _friendsPlaceVisits
+          .where((visit) => visit['place_id']?.toString() == placeId)
+          .toList(growable: false);
 
   Future<void> _ensureLocationPermission() async {
     final status = await LocationPermissionService.instance.requestOnce();
@@ -457,15 +481,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           SliverToBoxAdapter(child: RepaintBoundary(child: _QuickAccessGrid())),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: AlexandriaMasteryBar(
-                places: context.watch<PlaceProvider>().places,
-                visitedPlaceIds: context.watch<TripProvider>().visitedPlaceIds,
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
               padding: const EdgeInsets.only(top: 20),
               child: SizedBox(
                 height: 42,
@@ -636,6 +651,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       offsetY: 24,
                       child: PlaceCard(
                         place: filtered[i],
+                        friendVisitors: _friendVisitorsForPlace(filtered[i].id),
                         onTap: () => _openPlace(filtered[i]),
                       ),
                     ),
@@ -702,6 +718,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               offsetY: 24,
               child: PlaceCard(
                 place: results[i],
+                friendVisitors: _friendVisitorsForPlace(results[i].id),
                 onTap: () => _openPlace(results[i]),
               ),
             ),
@@ -829,6 +846,8 @@ class _IconBtn extends StatelessWidget {
 class _QuickAccessGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final places = context.watch<PlaceProvider>().places;
+    final visitedPlaceIds = context.watch<TripProvider>().visitedPlaceIds;
     final items = <_QuickItem>[
       _QuickItem(
         icon: Icons.map_rounded,
@@ -882,15 +901,16 @@ class _QuickAccessGrid extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              TextButton.icon(
-                onPressed: () => Navigator.push(
+              CompactAlexandriaMasteryPill(
+                places: places,
+                visitedPlaceIds: visitedPlaceIds,
+                onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute<void>(
-                    builder: (_) => const SavedToursScreen(),
+                    builder: (_) =>
+                        const SavedToursScreen(initialShowVisited: true),
                   ),
                 ),
-                icon: const Icon(Icons.bookmarks_outlined, size: 18),
-                label: Text(context.tr('saved_title')),
               ),
             ],
           ),
