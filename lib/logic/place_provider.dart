@@ -40,6 +40,7 @@ class PlaceProvider extends ChangeNotifier {
 
   Set<String> get availableGovernorateIds =>
       _places.map((place) => place.governorate).toSet();
+  List<PlaceModel> get allPlaces => List.unmodifiable(_places);
 
   bool _loading = false;
   bool get loading => _loading;

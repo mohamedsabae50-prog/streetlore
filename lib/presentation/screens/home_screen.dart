@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:provider/provider.dart';
 import 'trip_planner_screen.dart';
@@ -15,6 +16,8 @@ import '../../data/models/place_model.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/tour_provider.dart';
+import '../../logic/governorate_provider.dart';
+import '../widgets/governorate_explorer_sheet.dart';
 import '../widgets/place_card.dart';
 import '../widgets/weather_widget.dart';
 import '../widgets/compass_card.dart';
@@ -127,6 +130,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(context.tr('loc_service_off'))));
+    } else if (status == LocationPermissionStatus.granted) {
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          timeLimit: const Duration(seconds: 8),
+        );
+        if (!mounted) return;
+        await context.read<GovernorateProvider>().syncWithCoordinates(
+          position.latitude,
+          position.longitude,
+          availableGovernorateIds: context
+              .read<PlaceProvider>()
+              .availableGovernorateIds,
+        );
+      } catch (error, stackTrace) {
+        debugPrint(
+          'HomeScreen: governorate GPS detection failed: '
+          '$error\n$stackTrace',
+        );
+      }
     }
   }
 
@@ -370,6 +392,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 10, 20, 0),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: GovernoratePill(
+                  onTap: () => showGovernorateExplorerSheet(
+                    context,
+                    places: context.read<PlaceProvider>().allPlaces,
+                    visitedPlaceIds: context
+                        .read<TripProvider>()
+                        .visitedPlaceIds,
+                  ),
                 ),
               ),
             ),

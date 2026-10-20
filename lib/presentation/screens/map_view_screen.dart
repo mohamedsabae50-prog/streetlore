@@ -15,6 +15,8 @@ import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/governorate_provider.dart';
 import '../../logic/trip_provider.dart';
+import '../widgets/governorate_explorer_sheet.dart';
+import '../widgets/governorate_fog_layer.dart';
 import '_atm_sheet.dart';
 import 'place_details_screen.dart';
 
@@ -211,7 +213,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final places = context.watch<PlaceProvider>().places;
+    final placeProvider = context.watch<PlaceProvider>();
+    final places = placeProvider.places;
+    final allPlaces = placeProvider.allPlaces;
     final visitedPlaceIds = context.watch<TripProvider>().visitedPlaceIds;
     final visible = _filtered(places);
 
@@ -234,6 +238,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 userAgentPackageName: 'com.alsaba.egyptlore',
                 maxNativeZoom: 17,
                 tileProvider: OfflineTileProvider(),
+              ),
+              GovernorateFogLayer(
+                places: allPlaces,
+                visitedPlaceIds: visitedPlaceIds,
               ),
               MarkerLayer(
                 markers: [
@@ -482,6 +490,17 @@ class _MapViewScreenState extends State<MapViewScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 74,
+            left: 16,
+            child: GovernoratePill(
+              onTap: () => showGovernorateExplorerSheet(
+                context,
+                places: allPlaces,
+                visitedPlaceIds: visitedPlaceIds,
               ),
             ),
           ),

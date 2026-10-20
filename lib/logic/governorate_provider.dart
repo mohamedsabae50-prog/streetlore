@@ -103,6 +103,17 @@ class GovernorateProvider extends ChangeNotifier {
     return true;
   }
 
+  bool unlockAndSelectGovernorate(String id) {
+    if (!EgyptGovernorate.byId.containsKey(id)) return false;
+    final changed = _unlockedGovernorateIds.add(id) || _activeGovernorate != id;
+    _activeGovernorate = id;
+    if (changed) {
+      _persistSafely();
+      notifyListeners();
+    }
+    return true;
+  }
+
   void setFogEnabled(bool enabled) {
     if (_fogEnabled == enabled) return;
     _fogEnabled = enabled;

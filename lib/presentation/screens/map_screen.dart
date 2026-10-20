@@ -8,6 +8,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import '../../presentation/widgets/governorate_fog_layer.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/offline_tile_provider.dart';
@@ -329,6 +330,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final List<PlaceWaypoint> waypoints = _effectiveWaypoints;
+    final governorates = context.watch<GovernorateProvider>();
 
     final List<Marker> markerList = [];
     if (_currentLocation != null) {
@@ -396,6 +398,12 @@ class _MapScreenState extends State<MapScreen> {
         errorImage: MemoryImage(_kTransparentPng),
       ),
     );
+
+    if (governorates.fogEnabled) {
+      mapChildren.add(
+        GovernorateFogLayer(places: context.watch<PlaceProvider>().allPlaces),
+      );
+    }
 
     if (_routePoints.isNotEmpty && _routePoints.length > 1) {
       mapChildren.add(
