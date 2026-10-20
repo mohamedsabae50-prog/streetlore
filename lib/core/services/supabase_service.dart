@@ -13,6 +13,7 @@ import '../../data/models/place_model.dart';
 import '../../data/models/social_user.dart';
 import 'sync_queue_service.dart';
 import 'realtime_resilience.dart';
+import 'activity_feed_filter.dart';
 
 class SupabaseService {
   SupabaseService._();
@@ -236,16 +237,20 @@ class SupabaseService {
   Stream<List<ChatMessage>>? streamMessages(String placeId) {
     if (_client == null) return null;
     try {
-      return swallowTransientRealtimeErrors(_client!
-          .from('place_chat')
-          .stream(primaryKey: ['id'])
-          .eq('place_id', placeId)
-          .order('sent_at')
-          .map(
-            (rows) => rows
-                .map((j) => ChatMessage.fromJson(Map<String, dynamic>.from(j)))
-                .toList(),
-          ));
+      return swallowTransientRealtimeErrors(
+        _client!
+            .from('place_chat')
+            .stream(primaryKey: ['id'])
+            .eq('place_id', placeId)
+            .order('sent_at')
+            .map(
+              (rows) => rows
+                  .map(
+                    (j) => ChatMessage.fromJson(Map<String, dynamic>.from(j)),
+                  )
+                  .toList(),
+            ),
+      );
     } catch (e) {
       _logError('streamMessages', e);
       return null;
@@ -461,6 +466,7 @@ class SupabaseService {
           'created_at,read_at',
         )
         .eq('recipient_id', userId)
+        .neq('actor_id', userId)
         .order('created_at', ascending: false)
         .limit(limit);
     return (result as List)
@@ -495,6 +501,7 @@ class SupabaseService {
           .from('notifications')
           .stream(primaryKey: ['id'])
           .eq('recipient_id', recipientId)
+          .neq('actor_id', recipientId)
           .order('created_at', ascending: false)
           .map(
             (rows) => rows
@@ -507,10 +514,7 @@ class SupabaseService {
           debugPrint('Notification realtime unavailable; polling: $error');
           unawaited(poll());
         },
-      ).listen(
-        controller.add,
-        onError: controller.addError,
-      );
+      ).listen(controller.add, onError: controller.addError);
       pollTimer = Timer.periodic(
         const Duration(seconds: 30),
         (_) => unawaited(poll()),
@@ -695,9 +699,18 @@ class SupabaseService {
       if (result is! List) {
         throw const FormatException('Activity feed response was not a list.');
       }
-      return result
+      final rows = result
           .map((row) => Map<String, dynamic>.from(row as Map))
           .toList(growable: false);
+      final currentUser = client.auth.currentUser;
+      return filterOtherUsersActivity(
+        rows,
+        currentUser?.id ?? '',
+        currentUsername:
+            currentUser?.userMetadata?['username']?.toString() ?? '',
+        currentDisplayName:
+            currentUser?.userMetadata?['full_name']?.toString() ?? '',
+      );
     }, startedAt: startedAt);
   }
 
@@ -744,7 +757,6 @@ class SupabaseService {
       );
       rethrow;
     }
-
   }
 
   static bool _isTransientPostgrestError(PostgrestException error) {

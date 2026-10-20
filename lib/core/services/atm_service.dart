@@ -331,7 +331,9 @@ class AtmService {
     required double latitude,
     required double longitude,
     int radiusMeters = 2500,
+    http.Client? client,
   }) async {
+    final fallbackAtms = curatedAlexandriaAtms;
     if (!latitude.isFinite ||
         !longitude.isFinite ||
         latitude < -90 ||
@@ -339,86 +341,94 @@ class AtmService {
         longitude < -180 ||
         longitude > 180 ||
         radiusMeters <= 0) {
-      throw ArgumentError('Invalid ATM search location or radius.');
+      return fallbackAtms;
     }
-    final query =
-        '[out:json][timeout:4];node["amenity"="atm"]'
-        '(around:$radiusMeters,$latitude,$longitude);out body;';
-    final uri = Uri.https('overpass-api.de', '/api/interpreter', {
-      'data': query,
-    });
-    final response = await http
-        .get(
-          uri,
-          headers: const {'User-Agent': 'StreetLore/2.1.24 (Alexandria guide)'},
-        )
-        .timeout(const Duration(seconds: 4));
-    if (response.statusCode != 200) {
-      throw http.ClientException(
-        'Overpass API returned HTTP ${response.statusCode}.',
+    try {
+      final query =
+          '[out:json][timeout:3];node["amenity"="atm"]'
+          '(around:$radiusMeters,$latitude,$longitude);out body;';
+      final uri = Uri.https('overpass-api.de', '/api/interpreter', {
+        'data': query,
+      });
+      final request = client?.get ?? http.get;
+      final response = await request(
         uri,
-      );
-    }
-    final payload = jsonDecode(response.body);
-    if (payload is! Map || payload['elements'] is! List) {
-      throw const FormatException('Overpass returned an invalid ATM response.');
-    }
-
-    const brandColors = <String, Color>{
-      'cib': Color(0xFFED1C24),
-      'nbe': Color(0xFF0033A0),
-      'qnb': Color(0xFF8B1A1A),
-      'banque misr': Color(0xFF1F4E79),
-      'alex bank': Color(0xFFB22222),
-      'alexbank': Color(0xFFB22222),
-      'hsbc': Color(0xFFDB0011),
-      'banque du caire': Color(0xFF15803D),
-    };
-    final atms = <MapPoi>[];
-    for (final element in payload['elements'] as List) {
-      if (element is! Map ||
-          element['type'] != 'node' ||
-          element['lat'] is! num ||
-          element['lon'] is! num ||
-          element['tags'] is! Map) {
-        continue;
+        headers: const {'User-Agent': 'StreetLore/2.1.25 (Alexandria guide)'},
+      ).timeout(const Duration(seconds: 3));
+      if (response.statusCode != 200) return fallbackAtms;
+      final payload = jsonDecode(response.body);
+      if (payload is! Map || payload['elements'] is! List) {
+        return fallbackAtms;
       }
-      final lat = (element['lat'] as num).toDouble();
-      final lng = (element['lon'] as num).toDouble();
-      if (!isOnAlexandriaLand(lat, lng)) continue;
 
-      final tags = element['tags'] as Map;
-      final brand = (tags['brand'] ?? tags['operator'])?.toString();
-      final name = (tags['name'] ?? brand ?? 'ATM').toString().trim();
-      final street = tags['addr:street']?.toString().trim() ?? '';
-      final houseNumber = tags['addr:housenumber']?.toString().trim() ?? '';
-      final address = [
-        if (houseNumber.isNotEmpty) houseNumber,
-        if (street.isNotEmpty) street,
-      ].join(' ');
-      final brandKey = brand?.toLowerCase() ?? '';
-      var color = const Color(0xFF15803D);
-      for (final entry in brandColors.entries) {
-        if (brandKey.contains(entry.key)) {
-          color = entry.value;
-          break;
+      const brandColors = <String, Color>{
+        'cib': Color(0xFFED1C24),
+        'nbe': Color(0xFF0033A0),
+        'qnb': Color(0xFF8B1A1A),
+        'banque misr': Color(0xFF1F4E79),
+        'alex bank': Color(0xFFB22222),
+        'alexbank': Color(0xFFB22222),
+        'hsbc': Color(0xFFDB0011),
+        'banque du caire': Color(0xFF15803D),
+      };
+      final atms = <MapPoi>[];
+      for (final element in payload['elements'] as List) {
+        if (element is! Map ||
+            element['type'] != 'node' ||
+            element['lat'] is! num ||
+            element['lon'] is! num ||
+            element['tags'] is! Map) {
+          continue;
         }
+        final lat = (element['lat'] as num).toDouble();
+        final lng = (element['lon'] as num).toDouble();
+        if (!isOnAlexandriaLand(lat, lng)) continue;
+
+        final tags = element['tags'] as Map;
+        final brand = (tags['brand'] ?? tags['operator'])?.toString();
+        final name = (tags['name'] ?? brand ?? 'ATM').toString().trim();
+        final street = tags['addr:street']?.toString().trim() ?? '';
+        final houseNumber = tags['addr:housenumber']?.toString().trim() ?? '';
+        final address = [
+          if (houseNumber.isNotEmpty) houseNumber,
+          if (street.isNotEmpty) street,
+        ].join(' ');
+        final brandKey = brand?.toLowerCase() ?? '';
+        var color = const Color(0xFF15803D);
+        for (final entry in brandColors.entries) {
+          if (brandKey.contains(entry.key)) {
+            color = entry.value;
+            break;
+          }
+        }
+        atms.add(
+          MapPoi(
+            id: 'osm-atm-${element['id']}',
+            name: name,
+            address: address.isEmpty ? 'OpenStreetMap location' : address,
+            lat: lat,
+            lng: lng,
+            category: 'atm',
+            brand: brand,
+            icon: Icons.atm_rounded,
+            color: color,
+          ),
+        );
       }
-      atms.add(
-        MapPoi(
-          id: 'osm-atm-${element['id']}',
-          name: name,
-          address: address.isEmpty ? 'OpenStreetMap location' : address,
-          lat: lat,
-          lng: lng,
-          category: 'atm',
-          brand: brand,
-          icon: Icons.atm_rounded,
-          color: color,
-        ),
-      );
+
+      final mergedAtms = [...fallbackAtms];
+      for (final candidate in atms) {
+        final duplicate = mergedAtms.any(
+          (existing) =>
+              (existing.lat - candidate.lat).abs() < 0.0003 &&
+              (existing.lng - candidate.lng).abs() < 0.0003,
+        );
+        if (!duplicate) mergedAtms.add(candidate);
+      }
+      return mergedAtms;
+    } catch (_) {
+      return fallbackAtms;
     }
-    return atms;
   }
 
   static bool isOnAlexandriaLand(double latitude, double longitude) {

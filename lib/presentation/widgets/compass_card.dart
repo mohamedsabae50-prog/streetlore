@@ -185,75 +185,21 @@ class _CompassCardState extends State<CompassCard>
                 ),
                 child: Row(
                   children: [
-                    SizedBox(
-                      width: 84,
-                      height: 84,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: 84,
-                            height: 84,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF4F46E5), Color(0xFF22C55E)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Color.fromARGB(glowAlpha, 79, 70, 229),
-                                  blurRadius: 16 + pulseValue * 8,
-                                  spreadRadius: pulseValue * 2,
-                                ),
-                              ],
-                            ),
-                          ),
-                          StreamBuilder<double>(
-                            stream: CompassService.instance.headingStream,
-                            builder: (context, snapshot) {
-                              final heading =
-                                  snapshot.data ?? _currentHeadingDeg;
-                              return CompassDialIndicators(
-                                headingDegrees: heading,
-                                qiblaBearingDegrees: _qiblaBearingDeg,
-                                qiblaAvailable: _qiblaAvailable,
-                                qiblaAligned: _isQiblaAligned,
-                              );
-                            },
-                          ),
-                          AnimatedBuilder(
-                            animation: _iconCtrl,
-                            builder: (context, _) {
-                              return StreamBuilder<double>(
-                                stream: CompassService.instance.headingStream,
-                                builder: (context, snapshot) {
-                                  final heading =
-                                      snapshot.data ?? _currentHeadingDeg;
-                                  final hasCompass =
-                                      CompassService.instance.isActuallyWorking;
-                                  final arrowAngle = hasCompass
-                                      ? (_qiblaAvailable
-                                                ? _qiblaBearingDeg - heading
-                                                : -heading) *
-                                            (pi / 180.0)
-                                      : _iconRotation.value;
-                                  return Transform.rotate(
-                                    angle: arrowAngle,
-                                    child: Icon(
-                                      Icons.navigation_rounded,
-                                      color: _isQiblaAligned
-                                          ? const Color(0xFF22C55E)
-                                          : Colors.white,
-                                      size: 30,
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ],
+                    AnimatedBuilder(
+                      animation: _iconCtrl,
+                      builder: (context, _) => StreamBuilder<double>(
+                        stream: CompassService.instance.headingStream,
+                        builder: (context, snapshot) => CompassCardFace(
+                          headingDegrees: snapshot.data ?? _currentHeadingDeg,
+                          qiblaBearingDegrees: _qiblaBearingDeg,
+                          qiblaAvailable: _qiblaAvailable,
+                          qiblaAligned: _isQiblaAligned,
+                          compassWorking:
+                              CompassService.instance.isActuallyWorking,
+                          fallbackAngle: _iconRotation.value,
+                          glowAlpha: glowAlpha,
+                          pulseValue: pulseValue,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -365,14 +311,10 @@ class _CompassCardState extends State<CompassCard>
 class CompassDialIndicators extends StatelessWidget {
   const CompassDialIndicators({
     super.key,
-    required this.headingDegrees,
-    required this.qiblaBearingDegrees,
     required this.qiblaAvailable,
     this.qiblaAligned = false,
   });
 
-  final double headingDegrees;
-  final double qiblaBearingDegrees;
   final bool qiblaAvailable;
   final bool qiblaAligned;
 
@@ -380,66 +322,141 @@ class CompassDialIndicators extends StatelessWidget {
   Widget build(BuildContext context) {
     const size = 84.0;
     const markerSize = 18.0;
-    const radius = 31.0;
-    final bearing = qiblaBearingDegrees * pi / 180;
-    final qiblaLeft = size / 2 + radius * sin(bearing) - markerSize / 2;
-    final qiblaTop = size / 2 - radius * cos(bearing) - markerSize / 2;
-
-    return Transform.rotate(
-      angle: -headingDegrees * pi / 180,
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            const Positioned(
-              top: 3,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Text(
-                  'N',
-                  key: ValueKey('compass-north-marker'),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                  ),
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Positioned(
+            top: 3,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                'N',
+                key: ValueKey('compass-north-marker'),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ),
-            if (qiblaAvailable)
-              Positioned(
-                left: qiblaLeft,
-                top: qiblaTop,
-                child: Container(
-                  key: const ValueKey('compass-qibla-marker'),
-                  width: markerSize,
-                  height: markerSize,
-                  decoration: BoxDecoration(
-                    color: qiblaAligned
-                        ? const Color(0xFF22C55E)
-                        : const Color(0xFFEAB308),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFEAB308).withValues(alpha: 0.8),
-                        blurRadius: 6,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.mosque_rounded,
-                    color: Colors.white,
-                    size: 11,
-                  ),
+          ),
+          if (qiblaAvailable)
+            Positioned(
+              right: 3,
+              bottom: 3,
+              child: Container(
+                key: const ValueKey('compass-qibla-marker'),
+                width: markerSize,
+                height: markerSize,
+                decoration: BoxDecoration(
+                  color: qiblaAligned
+                      ? const Color(0xFF22C55E)
+                      : const Color(0xFFEAB308),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFEAB308).withValues(alpha: 0.8),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.mosque_rounded,
+                  color: Colors.white,
+                  size: 11,
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class CompassCardFace extends StatelessWidget {
+  const CompassCardFace({
+    super.key,
+    required this.headingDegrees,
+    required this.qiblaBearingDegrees,
+    required this.qiblaAvailable,
+    required this.compassWorking,
+    required this.fallbackAngle,
+    this.qiblaAligned = false,
+    this.glowAlpha = 0,
+    this.pulseValue = 0,
+  });
+
+  final double headingDegrees;
+  final double qiblaBearingDegrees;
+  final bool qiblaAvailable;
+  final bool qiblaAligned;
+  final bool compassWorking;
+  final double fallbackAngle;
+  final int glowAlpha;
+  final double pulseValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final pointerAngle = compassWorking
+        ? (qiblaAvailable
+                  ? qiblaBearingDegrees - headingDegrees
+                  : -headingDegrees) *
+              pi /
+              180
+        : fallbackAngle;
+    return SizedBox(
+      key: const ValueKey('compass-face'),
+      width: 84,
+      height: 84,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            key: const ValueKey('compass-square-background'),
+            width: 84,
+            height: 84,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4F46E5), Color(0xFF22C55E)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Color.fromARGB(glowAlpha, 79, 70, 229),
+                  blurRadius: 16 + pulseValue * 8,
+                  spreadRadius: pulseValue * 2,
+                ),
+              ],
+            ),
+          ),
+          CompassDialIndicators(
+            qiblaAvailable: qiblaAvailable,
+            qiblaAligned: qiblaAligned,
+          ),
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(end: pointerAngle),
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            builder: (context, angle, child) => Transform.rotate(
+              key: const ValueKey('compass-pointer-rotation'),
+              angle: angle,
+              child: child,
+            ),
+            child: Icon(
+              Icons.navigation_rounded,
+              color: qiblaAligned ? const Color(0xFF22C55E) : Colors.white,
+              size: 30,
+            ),
+          ),
+        ],
       ),
     );
   }

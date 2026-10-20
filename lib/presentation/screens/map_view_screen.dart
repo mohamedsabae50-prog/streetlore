@@ -458,7 +458,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         ],
                       ),
                       child: Text(
-                        context.tr('map_title', {'n': '${visible.length}'}),
+                        context.tr('map_title', {
+                          'n': '${_showAtms ? _atms.length : visible.length}',
+                        }),
                         style: TextStyle(
                           color: context.textPri,
                           fontSize: 14,

@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/image_defaults.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/activity_feed_filter.dart';
 import '../../data/models/place_model.dart';
 import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
@@ -96,10 +97,16 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
         ?.listen(
           (notifications) {
             if (!mounted || _requestedUserId != userId) return;
+            final otherNotifications = filterOtherUsersActivity(
+              notifications,
+              userId,
+              currentUsername: auth.username,
+              currentDisplayName: auth.userName,
+            );
             final oldNotificationIds = _notifications
                 .map((notification) => notification['id']?.toString() ?? '')
                 .toSet();
-            final received = notifications
+            final received = otherNotifications
                 .where(
                   (notification) => !oldNotificationIds.contains(
                     notification['id']?.toString() ?? '',
@@ -107,7 +114,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                 )
                 .toList(growable: false);
             final uniqueNotifications = _deduplicateNotifications(
-              notifications,
+              otherNotifications,
             );
             setState(() => _notifications = uniqueNotifications);
             unawaited(_loadNotificationActors(uniqueNotifications));
@@ -144,7 +151,10 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
   Future<void> _load() async {
     final achievements = context.read<AchievementProvider>();
     final gamification = context.read<GamificationProvider>();
-    final currentUserId = context.read<AuthProvider>().userId;
+    final auth = context.read<AuthProvider>();
+    final currentUserId = auth.userId;
+    final currentUsername = auth.username;
+    final currentDisplayName = auth.userName;
     setState(() {
       _loading = true;
       _error = null;
@@ -153,7 +163,12 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
       final activities = await SupabaseService.instance
           .fetchFollowingActivity();
       final notifications = _deduplicateNotifications(
-        await SupabaseService.instance.fetchNotifications(),
+        filterOtherUsersActivity(
+          await SupabaseService.instance.fetchNotifications(),
+          currentUserId,
+          currentUsername: currentUsername,
+          currentDisplayName: currentDisplayName,
+        ),
       );
       if (!mounted) return;
       setState(() {
@@ -335,14 +350,26 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
     final auth = context.watch<AuthProvider>();
     final blockedUsers = context.watch<BlockedUsersProvider>();
     final visibleActivities = _activities
-        .where((activity) {
-          final actorId = activity['actor_id']?.toString() ?? '';
-          return !blockedUsers.isBlocked(actorId);
-        })
+        .where(
+          (activity) =>
+              !blockedUsers.isBlocked(activity['actor_id']?.toString() ?? ''),
+        )
         .toList(growable: false);
+    final otherUsersActivities = filterOtherUsersActivity(
+      visibleActivities,
+      auth.userId,
+      currentUsername: auth.username,
+      currentDisplayName: auth.userName,
+    );
+    final otherUsersNotifications = filterOtherUsersActivity(
+      _notifications,
+      auth.userId,
+      currentUsername: auth.username,
+      currentDisplayName: auth.userName,
+    );
     final filteredActivities = _filter == 'all'
-        ? visibleActivities
-        : visibleActivities
+        ? otherUsersActivities
+        : otherUsersActivities
               .where((activity) => activity['event_type'] == _filter)
               .toList(growable: false);
     final needsSignIn = !auth.isLoggedIn || auth.isGuest;
@@ -373,8 +400,8 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                     ),
                   )
                 : _loading &&
-                      visibleActivities.isEmpty &&
-                      _notifications.isEmpty
+                      otherUsersActivities.isEmpty &&
+                      otherUsersNotifications.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
                 ? _FeedMessage(
@@ -384,22 +411,24 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                       child: Text(context.tr('no_internet_retry')),
                     ),
                   )
-                : visibleActivities.isEmpty && _notifications.isEmpty
+                : otherUsersActivities.isEmpty &&
+                      otherUsersNotifications.isEmpty
                 ? _FeedMessage(text: context.tr('feed_empty'))
                 : RefreshIndicator(
                     onRefresh: _load,
                     child: CustomScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       slivers: [
-                        if (_notifications.isNotEmpty)
+                        if (otherUsersNotifications.isNotEmpty)
                           SliverPadding(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                             sliver: SliverList.separated(
-                              itemCount: _notifications.length,
+                              itemCount: otherUsersNotifications.length,
                               separatorBuilder: (_, _) =>
                                   const SizedBox(height: 8),
                               itemBuilder: (context, index) {
-                                final notification = _notifications[index];
+                                final notification =
+                                    otherUsersNotifications[index];
                                 final actorId =
                                     notification['actor_id']?.toString() ?? '';
                                 return _NotificationCard(
@@ -430,7 +459,7 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
                         ),
                         SliverToBoxAdapter(child: _feedFilters(context)),
                         if (filteredActivities.isEmpty &&
-                            _notifications.isEmpty)
+                            otherUsersNotifications.isEmpty)
                           SliverFillRemaining(
                             hasScrollBody: false,
                             child: _FeedMessage(

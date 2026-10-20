@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:math' as math;
 import 'package:streetlore/data/models/place_model.dart';
 import 'package:streetlore/presentation/widgets/alexandria_mastery_bar.dart';
 import 'package:streetlore/presentation/widgets/compass_card.dart';
@@ -47,13 +48,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: CompassDialIndicators(
-            headingDegrees: 40,
-            qiblaBearingDegrees: 135.5,
-            qiblaAvailable: true,
-          ),
-        ),
+        home: Scaffold(body: CompassDialIndicators(qiblaAvailable: true)),
       ),
     );
 
@@ -67,6 +62,71 @@ void main() {
     );
     expect((north - qibla).distance, greaterThan(18));
   });
+
+  testWidgets(
+    'compass face keeps the box and markers fixed while pointer rotates',
+    (tester) async {
+      Future<void> pumpFace(double heading) => tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CompassCardFace(
+              headingDegrees: heading,
+              qiblaBearingDegrees: 120,
+              qiblaAvailable: true,
+              compassWorking: true,
+              fallbackAngle: 0,
+            ),
+          ),
+        ),
+      );
+
+      await pumpFace(0);
+      final backgroundCenter = tester.getCenter(
+        find.byKey(const ValueKey('compass-square-background')),
+      );
+      final northCenter = tester.getCenter(
+        find.byKey(const ValueKey('compass-north-marker')),
+      );
+      final qiblaCenter = tester.getCenter(
+        find.byKey(const ValueKey('compass-qibla-marker')),
+      );
+      final pointerTransform = tester.widget<Transform>(
+        find.byKey(const ValueKey('compass-pointer-rotation')),
+      );
+      final initialAngle = math.atan2(
+        pointerTransform.transform.storage[1],
+        pointerTransform.transform.storage[0],
+      );
+
+      await pumpFace(90);
+      await tester.pumpAndSettle();
+      final movedBackgroundCenter = tester.getCenter(
+        find.byKey(const ValueKey('compass-square-background')),
+      );
+      final movedNorthCenter = tester.getCenter(
+        find.byKey(const ValueKey('compass-north-marker')),
+      );
+      final movedQiblaCenter = tester.getCenter(
+        find.byKey(const ValueKey('compass-qibla-marker')),
+      );
+      final movedTransform = tester.widget<Transform>(
+        find.byKey(const ValueKey('compass-pointer-rotation')),
+      );
+      final movedAngle = math.atan2(
+        movedTransform.transform.storage[1],
+        movedTransform.transform.storage[0],
+      );
+
+      expect(movedBackgroundCenter, backgroundCenter);
+      expect(movedNorthCenter, northCenter);
+      expect(movedQiblaCenter, qiblaCenter);
+      expect(movedAngle, isNot(closeTo(initialAngle, 0.01)));
+      expect(
+        find.byKey(const ValueKey('compass-pointer-rotation')),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('head-to-head compares active catalog and shared places', (
     tester,

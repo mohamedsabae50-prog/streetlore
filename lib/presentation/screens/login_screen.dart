@@ -129,9 +129,6 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  
-  
-
   Future<void> _routeAfterAuth({String initialUsername = ''}) async {
     final auth = context.read<AuthProvider>();
     try {
@@ -201,8 +198,6 @@ class _LoginScreenState extends State<LoginScreen>
                           size: 220,
                           totalDuration: Duration(milliseconds: 4200),
                           loop: false,
-                          spinCompass: true,
-                          compassSpinDuration: Duration(seconds: 16),
                         ),
                       ),
                     ),
@@ -259,10 +254,7 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                           const SizedBox(height: 16),
-                          
-                          
-                          
-                          
+
                           if (_isSignUp) ...[
                             FadeInUp(
                               delay: const Duration(milliseconds: 420),

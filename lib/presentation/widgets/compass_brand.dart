@@ -6,16 +6,12 @@ class CompassBrandIntro extends StatefulWidget {
   final double size;
   final Duration totalDuration;
   final bool loop;
-  final bool spinCompass;
-  final Duration compassSpinDuration;
 
   const CompassBrandIntro({
     super.key,
     this.size = 280,
     this.totalDuration = const Duration(milliseconds: 4200),
     this.loop = false,
-    this.spinCompass = true,
-    this.compassSpinDuration = const Duration(seconds: 18),
   });
 
   @override
@@ -23,9 +19,8 @@ class CompassBrandIntro extends StatefulWidget {
 }
 
 class _CompassBrandIntroState extends State<CompassBrandIntro>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
-  late final AnimationController _compassSpinCtrl;
 
   // Aspect ratio of the cropped compass asset (677 wide x 713 tall,
   // transparent PNG). User-provided asset is left intact (no extra
@@ -42,17 +37,11 @@ class _CompassBrandIntroState extends State<CompassBrandIntro>
     } else {
       _ctrl.forward();
     }
-    _compassSpinCtrl = AnimationController(
-      vsync: this,
-      duration: widget.compassSpinDuration,
-    );
-    if (widget.spinCompass) _compassSpinCtrl.repeat();
   }
 
   @override
   void dispose() {
     _ctrl.dispose();
-    _compassSpinCtrl.dispose();
     super.dispose();
   }
 
@@ -80,7 +69,7 @@ class _CompassBrandIntroState extends State<CompassBrandIntro>
     final compassCenterY = totalHeight / 2;
 
     return AnimatedBuilder(
-      animation: Listenable.merge([_ctrl, _compassSpinCtrl]),
+      animation: _ctrl,
       builder: (context, _) {
         return SizedBox(
           width: widget.size,
@@ -98,27 +87,14 @@ class _CompassBrandIntroState extends State<CompassBrandIntro>
                 child: OverflowBox(
                   maxWidth: spinBoxSide,
                   maxHeight: spinBoxSide,
-                  child: widget.spinCompass
-                      ? Transform.rotate(
-                          angle: _compassSpinCtrl.value * 2 * math.pi,
-                          alignment: Alignment.center,
-                          child: Center(
-                            child: Image.asset(
-                              'assets/images/compass_only.png',
-                              width: compassWidth,
-                              height: compassHeight,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        )
-                      : Center(
-                          child: Image.asset(
-                            'assets/images/compass_only.png',
-                            width: compassWidth,
-                            height: compassHeight,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
+                  child: Center(
+                    child: Image.asset(
+                      'assets/images/compass_only.png',
+                      width: compassWidth,
+                      height: compassHeight,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
               ),
               // ── Orbiting / morphing / fading letters ──

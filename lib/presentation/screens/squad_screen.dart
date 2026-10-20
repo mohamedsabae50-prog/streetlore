@@ -8,7 +8,6 @@ import '../../logic/squad_provider.dart';
 import '../../l10n/app_strings.dart';
 import 'user_profile_screen.dart';
 import '../widgets/social_user_widgets.dart';
-import '../widgets/monthly_pro_reward_banner.dart';
 
 class SquadScreen extends StatefulWidget {
   const SquadScreen({super.key});
@@ -97,7 +96,6 @@ class _SquadScreenState extends State<SquadScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
             children: [
-              const MonthlyProRewardBanner(),
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
