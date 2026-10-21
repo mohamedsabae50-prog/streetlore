@@ -9,16 +9,25 @@ class GovernorateService {
 
   static List<EgyptGovernorate> get governorates => EgyptGovernorate.all;
 
+  static bool containsCoordinates(
+    EgyptGovernorate governorate,
+    double lat,
+    double lng,
+  ) =>
+      lat.isFinite &&
+      lng.isFinite &&
+      _containsPoint(governorate.boundaryPolygon, lat, lng);
+
   static EgyptGovernorate detectFromCoordinates(double lat, double lng) {
     if (lat.isFinite && lng.isFinite && lat >= -90 && lat <= 90) {
       final alexandria = EgyptGovernorate.byId['alexandria']!;
-      if (_containsPoint(alexandria.boundaryPolygon, lat, lng)) {
+      if (containsCoordinates(alexandria, lat, lng)) {
         return alexandria;
       }
       final matches = governorates.where(
         (governorate) =>
             governorate.id != 'alexandria' &&
-            _containsPoint(governorate.boundaryPolygon, lat, lng),
+            containsCoordinates(governorate, lat, lng),
       );
       if (matches.isNotEmpty) {
         return matches.reduce((nearest, candidate) {

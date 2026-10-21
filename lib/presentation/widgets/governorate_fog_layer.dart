@@ -44,6 +44,22 @@ class GovernorateFogLayer extends StatelessWidget {
           return Offset(screenPoint.x, screenPoint.y);
         })
         .toList(growable: false);
+    final activeBounds = _boundsOf(boundaryPoints);
+    final visibleBadges = filterGovernorateBadges(
+      candidates: fogged,
+      camera: camera,
+      activeBounds: activeBounds,
+    );
+    final territoryBoundaries = fogged
+        .map(
+          (governorate) => governorate.boundaryPolygon
+              .map((point) {
+                final screenPoint = camera.latLngToScreenPoint(point);
+                return Offset(screenPoint.x, screenPoint.y);
+              })
+              .toList(growable: false),
+        )
+        .toList(growable: false);
 
     return Stack(
       children: [
@@ -54,6 +70,7 @@ class GovernorateFogLayer extends StatelessWidget {
               painter: _BumpCloudFogPainter(
                 camera: camera,
                 boundaryPoints: boundaryPoints,
+                territoryBoundaries: territoryBoundaries,
                 fogEnabled: provider.fogEnabled,
               ),
             ),
@@ -62,11 +79,11 @@ class GovernorateFogLayer extends StatelessWidget {
         if (provider.fogEnabled)
           MarkerLayer(
             markers: [
-              for (final item in fogged)
+              for (final item in visibleBadges)
                 Marker(
                   point: LatLng(item.centerLat, item.centerLng),
-                  width: 124,
-                  height: 34,
+                  width: 96,
+                  height: 32,
                   child: _FogBadge(
                     governorate: item,
                     count: places
@@ -86,15 +103,58 @@ class GovernorateFogLayer extends StatelessWidget {
   }
 }
 
+@visibleForTesting
+List<EgyptGovernorate> filterGovernorateBadges({
+  required List<EgyptGovernorate> candidates,
+  required MapCamera camera,
+  required Rect activeBounds,
+}) {
+  final accepted = <EgyptGovernorate>[];
+  final occupied = <Rect>[];
+  for (final governorate in candidates) {
+    final projected = camera.latLngToScreenPoint(
+      LatLng(governorate.centerLat, governorate.centerLng),
+    );
+    final center = Offset(projected.x, projected.y);
+    final nearestX = center.dx.clamp(activeBounds.left, activeBounds.right);
+    final nearestY = center.dy.clamp(activeBounds.top, activeBounds.bottom);
+    if ((center - Offset(nearestX, nearestY)).distance <= 64) continue;
+
+    final bounds = Rect.fromCenter(center: center, width: 96, height: 32);
+    if (occupied.any((existing) => bounds.inflate(10).overlaps(existing))) {
+      continue;
+    }
+    accepted.add(governorate);
+    occupied.add(bounds);
+  }
+  return accepted;
+}
+
+Rect _boundsOf(List<Offset> points) {
+  var left = double.infinity;
+  var top = double.infinity;
+  var right = double.negativeInfinity;
+  var bottom = double.negativeInfinity;
+  for (final point in points) {
+    left = math.min(left, point.dx);
+    top = math.min(top, point.dy);
+    right = math.max(right, point.dx);
+    bottom = math.max(bottom, point.dy);
+  }
+  return Rect.fromLTRB(left, top, right, bottom);
+}
+
 class _BumpCloudFogPainter extends CustomPainter {
   const _BumpCloudFogPainter({
     required this.camera,
     required this.boundaryPoints,
+    required this.territoryBoundaries,
     required this.fogEnabled,
   });
 
   final MapCamera camera;
   final List<Offset> boundaryPoints;
+  final List<List<Offset>> territoryBoundaries;
   final bool fogEnabled;
 
   @override
@@ -114,6 +174,17 @@ class _BumpCloudFogPainter extends CustomPainter {
 
       canvas.save();
       canvas.clipPath(cutoutPath);
+      for (final points in territoryBoundaries) {
+        if (points.length < 3) continue;
+        canvas.drawPath(
+          Path()..addPolygon(points, true),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.1
+            ..color = const Color(0x2600E5FF)
+            ..isAntiAlias = true,
+        );
+      }
       canvas.drawPath(
         boundaryPath,
         Paint()
@@ -213,6 +284,7 @@ class _BumpCloudFogPainter extends CustomPainter {
   bool shouldRepaint(covariant _BumpCloudFogPainter oldDelegate) =>
       oldDelegate.camera != camera ||
       oldDelegate.boundaryPoints != boundaryPoints ||
+      oldDelegate.territoryBoundaries != territoryBoundaries ||
       oldDelegate.fogEnabled != fogEnabled;
 }
 
@@ -232,45 +304,53 @@ class _FogBadge extends StatelessWidget {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     return GestureDetector(
       onTap: onTap,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: const Color(0xE6162433),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: const Color(0xFF00E5FF).withValues(alpha: 0.55),
+      child: Align(
+        widthFactor: 1,
+        heightFactor: 1,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: const Color(0xE6162433),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: const Color(0xFF00E5FF).withValues(alpha: 0.55),
+            ),
+            boxShadow: const [
+              BoxShadow(color: Color(0x4400E5FF), blurRadius: 9),
+            ],
           ),
-          boxShadow: const [BoxShadow(color: Color(0x4400E5FF), blurRadius: 9)],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (count == 0) const Text('🔒', style: TextStyle(fontSize: 11)),
-              if (count > 0)
-                const Icon(
-                  Icons.place_rounded,
-                  size: 13,
-                  color: Color(0xFF55E6C1),
-                ),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  count > 0
-                      ? '$count'
-                      : isArabic
-                      ? governorate.nameAr
-                      : governorate.nameEn,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (count == 0)
+                  const Text('🔒', style: TextStyle(fontSize: 11)),
+                if (count > 0)
+                  const Icon(
+                    Icons.place_rounded,
+                    size: 13,
+                    color: Color(0xFF55E6C1),
+                  ),
+                const SizedBox(width: 4),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 58),
+                  child: Text(
+                    count > 0
+                        ? '$count'
+                        : isArabic
+                        ? governorate.nameAr
+                        : governorate.nameEn,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

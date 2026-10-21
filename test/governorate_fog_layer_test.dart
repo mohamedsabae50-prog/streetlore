@@ -58,6 +58,65 @@ void main() {
     expect(EgyptGovernorate.byId['alexandria']!.boundaryPolygon, isNotEmpty);
   });
 
+  testWidgets('governorate badge bounds do not overlap at zoom six', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final provider = GovernorateProvider();
+    addTearDown(provider.dispose);
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: FlutterMap(
+              options: MapOptions(
+                initialCenter: LatLng(30.8, 30.5),
+                initialZoom: 6,
+              ),
+              children: [GovernorateFogLayer(places: [])],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final paint = find.byKey(const ValueKey('governorate-cloud-fog'));
+    final camera = MapCamera.of(tester.element(paint));
+    expect(camera.zoom, 6);
+    final layer = tester.widget<MarkerLayer>(find.byType(MarkerLayer));
+    final alexandria = EgyptGovernorate.byId['alexandria']!;
+    final projectedBoundary = alexandria.boundaryPolygon.map((point) {
+      final screen = camera.latLngToScreenPoint(point);
+      return Offset(screen.x, screen.y);
+    });
+    final activeBounds = _boundsOf(projectedBoundary);
+    final centers = layer.markers.map((marker) {
+      final screen = camera.latLngToScreenPoint(marker.point);
+      return Offset(screen.x, screen.y);
+    }).toList();
+
+    for (var i = 0; i < centers.length; i++) {
+      final first = Rect.fromCenter(center: centers[i], width: 96, height: 32);
+      final nearest = Offset(
+        centers[i].dx.clamp(activeBounds.left, activeBounds.right).toDouble(),
+        centers[i].dy.clamp(activeBounds.top, activeBounds.bottom).toDouble(),
+      );
+      expect((centers[i] - nearest).distance, greaterThan(64));
+      for (var j = i + 1; j < centers.length; j++) {
+        final second = Rect.fromCenter(
+          center: centers[j],
+          width: 96,
+          height: 32,
+        );
+        expect(first.inflate(10).overlaps(second), isFalse);
+      }
+    }
+  });
+
   testWidgets('map header keeps the governorate pill clear of back button', (
     tester,
   ) async {
@@ -132,4 +191,18 @@ void main() {
     }
     expect(find.text('1 / 27 Governorates Unlocked'), findsOneWidget);
   });
+}
+
+Rect _boundsOf(Iterable<Offset> points) {
+  var left = double.infinity;
+  var top = double.infinity;
+  var right = double.negativeInfinity;
+  var bottom = double.negativeInfinity;
+  for (final point in points) {
+    if (point.dx < left) left = point.dx;
+    if (point.dy < top) top = point.dy;
+    if (point.dx > right) right = point.dx;
+    if (point.dy > bottom) bottom = point.dy;
+  }
+  return Rect.fromLTRB(left, top, right, bottom);
 }
