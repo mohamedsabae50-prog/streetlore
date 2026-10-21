@@ -29,6 +29,7 @@ class _CompassCardState extends State<CompassCard>
   double _currentHeadingDeg = 0;
   bool _qiblaAvailable = false;
   bool _wasQiblaAligned = false;
+  bool _wasNorthAligned = false;
 
   StreamSubscription<double>? _compassSub;
   StreamSubscription<double>? _qiblaSub;
@@ -126,21 +127,43 @@ class _CompassCardState extends State<CompassCard>
   }
 
   bool get _isQiblaAligned {
-    final difference = (_qiblaBearingDeg - _currentHeadingDeg) % 360;
-    final normalizedDifference = (difference + 360) % 360;
-    final shortestDifference = normalizedDifference > 180
-        ? normalizedDifference - 360
-        : normalizedDifference;
-    return _qiblaAvailable && shortestDifference.abs() <= 5;
+    return _qiblaAvailable &&
+        _shortestAngleDifference(_currentHeadingDeg, _qiblaBearingDeg).abs() <=
+            10;
   }
 
+  bool get _isAlignedNorth {
+    final heading = (_currentHeadingDeg % 360 + 360) % 360;
+    return heading <= 10 || heading >= 350;
+  }
+
+  double _shortestAngleDifference(double from, double to) =>
+      ((from - to + 540) % 360) - 180;
+
+  bool get _isAligned => _isQiblaAligned || _isAlignedNorth;
+
+  Color get _alignmentColor => _isQiblaAligned
+      ? const Color(0xFFEAB308)
+      : _isAlignedNorth
+      ? const Color(0xFF22C55E)
+      : context.textSec.withValues(alpha: 0.1);
+
+  Color get _alignmentBorderColor => _isQiblaAligned
+      ? const Color(0xFFEAB308)
+      : _isAlignedNorth
+      ? const Color(0xFF22C55E)
+      : context.textSec.withValues(alpha: 0.1);
+
   void _checkQiblaAlignment() {
-    final aligned = _isQiblaAligned;
-    final alignmentChanged = aligned != _wasQiblaAligned;
-    if (aligned && !_wasQiblaAligned) {
+    final qiblaAligned = _isQiblaAligned;
+    final northAligned = _isAlignedNorth;
+    final alignmentChanged =
+        qiblaAligned != _wasQiblaAligned || northAligned != _wasNorthAligned;
+    if (qiblaAligned && !_wasQiblaAligned) {
       HapticFeedback.mediumImpact();
     }
-    _wasQiblaAligned = aligned;
+    _wasQiblaAligned = qiblaAligned;
+    _wasNorthAligned = northAligned;
     if (alignmentChanged && mounted) setState(() {});
   }
 
@@ -175,12 +198,8 @@ class _CompassCardState extends State<CompassCard>
                     ),
                   ],
                   border: Border.all(
-                    color: _isQiblaAligned
-                        ? const Color(0xFF22C55E)
-                        : _qiblaAvailable
-                        ? const Color(0xFFEAB308).withValues(alpha: 0.65)
-                        : context.textSec.withValues(alpha: 0.1),
-                    width: _isQiblaAligned ? 2 : 1,
+                    color: _alignmentBorderColor,
+                    width: _isAligned ? 2 : 1,
                   ),
                 ),
                 child: Row(
@@ -194,6 +213,7 @@ class _CompassCardState extends State<CompassCard>
                           qiblaBearingDegrees: _qiblaBearingDeg,
                           qiblaAvailable: _qiblaAvailable,
                           qiblaAligned: _isQiblaAligned,
+                          northAligned: _isAlignedNorth,
                           compassWorking:
                               CompassService.instance.isActuallyWorking,
                           fallbackAngle: _iconRotation.value,
@@ -294,6 +314,18 @@ class _CompassCardState extends State<CompassCard>
                               ],
                             ),
                           ],
+                          if (_isAligned) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              _isQiblaAligned ? 'Facing Qibla' : 'Facing North',
+                              key: const ValueKey('compass-alignment-label'),
+                              style: TextStyle(
+                                color: _alignmentColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -313,10 +345,12 @@ class CompassDialIndicators extends StatelessWidget {
     super.key,
     required this.qiblaAvailable,
     this.qiblaAligned = false,
+    this.northAligned = false,
   });
 
   final bool qiblaAvailable;
   final bool qiblaAligned;
+  final bool northAligned;
 
   @override
   Widget build(BuildContext context) {
@@ -328,7 +362,7 @@ class CompassDialIndicators extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          const Positioned(
+          Positioned(
             top: 3,
             left: 0,
             right: 0,
@@ -337,7 +371,7 @@ class CompassDialIndicators extends StatelessWidget {
                 'N',
                 key: ValueKey('compass-north-marker'),
                 style: TextStyle(
-                  color: Colors.white,
+                  color: northAligned ? const Color(0xFF22C55E) : Colors.white,
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                 ),
@@ -354,16 +388,17 @@ class CompassDialIndicators extends StatelessWidget {
                 height: markerSize,
                 decoration: BoxDecoration(
                   color: qiblaAligned
-                      ? const Color(0xFF22C55E)
-                      : const Color(0xFFEAB308),
+                      ? const Color(0xFFEAB308)
+                      : const Color(0xFF253247),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 1.5),
                   boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFEAB308).withValues(alpha: 0.8),
-                      blurRadius: 6,
-                      spreadRadius: 1,
-                    ),
+                    if (qiblaAligned)
+                      const BoxShadow(
+                        color: Color(0xFFEAB308),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
                   ],
                 ),
                 child: const Icon(
@@ -388,6 +423,7 @@ class CompassCardFace extends StatelessWidget {
     required this.compassWorking,
     required this.fallbackAngle,
     this.qiblaAligned = false,
+    this.northAligned = false,
     this.glowAlpha = 0,
     this.pulseValue = 0,
   });
@@ -396,6 +432,7 @@ class CompassCardFace extends StatelessWidget {
   final double qiblaBearingDegrees;
   final bool qiblaAvailable;
   final bool qiblaAligned;
+  final bool northAligned;
   final bool compassWorking;
   final double fallbackAngle;
   final int glowAlpha;
@@ -404,11 +441,7 @@ class CompassCardFace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pointerAngle = compassWorking
-        ? (qiblaAvailable
-                  ? qiblaBearingDegrees - headingDegrees
-                  : -headingDegrees) *
-              pi /
-              180
+        ? headingDegrees * pi / 180
         : fallbackAngle;
     return SizedBox(
       key: const ValueKey('compass-face'),
@@ -440,6 +473,7 @@ class CompassCardFace extends StatelessWidget {
           CompassDialIndicators(
             qiblaAvailable: qiblaAvailable,
             qiblaAligned: qiblaAligned,
+            northAligned: northAligned,
           ),
           TweenAnimationBuilder<double>(
             tween: Tween<double>(end: pointerAngle),
@@ -452,7 +486,7 @@ class CompassCardFace extends StatelessWidget {
             ),
             child: Icon(
               Icons.navigation_rounded,
-              color: qiblaAligned ? const Color(0xFF22C55E) : Colors.white,
+              color: Colors.white,
               size: 30,
             ),
           ),

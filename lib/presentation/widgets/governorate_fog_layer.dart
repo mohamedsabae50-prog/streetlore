@@ -1,12 +1,22 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:provider/provider.dart';
 
 import '../../data/models/egypt_governorate.dart';
 import '../../data/models/place_model.dart';
 import '../../logic/governorate_provider.dart';
 import 'governorate_explorer_sheet.dart';
+
+@visibleForTesting
+Path buildGovernorateFogCutoutPath(Size size, List<Offset> boundaryPoints) {
+  return Path()
+    ..fillType = PathFillType.evenOdd
+    ..addRect(Rect.fromLTWH(-200, -200, size.width + 400, size.height + 400))
+    ..addPolygon(boundaryPoints, true);
+}
 
 class GovernorateFogLayer extends StatelessWidget {
   const GovernorateFogLayer({
@@ -21,35 +31,33 @@ class GovernorateFogLayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<GovernorateProvider>();
+    final camera = MapCamera.of(context);
     final active =
         EgyptGovernorate.byId[provider.activeGovernorate] ??
         EgyptGovernorate.byId['alexandria']!;
     final fogged = EgyptGovernorate.all
         .where((item) => item.id != active.id)
         .toList(growable: false);
+    final boundaryPoints = active.boundaryPolygon
+        .map((point) {
+          final screenPoint = camera.latLngToScreenPoint(point);
+          return Offset(screenPoint.x, screenPoint.y);
+        })
+        .toList(growable: false);
 
     return Stack(
       children: [
-        PolygonLayer(
-          polygons: [
-            if (provider.fogEnabled)
-              Polygon(
-                points: const [
-                  LatLng(18, 21),
-                  LatLng(18, 39),
-                  LatLng(35, 39),
-                  LatLng(35, 21),
-                ],
-                holePointsList: [active.boundaryPolygon],
-                color: const Color(0xCC060C18),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(
+              key: const ValueKey('governorate-cloud-fog'),
+              painter: _BumpCloudFogPainter(
+                camera: camera,
+                boundaryPoints: boundaryPoints,
+                fogEnabled: provider.fogEnabled,
               ),
-            Polygon(
-              points: active.boundaryPolygon,
-              color: Colors.transparent,
-              borderColor: const Color(0xFF00E5FF),
-              borderStrokeWidth: 2.5,
             ),
-          ],
+          ),
         ),
         if (provider.fogEnabled)
           MarkerLayer(
@@ -76,6 +84,136 @@ class GovernorateFogLayer extends StatelessWidget {
       ],
     );
   }
+}
+
+class _BumpCloudFogPainter extends CustomPainter {
+  const _BumpCloudFogPainter({
+    required this.camera,
+    required this.boundaryPoints,
+    required this.fogEnabled,
+  });
+
+  final MapCamera camera;
+  final List<Offset> boundaryPoints;
+  final bool fogEnabled;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (boundaryPoints.length < 3) return;
+
+    final boundaryPath = Path()..addPolygon(boundaryPoints, true);
+    if (fogEnabled) {
+      final cutoutPath = buildGovernorateFogCutoutPath(size, boundaryPoints);
+      canvas.drawPath(
+        cutoutPath,
+        Paint()
+          ..color = const Color(0xF2050811)
+          ..style = PaintingStyle.fill
+          ..isAntiAlias = true,
+      );
+
+      canvas.save();
+      canvas.clipPath(cutoutPath);
+      canvas.drawPath(
+        boundaryPath,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 26
+          ..color = const Color(0xD9050811)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
+      );
+      _drawCloudPuffs(canvas, size);
+      canvas.restore();
+    }
+
+    canvas.drawPath(
+      boundaryPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 5
+        ..color = const Color(0x9900E5FF)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+    );
+    canvas.drawPath(
+      boundaryPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..color = const Color(0xFF00E5FF)
+        ..isAntiAlias = true,
+    );
+    canvas.drawPath(
+      boundaryPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8
+        ..color = const Color(0xAA55E6C1)
+        ..isAntiAlias = true,
+    );
+  }
+
+  void _drawCloudPuffs(Canvas canvas, Size size) {
+    var index = 0;
+    for (var latitude = 19; latitude <= 35; latitude += 4) {
+      for (var longitude = 21; longitude <= 37; longitude += 4) {
+        final point = camera.latLngToScreenPoint(
+          LatLng(latitude.toDouble(), longitude.toDouble()),
+        );
+        _drawPuff(canvas, Offset(point.x, point.y), 44 + (index % 4) * 9);
+        index++;
+      }
+    }
+
+    for (var y = -60.0; y <= size.height + 60; y += 150) {
+      for (var x = -60.0; x <= size.width + 60; x += 150) {
+        final seed = index++;
+        final jitterX = math.sin(seed * 12.9898) * 28;
+        final jitterY = math.cos(seed * 7.233) * 24;
+        _drawPuff(
+          canvas,
+          Offset(x + jitterX, y + jitterY),
+          48 + (seed % 5) * 8,
+        );
+      }
+    }
+
+    for (var i = 0; i < boundaryPoints.length; i++) {
+      final point = boundaryPoints[i];
+      _drawPuff(canvas, point, 50 + (i % 4) * 7);
+      if (i.isEven) {
+        final next = boundaryPoints[(i + 1) % boundaryPoints.length];
+        _drawPuff(canvas, Offset.lerp(point, next, 0.5)!, 44 + (i % 3) * 8);
+      }
+    }
+  }
+
+  void _drawPuff(Canvas canvas, Offset center, double radius) {
+    final gradient = RadialGradient(
+      colors: const [
+        Color(0xFF24324A),
+        Color(0xFF161F30),
+        Color(0xFF0B101B),
+        Color(0x00101624),
+      ],
+      stops: const [0, 0.36, 0.72, 1],
+    );
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..shader = gradient.createShader(
+          Rect.fromCircle(center: center, radius: radius),
+        )
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28)
+        ..isAntiAlias = true,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _BumpCloudFogPainter oldDelegate) =>
+      oldDelegate.camera != camera ||
+      oldDelegate.boundaryPoints != boundaryPoints ||
+      oldDelegate.fogEnabled != fogEnabled;
 }
 
 class _FogBadge extends StatelessWidget {

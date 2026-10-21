@@ -6,9 +6,10 @@ import '../../data/models/place_model.dart';
 import '../../logic/governorate_provider.dart';
 
 class GovernoratePill extends StatelessWidget {
-  const GovernoratePill({super.key, required this.onTap});
+  const GovernoratePill({super.key, required this.onTap, this.compact = false});
 
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +26,11 @@ class GovernoratePill extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(22),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 42),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          constraints: BoxConstraints(minHeight: compact ? 36 : 42),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 9 : 14,
+            vertical: compact ? 6 : 8,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
@@ -37,16 +41,29 @@ class GovernoratePill extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text('📍'),
-              const SizedBox(width: 6),
-              Text(
-                '${isArabic ? active.nameAr : active.nameEn} · '
-                '${provider.unlockedGovernorateIds.length}/27',
-                style: Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(width: 4),
-              const Icon(Icons.expand_more_rounded, size: 19),
+              SizedBox(width: compact ? 4 : 6),
+              if (compact)
+                Flexible(
+                  child: Text(
+                    '${isArabic ? active.nameAr : active.nameEn} · '
+                    '${provider.unlockedGovernorateIds.length}/27',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  '${isArabic ? active.nameAr : active.nameEn} · '
+                  '${provider.unlockedGovernorateIds.length}/27',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+              SizedBox(width: compact ? 1 : 4),
+              Icon(Icons.expand_more_rounded, size: compact ? 17 : 19),
             ],
           ),
         ),

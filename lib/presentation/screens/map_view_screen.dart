@@ -452,6 +452,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
               child: Row(
                 children: [
                   IconButton.filled(
+                    key: const ValueKey('map-view-back-button'),
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back_ios_rounded, size: 18),
                     style: IconButton.styleFrom(
@@ -459,12 +460,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       foregroundColor: context.textPri,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Container(
+                      key: const ValueKey('map-view-header-bar'),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                        horizontal: 12,
+                        vertical: 8,
                       ),
                       decoration: BoxDecoration(
                         color: context.cardColor,
@@ -477,30 +479,40 @@ class _MapViewScreenState extends State<MapViewScreen> {
                           ),
                         ],
                       ),
-                      child: Text(
-                        context.tr('map_title', {
-                          'n': '${_showAtms ? _atms.length : visible.length}',
-                        }),
-                        style: TextStyle(
-                          color: context.textPri,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              context.tr('map_title', {
+                                'n':
+                                    '${_showAtms ? _atms.length : visible.length}',
+                              }),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: context.textPri,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: GovernoratePill(
+                              key: const ValueKey('map-view-governorate-pill'),
+                              compact: true,
+                              onTap: () => showGovernorateExplorerSheet(
+                                context,
+                                places: allPlaces,
+                                visitedPlaceIds: visitedPlaceIds,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-          Positioned(
-            top: 74,
-            left: 16,
-            child: GovernoratePill(
-              onTap: () => showGovernorateExplorerSheet(
-                context,
-                places: allPlaces,
-                visitedPlaceIds: visitedPlaceIds,
               ),
             ),
           ),

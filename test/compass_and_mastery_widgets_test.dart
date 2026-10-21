@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'dart:math' as math;
 import 'package:streetlore/data/models/place_model.dart';
+import 'package:streetlore/core/services/compass_service.dart';
 import 'package:streetlore/presentation/widgets/alexandria_mastery_bar.dart';
 import 'package:streetlore/presentation/widgets/compass_card.dart';
+import 'package:streetlore/presentation/widgets/governorate_explorer_sheet.dart';
 import 'package:streetlore/presentation/widgets/head_to_head_comparison_card.dart';
 import 'package:streetlore/presentation/widgets/social_user_widgets.dart';
+import 'package:streetlore/logic/auth_provider.dart';
+import 'package:streetlore/logic/governorate_provider.dart';
 import 'package:streetlore/logic/locale_provider.dart';
+import 'package:streetlore/logic/place_provider.dart';
+import 'package:streetlore/logic/trip_provider.dart';
+import 'package:streetlore/presentation/screens/home_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,6 +29,55 @@ PlaceModel _place(String id, String name) => PlaceModel(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await Supabase.initialize(
+      url: 'https://example.supabase.co',
+      publishableKey: 'test-anon-key',
+    );
+  });
+
+  testWidgets('home screen does not render the governorate switcher', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final governorates = GovernorateProvider();
+    final places = PlaceProvider(
+      watchRemoteUpdates: false,
+      governorates: governorates,
+    );
+    final trips = TripProvider();
+    final auth = AuthProvider();
+    final locale = LocaleProvider();
+    addTearDown(governorates.dispose);
+    addTearDown(places.dispose);
+    addTearDown(trips.dispose);
+    addTearDown(auth.dispose);
+    addTearDown(locale.dispose);
+    addTearDown(CompassService.instance.stop);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: governorates),
+          ChangeNotifierProvider.value(value: places),
+          ChangeNotifierProvider.value(value: trips),
+          ChangeNotifierProvider.value(value: auth),
+          ChangeNotifierProvider.value(value: locale),
+        ],
+        child: const MaterialApp(home: HomeScreen()),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 1500));
+    await tester.pump(const Duration(milliseconds: 1500));
+
+    expect(find.byType(GovernoratePill), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    CompassService.instance.stop();
+  });
+
   testWidgets('compact mastery pill is single-line and reports progress', (
     tester,
   ) async {
@@ -61,6 +118,73 @@ void main() {
       find.byKey(const ValueKey('compass-qibla-marker')),
     );
     expect((north - qibla).distance, greaterThan(18));
+  });
+
+  testWidgets('compass north and Qibla highlights are independent', (
+    tester,
+  ) async {
+    Future<void> pumpFace({
+      required double heading,
+      required bool northAligned,
+      required bool qiblaAligned,
+    }) => tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CompassCardFace(
+            headingDegrees: heading,
+            qiblaBearingDegrees: 136,
+            qiblaAvailable: true,
+            compassWorking: true,
+            fallbackAngle: 0,
+            northAligned: northAligned,
+            qiblaAligned: qiblaAligned,
+          ),
+        ),
+      ),
+    );
+
+    Future<double> pointerAngle() async {
+      final transform = tester.widget<Transform>(
+        find.byKey(const ValueKey('compass-pointer-rotation')),
+      );
+      return math.atan2(
+        transform.transform.storage[1],
+        transform.transform.storage[0],
+      );
+    }
+
+    await pumpFace(heading: 0, northAligned: true, qiblaAligned: false);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('compass-north-marker')))
+          .style!
+          .color,
+      const Color(0xFF22C55E),
+    );
+    var qiblaDecoration = tester.widget<Container>(
+      find.byKey(const ValueKey('compass-qibla-marker')),
+    );
+    expect(
+      (qiblaDecoration.decoration! as BoxDecoration).color,
+      const Color(0xFF253247),
+    );
+    expect(await pointerAngle(), closeTo(0, 0.001));
+
+    await pumpFace(heading: 358, northAligned: true, qiblaAligned: false);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(await pointerAngle(), closeTo(-2 * math.pi / 180, 0.001));
+
+    await pumpFace(heading: 136, northAligned: false, qiblaAligned: true);
+    await tester.pump(const Duration(milliseconds: 200));
+    qiblaDecoration = tester.widget<Container>(
+      find.byKey(const ValueKey('compass-qibla-marker')),
+    );
+    expect(
+      (qiblaDecoration.decoration! as BoxDecoration).color,
+      const Color(0xFFEAB308),
+    );
+    expect(await pointerAngle(), closeTo(136 * math.pi / 180, 0.001));
   });
 
   testWidgets(

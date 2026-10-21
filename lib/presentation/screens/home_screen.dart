@@ -17,7 +17,6 @@ import '../../logic/auth_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/tour_provider.dart';
 import '../../logic/governorate_provider.dart';
-import '../widgets/governorate_explorer_sheet.dart';
 import '../widgets/place_card.dart';
 import '../widgets/weather_widget.dart';
 import '../widgets/compass_card.dart';
@@ -395,22 +394,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(20, 10, 20, 0),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: GovernoratePill(
-                  onTap: () => showGovernorateExplorerSheet(
-                    context,
-                    places: context.read<PlaceProvider>().allPlaces,
-                    visitedPlaceIds: context
-                        .read<TripProvider>()
-                        .visitedPlaceIds,
-                  ),
-                ),
-              ),
-            ),
-
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: AnimatedContainer(
