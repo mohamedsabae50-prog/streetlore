@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,6 +30,30 @@ void main() {
     expect(path.fillType, PathFillType.evenOdd);
     expect(path.contains(const Offset(10, 10)), isTrue);
     expect(path.contains(const Offset(50, 50)), isFalse);
+  });
+
+  test('smooth governorate path makes curved cutout edges', () {
+    final points = const [
+      Offset(20, 20),
+      Offset(80, 20),
+      Offset(80, 80),
+      Offset(20, 80),
+    ];
+    final smooth = buildSmoothGovernoratePath(points);
+    final sharp = Path()
+      ..moveTo(points.first.dx, points.first.dy)
+      ..lineTo(points[1].dx, points[1].dy)
+      ..lineTo(points[2].dx, points[2].dy)
+      ..lineTo(points[3].dx, points[3].dy)
+      ..close();
+
+    expect(smooth.computeMetrics().single.length, greaterThan(200));
+    expect(
+      smooth.computeMetrics().single.length,
+      isNot(closeTo(sharp.computeMetrics().single.length, 0.01)),
+    );
+    expect(smooth.contains(const Offset(50, 50)), isTrue);
+    expect(smooth.contains(const Offset(5, 50)), isFalse);
   });
 
   testWidgets('fog layer paints a camera-synced cloud overlay', (tester) async {

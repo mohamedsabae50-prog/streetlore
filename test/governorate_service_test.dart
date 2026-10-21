@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,19 +44,26 @@ void main() {
       expect(EgyptGovernorate.byId, hasLength(27));
       final alexandria = EgyptGovernorate.byId['alexandria']!;
       expect(alexandria.boundaryPolygon, const [
-        LatLng(31.355, 30.085),
-        LatLng(31.320, 30.095),
-        LatLng(31.260, 30.055),
-        LatLng(31.205, 30.005),
-        LatLng(31.145, 29.935),
-        LatLng(31.055, 29.835),
-        LatLng(30.940, 29.720),
-        LatLng(30.825, 29.520),
-        LatLng(30.855, 29.455),
-        LatLng(31.035, 29.485),
-        LatLng(31.145, 29.705),
-        LatLng(31.245, 29.855),
-        LatLng(31.305, 29.965),
+        LatLng(31.470, 29.420),
+        LatLng(31.485, 29.620),
+        LatLng(31.485, 29.850),
+        LatLng(31.465, 30.080),
+        LatLng(31.425, 30.145),
+        LatLng(31.350, 30.165),
+        LatLng(31.280, 30.155),
+        LatLng(31.210, 30.140),
+        LatLng(31.150, 30.120),
+        LatLng(31.100, 30.090),
+        LatLng(30.980, 29.990),
+        LatLng(30.880, 29.840),
+        LatLng(30.800, 29.680),
+        LatLng(30.735, 29.520),
+        LatLng(30.755, 29.435),
+        LatLng(30.870, 29.400),
+        LatLng(31.000, 29.415),
+        LatLng(31.150, 29.455),
+        LatLng(31.300, 29.450),
+        LatLng(31.410, 29.425),
       ]);
       expect(
         _selfIntersectingEdges(alexandria.boundaryPolygon),
@@ -121,91 +130,45 @@ void main() {
     }
   });
 
-  test('western Borg El Arab hotel seed lies outside the supplied outline', () {
-    final hotel = getSeedHotelPlaces().singleWhere(
-      (place) => place.id == 'hotel-borg-al-arab',
-    );
-    expect(
-      GovernorateService.containsCoordinates(
-        EgyptGovernorate.byId['alexandria']!,
-        hotel.lat,
-        hotel.lng,
-      ),
-      isFalse,
-    );
-  });
-
   test(
     'all Alexandria mock places and terrestrial ATMs resolve to Alexandria',
     () {
+      void expectComfortablyInside(String id, double lat, double lng) {
+        final boundary = EgyptGovernorate.byId['alexandria']!.boundaryPolygon;
+        expect(
+          GovernorateService.containsCoordinates(
+            EgyptGovernorate.byId['alexandria']!,
+            lat,
+            lng,
+          ),
+          isTrue,
+          reason: '$id must be geometrically inside Alexandria',
+        );
+        expect(
+          _distanceToPolygonEdges(boundary, LatLng(lat, lng)),
+          greaterThan(0.01),
+          reason: '$id must have a comfortable boundary buffer',
+        );
+        expect(
+          GovernorateService.detectFromCoordinates(lat, lng).id,
+          'alexandria',
+          reason: '$id should resolve to Alexandria',
+        );
+      }
+
       for (final place in fallbackPlaces) {
-        expect(
-          GovernorateService.containsCoordinates(
-            EgyptGovernorate.byId['alexandria']!,
-            place.lat,
-            place.lng,
-          ),
-          isTrue,
-          reason: '${place.id} must be geometrically inside Alexandria',
-        );
-        expect(
-          GovernorateService.detectFromCoordinates(place.lat, place.lng).id,
-          'alexandria',
-          reason: '${place.id} should be inside the Alexandria boundary',
-        );
+        expectComfortablyInside(place.id, place.lat, place.lng);
       }
-      for (final hotel in getSeedHotelPlaces().where(
-        (hotel) => hotel.id != 'hotel-borg-al-arab',
-      )) {
-        expect(
-          GovernorateService.containsCoordinates(
-            EgyptGovernorate.byId['alexandria']!,
-            hotel.lat,
-            hotel.lng,
-          ),
-          isTrue,
-          reason: '${hotel.id} must be geometrically inside Alexandria',
-        );
-        expect(
-          GovernorateService.detectFromCoordinates(hotel.lat, hotel.lng).id,
-          'alexandria',
-          reason: '${hotel.id} should be inside the Alexandria boundary',
-        );
+      for (final hotel in getSeedHotelPlaces()) {
+        expectComfortablyInside(hotel.id, hotel.lat, hotel.lng);
       }
-      for (final hotel in getSeedHotels().where(
-        (hotel) => hotel.id != 'hotel-borg-al-arab',
-      )) {
-        expect(
-          GovernorateService.containsCoordinates(
-            EgyptGovernorate.byId['alexandria']!,
-            hotel.lat,
-            hotel.lng,
-          ),
-          isTrue,
-          reason: '${hotel.id} must be geometrically inside Alexandria',
-        );
-        expect(
-          GovernorateService.detectFromCoordinates(hotel.lat, hotel.lng).id,
-          'alexandria',
-          reason: '${hotel.id} should be inside the Alexandria boundary',
-        );
+      for (final hotel in getSeedHotels()) {
+        expectComfortablyInside(hotel.id, hotel.lat, hotel.lng);
       }
       expect(AtmService.curatedAlexandriaAtms, hasLength(27));
+      expect(AtmService.alexandriaAtms, hasLength(27));
       for (final atm in AtmService.curatedAlexandriaAtms) {
-        expect(
-          GovernorateService.containsCoordinates(
-            EgyptGovernorate.byId['alexandria']!,
-            atm.lat,
-            atm.lng,
-          ),
-          isTrue,
-          reason: '${atm.id} must be geometrically inside Alexandria',
-        );
-        expect(
-          GovernorateService.detectFromCoordinates(atm.lat, atm.lng).id,
-          'alexandria',
-          reason: '${atm.id} should be inside the Alexandria boundary',
-        );
+        expectComfortablyInside(atm.id, atm.lat, atm.lng);
       }
     },
   );
@@ -278,6 +241,31 @@ void main() {
   );
 }
 
+double _distanceToPolygonEdges(List<LatLng> polygon, LatLng point) {
+  var minimumDistance = double.infinity;
+  for (var index = 0; index < polygon.length; index++) {
+    final start = polygon[index];
+    final end = polygon[(index + 1) % polygon.length];
+    final dx = end.longitude - start.longitude;
+    final dy = end.latitude - start.latitude;
+    final denominator = dx * dx + dy * dy;
+    final t = denominator == 0
+        ? 0.0
+        : (((point.longitude - start.longitude) * dx +
+                      (point.latitude - start.latitude) * dy) /
+                  denominator)
+              .clamp(0.0, 1.0);
+    final nearestLongitude = start.longitude + t * dx;
+    final nearestLatitude = start.latitude + t * dy;
+    final distance = math.sqrt(
+      math.pow(point.longitude - nearestLongitude, 2) +
+          math.pow(point.latitude - nearestLatitude, 2),
+    );
+    minimumDistance = math.min(minimumDistance, distance);
+  }
+  return minimumDistance;
+}
+
 String? _selfIntersectingEdges(List<LatLng> polygon) {
   double orientation(LatLng p, LatLng q, LatLng r) =>
       (q.longitude - p.longitude) * (r.latitude - p.latitude) -
@@ -313,6 +301,7 @@ String? _selfIntersectingEdges(List<LatLng> polygon) {
 }
 
 bool _strictlyContains(List<LatLng> polygon, LatLng point) {
+  if (polygon.contains(point)) return false;
   if (!GovernorateService.containsCoordinates(
     EgyptGovernorate.byId['alexandria']!,
     point.latitude,
