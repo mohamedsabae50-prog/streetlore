@@ -92,13 +92,17 @@ class GovernorateFogLayer extends StatelessWidget {
       children: [
         Positioned.fill(
           child: IgnorePointer(
-            child: CustomPaint(
-              key: const ValueKey('governorate-cloud-fog'),
-              painter: _BumpCloudFogPainter(
-                camera: camera,
-                boundaryPoints: boundaryPoints,
-                territoryBoundaries: territoryBoundaries,
-                fogEnabled: provider.fogEnabled,
+            child: RepaintBoundary(
+              child: CustomPaint(
+                key: const ValueKey('governorate-cloud-fog'),
+                isComplex: true,
+                willChange: false,
+                painter: _BumpCloudFogPainter(
+                  camera: camera,
+                  boundaryPoints: boundaryPoints,
+                  territoryBoundaries: territoryBoundaries,
+                  fogEnabled: provider.fogEnabled,
+                ),
               ),
             ),
           ),
@@ -190,222 +194,101 @@ class _BumpCloudFogPainter extends CustomPainter {
 
     final boundaryPath = _buildSmoothPolygonPath(boundaryPoints);
     if (fogEnabled) {
-      final cutoutPath = Path()
-        ..fillType = PathFillType.evenOdd
-        ..addRect(
-          Rect.fromLTWH(-200, -200, size.width + 400, size.height + 400),
-        )
-        ..addPath(boundaryPath, Offset.zero);
-      canvas.drawPath(
-        cutoutPath,
-        Paint()
-          ..color = const Color(0xF4070B14)
-          ..style = PaintingStyle.fill
-          ..isAntiAlias = true,
-      );
+      final cutoutPath = buildGovernorateFogCutoutPath(size, boundaryPoints);
 
       canvas.save();
       canvas.clipPath(cutoutPath);
+      canvas.drawPath(
+        cutoutPath,
+        Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0x9E4A2E1B), Color(0xAD382112)],
+          ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+          ..style = PaintingStyle.fill
+          ..isAntiAlias = true,
+      );
+      canvas.drawPath(
+        _buildHexGridPath(size),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = const Color(0x26D4A373)
+          ..isAntiAlias = true,
+      );
       for (final points in territoryBoundaries) {
         if (points.length < 3) continue;
         canvas.drawPath(
           _buildSmoothPolygonPath(points),
           Paint()
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.1
-            ..color = const Color(0x2600E5FF)
+            ..strokeWidth = 1.4
+            ..color = const Color(0x55E6B88A)
             ..isAntiAlias = true,
         );
       }
-      _drawCloudCanopy(canvas, size);
-      _drawCloudBank(canvas, boundaryPath, size);
       canvas.restore();
-    }
-  }
 
-  void _drawCloudCanopy(Canvas canvas, Size size) {
-    final extent = Rect.fromLTWH(
-      -240,
-      -240,
-      size.width + 480,
-      size.height + 480,
-    );
-    final cloudMasses = Path();
-    _appendCloudMasses(
-      cloudMasses,
-      extent,
-      spacing: 48,
-      minRadius: 112,
-      maxRadius: 148,
-      seed: 17,
-    );
-    _appendCloudMasses(
-      cloudMasses,
-      extent,
-      spacing: 80,
-      minRadius: 184,
-      maxRadius: 238,
-      seed: 43,
-    );
-    for (final (color, sigma) in const [
-      (Color(0x38182338), 55.0),
-      (Color(0x2E0F1726), 42.0),
-      (Color(0x24243450), 30.0),
-    ]) {
-      canvas.drawPath(
-        cloudMasses,
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.fill
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, sigma)
-          ..isAntiAlias = true,
-      );
-    }
-  }
-
-  void _appendCloudMasses(
-    Path destination,
-    Rect extent, {
-    required double spacing,
-    required double minRadius,
-    required double maxRadius,
-    required int seed,
-  }) {
-    final columns = (extent.width / spacing).ceil();
-    final rows = (extent.height / spacing).ceil();
-    for (var row = 0; row <= rows; row++) {
-      for (var column = 0; column <= columns; column++) {
-        final x = extent.left + column * spacing;
-        final y = extent.top + row * spacing;
-        final noiseX = _fbmNoise(column * 0.31 + seed, row * 0.31);
-        final noiseY = _fbmNoise(column * 0.31, row * 0.31 + seed);
-        final center = Offset(
-          x + (noiseX - 0.5) * spacing * 0.86,
-          y + (noiseY - 0.5) * spacing * 0.86,
-        );
-        final radiusNoise = _fbmNoise(column * 0.17 + seed, row * 0.17 + 9);
-        final radius = minRadius + (maxRadius - minRadius) * radiusNoise;
-        destination.addPath(
-          _buildCloudBlob(center, radius, seed + row * columns + column),
-          Offset.zero,
-        );
-      }
-    }
-  }
-
-  void _drawCloudBank(Canvas canvas, Path boundaryPath, Size size) {
-    const strokes = [
-      (90.0, Color(0xF5060911), 34.0),
-      (65.0, Color(0xD90A101D), 28.0),
-      (44.0, Color(0xAA111A2E), 22.0),
-      (26.0, Color(0x661A2740), 16.0),
-      (14.0, Color(0x331A2740), 11.0),
-    ];
-    for (final (width, color, sigma) in strokes) {
       canvas.drawPath(
         boundaryPath,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = width
-          ..color = color
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, sigma)
+          ..strokeWidth = 6
+          ..strokeJoin = StrokeJoin.round
+          ..color = const Color(0xCC5C3A21)
+          ..isAntiAlias = true,
+      );
+      canvas.drawPath(
+        boundaryPath,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.6
+          ..strokeJoin = StrokeJoin.round
+          ..color = const Color(0xFFFFB74D)
+          ..isAntiAlias = true,
+      );
+      canvas.drawPath(
+        boundaryPath,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2
+          ..strokeJoin = StrokeJoin.round
+          ..color = const Color(0x80FFF3E0)
           ..isAntiAlias = true,
       );
     }
+  }
 
-    final bankLobes = Path();
-    final metrics = boundaryPath.computeMetrics().toList(growable: false);
-    var lobeIndex = 0;
-    for (final metric in metrics) {
-      for (var distance = 0.0; distance < metric.length; distance += 18) {
-        final tangent = metric.getTangentForOffset(distance);
-        if (tangent == null ||
-            !Rect.fromLTWH(
-              -80,
-              -80,
-              size.width + 160,
-              size.height + 160,
-            ).contains(tangent.position)) {
-          continue;
+  Path _buildHexGridPath(Size size) {
+    const radius = 26.0;
+    final horizontalSpacing = radius * 1.5;
+    final verticalSpacing = radius * math.sqrt(3);
+    final columns = (size.width / horizontalSpacing).ceil();
+    final rows = (size.height / verticalSpacing).ceil();
+    final path = Path();
+
+    for (var column = -1; column <= columns; column++) {
+      final centerX = column * horizontalSpacing;
+      final rowOffset = column.isEven ? 0.0 : verticalSpacing / 2;
+      for (var row = -1; row <= rows; row++) {
+        final centerY = row * verticalSpacing + rowOffset;
+        for (var vertex = 0; vertex < 6; vertex++) {
+          final angle = math.pi / 3 * vertex;
+          final point = Offset(
+            centerX + radius * math.cos(angle),
+            centerY + radius * math.sin(angle),
+          );
+          if (vertex == 0) {
+            path.moveTo(point.dx, point.dy);
+          } else {
+            path.lineTo(point.dx, point.dy);
+          }
         }
-        final noise = _fbmNoise(lobeIndex * 0.73, 5.1);
-        final radius = 36 + noise * 32;
-        bankLobes.addPath(
-          _buildCloudBlob(tangent.position, radius, lobeIndex + 701),
-          Offset.zero,
-        );
-        lobeIndex++;
+        path.close();
       }
     }
-    canvas.drawPath(
-      bankLobes,
-      Paint()
-        ..color = const Color(0xC90A101D)
-        ..style = PaintingStyle.fill
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24)
-        ..isAntiAlias = true,
-    );
-  }
-
-  Path _buildCloudBlob(Offset center, double radius, int seed) {
-    final points = <Offset>[];
-    const pointCount = 12;
-    for (var index = 0; index < pointCount; index++) {
-      final angle = 2 * math.pi * index / pointCount;
-      final nx = math.cos(angle);
-      final ny = math.sin(angle);
-      final shapeNoise = _fbmNoise(nx * 2.3 + seed, ny * 2.3 + seed * 0.37);
-      final fineNoise = _valueNoise(nx * 5.1 + seed * 0.11, ny * 5.1);
-      final variedRadius =
-          radius * (0.78 + shapeNoise * 0.34 + (fineNoise - 0.5) * 0.16);
-      points.add(
-        Offset(
-          center.dx + nx * variedRadius,
-          center.dy +
-              ny *
-                  variedRadius *
-                  (0.78 + _valueNoise(seed.toDouble(), 3.0) * 0.32),
-        ),
-      );
-    }
-    return _buildSmoothPolygonPath(points);
-  }
-
-  double _fbmNoise(double x, double y) {
-    var value = 0.0;
-    var amplitude = 0.5;
-    var amplitudeSum = 0.0;
-    for (var octave = 0; octave < 4; octave++) {
-      value += _valueNoise(x, y) * amplitude;
-      amplitudeSum += amplitude;
-      x *= 2.03;
-      y *= 2.03;
-      amplitude *= 0.5;
-    }
-    return value / amplitudeSum;
-  }
-
-  double _valueNoise(double x, double y) {
-    final x0 = x.floor();
-    final y0 = y.floor();
-    final tx = x - x0;
-    final ty = y - y0;
-    final sx = tx * tx * (3 - 2 * tx);
-    final sy = ty * ty * (3 - 2 * ty);
-    final top = _lerp(_noiseValue(x0, y0), _noiseValue(x0 + 1, y0), sx);
-    final bottom = _lerp(
-      _noiseValue(x0, y0 + 1),
-      _noiseValue(x0 + 1, y0 + 1),
-      sx,
-    );
-    return _lerp(top, bottom, sy);
-  }
-
-  double _noiseValue(int x, int y) {
-    var hash = x * 374761393 + y * 668265263 + 0x1b873593;
-    hash = (hash ^ (hash >> 13)) * 1274126177;
-    hash ^= hash >> 16;
-    return (hash & 0x7fffffff) / 0x7fffffff;
+    return path;
   }
 
   @override
@@ -415,8 +298,6 @@ class _BumpCloudFogPainter extends CustomPainter {
       oldDelegate.territoryBoundaries != territoryBoundaries ||
       oldDelegate.fogEnabled != fogEnabled;
 }
-
-double _lerp(double start, double end, double t) => start + (end - start) * t;
 
 class _FogBadge extends StatelessWidget {
   const _FogBadge({
@@ -439,14 +320,9 @@ class _FogBadge extends StatelessWidget {
         heightFactor: 1,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: const Color(0xE6162433),
+            color: const Color(0xD92B180C),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: const Color(0xFF00E5FF).withValues(alpha: 0.55),
-            ),
-            boxShadow: const [
-              BoxShadow(color: Color(0x4400E5FF), blurRadius: 9),
-            ],
+            border: Border.all(color: const Color(0x80FFB74D)),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
@@ -459,7 +335,7 @@ class _FogBadge extends StatelessWidget {
                   const Icon(
                     Icons.place_rounded,
                     size: 13,
-                    color: Color(0xFF55E6C1),
+                    color: Color(0xFFFFB74D),
                   ),
                 const SizedBox(width: 4),
                 ConstrainedBox(
@@ -473,7 +349,7 @@ class _FogBadge extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFFFFF8F0),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),

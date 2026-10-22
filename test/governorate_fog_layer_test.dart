@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
@@ -16,6 +18,27 @@ import 'package:streetlore/presentation/widgets/governorate_fog_layer.dart';
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+  });
+
+  test('fog painter uses translucent brown hex styling without blur', () {
+    final source = File(
+      'lib/presentation/widgets/governorate_fog_layer.dart',
+    ).readAsStringSync();
+
+    expect(source, contains('Color(0x9E4A2E1B)'));
+    expect(source, contains('Color(0xAD382112)'));
+    expect(source, contains('Color(0x26D4A373)'));
+    expect(source, contains('Color(0x55E6B88A)'));
+    expect(source, contains('Color(0xFFFFB74D)'));
+    expect(source, contains('Color(0x80FFF3E0)'));
+    expect(source, contains('Color(0xD92B180C)'));
+    expect(source, contains('Color(0x80FFB74D)'));
+    expect(source, contains('Color(0xFFFFF8F0)'));
+    expect(source, isNot(contains('MaskFilter.blur')));
+    expect(source, isNot(contains('_paintPerimeterLobes')));
+    expect(source, isNot(contains('RadialGradient')));
+    expect(source, contains('isComplex: true'));
+    expect(source, contains('willChange: false'));
   });
 
   test('screen-space fog path fills the exterior and cuts out Alexandria', () {
@@ -56,7 +79,9 @@ void main() {
     expect(smooth.contains(const Offset(5, 50)), isFalse);
   });
 
-  testWidgets('fog layer paints a camera-synced cloud overlay', (tester) async {
+  testWidgets('fog layer paints a camera-synced brown hex overlay', (
+    tester,
+  ) async {
     final provider = GovernorateProvider();
     addTearDown(provider.dispose);
     await tester.pumpWidget(
@@ -77,6 +102,15 @@ void main() {
       find.byKey(const ValueKey('governorate-cloud-fog')),
     );
     expect(customPaint.painter, isA<CustomPainter>());
+    expect(customPaint.isComplex, isTrue);
+    expect(customPaint.willChange, isFalse);
+    expect(
+      find.ancestor(
+        of: find.byKey(const ValueKey('governorate-cloud-fog')),
+        matching: find.byType(RepaintBoundary),
+      ),
+      findsWidgets,
+    );
     expect(find.byType(IgnorePointer), findsWidgets);
     expect(find.byType(MarkerLayer), findsOneWidget);
     expect(EgyptGovernorate.byId['alexandria']!.boundaryPolygon, isNotEmpty);
