@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -85,11 +86,11 @@ class PlaceProvider extends ChangeNotifier {
 
             final index = _places.indexWhere((place) => place.id == updated.id);
             if (index == -1) {
-              _places = [..._places, updated];
+              _places = deduplicatePlaces([..._places, updated]);
             } else {
               final places = [..._places];
               places[index] = updated;
-              _places = places;
+              _places = deduplicatePlaces(places);
             }
             unawaited(_cachePlaces());
             notifyListeners();
@@ -188,7 +189,7 @@ class PlaceProvider extends ChangeNotifier {
           final cached = _filterInvalidCoords(
             cachedRows.map(PlaceModel.fromJson).toList(growable: false),
           );
-          if (cached.isNotEmpty) _places = cached;
+          if (cached.isNotEmpty) _places = deduplicatePlaces(cached);
         } catch (cacheError) {
           debugPrint(
             'PlaceProvider.loadPlaces: cached response invalid: $cacheError',
@@ -196,7 +197,7 @@ class PlaceProvider extends ChangeNotifier {
         }
       }
       if (_places.isEmpty) {
-        _places = List<PlaceModel>.from(fallbackPlaces);
+        _places = deduplicatePlaces(fallbackPlaces);
       }
       mergeSeedHotels();
       notifyListeners();
@@ -230,11 +231,11 @@ class PlaceProvider extends ChangeNotifier {
         _places = _places.isNotEmpty
             ? _places
             : (OfflineProvider.cachedFallback.isNotEmpty
-                  ? OfflineProvider.cachedFallback
-                  : List<PlaceModel>.from(fallbackPlaces));
+                  ? deduplicatePlaces(OfflineProvider.cachedFallback)
+                  : deduplicatePlaces(fallbackPlaces));
         _error = null;
       } else {
-        _places = filtered;
+        _places = deduplicatePlaces(filtered);
         _error = null;
       }
     } catch (e) {
@@ -245,7 +246,7 @@ class PlaceProvider extends ChangeNotifier {
           final cached = _filterInvalidCoords(
             cachedRows.map(_placeFromSupabase).toList(growable: false),
           );
-          if (cached.isNotEmpty) _places = cached;
+          if (cached.isNotEmpty) _places = deduplicatePlaces(cached);
         } catch (cacheError) {
           debugPrint(
             'PlaceProvider.loadPlaces: cached response invalid: $cacheError',
@@ -285,12 +286,7 @@ class PlaceProvider extends ChangeNotifier {
   void mergeSeedHotels() {
     if (_places.isEmpty) return;
     final seedPlaces = getSeedAlexandriaPlaces();
-    final existingIds = _places.map((place) => place.id).toSet();
-    final additions = seedPlaces
-        .where((place) => !existingIds.contains(place.id))
-        .toList(growable: false);
-    if (additions.isEmpty) return;
-    final merged = [..._places, ...additions]
+    final merged = deduplicatePlaces([..._places, ...seedPlaces])
       ..sort((a, b) {
         final byOrder = a.displayOrder.compareTo(b.displayOrder);
         if (byOrder != 0) return byOrder;
@@ -298,12 +294,139 @@ class PlaceProvider extends ChangeNotifier {
         if (byCat != 0) return byCat;
         return a.nameEn.compareTo(b.nameEn);
       });
+    if (_samePlaces(_places, merged)) return;
+    final additions = merged
+        .where(
+          (place) => !_places.any((existing) => identical(existing, place)),
+        )
+        .length;
     _places = List<PlaceModel>.unmodifiable(merged);
     notifyListeners();
     debugPrint(
-      'PlaceProvider: merged ${additions.length} seeded places into _places '
+      'PlaceProvider: merged $additions seeded places into _places '
       '(total now ${_places.length})',
     );
+  }
+
+  static List<PlaceModel> deduplicatePlaces(Iterable<PlaceModel> input) {
+    final places = <PlaceModel>[];
+    final aliases = <List<PlaceModel>>[];
+    for (final place in input) {
+      var duplicateIndex = -1;
+      for (var index = 0; index < aliases.length; index++) {
+        if (aliases[index].any((alias) => _samePlace(alias, place))) {
+          duplicateIndex = index;
+          break;
+        }
+      }
+      if (duplicateIndex == -1) {
+        places.add(place);
+        aliases.add([place]);
+      } else {
+        aliases[duplicateIndex].add(place);
+        if (_placeCompleteness(place) >
+            _placeCompleteness(places[duplicateIndex])) {
+          places[duplicateIndex] = place;
+        }
+      }
+    }
+    return List<PlaceModel>.unmodifiable(places);
+  }
+
+  static bool _samePlace(PlaceModel a, PlaceModel b) {
+    if (a.id.trim().toLowerCase() == b.id.trim().toLowerCase()) return true;
+
+    final aEnglish = _normalizePlaceName(a.nameEn);
+    final bEnglish = _normalizePlaceName(b.nameEn);
+    final aArabic = _normalizePlaceName(a.nameAr ?? '');
+    final bArabic = _normalizePlaceName(b.nameAr ?? '');
+    if ((aEnglish.isNotEmpty && aEnglish == bEnglish) ||
+        (aArabic.isNotEmpty && aArabic == bArabic)) {
+      return true;
+    }
+
+    return _distanceMeters(a.lat, a.lng, b.lat, b.lng) < 45 &&
+        (_similarPlaceName(aEnglish, bEnglish) ||
+            _similarPlaceName(aArabic, bArabic));
+  }
+
+  static String _normalizePlaceName(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+        .replaceAll(RegExp(r'[^a-z0-9\u0600-\u06FF]+'), ' ')
+        .trim()
+        .replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  static bool _similarPlaceName(String a, String b) {
+    if (a.isEmpty || b.isEmpty) return false;
+    if (a == b || a.startsWith(b) || b.startsWith(a)) return true;
+
+    const genericWords = {
+      'alexandria',
+      'cafe',
+      'coffee',
+      'hotel',
+      'mall',
+      'restaurant',
+      'seafood',
+      'كافيه',
+      'مقهى',
+      'فندق',
+      'مطعم',
+      'مول',
+    };
+    final wordsA = _nameWords(a)..removeAll(genericWords);
+    final wordsB = _nameWords(b)..removeAll(genericWords);
+    if (wordsA.isEmpty || wordsB.isEmpty) return false;
+    if (wordsA.containsAll(wordsB) || wordsB.containsAll(wordsA)) return true;
+    final overlap = wordsA.intersection(wordsB).length;
+    return overlap / wordsA.union(wordsB).length >= 0.5;
+  }
+
+  static Set<String> _nameWords(String normalized) {
+    return normalized.split(' ').where((word) => word.isNotEmpty).toSet();
+  }
+
+  static double _distanceMeters(
+    double latitudeA,
+    double longitudeA,
+    double latitudeB,
+    double longitudeB,
+  ) {
+    const earthRadiusMeters = 6371000.0;
+    final latitudeDelta = _radians(latitudeB - latitudeA);
+    final longitudeDelta = _radians(longitudeB - longitudeA);
+    final haversine =
+        math.sin(latitudeDelta / 2) * math.sin(latitudeDelta / 2) +
+        math.cos(_radians(latitudeA)) *
+            math.cos(_radians(latitudeB)) *
+            math.sin(longitudeDelta / 2) *
+            math.sin(longitudeDelta / 2);
+    return 2 *
+        earthRadiusMeters *
+        math.asin(math.sqrt(haversine.clamp(0.0, 1.0)));
+  }
+
+  static double _radians(double degrees) => degrees * math.pi / 180;
+
+  static int _placeCompleteness(PlaceModel place) {
+    return (place.nameAr?.trim().isNotEmpty == true ? 1 : 0) +
+        place.descriptionEn.length +
+        (place.descriptionAr?.length ?? 0) +
+        place.imageUrl.length +
+        place.imageUrls.length * 100 +
+        place.address.length +
+        (place.addressAr?.length ?? 0);
+  }
+
+  bool _samePlaces(List<PlaceModel> a, List<PlaceModel> b) {
+    if (a.length != b.length) return false;
+    for (var index = 0; index < a.length; index++) {
+      if (!identical(a[index], b[index])) return false;
+    }
+    return true;
   }
 
   PlaceModel _placeFromSupabase(Map<String, dynamic> json) {
