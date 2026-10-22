@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -72,12 +73,19 @@ class GovernorateFogLayer extends StatelessWidget {
         })
         .toList(growable: false);
     final activeBounds = _boundsOf(boundaryPoints);
+    final visibleBounds = camera.visibleBounds;
     final visibleBadges = filterGovernorateBadges(
       candidates: fogged,
       camera: camera,
       activeBounds: activeBounds,
     );
     final territoryBoundaries = fogged
+        .where(
+          (governorate) => _intersectsVisibleBounds(
+            governorate.boundaryPolygon,
+            visibleBounds,
+          ),
+        )
         .map(
           (governorate) => governorate.boundaryPolygon
               .map((point) {
@@ -134,6 +142,28 @@ class GovernorateFogLayer extends StatelessWidget {
   }
 }
 
+bool _intersectsVisibleBounds(
+  List<LatLng> polygon,
+  LatLngBounds visibleBounds, {
+  double padding = 0.008,
+}) {
+  if (polygon.isEmpty) return false;
+  var south = double.infinity;
+  var north = double.negativeInfinity;
+  var west = double.infinity;
+  var east = double.negativeInfinity;
+  for (final point in polygon) {
+    south = math.min(south, point.latitude);
+    north = math.max(north, point.latitude);
+    west = math.min(west, point.longitude);
+    east = math.max(east, point.longitude);
+  }
+  return south <= visibleBounds.north + padding &&
+      north >= visibleBounds.south - padding &&
+      west <= visibleBounds.east + padding &&
+      east >= visibleBounds.west - padding;
+}
+
 @visibleForTesting
 List<EgyptGovernorate> filterGovernorateBadges({
   required List<EgyptGovernorate> candidates,
@@ -176,6 +206,10 @@ Rect _boundsOf(List<Offset> points) {
 }
 
 class _BumpCloudFogPainter extends CustomPainter {
+  static Size? _cachedHexSize;
+  static ui.Path? _cachedHexPath;
+  static double? _cachedHexRadius;
+
   const _BumpCloudFogPainter({
     required this.camera,
     required this.boundaryPoints,
@@ -210,7 +244,7 @@ class _BumpCloudFogPainter extends CustomPainter {
           ..isAntiAlias = true,
       );
       canvas.drawPath(
-        _buildHexGridPath(size),
+        _hexGridPath(size),
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1
@@ -260,8 +294,13 @@ class _BumpCloudFogPainter extends CustomPainter {
     }
   }
 
-  Path _buildHexGridPath(Size size) {
+  ui.Path _hexGridPath(Size size) {
     const radius = 26.0;
+    if (_cachedHexSize == size &&
+        _cachedHexRadius == radius &&
+        _cachedHexPath != null) {
+      return _cachedHexPath!;
+    }
     final horizontalSpacing = radius * 1.5;
     final verticalSpacing = radius * math.sqrt(3);
     final columns = (size.width / horizontalSpacing).ceil();
@@ -288,6 +327,9 @@ class _BumpCloudFogPainter extends CustomPainter {
         path.close();
       }
     }
+    _cachedHexSize = size;
+    _cachedHexRadius = radius;
+    _cachedHexPath = path;
     return path;
   }
 

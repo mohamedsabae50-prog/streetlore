@@ -257,206 +257,253 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 places: allPlaces,
                 visitedPlaceIds: visitedPlaceIds,
               ),
-              MarkerLayer(
-                markers: [
-                  if (_userLocation != null)
-                    Marker(
-                      point: _userLocation!,
-                      width: 26,
-                      height: 26,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF3B82F6),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF3B82F6,
-                              ).withValues(alpha: 0.5),
-                              blurRadius: 10,
-                              spreadRadius: 2,
+              Builder(
+                builder: (mapContext) {
+                  final camera = MapCamera.of(mapContext);
+                  final bounds = camera.visibleBounds;
+                  const padding = 0.008;
+                  bool inViewport(LatLng point) =>
+                      point.latitude >= bounds.south - padding &&
+                      point.latitude <= bounds.north + padding &&
+                      point.longitude >= bounds.west - padding &&
+                      point.longitude <= bounds.east + padding;
+                  final markerPlaces = <PlaceModel>[...visible];
+                  if (_selectedPlace != null &&
+                      !markerPlaces.any(
+                        (place) => place.id == _selectedPlace!.id,
+                      )) {
+                    markerPlaces.add(_selectedPlace!);
+                  }
+                  final visiblePlaces = markerPlaces.where((place) {
+                    final point = LatLng(place.lat, place.lng);
+                    return place.id == _selectedPlace?.id || inViewport(point);
+                  });
+                  final showMarkerGlow = camera.zoom >= 13.5;
+                  return MarkerLayer(
+                    markers: [
+                      if (_userLocation != null)
+                        Marker(
+                          point: _userLocation!,
+                          width: 26,
+                          height: 26,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3B82F6),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF3B82F6,
+                                  ).withValues(alpha: 0.5),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  for (final p in visible)
-                    Marker(
-                      point: LatLng(p.lat, p.lng),
-                      width: visitedPlaceIds.contains(p.id) ? 50 : 44,
-                      height: visitedPlaceIds.contains(p.id) ? 50 : 44,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedPlace = p);
-                          _mapController.move(LatLng(p.lat, p.lng), 14);
-                        },
-                        child: visitedPlaceIds.contains(p.id)
-                            ? Stack(
-                                clipBehavior: Clip.none,
-                                alignment: Alignment.center,
-                                children: [
-                                  Container(
-                                    width: 42,
-                                    height: 42,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF059669),
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(
-                                            0xFF059669,
-                                          ).withValues(alpha: 0.5),
-                                          blurRadius: 9,
-                                          spreadRadius: 2,
+                      for (final p in visiblePlaces)
+                        Marker(
+                          point: LatLng(p.lat, p.lng),
+                          width: visitedPlaceIds.contains(p.id) ? 50 : 44,
+                          height: visitedPlaceIds.contains(p.id) ? 50 : 44,
+                          child: RepaintBoundary(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() => _selectedPlace = p);
+                                _mapController.move(LatLng(p.lat, p.lng), 14);
+                              },
+                              child: visitedPlaceIds.contains(p.id)
+                                  ? Stack(
+                                      clipBehavior: Clip.none,
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Container(
+                                          width: 42,
+                                          height: 42,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF059669),
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              if (showMarkerGlow ||
+                                                  p.id == _selectedPlace?.id)
+                                                BoxShadow(
+                                                  color: const Color(
+                                                    0xFF059669,
+                                                  ).withValues(alpha: 0.5),
+                                                  blurRadius: 9,
+                                                  spreadRadius: 2,
+                                                ),
+                                            ],
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 3,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.check_rounded,
+                                            color: Colors.white,
+                                            size: 22,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: -1,
+                                          right: -1,
+                                          child: Container(
+                                            width: 19,
+                                            height: 19,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF4C542),
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: Colors.white,
+                                                width: 1.5,
+                                              ),
+                                            ),
+                                            child: const Icon(
+                                              Icons.check,
+                                              color: Color(0xFF14532D),
+                                              size: 13,
+                                            ),
+                                          ),
                                         ),
                                       ],
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 3,
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.check_rounded,
-                                      color: Colors.white,
-                                      size: 22,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: -1,
-                                    right: -1,
-                                    child: Container(
-                                      width: 19,
-                                      height: 19,
+                                    )
+                                  : Container(
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF4C542),
+                                        color: _colorForCategory(p.category),
                                         shape: BoxShape.circle,
+                                        boxShadow: [
+                                          if (showMarkerGlow ||
+                                              p.id == _selectedPlace?.id)
+                                            BoxShadow(
+                                              color: _colorForCategory(
+                                                p.category,
+                                              ).withValues(alpha: 0.5),
+                                              blurRadius: 8,
+                                              spreadRadius: 2,
+                                            ),
+                                        ],
                                         border: Border.all(
                                           color: Colors.white,
-                                          width: 1.5,
+                                          width: 3,
                                         ),
                                       ),
-                                      child: const Icon(
-                                        Icons.check,
-                                        color: Color(0xFF14532D),
-                                        size: 13,
+                                      child: Icon(
+                                        _iconForCategory(p.category),
+                                        color: Colors.white,
+                                        size: 20,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              )
-                            : Container(
-                                decoration: BoxDecoration(
-                                  color: _colorForCategory(p.category),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _colorForCategory(
-                                        p.category,
-                                      ).withValues(alpha: 0.5),
-                                      blurRadius: 8,
-                                      spreadRadius: 2,
+                            ),
+                          ),
+                        ),
+                      if (_showAtms)
+                        for (final atm in _atms.where(
+                          (atm) => inViewport(LatLng(atm.lat, atm.lng)),
+                        ))
+                          Marker(
+                            point: LatLng(atm.lat, atm.lng),
+                            width: 40,
+                            height: 40,
+                            child: RepaintBoundary(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() => _selectedPlace = null);
+                                  _showAtmSheet(context, atm);
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: atm.color,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      if (showMarkerGlow)
+                                        BoxShadow(
+                                          color: atm.color.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                          blurRadius: 8,
+                                        ),
+                                    ],
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2.5,
                                     ),
-                                  ],
-                                  border: Border.all(
+                                  ),
+                                  child: Icon(
+                                    atm.icon,
                                     color: Colors.white,
-                                    width: 3,
+                                    size: 20,
                                   ),
                                 ),
-                                child: Icon(
-                                  _iconForCategory(p.category),
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
                               ),
-                      ),
-                    ),
-                  if (_showAtms)
-                    for (final atm in _atms)
-                      Marker(
-                        point: LatLng(atm.lat, atm.lng),
-                        width: 40,
-                        height: 40,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() => _selectedPlace = null);
-                            _showAtmSheet(context, atm);
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: atm.color,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: atm.color.withValues(alpha: 0.5),
-                                  blurRadius: 8,
-                                ),
-                              ],
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2.5,
-                              ),
-                            ),
-                            child: Icon(
-                              atm.icon,
-                              color: Colors.white,
-                              size: 20,
                             ),
                           ),
-                        ),
-                      ),
-                  if (_showHotels)
-                    for (final hotel in getSeedHotels())
-                      Marker(
-                        point: LatLng(hotel.lat, hotel.lng),
-                        width: 44,
-                        height: 44,
-                        child: GestureDetector(
-                          onTap: () {
-                            final match = places.firstWhere(
-                              (p) => p.id == hotel.id,
-                              orElse: () => PlaceModel(
-                                id: hotel.id,
-                                nameEn: hotel.name,
-                                descriptionEn: hotel.address,
-                                imageUrl: '',
-                                rating: 5.0,
-                                category: 'Hotels',
-                                lat: hotel.lat,
-                                lng: hotel.lng,
-                                address: hotel.address,
-                                openHours: '',
-                              ),
-                            );
-                            setState(() {
-                              _selectedPlace = match;
-                            });
-                            _mapController.move(
-                              LatLng(hotel.lat, hotel.lng),
-                              14,
-                            );
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: hotel.color,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: hotel.color.withValues(alpha: 0.5),
-                                  blurRadius: 8,
+                      if (_showHotels)
+                        for (final hotel in getSeedHotels().where(
+                          (hotel) => inViewport(LatLng(hotel.lat, hotel.lng)),
+                        ))
+                          Marker(
+                            point: LatLng(hotel.lat, hotel.lng),
+                            width: 44,
+                            height: 44,
+                            child: RepaintBoundary(
+                              child: GestureDetector(
+                                onTap: () {
+                                  final match = places.firstWhere(
+                                    (p) => p.id == hotel.id,
+                                    orElse: () => PlaceModel(
+                                      id: hotel.id,
+                                      nameEn: hotel.name,
+                                      descriptionEn: hotel.address,
+                                      imageUrl: '',
+                                      rating: 5.0,
+                                      category: 'Hotels',
+                                      lat: hotel.lat,
+                                      lng: hotel.lng,
+                                      address: hotel.address,
+                                      openHours: '',
+                                    ),
+                                  );
+                                  setState(() {
+                                    _selectedPlace = match;
+                                  });
+                                  _mapController.move(
+                                    LatLng(hotel.lat, hotel.lng),
+                                    14,
+                                  );
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: hotel.color,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      if (showMarkerGlow)
+                                        BoxShadow(
+                                          color: hotel.color.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                          blurRadius: 8,
+                                        ),
+                                    ],
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 3,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    hotel.icon,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                 ),
-                              ],
-                              border: Border.all(color: Colors.white, width: 3),
-                            ),
-                            child: Icon(
-                              hotel.icon,
-                              color: Colors.white,
-                              size: 20,
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                ],
+                    ],
+                  );
+                },
               ),
             ],
           ),
