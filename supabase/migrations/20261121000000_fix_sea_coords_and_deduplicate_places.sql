@@ -27,6 +27,12 @@ WITH corrected_places (
     ('alex_kebdet_el_fallah', 'kebdetelfallah', 'كبدةالفلاح', 31.1994, 29.9005),
     ('alex_asmak_shaaban', 'asmakshaaban', 'أسماكشعبان', 31.1965, 29.8935),
     ('alex_zanqat_el_sittat_market', 'zanqatelsittattraditionalmarket', 'زنقةالستاتسوقالمنشية', 31.1958, 29.8895),
+    ('14', 'abuqirseafoodcoast', '', 31.2995, 30.0605),
+    ('22', 'kadouraseafoodrestaurant', '', 31.2135, 29.9231),
+    ('36', 'shatibimosque', '', 31.2045, 29.9080),
+    ('ec216324-1277-4649-a631-91be397eeeac', 'greekclubofalexandria', '', 31.2070, 29.9100),
+    ('8', 'stanleybridgeandcorniche', '', 31.2358, 29.9565),
+    ('v155_zephyrion', 'zephyrionrestaurant', '', 31.3000, 30.0636),
     ('fallback_qaitbay', 'citadelofqaitbay', 'قلعةقايتباي', 31.2140, 29.8856),
     ('alex_white_blue_greek_club', 'whiteandbluegreeknauticalclub', 'النادياليونانيالبحريوايتآندبلو', 31.2112, 29.8852),
     ('fallback_biblio', 'bibliothecaalexandrina', 'مكتبةالإسكندرية', 31.2070, 29.9095),
@@ -50,16 +56,7 @@ WHERE coalesce(nullif(place.governorate, ''), 'alexandria') = 'alexandria'
   AND (
     place.id = target.id
     OR regexp_replace(lower(coalesce(place.name_en, place.name, '')), '[^[:alnum:]]', '', 'g') = target.normalized_name
-    OR (
-      nullif(target.normalized_name_ar, '') IS NOT NULL
-      AND regexp_replace(
-        translate(lower(coalesce(place.name_ar, '')), 'ًٌٍَُِّْٰـ', ''),
-        '[^[:alnum:]]',
-        '',
-        'g'
-      ) = target.normalized_name_ar
-    )
-  );
+);
 
 CREATE TEMP TABLE streetlore_place_duplicate_map (
   duplicate_id text PRIMARY KEY,
@@ -185,6 +182,24 @@ FROM ranked_pairs
 WHERE choice = 1
 ON CONFLICT (duplicate_id) DO NOTHING;
 
+INSERT INTO streetlore_place_duplicate_map (duplicate_id, canonical_id)
+SELECT duplicate.id, canonical.id
+FROM public.places AS duplicate
+JOIN public.places AS canonical
+  ON canonical.id = 'alex_san_stefano_grand_plaza'
+WHERE duplicate.id = '32'
+ON CONFLICT (duplicate_id) DO UPDATE
+SET canonical_id = EXCLUDED.canonical_id;
+
+INSERT INTO streetlore_place_duplicate_map (duplicate_id, canonical_id)
+SELECT duplicate.id, canonical.id
+FROM public.places AS duplicate
+JOIN public.places AS canonical
+  ON canonical.id = '2'
+WHERE duplicate.id = 'a118abcb-13b2-4db3-89b6-dfe2fb2abe2f'
+ON CONFLICT (duplicate_id) DO UPDATE
+SET canonical_id = EXCLUDED.canonical_id;
+
 WITH RECURSIVE resolved AS (
   SELECT
     duplicate_id AS original_id,
@@ -237,20 +252,59 @@ BEGIN
       AND tables.table_type = 'BASE TABLE'
       AND columns.table_name <> 'places'
   LOOP
-    IF child.table_name = 'tour_places'
-       AND EXISTS (
-         SELECT 1
-         FROM information_schema.columns
-         WHERE table_schema = child.table_schema
-           AND table_name = child.table_name
-           AND column_name = 'tour_id'
-       ) THEN
+    IF child.table_name = 'saved_places' THEN
       EXECUTE format(
-        'DELETE FROM %I.%I AS duplicate_ref '
-        'USING streetlore_place_duplicate_map AS mapping, %I.%I AS canonical_ref '
-        'WHERE duplicate_ref.place_id = mapping.duplicate_id '
-        'AND canonical_ref.place_id = mapping.canonical_id '
-        'AND canonical_ref.tour_id = duplicate_ref.tour_id',
+        'WITH ranked AS ('
+        '  SELECT child.ctid AS row_id, '
+        '         row_number() OVER ('
+        '           PARTITION BY child.user_id, coalesce(mapping.canonical_id, child.place_id) '
+        '           ORDER BY (mapping.duplicate_id IS NULL) DESC, child.ctid'
+        '         ) AS rank'
+        '  FROM %I.%I AS child '
+        '  LEFT JOIN streetlore_place_duplicate_map AS mapping '
+        '    ON child.place_id = mapping.duplicate_id'
+        ') '
+        'DELETE FROM %I.%I AS child USING ranked '
+        'WHERE child.ctid = ranked.row_id AND ranked.rank > 1',
+        child.table_schema,
+        child.table_name,
+        child.table_schema,
+        child.table_name
+      );
+    ELSIF child.table_name = 'place_checkins' THEN
+      EXECUTE format(
+        'WITH ranked AS ('
+        '  SELECT child.ctid AS row_id, '
+        '         row_number() OVER ('
+        '           PARTITION BY child.user_id, coalesce(mapping.canonical_id, child.place_id) '
+        '           ORDER BY child.checked_in_at DESC NULLS LAST, '
+        '                    (mapping.duplicate_id IS NULL) DESC, child.id'
+        '         ) AS rank'
+        '  FROM %I.%I AS child '
+        '  LEFT JOIN streetlore_place_duplicate_map AS mapping '
+        '    ON child.place_id = mapping.duplicate_id'
+        ') '
+        'DELETE FROM %I.%I AS child USING ranked '
+        'WHERE child.ctid = ranked.row_id AND ranked.rank > 1',
+        child.table_schema,
+        child.table_name,
+        child.table_schema,
+        child.table_name
+      );
+    ELSIF child.table_name = 'tour_places' THEN
+      EXECUTE format(
+        'WITH ranked AS ('
+        '  SELECT child.ctid AS row_id, '
+        '         row_number() OVER ('
+        '           PARTITION BY child.tour_id, coalesce(mapping.canonical_id, child.place_id) '
+        '           ORDER BY (mapping.duplicate_id IS NULL) DESC, child.ctid'
+        '         ) AS rank'
+        '  FROM %I.%I AS child '
+        '  LEFT JOIN streetlore_place_duplicate_map AS mapping '
+        '    ON child.place_id = mapping.duplicate_id'
+        ') '
+        'DELETE FROM %I.%I AS child USING ranked '
+        'WHERE child.ctid = ranked.row_id AND ranked.rank > 1',
         child.table_schema,
         child.table_name,
         child.table_schema,
@@ -324,6 +378,63 @@ BEGIN
        )
   ) THEN
     RAISE EXCEPTION 'Place deduplication left duplicate or nearby similar places';
+  END IF;
+
+  IF EXISTS (
+    WITH shoreline (lat, lng) AS (
+      VALUES
+        (31.135::double precision, 29.65::double precision),
+        (31.150, 29.70),
+        (31.170, 29.77),
+        (31.185, 29.82),
+        (31.195, 29.86),
+        (31.214, 29.8856),
+        (31.205, 29.888),
+        (31.2025, 29.8975),
+        (31.2025, 29.906),
+        (31.208, 29.9095),
+        (31.213, 29.9212),
+        (31.228, 29.9435),
+        (31.2355, 29.9535),
+        (31.245, 29.966),
+        (31.258, 29.9875),
+        (31.273, 30.0065),
+        (31.290, 30.016),
+        (31.305, 30.08),
+        (31.320, 30.15)
+    ),
+    segments AS (
+      SELECT
+        lng AS start_lng,
+        lead(lng) OVER (ORDER BY lng) AS end_lng,
+        lat AS start_lat,
+        lead(lat) OVER (ORDER BY lng) AS end_lat
+      FROM shoreline
+    ),
+    checked_places AS (
+      SELECT
+        place.id,
+        place.lat::double precision AS lat,
+        segment.start_lat
+          + (segment.end_lat - segment.start_lat)
+            * (place.lng::double precision - segment.start_lng)
+            / (segment.end_lng - segment.start_lng) AS shore_lat
+      FROM public.places AS place
+      JOIN segments AS segment
+        ON place.lng::double precision >= segment.start_lng
+       AND place.lng::double precision <= segment.end_lng
+      WHERE segment.end_lng IS NOT NULL
+    )
+    SELECT 1
+    FROM checked_places
+    WHERE lat >= shore_lat - 30.0 / 111320.0
+      AND id NOT IN (
+        'fallback_qaitbay',
+        'alex_white_blue_greek_club',
+        'p_1784811618524'
+      )
+  ) THEN
+    RAISE EXCEPTION 'Place coordinate correction left pins on the sea side of the shoreline';
   END IF;
 END;
 $$;
