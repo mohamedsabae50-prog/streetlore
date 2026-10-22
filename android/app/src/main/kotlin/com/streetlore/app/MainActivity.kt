@@ -8,6 +8,9 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.appwidget.AppWidgetManager
+import android.content.Context
+import com.oguzhnatly.flutter_android_auto.FAAConstants
+import io.flutter.embedding.engine.FlutterEngineCache
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "streetlore/widget"
@@ -17,7 +20,11 @@ class MainActivity : FlutterActivity() {
         super.onCreate(savedInstanceState)
     }
 
+    override fun provideFlutterEngine(context: Context): FlutterEngine? =
+        FlutterEngineCache.getInstance().get(FAAConstants.flutterEngineId)
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        FlutterEngineCache.getInstance().put(FAAConstants.flutterEngineId, flutterEngine)
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->

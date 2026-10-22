@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../mock_data.dart';
 import '../models/place_model.dart';
 import 'map_poi.dart';
+
+List<PlaceModel> getSeedAlexandriaPlaces() => [
+  ...curatedAlexandriaPlaces,
+  ..._hotelPlaces,
+];
 
 List<MapPoi> getSeedHotels() => _hotels;
 

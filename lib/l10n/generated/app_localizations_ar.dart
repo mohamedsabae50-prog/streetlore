@@ -148,6 +148,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cat_food => 'أكل';
 
   @override
+  String get cat_cafe => 'كافيهات';
+
+  @override
+  String get cat_cafes => 'كافيهات';
+
+  @override
   String get cat_historical => 'تاريخي';
 
   @override

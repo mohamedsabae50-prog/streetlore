@@ -173,6 +173,48 @@ void main() {
     },
   );
 
+  test(
+    'curated dining, cafes, and shopping seeds are complete and on land',
+    () {
+      final alexandria = EgyptGovernorate.byId['alexandria']!;
+      expect(curatedAlexandriaPlaces, hasLength(27));
+      for (final place in curatedAlexandriaPlaces) {
+        expect(
+          GovernorateService.containsCoordinates(
+            alexandria,
+            place.lat,
+            place.lng,
+          ),
+          isTrue,
+          reason: '${place.id} must be within Alexandria',
+        );
+        expect(
+          place.lat,
+          lessThan(31.28),
+          reason: '${place.id} must be south of the Mediterranean coast',
+        );
+        expect(
+          place.nameAr,
+          isNotEmpty,
+          reason: '${place.id} needs Arabic name',
+        );
+        expect(
+          place.descriptionAr,
+          isNotEmpty,
+          reason: '${place.id} needs Arabic description',
+        );
+        expect(place.descriptionEn, isNotEmpty);
+        expect(place.rating, inInclusiveRange(4.4, 4.9));
+        expect(
+          place.imageUrl,
+          startsWith('https://images.unsplash.com/'),
+          reason: '${place.id} must have an HTTPS Unsplash photo',
+        );
+        expect(place.governorate, 'alexandria');
+      }
+    },
+  );
+
   test('legacy and empty governorate values default to Alexandria', () {
     final legacyPlace = PlaceModel.fromJson({
       'id': 'legacy',

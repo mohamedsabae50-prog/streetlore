@@ -122,6 +122,8 @@ class AppStrings {
     'cat_culture': {'en': 'Culture', 'ar': 'ثقافة'},
     'cat_nature': {'en': 'Nature', 'ar': 'طبيعة'},
     'cat_food': {'en': 'Food', 'ar': 'أكل'},
+    'cat_cafe': {'en': 'Cafes', 'ar': 'كافيهات'},
+    'cat_cafes': {'en': 'Cafes', 'ar': 'كافيهات'},
     'cat_shopping': {'en': 'Shopping', 'ar': 'تسوق'},
     'cat_mosques': {'en': 'Mosques', 'ar': 'مساجد'},
     'cat_churches': {'en': 'Churches', 'ar': 'كنائس'},

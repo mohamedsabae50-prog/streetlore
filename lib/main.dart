@@ -15,6 +15,7 @@ import 'core/services/revenuecat_service.dart';
 import 'core/services/supabase_service.dart';
 import 'core/services/sync_queue_service.dart';
 import 'core/services/realtime_resilience.dart';
+import 'core/services/carplay_service.dart';
 import 'core/config/app_config.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'l10n/app_strings.dart';
@@ -137,6 +138,18 @@ Future<void> _runApplication() async {
   final governorateProvider = GovernorateProvider();
   final placeProvider = PlaceProvider(governorates: governorateProvider);
   final tourProvider = TourProvider(governorates: governorateProvider);
+  void syncCarPlayPlaces() {
+    CarPlayService.instance.syncPlaces(
+      places: placeProvider.allPlaces,
+      savedPlaces: placeProvider.savedPlaces,
+      tours: tourProvider.tours,
+    );
+  }
+
+  placeProvider.addListener(syncCarPlayPlaces);
+  tourProvider.addListener(syncCarPlayPlaces);
+  syncCarPlayPlaces();
+  unawaited(CarPlayService.instance.initialize());
   final tripProvider = TripProvider();
   void syncTourVisitStatus() {
     tourProvider.syncVisitedPlaces(
@@ -276,6 +289,10 @@ Future<void> _syncGovernorateFromCurrentLocation(
         await Geolocator.getCurrentPosition(
           timeLimit: const Duration(seconds: 5),
         );
+    CarPlayService.instance.updateLocation(
+      position.latitude,
+      position.longitude,
+    );
     await governorates.syncWithCoordinates(
       position.latitude,
       position.longitude,

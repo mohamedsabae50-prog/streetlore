@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/atm_service.dart';
+import '../../core/services/carplay_service.dart';
 import '../../data/models/map_poi.dart';
 import '../../data/models/map_seed.dart';
 import '../../data/models/place_model.dart';
@@ -32,6 +33,8 @@ String _catLabel(BuildContext context, String cat) {
       return context.tr('cat_nature');
     case 'Food':
       return context.tr('cat_food');
+    case 'Cafe':
+      return context.tr('cat_cafes');
     case 'Shopping':
       return context.tr('cat_shopping');
     case 'Mosques':
@@ -86,6 +89,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
       );
       if (!mounted) return;
       final here = LatLng(pos.latitude, pos.longitude);
+      CarPlayService.instance.updateLocation(here.latitude, here.longitude);
       setState(() => _userLocation = here);
       await context.read<GovernorateProvider>().syncWithCoordinates(
         here.latitude,
@@ -163,6 +167,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
         return Icons.park_rounded;
       case 'Food':
         return Icons.restaurant_rounded;
+      case 'Cafe':
+        return Icons.local_cafe_rounded;
       case 'Shopping':
         return Icons.shopping_bag_rounded;
       case 'Mosques':
@@ -186,6 +192,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
         return const Color(0xFF10B981);
       case 'Food':
         return const Color(0xFFF59E0B);
+      case 'Cafe':
+        return const Color(0xFF8B5E3C);
       case 'Shopping':
         return const Color(0xFF3B82F6);
       case 'Mosques':
@@ -206,7 +214,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
     }
     if (_allOff) return const <PlaceModel>[];
     if (_selectedCategory == null) return all;
-    return all.where((p) => p.category == _selectedCategory).toList();
+    return all
+        .where(
+          (place) =>
+              place.category == _selectedCategory ||
+              (_selectedCategory == 'Cafe' && place.category == 'Food'),
+        )
+        .toList();
   }
 
   bool get _showHotels => _extraLayers.contains(_hotelsCategory);
@@ -727,6 +741,8 @@ class _CategoryFilter extends StatelessWidget {
       'Culture',
       'Nature',
       'Food',
+      'Cafe',
+      'Shopping',
       'Mosques',
       'Churches',
     ];

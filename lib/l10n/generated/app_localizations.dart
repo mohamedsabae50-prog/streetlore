@@ -368,6 +368,18 @@ abstract class AppLocalizations {
   /// **'Food'**
   String get cat_food;
 
+  /// Translation key: cat_cafe
+  ///
+  /// In en, this message translates to:
+  /// **'Cafes'**
+  String get cat_cafe;
+
+  /// Translation key: cat_cafes
+  ///
+  /// In en, this message translates to:
+  /// **'Cafes'**
+  String get cat_cafes;
+
   /// Translation key: cat_historical
   ///
   /// In en, this message translates to:

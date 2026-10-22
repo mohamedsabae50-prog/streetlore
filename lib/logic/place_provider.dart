@@ -284,10 +284,10 @@ class PlaceProvider extends ChangeNotifier {
 
   void mergeSeedHotels() {
     if (_places.isEmpty) return;
-    final hotelSeeds = getSeedHotelPlaces();
-    final existingIds = _places.map((p) => p.id).toSet();
-    final additions = hotelSeeds
-        .where((h) => !existingIds.contains(h.id))
+    final seedPlaces = getSeedAlexandriaPlaces();
+    final existingIds = _places.map((place) => place.id).toSet();
+    final additions = seedPlaces
+        .where((place) => !existingIds.contains(place.id))
         .toList(growable: false);
     if (additions.isEmpty) return;
     final merged = [..._places, ...additions]
@@ -301,7 +301,7 @@ class PlaceProvider extends ChangeNotifier {
     _places = List<PlaceModel>.unmodifiable(merged);
     notifyListeners();
     debugPrint(
-      'PlaceProvider: merged ${additions.length} seed hotels into _places '
+      'PlaceProvider: merged ${additions.length} seeded places into _places '
       '(total now ${_places.length})',
     );
   }

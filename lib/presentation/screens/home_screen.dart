@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'trip_planner_screen.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/services/location_permission_service.dart';
+import '../../core/services/carplay_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/shimmer_image.dart';
@@ -61,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _CategoryItem(label: 'Culture', icon: Icons.museum_rounded),
     _CategoryItem(label: 'Nature', icon: Icons.park_rounded),
     _CategoryItem(label: 'Food', icon: Icons.restaurant_rounded),
+    _CategoryItem(label: 'Cafe', icon: Icons.local_cafe_rounded),
     _CategoryItem(label: 'Shopping', icon: Icons.shopping_bag_rounded),
     _CategoryItem(label: 'Mosques', icon: Icons.mosque_rounded),
     _CategoryItem(label: 'Churches', icon: Icons.church_rounded),
@@ -135,6 +137,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           timeLimit: const Duration(seconds: 8),
         );
         if (!mounted) return;
+        CarPlayService.instance.updateLocation(
+          position.latitude,
+          position.longitude,
+        );
         await context.read<GovernorateProvider>().syncWithCoordinates(
           position.latitude,
           position.longitude,
@@ -173,6 +179,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         .where(
           (p) =>
               p.category == _selectedCategory ||
+              (_selectedCategory == 'Cafe' && p.category == 'Food') ||
               p.categoryAr == _selectedCategory,
         )
         .toList();
@@ -586,7 +593,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              context.tr('cat_${cat.label.toLowerCase()}'),
+                              context.tr(
+                                cat.label == 'Cafe'
+                                    ? 'cat_cafes'
+                                    : 'cat_${cat.label.toLowerCase()}',
+                              ),
                               style: TextStyle(
                                 color: isSel ? Colors.white : context.textSec,
                                 fontWeight: isSel
@@ -614,7 +625,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Text(
                     _selectedCategory == 'All'
                         ? context.tr('all_places')
-                        : context.tr('cat_${_selectedCategory.toLowerCase()}'),
+                        : context.tr(
+                            _selectedCategory == 'Cafe'
+                                ? 'cat_cafes'
+                                : 'cat_${_selectedCategory.toLowerCase()}',
+                          ),
                     style: AppTextStyles.sectionTitle.copyWith(
                       color: context.textPri,
                     ),

@@ -149,6 +149,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cat_food => 'Food';
 
   @override
+  String get cat_cafe => 'Cafes';
+
+  @override
+  String get cat_cafes => 'Cafes';
+
+  @override
   String get cat_historical => 'Historical';
 
   @override
