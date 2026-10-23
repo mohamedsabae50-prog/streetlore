@@ -463,7 +463,7 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'قصر ملكي سابق في زيزينيا يعرض مجوهرات ومقتنيات أسرة محمد علي، إلى جانب القاعات المزخرفة التي تشكل جزءاً من تجربة الزيارة.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/44.jpg",
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_royal_jewelry_museum.jpg",
     rating: 4.6,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -485,8 +485,8 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'شقة الشاعر اليوناني قسطنطين كفافيس المحفوظة في الإسكندرية، وتضم مقتنيات ووثائق تستعرض حياته وأعماله الأدبية وصلته بالمدينة.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/46.jpg",
-    imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/46.jpg"],
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_cavafy_museum.jpg",
+    imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_cavafy_museum.jpg"],
     rating: 4.5,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -530,7 +530,7 @@ const List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'دار أوبرا الإسكندرية التاريخية، افتُتحت عام ١٩٢١ وسُمّيت باسم الموسيقار المصري سيد درويش. لا يزال المسرح الإيطالي الطراز يستضيف الأوبرا والحفلات والعروض الثقافية.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/47.jpg",
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_sayed_darwish_theatre.jpg",
     rating: 4.6,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -688,7 +688,7 @@ const List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مطعم شعبي محبوب يشتهر بسندويتشات الكبدة على الطريقة الإسكندرانية والأكلات السريعة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1553909489-cd47e0ef937f?w=1200&q=85&fit=crop',
+        'https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=1200&q=85',
     rating: 4.5,
     category: 'Food',
     categoryAr: 'مطاعم',
@@ -974,7 +974,7 @@ const List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'وجهة تسوق كبيرة تضم كارفور ومحلات الأزياء والمطاعم ومرافق ترفيهية للعائلة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=1200&q=85&fit=crop',
+        'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=1200&q=85',
     rating: 4.6,
     category: 'Shopping',
     categoryAr: 'تسوق',
@@ -1018,7 +1018,7 @@ const List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مجمع تسوق واسع في سموحة يضم المتاجر والمقاهي والمطاعم وخيارات ترفيهية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1481437156560-320fdeb1f3f7?w=1200&q=85&fit=crop',
+        'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?auto=format&fit=crop&w=1200&q=85',
     rating: 4.5,
     category: 'Shopping',
     categoryAr: 'تسوق',
@@ -1040,7 +1040,7 @@ const List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'ممشى ساحلي حيوي يضم المقاهي والمطاعم وإطلالات البحر في حي جليم.',
     imageUrl:
-        'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=1200&q=85&fit=crop',
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
     rating: 4.6,
     category: 'Shopping',
     categoryAr: 'تسوق',
@@ -1062,7 +1062,7 @@ const List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'وجهة في سيدي جابر للمطاعم والمقاهي والترفيه داخل مبنى ذي قبة مميزة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1481437156560-320fdeb1f3f7?w=1200&q=85&fit=crop',
+        'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&w=1200&q=85',
     rating: 4.5,
     category: 'Shopping',
     categoryAr: 'تسوق',
@@ -1084,7 +1084,7 @@ const List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مركز للتسوق ونمط الحياة في منطقة سموحة يضم المتاجر والخدمات المحلية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1481437156560-320fdeb1f3f7?w=1200&q=85&fit=crop',
+        'https://images.unsplash.com/photo-1567958451986-2de427a4a0be?auto=format&fit=crop&w=1200&q=85',
     rating: 4.4,
     category: 'Shopping',
     categoryAr: 'تسوق',

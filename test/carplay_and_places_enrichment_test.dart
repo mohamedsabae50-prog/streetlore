@@ -17,6 +17,40 @@ void main() {
       _expectUniquePlaces('seeded hotels', getSeedHotelPlaces());
     });
 
+    test('fallback place images and bilingual metadata are complete', () {
+      final imageUrls = <String>{};
+      for (final place in fallbackPlaces) {
+        final baseImageUrl = place.imageUrl.split('?').first.trim();
+        expect(baseImageUrl, isNotEmpty, reason: '${place.id} has no image');
+        expect(
+          imageUrls.add(baseImageUrl),
+          isTrue,
+          reason: 'fallback places share image URL $baseImageUrl',
+        );
+        expect(
+          place.nameEn.trim(),
+          isNotEmpty,
+          reason: '${place.id} lacks EN name',
+        );
+        expect(
+          place.nameAr?.trim(),
+          isNotEmpty,
+          reason: '${place.id} lacks AR name',
+        );
+        expect(
+          place.descriptionEn.trim(),
+          isNotEmpty,
+          reason: '${place.id} lacks EN description',
+        );
+        expect(
+          place.descriptionAr?.trim(),
+          isNotEmpty,
+          reason: '${place.id} lacks AR description',
+        );
+      }
+      expect(imageUrls, hasLength(fallbackPlaces.length));
+    });
+
     test(
       'provider merge collapses ID, bilingual-name, and nearby duplicates',
       () {
