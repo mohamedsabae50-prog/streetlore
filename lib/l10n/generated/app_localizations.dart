@@ -3545,8 +3545,14 @@ abstract class AppLocalizations {
   /// No description provided for @checkin_too_far.
   ///
   /// In en, this message translates to:
-  /// **'You need to be within 100 meters of this place to check in.'**
+  /// **'Move closer to this place to check in. The allowed distance varies by place.'**
   String get checkin_too_far;
+
+  /// Shown when proximity automatically checks in a place
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 Auto checked in at {place}!'**
+  String auto_checkin_success(String place);
 
   /// No description provided for @checkin_location_permission.
   ///

@@ -1873,7 +1873,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkin_too_far =>
-      'You need to be within 100 meters of this place to check in.';
+      'Move closer to this place to check in. The allowed distance varies by place.';
+
+  @override
+  String auto_checkin_success(String place) {
+    return '🎉 Auto checked in at $place!';
+  }
 
   @override
   String get checkin_location_permission =>

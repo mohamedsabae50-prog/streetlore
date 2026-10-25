@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -13,11 +15,10 @@ class CheckInLocationService {
   CheckInLocationService._();
   static final CheckInLocationService instance = CheckInLocationService._();
 
-  static const double allowedDistanceMeters = 100;
-
   Future<CheckInLocationResult> verify({
     required double latitude,
     required double longitude,
+    required double allowedDistanceMeters,
   }) async {
     try {
       if (!await Geolocator.isLocationServiceEnabled()) {
@@ -34,24 +35,62 @@ class CheckInLocationService {
         return CheckInLocationResult.permissionDenied;
       }
 
+      final cachedPosition = await Geolocator.getLastKnownPosition();
+      if (cachedPosition != null &&
+          _isWithinRadius(
+            cachedPosition,
+            latitude,
+            longitude,
+            allowedDistanceMeters,
+          )) {
+        return CheckInLocationResult.verified;
+      }
+
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 20),
+        timeLimit: const Duration(seconds: 7),
       );
-      final distance = Geolocator.distanceBetween(
-        position.latitude,
-        position.longitude,
-        latitude,
-        longitude,
-      );
-      return distance <= allowedDistanceMeters
+      return _isWithinRadius(
+            position,
+            latitude,
+            longitude,
+            allowedDistanceMeters,
+          )
           ? CheckInLocationResult.verified
           : CheckInLocationResult.tooFar;
     } catch (error, stackTrace) {
-      debugPrint(
-        'CheckInLocationService.verify failed: $error\n$stackTrace',
-      );
+      debugPrint('CheckInLocationService.verify failed: $error\n$stackTrace');
       return CheckInLocationResult.unavailable;
     }
+  }
+
+  static bool isWithinRadius({
+    required double rawDistanceMeters,
+    required double accuracyMeters,
+    required double allowedDistanceMeters,
+  }) {
+    final accuracy = accuracyMeters.isFinite
+        ? accuracyMeters.clamp(0.0, 80.0)
+        : 0.0;
+    return math.max(0.0, rawDistanceMeters - accuracy) <= allowedDistanceMeters;
+  }
+
+  bool _isWithinRadius(
+    Position position,
+    double latitude,
+    double longitude,
+    double allowedDistanceMeters,
+  ) {
+    final distance = Geolocator.distanceBetween(
+      position.latitude,
+      position.longitude,
+      latitude,
+      longitude,
+    );
+    return isWithinRadius(
+      rawDistanceMeters: distance,
+      accuracyMeters: position.accuracy,
+      allowedDistanceMeters: allowedDistanceMeters,
+    );
   }
 }

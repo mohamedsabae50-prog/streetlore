@@ -161,16 +161,6 @@ Future<void> _runApplication() async {
   tripProvider.addListener(syncTourVisitStatus);
   placeProvider.addListener(syncTourVisitStatus);
   syncTourVisitStatus();
-  unawaited(
-    placeProvider
-        .loadPlaces(force: true)
-        .then(
-          (_) => _syncGovernorateFromCurrentLocation(
-            governorateProvider,
-            placeProvider,
-          ),
-        ),
-  );
   unawaited(tourProvider.loadTours());
 
   final gamification = GamificationProvider();
@@ -195,6 +185,39 @@ Future<void> _runApplication() async {
     streak: streak,
     achievements: achievements,
     squad: squad,
+  );
+  placeProvider.configureAutoCheckIn(
+    isPlaceVisited: tripProvider.isVisited,
+    recordCheckIn: (place) async {
+      tripProvider.markVisited(place.id);
+      try {
+        await gamification.applyAction('check_in', placeId: place.id);
+        final checkinError = gamification.lastCheckinError;
+        if (checkinError != null) {
+          gamification.clearCheckinError();
+          throw StateError(
+            'Automatic check-in could not be saved: $checkinError',
+          );
+        }
+        tourProvider.markPlaceCheckedIn(place.id);
+      } catch (_) {
+        tripProvider.unmarkVisited(place.id);
+        rethrow;
+      }
+    },
+  );
+  unawaited(
+    placeProvider
+        .loadPlaces(force: true)
+        .then(
+          (_) => _syncGovernorateFromCurrentLocation(
+            governorateProvider,
+            placeProvider,
+          ),
+        )
+        .catchError((Object error, StackTrace stackTrace) {
+          debugPrint('Startup place/location sync failed: $error\n$stackTrace');
+        }),
   );
 
   Future<void> bootstrapFromSupabase(String userId) async {
@@ -297,6 +320,11 @@ Future<void> _syncGovernorateFromCurrentLocation(
       position.latitude,
       position.longitude,
       availableGovernorateIds: places.availableGovernorateIds,
+    );
+    await places.evaluateAutoCheckInForPosition(
+      lat: position.latitude,
+      lng: position.longitude,
+      accuracy: position.accuracy,
     );
   } catch (error, stackTrace) {
     debugPrint('Governorate startup GPS detection failed: $error\n$stackTrace');

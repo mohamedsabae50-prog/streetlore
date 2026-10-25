@@ -1137,8 +1137,14 @@ class AppStrings {
       'ar': 'تعذر تشغيل تنبيهات الأماكن القريبة. حاول مرة أخرى.',
     },
     'checkin_too_far': {
-      'en': 'You need to be within 100 meters of this place to check in.',
-      'ar': 'يجب أن تكون على بُعد ١٠٠ متر من هذا المكان لتسجيل الزيارة.',
+      'en':
+          'Move closer to this place to check in. The allowed distance varies by place.',
+      'ar':
+          'اقترب أكثر من هذا المكان لتسجيل الزيارة. تختلف المسافة المسموح بها حسب المكان.',
+    },
+    'auto_checkin_success': {
+      'en': '🎉 Auto checked in at {place}!',
+      'ar': '🎉 تم تسجيل زيارتك تلقائياً في {place}!',
     },
     'checkin_location_permission': {
       'en': 'Allow location access to verify your check-in.',

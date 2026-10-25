@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -67,15 +68,133 @@ class _MapViewScreenState extends State<MapViewScreen> {
   List<MapPoi> _atms = const [];
 
   final Set<String> _extraLayers = <String>{};
+  StreamSubscription<Position>? _positionSubscription;
+  StreamSubscription<PlaceModel>? _autoCheckInSubscription;
+  bool _startingPositionUpdates = false;
 
   static const _alexCenter = LatLng(31.2001, 29.9187);
   static const _hotelsCategory = 'Hotels';
   static const String _allOffSentinel = '__none__';
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _startAutoCheckInLocationUpdates();
+    });
+  }
+
   bool get _allOff => _selectedCategory == _allOffSentinel;
+
+  void _startAutoCheckInLocationUpdates() {
+    final places = context.read<PlaceProvider>();
+    _autoCheckInSubscription = places.autoCheckIns.listen(
+      _showAutoCheckInSnackBar,
+      onError: (Object error, StackTrace stackTrace) {
+        debugPrint('MapViewScreen auto check-in notification failed: $error');
+      },
+    );
+  }
+
+  Future<void> _subscribeToPositionUpdates(PlaceProvider places) async {
+    if (kIsWeb || _positionSubscription != null || _startingPositionUpdates) {
+      return;
+    }
+    _startingPositionUpdates = true;
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) return;
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.unableToDetermine) {
+        return;
+      }
+      _positionSubscription =
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 15,
+            ),
+          ).listen(
+            (position) {
+              unawaited(_handlePositionUpdate(places, position));
+            },
+            onError: (Object error, StackTrace stackTrace) {
+              debugPrint(
+                'MapViewScreen location stream failed: $error\n$stackTrace',
+              );
+            },
+          );
+    } catch (error, stackTrace) {
+      debugPrint(
+        'MapViewScreen could not start auto check-in location updates: '
+        '$error\n$stackTrace',
+      );
+    } finally {
+      _startingPositionUpdates = false;
+    }
+  }
+
+  Future<void> _handlePositionUpdate(
+    PlaceProvider places,
+    Position position,
+  ) async {
+    if (!mounted) return;
+    final governorates = context.read<GovernorateProvider>();
+    final location = LatLng(position.latitude, position.longitude);
+    setState(() => _userLocation = location);
+    CarPlayService.instance.updateLocation(
+      location.latitude,
+      location.longitude,
+    );
+    try {
+      await governorates.syncWithCoordinates(
+        location.latitude,
+        location.longitude,
+        availableGovernorateIds: places.availableGovernorateIds,
+      );
+      await _evaluateAutoCheckIn(places, position);
+    } catch (error, stackTrace) {
+      debugPrint('MapViewScreen position update failed: $error\n$stackTrace');
+    }
+  }
+
+  Future<void> _evaluateAutoCheckIn(
+    PlaceProvider places,
+    Position position,
+  ) async {
+    try {
+      await places.evaluateAutoCheckInForPosition(
+        lat: position.latitude,
+        lng: position.longitude,
+        accuracy: position.accuracy,
+      );
+    } catch (error, stackTrace) {
+      debugPrint('MapViewScreen auto check-in failed: $error\n$stackTrace');
+    }
+  }
+
+  void _showAutoCheckInSnackBar(PlaceModel place) {
+    if (!mounted || (ModalRoute.of(context)?.isCurrent == false)) return;
+    final locale = Localizations.localeOf(context).languageCode;
+    final message = context.tr('auto_checkin_success', {
+      'place': place.localizedName(locale),
+    });
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF059669),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
 
   Future<void> _locateUser({bool move = false}) async {
     try {
+      final governorates = context.read<GovernorateProvider>();
+      final places = context.read<PlaceProvider>();
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -88,16 +207,16 @@ class _MapViewScreenState extends State<MapViewScreen> {
         desiredAccuracy: LocationAccuracy.medium,
       );
       if (!mounted) return;
+      unawaited(_subscribeToPositionUpdates(places));
       final here = LatLng(pos.latitude, pos.longitude);
       CarPlayService.instance.updateLocation(here.latitude, here.longitude);
       setState(() => _userLocation = here);
-      await context.read<GovernorateProvider>().syncWithCoordinates(
+      await governorates.syncWithCoordinates(
         here.latitude,
         here.longitude,
-        availableGovernorateIds: context
-            .read<PlaceProvider>()
-            .availableGovernorateIds,
+        availableGovernorateIds: places.availableGovernorateIds,
       );
+      await _evaluateAutoCheckIn(places, pos);
       if (move || !_initialCentered) {
         _initialCentered = true;
         _mapController.move(here, 13.5);
@@ -224,6 +343,14 @@ class _MapViewScreenState extends State<MapViewScreen> {
   }
 
   bool get _showHotels => _extraLayers.contains(_hotelsCategory);
+
+  @override
+  void dispose() {
+    unawaited(_positionSubscription?.cancel());
+    unawaited(_autoCheckInSubscription?.cancel());
+    _mapController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

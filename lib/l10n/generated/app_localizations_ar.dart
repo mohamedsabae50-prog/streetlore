@@ -1854,7 +1854,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get checkin_too_far =>
-      'يجب أن تكون على بُعد ١٠٠ متر من هذا المكان لتسجيل الزيارة.';
+      'اقترب أكثر من هذا المكان لتسجيل الزيارة. تختلف المسافة المسموح بها حسب المكان.';
+
+  @override
+  String auto_checkin_success(String place) {
+    return '🎉 تم تسجيل زيارتك تلقائياً في $place!';
+  }
 
   @override
   String get checkin_location_permission =>

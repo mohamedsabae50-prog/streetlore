@@ -13,14 +13,82 @@ import '../data/models/place_model.dart';
 import 'governorate_provider.dart';
 import 'offline_provider.dart';
 
+double getEffectiveCheckInRadiusMeters(PlaceModel place) {
+  final identity = _normalizeCheckInName(
+    '${place.id} ${place.nameEn} ${place.nameAr ?? ''}',
+  );
+  if (_megaParkAliases.any(identity.contains)) return 1250;
+  if (place.category.toLowerCase() == 'nature' ||
+      place.category.toLowerCase() == 'shopping' ||
+      _largeLandmarkAliases.any(identity.contains)) {
+    return 550;
+  }
+  return 300;
+}
+
+String _normalizeCheckInName(String value) => value
+    .toLowerCase()
+    .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+    .replaceAll(RegExp(r'[^a-z0-9\u0600-\u06FF]+'), ' ')
+    .trim()
+    .replaceAll(RegExp(r'\s+'), ' ');
+
+const _megaParkAliases = <String>[
+  'montaza',
+  'المنتزه',
+  'mamoura',
+  'المعمورة',
+  'antoniades',
+  'انطونيادس',
+  'أنطونيادس',
+  'shallalat',
+  'الشلالات',
+];
+
+const _largeLandmarkAliases = <String>[
+  'qaitbay',
+  'قايتباي',
+  'قائد باي',
+  'bibliotheca alexandrina',
+  'bibliotheca',
+  'مكتبة الاسكندرية',
+  'مكتبة الإسكندرية',
+  'stanley bridge',
+  'كوبري ستانلي',
+  'gleem bay',
+  'خليج جليم',
+  'san stefano',
+  'سان ستيفانو',
+  'city centre alexandria',
+  'سيتي سنتر الاسكندرية',
+  'green plaza',
+  'جرين بلازا',
+  'fouad street',
+  'شارع فؤاد',
+  'kom el dikka',
+  'كوم الدكة',
+  'pompey',
+  'عمود السواري',
+  'catacombs',
+  'مقابر كوم الشقافة',
+];
+
 class PlaceProvider extends ChangeNotifier {
   static const _placesCacheKey = 'supabase_places_v2';
+  static const double kAutoCheckInRadiusMeters = 50.0;
 
   SupabaseClient get _client => Supabase.instance.client;
 
-  List<PlaceModel> _places = [];
+  List<PlaceModel> _places;
   RealtimeChannel? _placesChannel;
   final GovernorateProvider? governorates;
+  final Set<String> _autoCheckInAttemptedIds = <String>{};
+  final StreamController<PlaceModel> _autoCheckInController =
+      StreamController<PlaceModel>.broadcast();
+  bool Function(String placeId)? _isPlaceVisited;
+  Future<void> Function(PlaceModel place)? _recordCheckIn;
+
+  Stream<PlaceModel> get autoCheckIns => _autoCheckInController.stream;
 
   /// ALWAYS sorted by (displayOrder ASC, id ASC). Single source of truth
   /// for the UI. `_places` is the raw cache (set by loadPlaces/merge/fallback);
@@ -64,10 +132,63 @@ class PlaceProvider extends ChangeNotifier {
   int get remoteSavedCount => _remoteSavedCount;
   int get remoteCheckinCount => _remoteCheckinCount;
 
-  PlaceProvider({bool watchRemoteUpdates = true, this.governorates}) {
+  PlaceProvider({
+    bool watchRemoteUpdates = true,
+    this.governorates,
+    Iterable<PlaceModel> initialPlaces = const <PlaceModel>[],
+  }) : _places = deduplicatePlaces(initialPlaces) {
     governorates?.addListener(_onGovernorateChanged);
     _loadSavedPlaces();
     if (watchRemoteUpdates) _watchPlaceUpdates();
+  }
+
+  void configureAutoCheckIn({
+    required bool Function(String placeId) isPlaceVisited,
+    required Future<void> Function(PlaceModel place) recordCheckIn,
+  }) {
+    _isPlaceVisited = isPlaceVisited;
+    _recordCheckIn = recordCheckIn;
+  }
+
+  Future<List<PlaceModel>> evaluateAutoCheckInForPosition({
+    required double lat,
+    required double lng,
+    double accuracy = 0.0,
+  }) async {
+    final isVisited = _isPlaceVisited;
+    final recordCheckIn = _recordCheckIn;
+    if (isVisited == null || recordCheckIn == null) {
+      throw StateError(
+        'PlaceProvider auto check-in pipeline is not configured.',
+      );
+    }
+
+    final safeAccuracy = accuracy.isFinite
+        ? accuracy.clamp(0.0, kAutoCheckInRadiusMeters)
+        : 0.0;
+    final newlyCheckedIn = <PlaceModel>[];
+    for (final place in places) {
+      if (isVisited(place.id) || _autoCheckInAttemptedIds.contains(place.id)) {
+        continue;
+      }
+
+      final rawDistance = _distanceMeters(lat, lng, place.lat, place.lng);
+      final effectiveDistance = math.max(0.0, rawDistance - safeAccuracy);
+      final radius =
+          kAutoCheckInRadiusMeters + (_isMegaPark(place) ? 50.0 : 0.0);
+      if (effectiveDistance > radius) continue;
+
+      _autoCheckInAttemptedIds.add(place.id);
+      try {
+        await recordCheckIn(place);
+      } catch (_) {
+        _autoCheckInAttemptedIds.remove(place.id);
+        rethrow;
+      }
+      newlyCheckedIn.add(place);
+      _autoCheckInController.add(place);
+    }
+    return List.unmodifiable(newlyCheckedIn);
   }
 
   void _onGovernorateChanged() => notifyListeners();
@@ -110,6 +231,7 @@ class PlaceProvider extends ChangeNotifier {
     if (channel != null) {
       unawaited(_client.removeChannel(channel).then<void>((_) {}));
     }
+    unawaited(_autoCheckInController.close());
     super.dispose();
   }
 
@@ -407,6 +529,13 @@ class PlaceProvider extends ChangeNotifier {
     return 2 *
         earthRadiusMeters *
         math.asin(math.sqrt(haversine.clamp(0.0, 1.0)));
+  }
+
+  static bool _isMegaPark(PlaceModel place) {
+    final identity = _normalizeCheckInName(
+      '${place.id} ${place.nameEn} ${place.nameAr ?? ''}',
+    );
+    return _megaParkAliases.any(identity.contains);
   }
 
   static double _radians(double degrees) => degrees * math.pi / 180;

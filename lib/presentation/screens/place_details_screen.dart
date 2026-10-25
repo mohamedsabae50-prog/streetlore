@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -68,6 +70,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
     },
   );
   final List<PlaceModel> _nearby = [];
+  StreamSubscription<PlaceModel>? _autoCheckInSubscription;
 
   @override
   void initState() {
@@ -97,7 +100,72 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
 
       _loadCheckinState();
       _loadFriendVisitors();
+      _listenToAutoCheckIns();
+      unawaited(_tryAutoCheckInAtCurrentPlace());
     });
+  }
+
+  void _listenToAutoCheckIns() {
+    _autoCheckInSubscription = context
+        .read<PlaceProvider>()
+        .autoCheckIns
+        .listen(
+          (place) {
+            if (!mounted || ModalRoute.of(context)?.isCurrent == false) {
+              return;
+            }
+            if (place.id == widget.place.id) setState(() => _isVisited = true);
+            final locale = Localizations.localeOf(context).languageCode;
+            ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+              SnackBar(
+                content: Text(
+                  context.tr('auto_checkin_success', {
+                    'place': place.localizedName(locale),
+                  }),
+                ),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: const Color(0xFF059669),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            debugPrint(
+              'PlaceDetailsScreen auto check-in notification failed: $error',
+            );
+          },
+        );
+  }
+
+  Future<void> _tryAutoCheckInAtCurrentPlace() async {
+    if (kIsWeb || _isVisited) return;
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) return;
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.unableToDetermine) {
+        return;
+      }
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+      if (!mounted) return;
+      await context.read<PlaceProvider>().evaluateAutoCheckInForPosition(
+        lat: position.latitude,
+        lng: position.longitude,
+        accuracy: position.accuracy,
+      );
+    } catch (error, stackTrace) {
+      debugPrint(
+        'PlaceDetailsScreen auto check-in location check failed: '
+        '$error\n$stackTrace',
+      );
+    }
   }
 
   Future<void> _loadFriendVisitors() async {
@@ -201,6 +269,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
   @override
   void dispose() {
     _contentCtrl.dispose();
+    unawaited(_autoCheckInSubscription?.cancel());
     super.dispose();
   }
 
@@ -727,6 +796,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                 .verify(
                                                   latitude: place.lat,
                                                   longitude: place.lng,
+                                                  allowedDistanceMeters:
+                                                      getEffectiveCheckInRadiusMeters(
+                                                        place,
+                                                      ),
                                                 );
                                         if (!context.mounted) return;
                                         if (locationResult !=
@@ -1276,11 +1349,7 @@ class _GlassBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final String? tooltip;
-  const _GlassBtn({
-    required this.icon,
-    required this.onTap,
-    this.tooltip,
-  });
+  const _GlassBtn({required this.icon, required this.onTap, this.tooltip});
 
   @override
   Widget build(BuildContext context) {
