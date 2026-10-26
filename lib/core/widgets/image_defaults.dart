@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 const Map<String, String> streetloreImageHeaders = {
-  'User-Agent':
-      'EgyptLoreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)',
+  if (!kIsWeb)
+    'User-Agent':
+        'EgyptLoreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)',
 };
 
 IconData imageFallbackIconForCategory(String? category) {

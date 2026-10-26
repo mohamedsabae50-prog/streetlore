@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,6 +11,31 @@ import 'auth_provider.dart';
 import 'squad_provider.dart';
 import 'streak_provider.dart';
 
+class GamificationActivity {
+  final String type;
+  final DateTime occurredAt;
+  final String? placeId;
+
+  const GamificationActivity({
+    required this.type,
+    required this.occurredAt,
+    this.placeId,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    'occurred_at': occurredAt.toIso8601String(),
+    'place_id': placeId,
+  };
+
+  factory GamificationActivity.fromJson(Map<String, dynamic> json) =>
+      GamificationActivity(
+        type: json['type'] as String,
+        occurredAt: DateTime.parse(json['occurred_at'] as String),
+        placeId: json['place_id'] as String?,
+      );
+}
+
 class GamificationProvider extends ChangeNotifier {
   GamificationStats _stats = GamificationStats(
     userId: 'me',
@@ -17,6 +43,8 @@ class GamificationProvider extends ChangeNotifier {
     avatarColorHex: '0xFF3B82F6',
   );
   GamificationStats get stats => _stats;
+  List<GamificationActivity> _activity = const [];
+  List<GamificationActivity> get activity => _activity;
 
   StreakProvider? _streak;
   AchievementProvider? _achievements;
@@ -60,17 +88,35 @@ class GamificationProvider extends ChangeNotifier {
       return;
     }
     _stats = GamificationStats(userId: userId, userName: userName);
+    _activity = const [];
     notifyListeners();
     _load(userId);
   }
 
   String _keyForUser(String userId) => '${_kKeyPrefix}_$userId';
+  String _activityKeyForUser(String userId) => 'gamification_activity_$userId';
 
   Future<void> _load(String userId) async {
     final generation = ++_loadGeneration;
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_keyForUser(userId));
+    final rawActivity = prefs.getStringList(_activityKeyForUser(userId));
     if (generation != _loadGeneration || _stats.userId != userId) return;
+    if (rawActivity != null) {
+      try {
+        _activity = rawActivity
+            .map(
+              (item) => GamificationActivity.fromJson(
+                jsonDecode(item) as Map<String, dynamic>,
+              ),
+            )
+            .toList(growable: false);
+      } catch (error) {
+        debugPrint('GamificationProvider: failed to load activity: $error');
+      }
+    } else {
+      _activity = const [];
+    }
     if (raw == null) return;
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
@@ -111,6 +157,9 @@ class GamificationProvider extends ChangeNotifier {
     final mergedReviews = remote.reviewsPosted > local.reviewsPosted
         ? remote.reviewsPosted
         : local.reviewsPosted;
+    final mergedChatMessages = remote.chatMessagesSent > local.chatMessagesSent
+        ? remote.chatMessagesSent
+        : local.chatMessagesSent;
     final mergedPhotos = remote.photosUploaded > local.photosUploaded
         ? remote.photosUploaded
         : local.photosUploaded;
@@ -124,6 +173,7 @@ class GamificationProvider extends ChangeNotifier {
       totalPoints: mergedPoints,
       placesVisited: mergedVisited,
       reviewsPosted: mergedReviews,
+      chatMessagesSent: mergedChatMessages,
       photosUploaded: mergedPhotos,
       level: mergedLevel,
       badges: mergedBadges,
@@ -144,6 +194,21 @@ class GamificationProvider extends ChangeNotifier {
     );
 
     SupabaseService.instance.pushStats(_stats);
+  }
+
+  Future<void> recordActivity(String type, {String? placeId}) async {
+    final event = GamificationActivity(
+      type: type,
+      occurredAt: DateTime.now(),
+      placeId: placeId,
+    );
+    _activity = [event, ..._activity].take(30).toList(growable: false);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _activityKeyForUser(_stats.userId),
+      _activity.map((item) => jsonEncode(item.toJson())).toList(),
+    );
+    notifyListeners();
   }
 
   /// The single orchestrator for every user action that earns
@@ -221,6 +286,9 @@ class GamificationProvider extends ChangeNotifier {
       photosUploaded: action == 'photo'
           ? _stats.photosUploaded + 1
           : _stats.photosUploaded,
+      chatMessagesSent: action == 'chat_message'
+          ? _stats.chatMessagesSent + 1
+          : _stats.chatMessagesSent,
       // Reflect the streak (now the source of truth) into the
       // gamification stats so the UI never goes out of sync.
       currentStreak: _streak?.currentStreak ?? _stats.currentStreak,
@@ -261,6 +329,7 @@ class GamificationProvider extends ChangeNotifier {
     _stats = _stats.copyWith(badges: _stats.badges);
 
     await _save();
+    await recordActivity(action, placeId: placeId);
     notifyListeners();
 
     // Pick the most-recently unlocked catalog badge to show in the UI.
@@ -310,6 +379,7 @@ class GamificationProvider extends ChangeNotifier {
       placesVisited: _stats.placesVisited,
       reviewsPosted: _stats.reviewsPosted,
       photosUploaded: _stats.photosUploaded,
+      chatMessagesSent: _stats.chatMessagesSent,
       totalPoints: _stats.totalPoints,
     );
 
@@ -326,6 +396,9 @@ class GamificationProvider extends ChangeNotifier {
       placesVisited: newPlacesVisited,
       reviewsPosted: newReviewsPosted,
       photosUploaded: newPhotosUploaded,
+      chatMessagesSent: action == 'chat_message'
+          ? (_stats.chatMessagesSent - 1).clamp(0, 1 << 30).toInt()
+          : _stats.chatMessagesSent,
       badges: _stats.badges,
     );
 
@@ -428,6 +501,7 @@ class GamificationProvider extends ChangeNotifier {
       ),
     );
     await _save();
+    await recordActivity('badge_unlocked');
     notifyListeners();
   }
 
@@ -463,6 +537,7 @@ class GamificationProvider extends ChangeNotifier {
       placesVisited: _stats.placesVisited,
       reviewsPosted: _stats.reviewsPosted,
       photosUploaded: _stats.photosUploaded,
+      chatMessagesSent: _stats.chatMessagesSent,
       badges: _stats.badges,
       level: _stats.level,
     );

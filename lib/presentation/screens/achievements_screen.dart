@@ -2,20 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/achievement_catalog.dart';
+import '../../data/models/gamification_stats.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/achievement_provider.dart';
+import '../../logic/gamification_provider.dart';
+import '../../logic/place_provider.dart';
 
-class AchievementsScreen extends StatelessWidget {
+class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
+
+  @override
+  State<AchievementsScreen> createState() => _AchievementsScreenState();
+}
+
+class _AchievementsScreenState extends State<AchievementsScreen> {
+  String _filter = 'all';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
-        title: const Text(
-          'Achievements',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        title: Text(
+          context.tr('gamification_title'),
+          style: const TextStyle(fontWeight: FontWeight.w800),
         ),
         centerTitle: true,
         backgroundColor: context.bgColor,
@@ -27,6 +37,7 @@ class AchievementsScreen extends StatelessWidget {
       ),
       body: Consumer<AchievementProvider>(
         builder: (context, ach, _) {
+          final stats = context.watch<GamificationProvider>().stats;
           final unlocked = ach.totalUnlocked;
           final total = ach.totalAvailable;
           final points = ach.totalPointsEarned;
@@ -35,8 +46,12 @@ class AchievementsScreen extends StatelessWidget {
           final byCategory =
               <AchievementCategory, List<AchievementDefinition>>{};
           for (final def in AchievementCatalog.all) {
+            final progress = ach.progressFor(def.id);
+            if (_filter == 'unlocked' && !progress.unlocked) continue;
+            if (_filter == 'progress' && progress.unlocked) continue;
             byCategory.putIfAbsent(def.category, () => []).add(def);
           }
+          byCategory.removeWhere((_, items) => items.isEmpty);
 
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
@@ -47,8 +62,16 @@ class AchievementsScreen extends StatelessWidget {
                   total: total,
                   points: points,
                   ratio: ratio,
+                  stats: stats,
                 ),
               ),
+              SliverToBoxAdapter(
+                child: _FilterBar(
+                  selected: _filter,
+                  onSelected: (filter) => setState(() => _filter = filter),
+                ),
+              ),
+              SliverToBoxAdapter(child: _CategoryMastery(achievements: ach)),
               for (final entry in byCategory.entries) ...[
                 SliverToBoxAdapter(
                   child: Padding(
@@ -90,7 +113,7 @@ class AchievementsScreen extends StatelessWidget {
                           crossAxisCount: 2,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
-                          childAspectRatio: 0.78,
+                          childAspectRatio: 0.72,
                         ),
                     delegate: SliverChildBuilderDelegate((context, i) {
                       final def = entry.value[i];
@@ -102,6 +125,11 @@ class AchievementsScreen extends StatelessWidget {
                   ),
                 ),
               ],
+              SliverToBoxAdapter(
+                child: _ActivityTimeline(
+                  events: context.watch<GamificationProvider>().activity,
+                ),
+              ),
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
           );
@@ -120,6 +148,10 @@ class AchievementsScreen extends StatelessWidget {
         return Icons.museum_rounded;
       case AchievementCategory.food:
         return Icons.restaurant_rounded;
+      case AchievementCategory.cafes:
+        return Icons.local_cafe_rounded;
+      case AchievementCategory.shopping:
+        return Icons.shopping_bag_rounded;
       case AchievementCategory.nature:
         return Icons.nature_rounded;
       case AchievementCategory.social:
@@ -136,13 +168,17 @@ class AchievementsScreen extends StatelessWidget {
   String _categoryLabel(BuildContext context, AchievementCategory cat) {
     switch (cat) {
       case AchievementCategory.exploration:
-        return 'Exploration';
+        return context.tr('mastery_exploration');
       case AchievementCategory.historical:
         return 'Historical';
       case AchievementCategory.culture:
         return 'Culture';
       case AchievementCategory.food:
-        return 'Food';
+        return context.tr('cat_food');
+      case AchievementCategory.cafes:
+        return context.tr('cat_cafes');
+      case AchievementCategory.shopping:
+        return context.tr('cat_shopping');
       case AchievementCategory.nature:
         return 'Nature';
       case AchievementCategory.social:
@@ -157,16 +193,239 @@ class AchievementsScreen extends StatelessWidget {
   }
 }
 
+String _rankName(BuildContext context, int points) {
+  if (points >= 5000) return context.tr('rank_alexandria_legend');
+  if (points >= 2000) return context.tr('rank_heritage_pathfinder');
+  if (points >= 500) return context.tr('rank_urban_scout');
+  return context.tr('rank_newcomer');
+}
+
+double _levelProgress(int points) {
+  final start = points >= 5000
+      ? 5000
+      : points >= 2000
+      ? 2000
+      : points >= 500
+      ? 500
+      : 0;
+  final end = points >= 5000
+      ? 5000
+      : points >= 2000
+      ? 5000
+      : points >= 500
+      ? 2000
+      : 500;
+  return end == start ? 1 : ((points - start) / (end - start)).clamp(0.0, 1.0);
+}
+
+class _HeroStat extends StatelessWidget {
+  const _HeroStat({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, size: 15, color: Colors.white),
+      const SizedBox(width: 4),
+      Text(
+        '$value $label',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ],
+  );
+}
+
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({required this.selected, required this.onSelected});
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+    child: Wrap(
+      spacing: 8,
+      children: [
+        _chip(context, 'all', 'badge_filter_all'),
+        _chip(context, 'unlocked', 'badge_filter_unlocked'),
+        _chip(context, 'progress', 'badge_filter_progress'),
+      ],
+    ),
+  );
+
+  Widget _chip(BuildContext context, String key, String labelKey) => ChoiceChip(
+    label: Text(context.tr(labelKey)),
+    selected: selected == key,
+    onSelected: (_) => onSelected(key),
+  );
+}
+
+class _CategoryMastery extends StatelessWidget {
+  const _CategoryMastery({required this.achievements});
+  final AchievementProvider achievements;
+
+  @override
+  Widget build(BuildContext context) {
+    const categories = <(String, String, IconData)>[
+      ('Historical', 'cat_historical', Icons.history_edu_rounded),
+      ('Food', 'cat_food', Icons.restaurant_rounded),
+      ('Cafe', 'cat_cafes', Icons.local_cafe_rounded),
+      ('Shopping', 'cat_shopping', Icons.shopping_bag_rounded),
+      ('Nature', 'cat_nature', Icons.park_rounded),
+      ('Culture', 'cat_culture', Icons.museum_rounded),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr('category_mastery'),
+            style: TextStyle(
+              color: context.textPri,
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 12),
+          for (final (category, labelKey, icon) in categories) ...[
+            Row(
+              children: [
+                Icon(icon, size: 16, color: AppColors.primary),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    context.tr(labelKey),
+                    style: TextStyle(
+                      color: context.textPri,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${(achievements.categoryProgress(category) * 100).round()}%',
+                  style: TextStyle(color: context.textSec, fontSize: 11),
+                ),
+              ],
+            ),
+            const SizedBox(height: 5),
+            LinearProgressIndicator(
+              value: achievements.categoryProgress(category),
+              minHeight: 5,
+              borderRadius: BorderRadius.circular(4),
+              backgroundColor: context.bgAlt,
+              color: AppColors.primary,
+            ),
+            const SizedBox(height: 10),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivityTimeline extends StatelessWidget {
+  const _ActivityTimeline({required this.events});
+  final List<GamificationActivity> events;
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) return const SizedBox.shrink();
+    final locale = Localizations.localeOf(context).languageCode;
+    final placeProvider = context.read<PlaceProvider>();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr('activity_timeline'),
+            style: TextStyle(
+              color: context.textPri,
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final event in events.take(10))
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(
+                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                child: Icon(_eventIcon(event.type), color: AppColors.primary),
+              ),
+              title: Text(context.tr(_eventLabel(event.type))),
+              subtitle: Text(
+                [
+                  if (event.placeId != null)
+                    placeProvider
+                            .findById(event.placeId!)
+                            ?.localizedName(locale) ??
+                        event.placeId!,
+                  _relativeTime(context, event.occurredAt),
+                ].join(' · '),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _eventLabel(String type) => switch (type) {
+    'check_in' => 'activity_checkin',
+    'review' => 'activity_review',
+    'photo' => 'activity_photo',
+    'chat_message' => 'activity_chat',
+    'tour_completed' => 'activity_tour',
+    'badge_unlocked' => 'activity_badge',
+    _ => 'activity_checkin',
+  };
+
+  IconData _eventIcon(String type) => switch (type) {
+    'check_in' => Icons.place_rounded,
+    'review' => Icons.rate_review_rounded,
+    'photo' => Icons.photo_camera_rounded,
+    'chat_message' => Icons.forum_rounded,
+    'tour_completed' => Icons.route_rounded,
+    'badge_unlocked' => Icons.emoji_events_rounded,
+    _ => Icons.bolt_rounded,
+  };
+
+  String _relativeTime(BuildContext context, DateTime date) {
+    final minutes = DateTime.now().difference(date).inMinutes;
+    if (minutes < 1) return context.tr('activity_just_now');
+    if (minutes < 60) return context.tr('activity_minutes', {'n': '$minutes'});
+    if (minutes < 1440) {
+      return context.tr('activity_hours', {'n': '${minutes ~/ 60}'});
+    }
+    return context.tr('activity_days', {'n': '${minutes ~/ 1440}'});
+  }
+}
+
 class _Header extends StatelessWidget {
   final int unlocked;
   final int total;
   final int points;
   final double ratio;
+  final GamificationStats stats;
   const _Header({
     required this.unlocked,
     required this.total,
     required this.points,
     required this.ratio,
+    required this.stats,
   });
 
   @override
@@ -283,6 +542,82 @@ class _Header extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                const Icon(Icons.military_tech_rounded, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _rankName(context, stats.totalPoints),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'LV ${stats.level}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(
+                begin: 0,
+                end: _levelProgress(stats.totalPoints),
+              ),
+              duration: const Duration(milliseconds: 700),
+              builder: (context, value, _) => LinearProgressIndicator(
+                value: value,
+                minHeight: 6,
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                valueColor: const AlwaysStoppedAnimation(Colors.white),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 14,
+              runSpacing: 6,
+              children: [
+                _HeroStat(
+                  icon: Icons.local_fire_department_rounded,
+                  value: '${stats.currentStreak}',
+                  label: context.tr('activity_streak'),
+                ),
+                _HeroStat(
+                  icon: Icons.place_rounded,
+                  value: '${stats.placesVisited}',
+                  label: context.tr('activity_places'),
+                ),
+                _HeroStat(
+                  icon: Icons.rate_review_rounded,
+                  value: '${stats.reviewsPosted}',
+                  label: context.tr('activity_reviews'),
+                ),
+                _HeroStat(
+                  icon: Icons.emoji_events_rounded,
+                  value: '$unlocked',
+                  label: context.tr('activity_badges'),
+                ),
+              ],
             ),
           ],
         ),
@@ -407,41 +742,47 @@ class _AchievementTile extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            if (!unlocked) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: ratio,
-                  minHeight: 5,
-                  backgroundColor: context.bgAlt,
-                  valueColor: AlwaysStoppedAnimation(definition.color),
-                ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: ratio,
+                minHeight: 5,
+                backgroundColor: context.bgAlt,
+                valueColor: AlwaysStoppedAnimation(definition.color),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${progress.current}/${definition.target}',
-                style: TextStyle(
-                  color: context.textSec,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${progress.current.clamp(0, definition.target)}/${definition.target}',
+                  style: TextStyle(
+                    color: context.textSec,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ] else ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.bolt_rounded, size: 12, color: tierColor),
-                  Text(
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tierColor.withValues(alpha: 0.13),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
                     '+${definition.points} XP',
                     style: TextStyle(
                       color: tierColor,
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ],
         ),
       ),

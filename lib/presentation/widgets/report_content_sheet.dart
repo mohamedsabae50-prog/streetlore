@@ -10,12 +10,14 @@ class ReportContentSheet extends StatefulWidget {
   final String targetId;
   final String targetType;
   final String? targetContext;
+  final String? authorName;
 
   const ReportContentSheet({
     super.key,
     required this.targetId,
     required this.targetType,
     this.targetContext,
+    this.authorName,
   });
 
   static Future<void> show(
@@ -23,6 +25,7 @@ class ReportContentSheet extends StatefulWidget {
     required String targetId,
     required String targetType,
     String? targetContext,
+    String? authorName,
   }) => showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -31,6 +34,7 @@ class ReportContentSheet extends StatefulWidget {
       targetId: targetId,
       targetType: targetType,
       targetContext: targetContext,
+      authorName: authorName,
     ),
   );
 
@@ -39,12 +43,17 @@ class ReportContentSheet extends StatefulWidget {
 }
 
 class _ReportContentSheetState extends State<ReportContentSheet> {
-  static const _reasonKeys = [
+  static const _generalReasonKeys = [
     'report_reason_inappropriate',
     'report_reason_spam',
     'report_reason_harassment',
     'report_reason_false_info',
     'report_reason_other',
+  ];
+  static const _contentReasonKeys = [
+    'report_reason_offensive',
+    'report_reason_inappropriate',
+    'report_reason_spam',
   ];
   String _selectedReasonKey = 'report_reason_inappropriate';
   bool _submitting = false;
@@ -62,9 +71,11 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
         targetId: widget.targetId,
         targetType: widget.targetType,
         targetContext: widget.targetContext,
+        authorName: widget.authorName,
         reason: switch (_selectedReasonKey) {
           'report_reason_inappropriate' => 'Inappropriate content',
           'report_reason_spam' => 'Spam',
+          'report_reason_offensive' => 'Offensive language',
           'report_reason_harassment' => 'Harassment',
           'report_reason_false_info' => 'False information',
           _ => 'Other',
@@ -113,7 +124,11 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final reasonKey in _reasonKeys)
+                for (final reasonKey
+                    in widget.targetType == 'chat' ||
+                            widget.targetType == 'review'
+                        ? _contentReasonKeys
+                        : _generalReasonKeys)
                   ChoiceChip(
                     label: Text(context.tr(reasonKey)),
                     selected: _selectedReasonKey == reasonKey,

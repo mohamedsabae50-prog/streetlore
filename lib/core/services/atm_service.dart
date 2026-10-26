@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -353,7 +354,9 @@ class AtmService {
       final request = client?.get ?? http.get;
       final response = await request(
         uri,
-        headers: const {'User-Agent': 'StreetLore/2.1.25 (Alexandria guide)'},
+        headers: const {
+          if (!kIsWeb) 'User-Agent': 'StreetLore/2.1.25 (Alexandria guide)',
+        },
       ).timeout(const Duration(seconds: 3));
       if (response.statusCode != 200) return fallbackAtms;
       final payload = jsonDecode(response.body);

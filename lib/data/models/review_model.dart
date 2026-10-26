@@ -9,6 +9,8 @@ class ReviewModel {
   final String comment;
   final String? imagePath;
   final DateTime date;
+  final bool isFlagged;
+  final int reportCount;
 
   ReviewModel({
     required this.id,
@@ -19,6 +21,8 @@ class ReviewModel {
     required this.comment,
     this.imagePath,
     required this.date,
+    this.isFlagged = false,
+    this.reportCount = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -31,6 +35,8 @@ class ReviewModel {
       'comment': comment,
       'imagePath': imagePath,
       'date': date.toIso8601String(),
+      'isFlagged': isFlagged,
+      'reportCount': reportCount,
     };
   }
 
@@ -44,6 +50,8 @@ class ReviewModel {
       comment: map['comment'],
       imagePath: map['imagePath'],
       date: DateTime.parse(map['date']),
+      isFlagged: map['isFlagged'] as bool? ?? false,
+      reportCount: (map['reportCount'] as num?)?.toInt() ?? 0,
     );
   }
 

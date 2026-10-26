@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_carplay/flutter_carplay.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'google_maps_search.dart';
 
 import '../../data/models/place_model.dart';
 import '../../data/models/itinerary_model.dart';
@@ -111,29 +112,17 @@ class CarPlayService {
       : ('Nearby Gems', 'Food & Cafes', 'Shopping', 'Saved');
 
   Uri navigationUri(PlaceModel place, {TargetPlatform? platform}) {
-    if (!place.lat.isFinite ||
-        !place.lng.isFinite ||
-        place.lat < -90 ||
-        place.lat > 90 ||
-        place.lng < -180 ||
-        place.lng > 180) {
-      throw ArgumentError.value(
-        '${place.lat},${place.lng}',
-        'place coordinates',
-        'Must be valid latitude and longitude values.',
-      );
-    }
-    final destination = '${place.lat},${place.lng}';
     switch (platform ?? defaultTargetPlatform) {
       case TargetPlatform.iOS:
-        return Uri.parse('maps://?daddr=$destination');
-      case TargetPlatform.android:
-        return Uri.parse('google.navigation:q=$destination');
-      default:
-        return Uri.https('www.google.com', '/maps/dir/', {
-          'api': '1',
-          'destination': destination,
+        return Uri.https('maps.apple.com', '/', {
+          'q':
+              '${cleanPlaceName(place.nameEn)}, '
+              '${place.governorate}, Egypt',
         });
+      case TargetPlatform.android:
+        return googleMapsSearchUri(place);
+      default:
+        return googleMapsSearchUri(place);
     }
   }
 

@@ -27,6 +27,7 @@ class GamificationStats {
   final int placesVisited;
   final int reviewsPosted;
   final int photosUploaded;
+  final int chatMessagesSent;
   final List<Badge> badges;
   final String level;
 
@@ -46,6 +47,7 @@ class GamificationStats {
     this.placesVisited = 0,
     this.reviewsPosted = 0,
     this.photosUploaded = 0,
+    this.chatMessagesSent = 0,
     this.badges = const [],
     this.level = 'Explorer',
     this.currentStreak = 0,
@@ -59,6 +61,7 @@ class GamificationStats {
     int? placesVisited,
     int? reviewsPosted,
     int? photosUploaded,
+    int? chatMessagesSent,
     List<Badge>? badges,
     String? level,
     int? currentStreak,
@@ -75,6 +78,7 @@ class GamificationStats {
     placesVisited: placesVisited ?? this.placesVisited,
     reviewsPosted: reviewsPosted ?? this.reviewsPosted,
     photosUploaded: photosUploaded ?? this.photosUploaded,
+    chatMessagesSent: chatMessagesSent ?? this.chatMessagesSent,
     badges: badges ?? this.badges,
     level: level ?? this.level,
     currentStreak: currentStreak ?? this.currentStreak,
@@ -93,6 +97,7 @@ class GamificationStats {
     'places_visited': placesVisited,
     'reviews_posted': reviewsPosted,
     'photos_uploaded': photosUploaded,
+    'chat_messages_sent': chatMessagesSent,
     'badges': badges
         .map(
           (b) => {
@@ -123,6 +128,7 @@ class GamificationStats {
         placesVisited: (json['places_visited'] as num?)?.toInt() ?? 0,
         reviewsPosted: (json['reviews_posted'] as num?)?.toInt() ?? 0,
         photosUploaded: (json['photos_uploaded'] as num?)?.toInt() ?? 0,
+        chatMessagesSent: (json['chat_messages_sent'] as num?)?.toInt() ?? 0,
         badges: ((json['badges'] as List<dynamic>?) ?? const [])
             .map(
               (b) => Badge(

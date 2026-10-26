@@ -162,21 +162,21 @@ void main() {
         platform: TargetPlatform.windows,
       );
 
-      expect(appleMaps.toString(), 'maps://?daddr=${place.lat},${place.lng}');
+      expect(appleMaps.host, 'maps.apple.com');
+      expect(appleMaps.queryParameters['q'], contains(place.nameEn));
+      expect(appleMaps.queryParameters['q'], isNot(contains('${place.lat}')));
+      expect(googleMaps.host, 'www.google.com');
+      expect(googleMaps.path, '/maps/search/');
+      expect(googleMaps.queryParameters['query'], contains(place.nameEn));
       expect(
-        googleMaps.toString(),
-        'google.navigation:q=${place.lat},${place.lng}',
+        googleMaps.queryParameters['query'],
+        isNot(contains('${place.lng}')),
       );
-      expect(appleMaps.scheme, 'maps');
-      expect(googleMaps.scheme, 'google.navigation');
       expect(webFallback.scheme, 'https');
-      expect(
-        webFallback.queryParameters['destination'],
-        '${place.lat},${place.lng}',
-      );
+      expect(webFallback, googleMaps);
     });
 
-    test('rejects invalid coordinates before building a navigation URI', () {
+    test('navigation search does not depend on raw coordinates', () {
       const invalidPlace = PlaceModel(
         id: 'invalid',
         nameEn: 'Invalid',
@@ -187,10 +187,13 @@ void main() {
         lng: 29.9,
       );
 
-      expect(
-        () => CarPlayService.instance.navigationUri(invalidPlace),
-        throwsArgumentError,
+      final uri = CarPlayService.instance.navigationUri(
+        invalidPlace,
+        platform: TargetPlatform.android,
       );
+      expect(uri.queryParameters['query'], contains('Invalid'));
+      expect(uri.queryParameters['query'], isNot(contains('95')));
+      expect(uri.queryParameters['query'], isNot(contains('29.9')));
     });
   });
 }

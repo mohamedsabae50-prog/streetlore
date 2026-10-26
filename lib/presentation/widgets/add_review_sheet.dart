@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/app_image.dart';
+import '../../core/utils/profanity_filter.dart';
 import '../../data/models/review_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/review_provider.dart';
+import '../../logic/gamification_provider.dart';
 
 class AddReviewSheet extends StatefulWidget {
   final String placeId;
@@ -50,11 +52,18 @@ class _AddReviewSheetState extends State<AddReviewSheet> {
       ).showSnackBar(SnackBar(content: Text(context.tr('review_empty_warn'))));
       return;
     }
+    if (ProfanityFilter.containsProfanity(_commentController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('review_profanity_warning'))),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     final auth = context.read<AuthProvider>();
     final reviewProvider = context.read<ReviewProvider>();
+    final gamification = context.read<GamificationProvider>();
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final userName = auth.userName.isNotEmpty
@@ -74,6 +83,13 @@ class _AddReviewSheetState extends State<AddReviewSheet> {
 
     try {
       await reviewProvider.addReview(review);
+      try {
+        await gamification.applyAction('review');
+      } catch (error, stackTrace) {
+        debugPrint(
+          'AddReviewSheet: review XP update failed: $error\n$stackTrace',
+        );
+      }
       if (!mounted) return;
       navigator.pop();
     } catch (e) {

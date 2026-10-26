@@ -667,6 +667,8 @@ class PlaceProvider extends ChangeNotifier {
     return _savedPlaces.any((place) => place.id == id);
   }
 
+  int get savedPlacesCount => _savedPlaces.length;
+
   Future<void> toggleSave(PlaceModel place) async {
     final prefs = await SharedPreferences.getInstance();
     final wasSaved = isSaved(place.id);

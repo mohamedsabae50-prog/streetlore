@@ -4,11 +4,14 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/animated_icons.dart';
+import '../../core/utils/profanity_filter.dart';
 import '../../data/models/chat_message.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/chat_provider.dart';
+import '../../logic/gamification_provider.dart';
+import '../widgets/report_content_sheet.dart';
 
 class LiveChatScreen extends StatefulWidget {
   final PlaceModel place;
@@ -40,8 +43,15 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   Future<void> _send() async {
     final text = _input.text.trim();
     if (text.isEmpty) return;
+    if (ProfanityFilter.containsProfanity(text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('chat_profanity_warning'))),
+      );
+      return;
+    }
     final auth = context.read<AuthProvider>();
     final chat = context.read<ChatProvider>();
+    final gamification = context.read<GamificationProvider>();
     final messenger = ScaffoldMessenger.of(context);
     // Posting requires a real account: the insert RLS policy checks
     // user_id = auth.uid(), which a guest (random local id) can never satisfy.
@@ -59,6 +69,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       text: text,
       sentAt: DateTime.now(),
       userAvatarColor: '0xFF3B82F6',
+      avatarUrl: auth.avatarUrl,
     );
     _input.clear();
 
@@ -71,6 +82,12 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       messenger.showSnackBar(
         SnackBar(content: Text(context.tr('chat_send_failed'))),
       );
+      return;
+    }
+    try {
+      await gamification.applyAction('chat_message');
+    } catch (error, stackTrace) {
+      debugPrint('LiveChatScreen: chat XP update failed: $error\n$stackTrace');
     }
   }
 
@@ -168,7 +185,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                     padding: const EdgeInsets.all(12),
                     physics: const BouncingScrollPhysics(),
                     itemCount: msgs.length,
-                    itemBuilder: (_, i) => _MessageBubble(message: msgs[i]),
+                    itemBuilder: (_, i) =>
+                        _MessageBubble(message: msgs[i], placeId: place.id),
                   );
                 },
               ),
@@ -183,9 +201,25 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
 class _MessageBubble extends StatelessWidget {
   final ChatMessage message;
-  const _MessageBubble({required this.message});
+  final String placeId;
+  const _MessageBubble({required this.message, required this.placeId});
+
+  Future<void> _delete(BuildContext context) async {
+    try {
+      await context.read<ChatProvider>().deleteMessage(message);
+    } catch (error, stackTrace) {
+      debugPrint('LiveChatScreen: message delete failed: $error\n$stackTrace');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('chat_delete_failed'))));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final canDelete = auth.isAdmin || auth.userId == message.userId;
     final color = message.userAvatarColor == null
         ? AppColors.primary
         : Color(int.parse(message.userAvatarColor!.replaceFirst('0x', '0xff')));
@@ -236,12 +270,50 @@ class _MessageBubble extends StatelessWidget {
                         _relativeTime(context, message.sentAt),
                         style: TextStyle(color: context.textSec, fontSize: 10),
                       ),
+                      if (message.isFlagged || message.reportCount > 0) ...[
+                        const SizedBox(width: 6),
+                        const Icon(
+                          Icons.flag_rounded,
+                          color: AppColors.error,
+                          size: 14,
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     message.text,
                     style: const TextStyle(fontSize: 14, height: 1.4),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        tooltip: context.tr('report_title'),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: auth.userId.isEmpty
+                            ? null
+                            : () => ReportContentSheet.show(
+                                context,
+                                targetId: message.id,
+                                targetType: 'chat',
+                                targetContext: '$placeId\n${message.text}',
+                                authorName: message.userName,
+                              ),
+                        icon: const Icon(Icons.flag_outlined, size: 18),
+                      ),
+                      if (canDelete)
+                        IconButton(
+                          tooltip: context.tr('delete'),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _delete(context),
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: AppColors.error,
+                            size: 18,
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),

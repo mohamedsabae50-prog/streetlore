@@ -12,7 +12,8 @@ import 'package:path_provider/path_provider.dart';
 import 'offline_storage_service.dart';
 
 class OfflineTileProvider extends TileProvider {
-  OfflineTileProvider() : super(headers: {'User-Agent': _userAgent});
+  OfflineTileProvider()
+    : super(headers: {if (!kIsWeb) 'User-Agent': _userAgent});
 
   static const _userAgent =
       'EgyptLoreApp/2.1 (https://github.com/mohamedsabae50-prog/streetlore)';
@@ -159,7 +160,7 @@ class _OfflineTileImageProvider
           final response = await client
               .get(
                 Uri.parse('$template/$zoom/$x/$y.png'),
-                headers: const {'User-Agent': _userAgent},
+                headers: const {if (!kIsWeb) 'User-Agent': _userAgent},
               )
               .timeout(const Duration(seconds: 4));
           if (response.statusCode != 200 ||

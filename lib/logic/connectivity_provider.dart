@@ -92,7 +92,10 @@ class ConnectivityProvider extends ChangeNotifier with WidgetsBindingObserver {
     try {
       // Any HTTP response, whatever its status, proves the network works.
       await _httpClient
-          .get(Uri.parse('${AppConfig.supabaseUrl}/auth/v1/health'))
+          .get(
+            Uri.parse('${AppConfig.supabaseUrl}/auth/v1/health'),
+            headers: {'apikey': AppConfig.supabaseAnonKey},
+          )
           .timeout(probeTimeout);
       return true;
     } on TimeoutException {

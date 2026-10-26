@@ -311,7 +311,7 @@ class OfflineStorageService {
             final response = await client
                 .get(
                   Uri.parse('$template/${tile.$1}/${tile.$2}/${tile.$3}.png'),
-                  headers: const {'User-Agent': _tileUserAgent},
+                  headers: const {if (!kIsWeb) 'User-Agent': _tileUserAgent},
                 )
                 .timeout(const Duration(seconds: 5));
             if (!_isPngTile(response)) {
@@ -459,7 +459,10 @@ class OfflineStorageService {
       );
       try {
         final response = await http
-            .get(uri, headers: const {'User-Agent': _tileUserAgent})
+            .get(
+              uri,
+              headers: const {if (!kIsWeb) 'User-Agent': _tileUserAgent},
+            )
             .timeout(const Duration(seconds: 4));
         if (response.statusCode != 200) {
           debugPrint(

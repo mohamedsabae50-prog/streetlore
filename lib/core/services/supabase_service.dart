@@ -10,6 +10,7 @@ import '../config/app_config.dart';
 import '../../data/models/chat_message.dart';
 import '../../data/models/gamification_stats.dart';
 import '../../data/models/place_model.dart';
+import '../../data/models/review_model.dart';
 import '../../data/models/social_user.dart';
 import 'sync_queue_service.dart';
 import 'realtime_resilience.dart';
@@ -181,7 +182,7 @@ class SupabaseService {
           .from('place_chat')
           .select()
           .eq('place_id', placeId)
-          .order('sent_at', ascending: true)
+          .order('created_at', ascending: true)
           .limit(100);
       return (res as List)
           .map((j) => ChatMessage.fromJson(j as Map<String, dynamic>))
@@ -195,8 +196,8 @@ class SupabaseService {
   /// Inserts [message] into `place_chat`. Throws if the send fails (not signed
   /// in, RLS rejection, network) so the caller can tell the user — a failed
   /// send must never look like a delivered one.
-  Future<void> postMessage(ChatMessage message) async {
-    if (_client == null) return;
+  Future<ChatMessage?> postMessage(ChatMessage message) async {
+    if (_client == null) return null;
     try {
       // The insert policy requires user_id = auth.uid(), so take the id from
       // the live session rather than trusting the model's copy.
@@ -204,10 +205,12 @@ class SupabaseService {
       if (uid == null) {
         throw StateError('postMessage: no authenticated user');
       }
-      await _client!.from('place_chat').insert({
-        ...message.toJson(),
-        'user_id': uid,
-      });
+      final row = await _client!
+          .from('place_chat')
+          .insert({...message.toJson(), 'user_id': uid})
+          .select()
+          .single();
+      return ChatMessage.fromJson(Map<String, dynamic>.from(row));
     } catch (e) {
       _logError('postMessage', e);
       rethrow;
@@ -242,7 +245,7 @@ class SupabaseService {
             .from('place_chat')
             .stream(primaryKey: ['id'])
             .eq('place_id', placeId)
-            .order('sent_at')
+            .order('created_at')
             .map(
               (rows) => rows
                   .map(
@@ -265,7 +268,7 @@ class SupabaseService {
           .select(
             'user_id,user_name,avatar_color_hex,total_points,places_visited,'
             'reviews_posted,photos_uploaded,level,badges,current_streak,'
-            'longest_streak,total_visit_days',
+            'longest_streak,total_visit_days,chat_messages_sent',
           )
           .order('total_points', ascending: false)
           .limit(limit);
@@ -775,6 +778,7 @@ class SupabaseService {
     required String targetType,
     required String reason,
     String? targetContext,
+    String? authorName,
   }) async {
     final client = _client;
     if (client == null) {
@@ -787,16 +791,39 @@ class SupabaseService {
 
     if (targetId.trim().isEmpty ||
         (targetContext != null &&
-            (targetType != 'ai_message' || targetContext.trim().isEmpty)) ||
-        !const {'place', 'user', 'review', 'ai_message'}.contains(targetType) ||
+            targetType == 'ai_message' &&
+            targetContext.trim().isEmpty) ||
+        !const {
+          'place',
+          'user',
+          'review',
+          'ai_message',
+          'chat',
+        }.contains(targetType) ||
         !const {
           'Inappropriate content',
           'Spam',
           'Harassment',
           'False information',
+          'Offensive language',
           'Other',
         }.contains(reason)) {
       throw ArgumentError('Invalid report details.');
+    }
+    if (targetType == 'chat' || targetType == 'review') {
+      final context = targetContext?.trim() ?? '';
+      await client.from('content_reports').insert({
+        'target_type': targetType,
+        'target_id': targetId.trim(),
+        'place_id': context.split('\n').first,
+        'reason': reason,
+        'reporter_id': resolvedReporterId,
+        'content_preview': context.contains('\n')
+            ? context.substring(context.indexOf('\n') + 1)
+            : '',
+        'author_name': authorName?.trim() ?? '',
+      });
+      return;
     }
     await client.from('reports').insert({
       'reporter_id': resolvedReporterId,
@@ -811,6 +838,65 @@ class SupabaseService {
               : targetContext.trim().length,
         ),
     });
+  }
+
+  Future<void> deletePlaceChatMessage(String messageId) async {
+    final client = _client;
+    if (client == null) throw StateError('Supabase is unavailable.');
+    await client.from('place_chat').delete().eq('id', messageId);
+  }
+
+  Future<List<ReviewModel>> fetchReviews({String? placeId}) async {
+    final client = _client;
+    if (client == null) return const [];
+    var query = client.from('reviews').select();
+    if (placeId != null) query = query.eq('place_id', placeId);
+    final rows = await query.order('created_at', ascending: false);
+    return (rows as List)
+        .map((row) {
+          final json = Map<String, dynamic>.from(row as Map);
+          return ReviewModel(
+            id: json['id'].toString(),
+            placeId: json['place_id']?.toString() ?? '',
+            userName: json['user_name']?.toString() ?? 'Explorer',
+            userId: json['user_id']?.toString() ?? '',
+            rating: (json['rating'] as num?)?.toDouble() ?? 0,
+            comment: json['comment']?.toString() ?? '',
+            imagePath: json['image_url'] as String?,
+            date:
+                DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+                DateTime.now(),
+            isFlagged: json['is_flagged'] as bool? ?? false,
+            reportCount: (json['report_count'] as num?)?.toInt() ?? 0,
+          );
+        })
+        .toList(growable: false);
+  }
+
+  Future<void> createReview(ReviewModel review) async {
+    final client = _client;
+    final userId = resolveUuidUserId(client?.auth.currentUser?.id);
+    if (client == null || userId == null) {
+      throw StateError('Sign in to publish a review.');
+    }
+    await client.from('reviews').insert({
+      'id': review.id,
+      'place_id': review.placeId,
+      'user_id': userId,
+      'user_name': review.userName,
+      'user_email': client.auth.currentUser?.email,
+      'rating': review.rating,
+      'comment': review.comment,
+      if (review.imagePath?.startsWith('https://') == true)
+        'image_url': review.imagePath,
+      'created_at': review.date.toUtc().toIso8601String(),
+    });
+  }
+
+  Future<void> deleteReview(String reviewId) async {
+    final client = _client;
+    if (client == null) throw StateError('Supabase is unavailable.');
+    await client.from('reviews').delete().eq('id', reviewId);
   }
 
   Future<Set<String>> fetchReportedPhotoIds() async {

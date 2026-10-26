@@ -17,6 +17,7 @@ import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/blocked_users_provider.dart';
 import '../../logic/place_photos_provider.dart';
+import '../../logic/gamification_provider.dart';
 
 class PlacePhotosSection extends StatefulWidget {
   final PlaceModel place;
@@ -49,6 +50,7 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
     if (!context.mounted || _isUploading) return;
     final auth = context.read<AuthProvider>();
     final photos = context.read<PlacePhotosProvider>();
+    final gamification = context.read<GamificationProvider>();
     HapticFeedback.mediumImpact();
     setState(() => _isUploading = true);
     final uploadDialog = showDialog<void>(
@@ -79,6 +81,13 @@ class _PlacePhotosSectionState extends State<PlacePhotosSection> {
         imageBytes: bytes,
         userId: auth.currentUserId,
       );
+      try {
+        await gamification.applyAction('photo', placeId: widget.place.id);
+      } catch (error, stackTrace) {
+        debugPrint(
+          'PlacePhotosSection: photo XP update failed: $error\n$stackTrace',
+        );
+      }
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.tr('image_upload_success'))),

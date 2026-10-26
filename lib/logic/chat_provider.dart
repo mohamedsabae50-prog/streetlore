@@ -8,10 +8,10 @@ import '../data/models/chat_message.dart';
 class ChatProvider extends ChangeNotifier {
   final Map<String, List<ChatMessage>> _byPlace = {};
   final Map<String, StreamSubscription> _subs = {};
-  final Future<void> Function(ChatMessage) _post;
+  final Future<dynamic> Function(ChatMessage) _post;
 
   /// [postMessage] is injectable for tests; it defaults to the Supabase insert.
-  ChatProvider({Future<void> Function(ChatMessage)? postMessage})
+  ChatProvider({Future<dynamic> Function(ChatMessage)? postMessage})
     : _post = postMessage ?? SupabaseService.instance.postMessage;
 
   SupabaseService get _supa => SupabaseService.instance;
@@ -50,7 +50,16 @@ class ChatProvider extends ChangeNotifier {
     _byPlace[message.placeId] = list;
     notifyListeners();
     try {
-      await _post(message);
+      final persisted = await _post(message);
+      if (persisted is ChatMessage) {
+        final current = List<ChatMessage>.from(
+          _byPlace[message.placeId] ?? const [],
+        );
+        final index = current.indexWhere((entry) => entry.id == message.id);
+        if (index >= 0) current[index] = persisted;
+        _byPlace[message.placeId] = current;
+        notifyListeners();
+      }
     } catch (_) {
       final current = List<ChatMessage>.from(
         _byPlace[message.placeId] ?? const [],
@@ -59,6 +68,15 @@ class ChatProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+
+  Future<void> deleteMessage(ChatMessage message) async {
+    await _supa.deletePlaceChatMessage(message.id);
+    final updated = List<ChatMessage>.from(
+      _byPlace[message.placeId] ?? const [],
+    )..removeWhere((entry) => entry.id == message.id);
+    _byPlace[message.placeId] = updated;
+    notifyListeners();
   }
 
   void appendLocal(ChatMessage message) {

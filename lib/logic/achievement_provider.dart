@@ -201,6 +201,7 @@ class AchievementProvider extends ChangeNotifier {
     }
     return _progress.values.where((p) => p.unlocked).length;
   }
+
   int get totalAvailable => AchievementCatalog.all.length;
   double get completionRatio =>
       totalAvailable == 0 ? 0 : totalUnlocked / totalAvailable;
@@ -254,72 +255,84 @@ class AchievementProvider extends ChangeNotifier {
         cur = stats.badges.any((badge) => badge.id == def.id) ? def.target : 0;
       } else if (def.id == 'social_explorer') {
         cur = _friendCount;
-      } else if (visitedCount == 0) {
-        cur = 0;
       } else {
         switch (def.id) {
-        case 'first_steps':
-        case 'explorer_5':
-        case 'explorer_10':
-        case 'explorer_25':
-        case 'lorekeeper':
-        case 'street_explorer':
-        case 'lore_master':
-        case 'alexandria_legend':
-          cur = visitedCount;
-          break;
-        case 'culture_buff':
-        case 'history_nerd':
-        case 'time_traveler':
-          cur = _countVisitedIn(checkedInPlaces, ['Historical']);
-          if (def.id == 'culture_buff' || def.id == 'history_nerd') {
-            cur += _countVisitedIn(checkedInPlaces, ['Culture']);
-          }
-          break;
-        case 'culture_vulture':
-          cur = _countVisitedIn(checkedInPlaces, ['Culture']);
-          break;
-        case 'foodie':
-        case 'gourmet':
-        case 'alex_foodie':
-          cur = _countVisitedIn(checkedInPlaces, ['Food']);
-          break;
-        case 'nature_lover':
-          cur = _countVisitedIn(checkedInPlaces, ['Nature']);
-          break;
-        case 'shopaholic':
-          cur = _countVisitedIn(checkedInPlaces, ['Shopping']);
-          break;
-        case 'spiritual_seeker':
-          cur = _countVisitedIn(checkedInPlaces, ['Mosques']);
-          break;
-        case 'pilgrim':
-          cur = _countVisitedIn(checkedInPlaces, ['Churches']);
-          break;
-        case 'streak_3':
-        case 'streak_7':
-        case 'streak_30':
-        case 'streak_100':
-          cur = streakDays;
-          break;
-        case 'hidden_gem_hunter':
-          cur = hiddenGemsVisited;
-          break;
-        case 'reviewer':
-        case 'critic':
-          cur = stats.reviewsPosted;
-          break;
-        case 'photographer':
-        case 'influencer':
-          cur = stats.photosUploaded;
-          break;
-        case 'early_bird':
-        case 'night_owl':
-          cur = visitedCount;
-          break;
-        case 'completionist':
-          cur = visitedTourCount;
-          break;
+          case 'first_steps':
+          case 'explorer_5':
+          case 'explorer_10':
+          case 'explorer_25':
+          case 'lorekeeper':
+          case 'street_explorer':
+          case 'lore_master':
+          case 'alexandria_legend':
+            cur = visitedCount;
+            break;
+          case 'culture_buff':
+          case 'history_nerd':
+          case 'time_traveler':
+            cur = _countVisitedIn(checkedInPlaces, ['Historical']);
+            if (def.id == 'culture_buff' || def.id == 'history_nerd') {
+              cur += _countVisitedIn(checkedInPlaces, ['Culture']);
+            }
+            break;
+          case 'culture_vulture':
+            cur = _countVisitedIn(checkedInPlaces, ['Culture']);
+            break;
+          case 'foodie':
+          case 'gourmet':
+          case 'alex_foodie':
+            cur = _countVisitedIn(checkedInPlaces, ['Food']);
+            break;
+          case 'nature_lover':
+            cur = _countVisitedIn(checkedInPlaces, ['Nature']);
+            break;
+          case 'shopaholic':
+            cur = _countVisitedIn(checkedInPlaces, ['Shopping']);
+            break;
+          case 'cafe_hopper':
+            cur = _countVisitedIn(checkedInPlaces, ['Cafe']);
+            break;
+          case 'spiritual_seeker':
+            cur = _countVisitedIn(checkedInPlaces, ['Mosques']);
+            break;
+          case 'pilgrim':
+            cur = _countVisitedIn(checkedInPlaces, ['Churches']);
+            break;
+          case 'streak_3':
+          case 'streak_7':
+          case 'streak_30':
+          case 'streak_100':
+            cur = streakDays;
+            break;
+          case 'hidden_gem_hunter':
+            cur = hiddenGemsVisited;
+            break;
+          case 'reviewer':
+          case 'critic':
+            cur = stats.reviewsPosted;
+            break;
+          case 'photographer':
+          case 'influencer':
+            cur = stats.photosUploaded;
+            break;
+          case 'early_bird':
+          case 'night_owl':
+            cur = visitedCount;
+            break;
+          case 'completionist':
+          case 'tour_finisher':
+          case 'grand_tour_master':
+            cur = visitedTourCount;
+            break;
+          case 'community_spark':
+            cur = stats.chatMessagesSent;
+            break;
+          case 'lens_of_alexandria':
+            cur = stats.photosUploaded;
+            break;
+          case 'bookmark_collector':
+            cur = places.savedPlacesCount;
+            break;
         }
       }
       _updateProgress(def, cur);
@@ -330,6 +343,26 @@ class AchievementProvider extends ChangeNotifier {
     return checkedInPlaces
         .where((place) => cats.contains(place.category))
         .length;
+  }
+
+  double categoryProgress(String category) {
+    final targets = <String, int>{
+      'Historical': 5,
+      'Food': 5,
+      'Cafe': 4,
+      'Shopping': 4,
+      'Nature': 3,
+      'Culture': 5,
+    };
+    final target = targets[category]!;
+    final visitedIds = tours.checkedInPlaceIds;
+    final count = places.places
+        .where(
+          (place) =>
+              visitedIds.contains(place.id) && place.category == category,
+        )
+        .length;
+    return (count / target).clamp(0.0, 1.0);
   }
 
   void _updateProgress(AchievementDefinition def, int current) {
@@ -345,6 +378,11 @@ class AchievementProvider extends ChangeNotifier {
       unlocked: shouldUnlock,
       unlockedAt: shouldUnlock ? (wasAt ?? DateTime.now()) : null,
     );
+    if (!wasUnlocked &&
+        shouldUnlock &&
+        (def.id == 'tour_finisher' || def.id == 'grand_tour_master')) {
+      unawaited(gam.recordActivity('tour_completed'));
+    }
     final hasBadge = gam.stats.badges.any((badge) => badge.id == def.id);
     if (shouldUnlock && !hasBadge) {
       _grantBadge(def);

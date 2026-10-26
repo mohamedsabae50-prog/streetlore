@@ -15,6 +15,7 @@ import '../../core/services/checkin_location_service.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../core/services/app_review_service.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/google_maps_search.dart';
 import '../../core/widgets/app_image.dart';
 import '../../core/widgets/confetti_overlay.dart';
 import '../../core/widgets/shimmer_image.dart';
@@ -296,12 +297,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
 
   Future<void> _openGoogleMaps(PlaceModel place) async {
     final locale = Localizations.localeOf(context).languageCode;
-    final uri = Uri.https('www.google.com', '/maps/search/', {
-      'api': '1',
-      'query':
-          '${place.lat},${place.lng} '
-          '${place.localizedName(locale)}',
-    });
+    final uri = googleMapsSearchUri(place, locale: locale);
     try {
       final launched = await launchUrl(
         uri,
@@ -1596,7 +1592,17 @@ class _ReviewItem extends StatelessWidget {
       ),
     );
     if (confirmed == true) {
-      await provider.removeReview(review.id);
+      try {
+        await provider.removeReview(review.id);
+      } catch (error, stackTrace) {
+        debugPrint(
+          'PlaceDetailsScreen: review delete failed: $error\n$stackTrace',
+        );
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('review_delete_failed'))),
+        );
+      }
     }
   }
 
@@ -1605,7 +1611,8 @@ class _ReviewItem extends StatelessWidget {
     final theme = Theme.of(context);
     final textPri = theme.textTheme.bodyLarge?.color ?? Colors.black;
     final textSec = theme.textTheme.bodyMedium?.color ?? Colors.grey;
-    final canDelete = context.read<AuthProvider>().owns(review.userId);
+    final auth = context.watch<AuthProvider>();
+    final canDelete = auth.isAdmin || auth.userId == review.userId;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -1666,18 +1673,36 @@ class _ReviewItem extends StatelessWidget {
                     '${review.date.day}/${review.date.month}/${review.date.year}',
                     style: TextStyle(color: textSec, fontSize: 12),
                   ),
-                  if (canDelete)
-                    GestureDetector(
-                      onTap: () => _confirmDelete(context),
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Icon(
-                          Icons.delete_outline_rounded,
-                          color: AppColors.error.withValues(alpha: 0.8),
-                          size: 18,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (auth.userId.isNotEmpty)
+                        IconButton(
+                          tooltip: context.tr('report_title'),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => ReportContentSheet.show(
+                            context,
+                            targetId: review.id,
+                            targetType: 'review',
+                            targetContext:
+                                '${review.placeId}\n${review.comment}',
+                            authorName: review.userName,
+                          ),
+                          icon: const Icon(Icons.flag_outlined, size: 18),
                         ),
-                      ),
-                    ),
+                      if (canDelete)
+                        IconButton(
+                          tooltip: context.tr('delete'),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _confirmDelete(context),
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: AppColors.error,
+                            size: 18,
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ],
@@ -1691,6 +1716,18 @@ class _ReviewItem extends StatelessWidget {
               height: 1.4,
             ),
           ),
+          if (review.isFlagged || review.reportCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                context.tr('content_reported_badge'),
+                style: const TextStyle(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                ),
+              ),
+            ),
           if (review.imagePath != null && review.imagePath!.isNotEmpty) ...[
             const SizedBox(height: 10),
             ClipRRect(

@@ -508,6 +508,10 @@ class AppStrings {
       'en': 'Inappropriate content',
       'ar': 'محتوى غير لائق',
     },
+    'report_reason_offensive': {
+      'en': 'Offensive language',
+      'ar': 'كلام خارج أو مسيء',
+    },
     'report_reason_spam': {'en': 'Spam', 'ar': 'رسائل مزعجة'},
     'report_reason_harassment': {'en': 'Harassment', 'ar': 'مضايقة'},
     'report_reason_false_info': {
@@ -524,6 +528,58 @@ class AppStrings {
       'en': 'Could not submit your report. Please try again.',
       'ar': 'تعذر إرسال البلاغ. حاول مرة أخرى.',
     },
+    'chat_profanity_warning': {
+      'en': 'Please keep the conversation respectful.',
+      'ar': 'يرجى الحفاظ على احترام الآخرين في المحادثة.',
+    },
+    'review_profanity_warning': {
+      'en': 'Please revise your review to remove offensive language.',
+      'ar': 'يرجى تعديل التقييم وإزالة الألفاظ المسيئة.',
+    },
+    'chat_delete_failed': {
+      'en': 'Could not delete this message. Please try again.',
+      'ar': 'تعذر حذف الرسالة. حاول مرة أخرى.',
+    },
+    'review_delete_failed': {
+      'en': 'Could not delete this review. Please try again.',
+      'ar': 'تعذر حذف التقييم. حاول مرة أخرى.',
+    },
+    'content_reported_badge': {
+      'en': 'Reported content',
+      'ar': 'تم الإبلاغ عن المحتوى',
+    },
+    'admin_content_moderation': {
+      'en': 'Content moderation',
+      'ar': 'إدارة المحتوى',
+    },
+    'admin_reviews_moderation': {
+      'en': 'Reviews moderation',
+      'ar': 'إدارة التقييمات',
+    },
+    'admin_chat_moderation': {
+      'en': 'Chat & reports',
+      'ar': 'إدارة الشات والبلاغات',
+    },
+    'admin_reviews_empty': {
+      'en': 'No community reviews to moderate.',
+      'ar': 'لا توجد تقييمات مجتمعية لإدارتها.',
+    },
+    'admin_chat_empty': {
+      'en': 'No chat messages or open reports.',
+      'ar': 'لا توجد رسائل أو بلاغات مفتوحة.',
+    },
+    'admin_open_reports': {'en': 'Open reports', 'ar': 'البلاغات المفتوحة'},
+    'admin_recent_messages': {
+      'en': 'Recent place messages',
+      'ar': 'أحدث رسائل الأماكن',
+    },
+    'admin_dismiss_report': {'en': 'Dismiss', 'ar': 'تجاهل البلاغ'},
+    'admin_delete_message': {'en': 'Delete message', 'ar': 'حذف الرسالة'},
+    'admin_delete_message_q': {
+      'en': 'Delete this chat message?',
+      'ar': 'هل تريد حذف هذه الرسالة؟',
+    },
+    'admin_action_failed': {'en': 'Action failed', 'ar': 'تعذر تنفيذ الإجراء'},
     'block_user': {'en': 'Block user', 'ar': 'حظر المستخدم'},
     'unblock_user': {'en': 'Unblock user', 'ar': 'إلغاء حظر المستخدم'},
     'block_user_title': {'en': 'Block this user?', 'ar': 'حظر هذا المستخدم؟'},
@@ -770,27 +826,30 @@ class AppStrings {
       'en': 'Check in at places to earn badges',
       'ar': 'سجّل زياراتك للأماكن لتكسب الشارات',
     },
-    'ach_first_steps_name': {'en': 'First Steps', 'ar': 'الخطوات الأولى'},
+    'ach_first_steps_name': {'en': 'First Step', 'ar': 'أول خطوة'},
     'ach_first_steps_desc': {
       'en': 'Check in at your first place',
       'ar': 'سجّل دخولك في أول مكان',
     },
     'ach_street_explorer_name': {
-      'en': 'Street Explorer',
-      'ar': 'مستكشف الشوارع',
+      'en': 'Alexandria Explorer',
+      'ar': 'مستكشف الإسكندرية',
     },
     'ach_street_explorer_desc': {
       'en': 'Visit 5 different places in Alexandria',
       'ar': 'زُر 5 أماكن مختلفة في الإسكندرية',
     },
-    'ach_lore_master_name': {'en': 'Lore Master', 'ar': 'خبير الحكايات'},
+    'ach_lore_master_name': {
+      'en': 'Pearl of the Mediterranean',
+      'ar': 'لؤلؤة المتوسط',
+    },
     'ach_lore_master_desc': {
       'en': 'Visit 15 places and uncover their stories',
       'ar': 'زُر 15 مكانًا واكتشف حكاياتها',
     },
     'ach_alexandria_legend_name': {
-      'en': 'Alexandria Legend',
-      'ar': 'أسطورة الإسكندرية',
+      'en': 'Master of Alexandria',
+      'ar': 'خبير الإسكندرية',
     },
     'ach_alexandria_legend_desc': {
       'en': 'Visit 30 places across Alexandria',
@@ -821,7 +880,7 @@ class AppStrings {
       'en': 'Visit 5 cultural spots',
       'ar': 'زُر 5 أماكن ثقافية',
     },
-    'ach_time_traveler_name': {'en': 'Time Traveler', 'ar': 'مسافر عبر الزمن'},
+    'ach_time_traveler_name': {'en': 'History Buff', 'ar': 'عاشق التاريخ'},
     'ach_time_traveler_desc': {
       'en': 'Visit 5 Historical places',
       'ar': 'زُر 5 أماكن تاريخية',
@@ -841,12 +900,18 @@ class AppStrings {
       'en': 'Check in at 3 food spots',
       'ar': 'سجّل دخولك في 3 أماكن أكل',
     },
-    'ach_alex_foodie_name': {'en': 'Alex Foodie', 'ar': 'ذوّاق إسكندراني'},
-    'ach_alex_foodie_desc': {
-      'en': 'Visit 4 Food places in Alexandria',
-      'ar': 'زُر 4 أماكن للطعام في الإسكندرية',
+    'ach_alex_foodie_name': {
+      'en': 'Foodie Connoisseur',
+      'ar': 'ذواقة الإسكندرية',
     },
-    'ach_nature_lover_name': {'en': 'Nature Lover', 'ar': 'محب الطبيعة'},
+    'ach_alex_foodie_desc': {
+      'en': 'Visit 5 food spots',
+      'ar': 'زُر 5 أماكن للطعام',
+    },
+    'ach_nature_lover_name': {
+      'en': 'Royal Gardens Walker',
+      'ar': 'نسيم الحدائق والبحر',
+    },
     'ach_nature_lover_desc': {
       'en': 'Visit 3 Nature places',
       'ar': 'زُر 3 أماكن طبيعية',
@@ -856,10 +921,10 @@ class AppStrings {
       'en': 'Check in at 8 food spots',
       'ar': 'سجّل دخولك في 8 أماكن أكل',
     },
-    'ach_shopaholic_name': {'en': 'Shopaholic', 'ar': 'مدمن تسوق'},
+    'ach_shopaholic_name': {'en': 'Mall & Souq Hunter', 'ar': 'خبير التسوق'},
     'ach_shopaholic_desc': {
-      'en': 'Visit 3 shopping spots',
-      'ar': 'زُر 3 أماكن تسوق',
+      'en': 'Visit 4 shopping spots',
+      'ar': 'زُر 4 أماكن للتسوق',
     },
     'ach_spiritual_seeker_name': {'en': 'Spiritual Seeker', 'ar': 'باحث روحي'},
     'ach_spiritual_seeker_desc': {'en': 'Visit 2 mosques', 'ar': 'زُر مسجدين'},
@@ -868,12 +933,12 @@ class AppStrings {
       'en': 'Visit 2 churches or holy sites',
       'ar': 'زُر كنيستين أو موقعين مقدسين',
     },
-    'ach_streak_3_name': {'en': 'Warming Up', 'ar': 'بداية دافئة'},
+    'ach_streak_3_name': {'en': '3-Day Streak', 'ar': 'حماس مستمر'},
     'ach_streak_3_desc': {
       'en': '3-day check-in streak',
       'ar': 'سلسلة 3 أيام من تسجيل الدخول',
     },
-    'ach_streak_7_name': {'en': 'On a Roll', 'ar': 'على مَوجة'},
+    'ach_streak_7_name': {'en': '7-Day Legend', 'ar': 'أسطورة الأسبوع'},
     'ach_streak_7_desc': {
       'en': '7-day check-in streak',
       'ar': 'سلسلة 7 أيام من تسجيل الدخول',
@@ -896,10 +961,16 @@ class AppStrings {
       'en': 'Discover 3 hidden gems',
       'ar': 'اكتشف 3 جواهر مخفية',
     },
-    'ach_reviewer_name': {'en': 'Reviewer', 'ar': 'مُراجِع'},
-    'ach_reviewer_desc': {'en': 'Post 3 reviews', 'ar': 'انشر 3 تقييمات'},
-    'ach_critic_name': {'en': 'Critic', 'ar': 'ناقد'},
-    'ach_critic_desc': {'en': 'Post 10 reviews', 'ar': 'انشر 10 تقييمات'},
+    'ach_reviewer_name': {'en': 'Voice of the City', 'ar': 'صوت المدينة'},
+    'ach_reviewer_desc': {
+      'en': 'Write your first review',
+      'ar': 'اكتب أول تقييم لك',
+    },
+    'ach_critic_name': {'en': 'Top Critic', 'ar': 'الناقد المميز'},
+    'ach_critic_desc': {
+      'en': 'Write 5 community reviews',
+      'ar': 'اكتب 5 تقييمات للمجتمع',
+    },
     'ach_photographer_name': {'en': 'Photographer', 'ar': 'مُصوِّر'},
     'ach_photographer_desc': {'en': 'Upload 5 photos', 'ar': 'ارفع 5 صور'},
     'ach_influencer_name': {'en': 'Influencer', 'ar': 'مؤثر'},
@@ -932,6 +1003,85 @@ class AppStrings {
       'en': 'Make friends with 3 explorers',
       'ar': 'كوّن صداقات مع 3 مستكشفين',
     },
+    'badge_cafe_hopper_name': {'en': 'Cafe Hopper', 'ar': 'عاشق القهوة'},
+    'badge_cafe_hopper_desc': {'en': 'Visit 4 cafes', 'ar': 'زُر 4 مقاهٍ'},
+    'badge_tour_finisher_name': {'en': 'Tour Finisher', 'ar': 'بطل الجولات'},
+    'badge_tour_finisher_desc': {
+      'en': 'Complete your first guided tour',
+      'ar': 'أكمل أول جولة إرشادية',
+    },
+    'badge_grand_tour_master_name': {
+      'en': 'Grand Tour Master',
+      'ar': 'قائد الجولات',
+    },
+    'badge_grand_tour_master_desc': {
+      'en': 'Complete 3 guided tours',
+      'ar': 'أكمل 3 جولات إرشادية',
+    },
+    'badge_community_spark_name': {
+      'en': 'Community Spark',
+      'ar': 'نبض المجتمع',
+    },
+    'badge_community_spark_desc': {
+      'en': 'Send 5 place chat messages',
+      'ar': 'أرسل 5 رسائل في دردشات الأماكن',
+    },
+    'badge_lens_of_alexandria_name': {
+      'en': 'Lens of Alexandria',
+      'ar': 'عدسة الإسكندرية',
+    },
+    'badge_lens_of_alexandria_desc': {
+      'en': 'Share 3 place photos',
+      'ar': 'شارك 3 صور للأماكن',
+    },
+    'badge_bookmark_collector_name': {
+      'en': 'Bookmark Collector',
+      'ar': 'صائد الكنوز',
+    },
+    'badge_bookmark_collector_desc': {
+      'en': 'Save 5 favorite places',
+      'ar': 'احفظ 5 أماكن مفضلة',
+    },
+    'rank_newcomer': {'en': 'Newcomer', 'ar': 'وافد جديد'},
+    'rank_urban_scout': {'en': 'Urban Scout', 'ar': 'كشاف المدينة'},
+    'rank_heritage_pathfinder': {
+      'en': 'Heritage Pathfinder',
+      'ar': 'دليل التراث',
+    },
+    'rank_alexandria_legend': {
+      'en': 'Alexandria Legend',
+      'ar': 'أسطورة الإسكندرية',
+    },
+    'gamification_title': {'en': 'Explorer Activity', 'ar': 'نشاط المستكشف'},
+    'mastery_exploration': {'en': 'Exploration', 'ar': 'الاستكشاف'},
+    'category_mastery': {'en': 'Category mastery', 'ar': 'إتقان الفئات'},
+    'badge_filter_all': {'en': 'All', 'ar': 'الكل'},
+    'badge_filter_unlocked': {'en': 'Unlocked', 'ar': 'المفتوحة'},
+    'badge_filter_progress': {'en': 'In Progress', 'ar': 'قيد التقدم'},
+    'activity_timeline': {'en': 'Your activity timeline', 'ar': 'سجل نشاطك'},
+    'activity_checkin': {
+      'en': 'Checked in at a place',
+      'ar': 'سجّل زيارة لمكان',
+    },
+    'activity_review': {'en': 'Published a review', 'ar': 'نشر تقييمًا'},
+    'activity_photo': {'en': 'Shared a place photo', 'ar': 'شارك صورة لمكان'},
+    'activity_chat': {
+      'en': 'Sent a community message',
+      'ar': 'أرسل رسالة للمجتمع',
+    },
+    'activity_tour': {
+      'en': 'Completed a guided tour',
+      'ar': 'أكمل جولة إرشادية',
+    },
+    'activity_badge': {'en': 'Unlocked a new badge', 'ar': 'فتح شارة جديدة'},
+    'activity_streak': {'en': 'day streak', 'ar': 'أيام متتالية'},
+    'activity_places': {'en': 'places', 'ar': 'أماكن'},
+    'activity_reviews': {'en': 'reviews', 'ar': 'تقييمات'},
+    'activity_badges': {'en': 'badges', 'ar': 'شارات'},
+    'activity_just_now': {'en': 'just now', 'ar': 'الآن'},
+    'activity_minutes': {'en': '{n}m ago', 'ar': 'منذ {n} د'},
+    'activity_hours': {'en': '{n}h ago', 'ar': 'منذ {n} س'},
+    'activity_days': {'en': '{n}d ago', 'ar': 'منذ {n} ي'},
     'squad_title': {'en': 'Co-op Exploration', 'ar': 'استكشاف جماعي'},
     'squad_active_title': {'en': 'Your active squad', 'ar': 'فريقك النشط'},
     'squad_invite_subtitle': {
