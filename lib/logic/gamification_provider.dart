@@ -122,13 +122,7 @@ class GamificationProvider extends ChangeNotifier {
       final json = jsonDecode(raw) as Map<String, dynamic>;
       final loaded = GamificationStats.fromJson(json);
       if (loaded.userId != userId) return;
-      final badgesById = <String, Badge>{};
-      for (final badge in loaded.badges) {
-        badgesById.putIfAbsent(badge.id, () => badge);
-      }
-      _stats = loaded.copyWith(
-        badges: badgesById.values.toList(growable: false),
-      );
+      _stats = loaded.copyWith(badges: _normalizeBadges(loaded.badges));
     } catch (e) {
       debugPrint('GamificationProvider: failed to load: $e');
     }
@@ -164,11 +158,7 @@ class GamificationProvider extends ChangeNotifier {
         ? remote.photosUploaded
         : local.photosUploaded;
     final mergedLevel = GamificationStats.levelForPoints(mergedPoints);
-    final mergedBadgesById = <String, Badge>{};
-    for (final badge in [...local.badges, ...remote.badges]) {
-      mergedBadgesById.putIfAbsent(badge.id, () => badge);
-    }
-    final mergedBadges = mergedBadgesById.values.toList(growable: false);
+    final mergedBadges = _normalizeBadges([...local.badges, ...remote.badges]);
     _stats = local.copyWith(
       totalPoints: mergedPoints,
       placesVisited: mergedVisited,
@@ -492,12 +482,29 @@ class GamificationProvider extends ChangeNotifier {
   }
 
   Future<void> addBadgeIfMissing(Badge badge) async {
-    if (_stats.badges.any((b) => b.id == badge.id)) return;
+    final canonicalId = AchievementCatalog.canonicalId(badge.id);
+    if (_stats.badges.any(
+      (existing) => AchievementCatalog.canonicalId(existing.id) == canonicalId,
+    )) {
+      return;
+    }
+    final definition = AchievementCatalog.byId(canonicalId);
+    final normalizedBadge = definition == null
+        ? badge
+        : Badge(
+            id: canonicalId,
+            name: definition.nameKey,
+            description: definition.descKey,
+            iconName: badge.iconName,
+            tier: AchievementCatalog.tierName(definition.tier).toLowerCase(),
+            earnedAt: badge.earnedAt,
+            pointsAwarded: badge.pointsAwarded,
+          );
     _stats = _stats.copyWith(
-      badges: [..._stats.badges, badge],
-      totalPoints: _stats.totalPoints + badge.pointsAwarded,
+      badges: _normalizeBadges([..._stats.badges, normalizedBadge]),
+      totalPoints: _stats.totalPoints + normalizedBadge.pointsAwarded,
       level: GamificationStats.levelForPoints(
-        _stats.totalPoints + badge.pointsAwarded,
+        _stats.totalPoints + normalizedBadge.pointsAwarded,
       ),
     );
     await _save();
@@ -505,11 +512,46 @@ class GamificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  List<Badge> _normalizeBadges(Iterable<Badge> badges) {
+    final byId = <String, Badge>{};
+    for (final badge in badges) {
+      final id = AchievementCatalog.canonicalId(badge.id);
+      final definition = AchievementCatalog.byId(id);
+      final normalized = definition == null
+          ? badge
+          : Badge(
+              id: id,
+              name: definition.nameKey,
+              description: definition.descKey,
+              iconName: badge.iconName,
+              tier: AchievementCatalog.tierName(definition.tier).toLowerCase(),
+              earnedAt: badge.earnedAt,
+              pointsAwarded: badge.pointsAwarded,
+            );
+      final previous = byId[id];
+      final hasMorePoints =
+          previous != null && normalized.pointsAwarded > previous.pointsAwarded;
+      final hasEarlierEarnedAt =
+          previous != null &&
+          normalized.pointsAwarded == previous.pointsAwarded &&
+          normalized.earnedAt != null &&
+          (previous.earnedAt == null ||
+              normalized.earnedAt!.isBefore(previous.earnedAt!));
+      if (previous == null || hasMorePoints || hasEarlierEarnedAt) {
+        byId[id] = normalized;
+      }
+    }
+    return byId.values.toList(growable: false);
+  }
+
   /// Remove a badge by id and claw back its points. Safe to call when the
   /// badge is not present (no-op). Used by AchievementProvider when the
   /// underlying stat drops below the threshold that earned the badge.
   Future<void> removeBadgeIfPresent(String badgeId) async {
-    final idx = _stats.badges.indexWhere((b) => b.id == badgeId);
+    final canonicalId = AchievementCatalog.canonicalId(badgeId);
+    final idx = _stats.badges.indexWhere(
+      (badge) => AchievementCatalog.canonicalId(badge.id) == canonicalId,
+    );
     if (idx < 0) return;
     final removed = _stats.badges[idx];
     final remaining = [..._stats.badges]..removeAt(idx);

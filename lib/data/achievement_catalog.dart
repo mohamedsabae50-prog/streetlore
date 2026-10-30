@@ -45,7 +45,7 @@ class AchievementCatalog {
 
   static const List<AchievementDefinition> all = [
     AchievementDefinition(
-      id: 'first_steps',
+      id: 'first_step',
       icon: Icons.flag_rounded,
       color: Color(0xFFCD7F32),
       tier: AchievementTier.bronze,
@@ -153,17 +153,6 @@ class AchievementCatalog {
       points: 150,
       nameKey: 'ach_time_traveler_name',
       descKey: 'ach_time_traveler_desc',
-    ),
-    AchievementDefinition(
-      id: 'culture_vulture',
-      icon: Icons.museum_rounded,
-      color: Color(0xFFC0C0C0),
-      tier: AchievementTier.silver,
-      category: AchievementCategory.culture,
-      target: 5,
-      points: 150,
-      nameKey: 'ach_culture_vulture_name',
-      descKey: 'ach_culture_vulture_desc',
     ),
     AchievementDefinition(
       id: 'history_nerd',
@@ -475,9 +464,16 @@ class AchievementCatalog {
     ),
   ];
 
+  static String canonicalId(String id) => switch (id) {
+    'first_steps' || 'b_checkin_first' => 'first_step',
+    'culture_vulture' => 'culture_buff',
+    _ => id,
+  };
+
   static AchievementDefinition? byId(String id) {
+    final canonical = canonicalId(id);
     for (final a in all) {
-      if (a.id == id) return a;
+      if (a.id == canonical) return a;
     }
     return null;
   }

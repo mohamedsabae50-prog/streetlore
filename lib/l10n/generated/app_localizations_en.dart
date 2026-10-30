@@ -2130,4 +2130,117 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get google_general_error =>
       'Google Sign-In failed. Try email login instead.';
+
+  @override
+  String get hub_community => 'Community';
+
+  @override
+  String get hub_leaderboard => 'Leaderboard';
+
+  @override
+  String get hub_badges => 'Badges & Progress';
+
+  @override
+  String get login_apple => 'Continue with Apple';
+
+  @override
+  String get login_apple_failed => 'Apple sign-in failed. Please try again.';
+
+  @override
+  String get ach_alex_foodie_name => 'Alexandria Foodie';
+
+  @override
+  String get ach_alex_foodie_desc => 'Try 5 food places in Alexandria';
+
+  @override
+  String get ach_alexandria_legend_name => 'Alexandria Legend';
+
+  @override
+  String get ach_alexandria_legend_desc => 'Visit 30 places';
+
+  @override
+  String get ach_culture_vulture_name => 'Culture Vulture';
+
+  @override
+  String get ach_culture_vulture_desc => 'Visit 5 cultural places';
+
+  @override
+  String get ach_lore_master_name => 'Lore Master';
+
+  @override
+  String get ach_lore_master_desc => 'Visit 15 places';
+
+  @override
+  String get ach_nature_lover_name => 'Nature Lover';
+
+  @override
+  String get ach_nature_lover_desc => 'Visit 3 nature places';
+
+  @override
+  String get ach_social_explorer_name => 'Social Explorer';
+
+  @override
+  String get ach_social_explorer_desc => 'Make 3 friends';
+
+  @override
+  String get ach_street_explorer_name => 'Alexandria Explorer';
+
+  @override
+  String get ach_street_explorer_desc =>
+      'Visit 5 different places in Alexandria';
+
+  @override
+  String get ach_time_traveler_name => 'History Buff';
+
+  @override
+  String get ach_time_traveler_desc => 'Visit 5 historical places';
+
+  @override
+  String get badge_bookmark_collector_name => 'Bookmark Collector';
+
+  @override
+  String get badge_bookmark_collector_desc => 'Save 5 places';
+
+  @override
+  String get badge_cafe_hopper_name => 'Cafe Hopper';
+
+  @override
+  String get badge_cafe_hopper_desc => 'Visit 4 cafes';
+
+  @override
+  String get badge_community_spark_name => 'Community Spark';
+
+  @override
+  String get badge_community_spark_desc => 'Send 5 chat messages';
+
+  @override
+  String get badge_grand_tour_master_name => 'Grand Tour Master';
+
+  @override
+  String get badge_grand_tour_master_desc => 'Complete 3 tours';
+
+  @override
+  String get badge_lens_of_alexandria_name => 'Lens of Alexandria';
+
+  @override
+  String get badge_lens_of_alexandria_desc => 'Upload 3 photos';
+
+  @override
+  String get badge_tour_finisher_name => 'Tour Finisher';
+
+  @override
+  String get badge_tour_finisher_desc => 'Complete a tour';
+
+  @override
+  String get feed_suggest_hidden_gem => 'Suggest a Hidden Gem';
+
+  @override
+  String feed_friend_requests_summary(Object count) {
+    return '$count Friend Requests — Tap to view';
+  }
+
+  @override
+  String feed_notifications_summary(Object count) {
+    return '$count Notifications — Tap to view';
+  }
 }

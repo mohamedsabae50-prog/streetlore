@@ -9,7 +9,9 @@ import '../../logic/gamification_provider.dart';
 import '../../logic/place_provider.dart';
 
 class AchievementsScreen extends StatefulWidget {
-  const AchievementsScreen({super.key});
+  const AchievementsScreen({super.key, this.embedded = false});
+
+  final bool embedded;
 
   @override
   State<AchievementsScreen> createState() => _AchievementsScreenState();
@@ -22,19 +24,24 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          context.tr('gamification_title'),
-          style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
-        centerTitle: true,
-        backgroundColor: context.bgColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPri),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              title: Text(
+                context.tr('gamification_title'),
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+              centerTitle: true,
+              backgroundColor: context.bgColor,
+              elevation: 0,
+              leading: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: context.textPri,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
       body: Consumer<AchievementProvider>(
         builder: (context, ach, _) {
           final stats = context.watch<GamificationProvider>().stats;
@@ -803,8 +810,8 @@ class _AchievementTile extends StatelessWidget {
     final tr = context.tr(def.nameKey);
     if (tr == def.nameKey) {
       switch (def.id) {
-        case 'first_steps':
-          return 'First Steps';
+        case 'first_step':
+          return 'First Step';
         case 'explorer_5':
           return 'Curious';
         case 'explorer_10':
@@ -1026,8 +1033,8 @@ class _AchievementDetailsSheet extends StatelessWidget {
 
   String _fallbackName(String id) {
     switch (id) {
-      case 'first_steps':
-        return 'First Steps';
+      case 'first_step':
+        return 'First Step';
       case 'explorer_5':
         return 'Curious';
       case 'explorer_10':

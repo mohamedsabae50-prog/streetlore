@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/image_defaults.dart';
+import '../../data/achievement_catalog.dart';
 import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/locale_provider.dart';
@@ -107,14 +108,23 @@ class SocialBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (badges.isEmpty) {
+    final uniqueById = <String, Map<String, dynamic>>{};
+    for (final badge in badges) {
+      final id = badge['id']?.toString() ?? '';
+      final key = id.isEmpty
+          ? (badge['name']?.toString() ?? '').trim().toLowerCase()
+          : AchievementCatalog.canonicalId(id);
+      uniqueById.putIfAbsent(key, () => badge);
+    }
+    final uniqueBadges = uniqueById.values.toList(growable: false);
+    if (uniqueBadges.isEmpty) {
       return Text(
         context.tr('profile_no_public_badges'),
         style: TextStyle(color: context.textSec, fontSize: 12),
       );
     }
 
-    final shown = compact ? badges.take(3) : badges;
+    final shown = compact ? uniqueBadges.take(3) : uniqueBadges;
     return Wrap(
       spacing: 7,
       runSpacing: 7,
@@ -126,20 +136,41 @@ class SocialBadges extends StatelessWidget {
               color: AppColors.ratingGold,
               size: 17,
             ),
-            label: Text(
-              badge['name']?.toString().trim().isNotEmpty == true
-                  ? badge['name'].toString()
-                  : context.tr('badge_earned_fallback'),
-            ),
+            label: Text(_badgeName(context, badge)),
             visualDensity: compact
                 ? VisualDensity.compact
                 : VisualDensity.standard,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-        if (compact && badges.length > 3)
-          Chip(label: Text('+${badges.length - 3}')),
+        if (compact && uniqueBadges.length > 3)
+          Chip(label: Text('+${uniqueBadges.length - 3}')),
       ],
     );
+  }
+
+  String _badgeName(BuildContext context, Map<String, dynamic> badge) {
+    final id = badge['id']?.toString() ?? '';
+    final definition = AchievementCatalog.byId(
+      AchievementCatalog.canonicalId(id),
+    );
+    if (definition != null) return context.tr(definition.nameKey);
+    final name = badge['name']?.toString().trim() ?? '';
+    if (name.startsWith('ach_') || name.startsWith('badge_')) {
+      final translated = context.tr(name);
+      if (translated != name) return translated;
+      return name
+          .replaceFirst(RegExp(r'^(ach|badge)_'), '')
+          .replaceFirst(RegExp(r'_(name|desc)$'), '')
+          .replaceAll('_', ' ')
+          .split(' ')
+          .map(
+            (word) => word.isEmpty
+                ? word
+                : '${word[0].toUpperCase()}${word.substring(1)}',
+          )
+          .join(' ');
+    }
+    return name.isEmpty ? context.tr('badge_earned_fallback') : name;
   }
 
   IconData _badgeIcon(String? iconName) => switch (iconName) {

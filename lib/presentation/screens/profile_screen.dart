@@ -13,6 +13,7 @@ import '../../core/services/supabase_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/confetti_overlay.dart';
+import '../../data/achievement_catalog.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/geofence_provider.dart';
 import '../../logic/tour_provider.dart';
@@ -894,7 +895,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Consumer<GamificationProvider>(
                     builder: (context, g, _) {
                       final badgesById = {
-                        for (final badge in g.stats.badges) badge.id: badge,
+                        for (final badge in g.stats.badges)
+                          AchievementCatalog.canonicalId(badge.id): badge,
                       };
                       final badges = badgesById.values.toList(growable: false);
                       return Column(

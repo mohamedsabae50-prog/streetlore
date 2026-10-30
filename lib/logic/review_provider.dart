@@ -5,11 +5,16 @@ import '../data/models/review_model.dart';
 
 class ReviewProvider extends ChangeNotifier {
   List<ReviewModel> _reviews = [];
-  List<ReviewModel> get reviews => _reviews;
+  final bool Function(String userId) _isBlocked;
+  List<ReviewModel> get reviews =>
+      _reviews.where((review) => !_isBlocked(review.userId)).toList();
 
-  ReviewProvider() {
+  ReviewProvider({bool Function(String userId)? isBlocked})
+    : _isBlocked = isBlocked ?? _neverBlocked {
     _loadReviews();
   }
+
+  static bool _neverBlocked(String _) => false;
 
   Future<void> _loadReviews() async {
     final prefs = await SharedPreferences.getInstance();
@@ -23,7 +28,9 @@ class ReviewProvider extends ChangeNotifier {
       for (final review in remote) {
         byId[review.id] = review;
       }
-      _reviews = byId.values.toList(growable: true);
+      _reviews = byId.values
+          .where((review) => !_isBlocked(review.userId))
+          .toList(growable: true);
     } catch (error, stackTrace) {
       debugPrint(
         'ReviewProvider: remote reviews load failed: $error\n$stackTrace',
@@ -33,7 +40,12 @@ class ReviewProvider extends ChangeNotifier {
   }
 
   List<ReviewModel> getReviewsForPlace(String placeId) {
-    return _reviews.where((review) => review.placeId == placeId).toList();
+    return reviews.where((review) => review.placeId == placeId).toList();
+  }
+
+  void refreshBlockedContent() {
+    _reviews.removeWhere((review) => _isBlocked(review.userId));
+    notifyListeners();
   }
 
   Future<void> addReview(ReviewModel review) async {

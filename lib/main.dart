@@ -266,7 +266,11 @@ Future<void> _runApplication() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: auth),
-        ChangeNotifierProvider(create: (_) => ReviewProvider()),
+        ChangeNotifierProvider(
+          create: (_) => ReviewProvider(
+            isBlocked: (userId) => blockedUsers.isBlocked(userId),
+          ),
+        ),
         ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider<TripProvider>.value(value: tripProvider),
@@ -276,7 +280,11 @@ Future<void> _runApplication() async {
           value: governorateProvider,
         ),
         ChangeNotifierProvider<GamificationProvider>.value(value: gamification),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(
+          create: (_) => ChatProvider(
+            isBlocked: (userId) => blockedUsers.isBlocked(userId),
+          ),
+        ),
         ChangeNotifierProvider(create: (_) => LeaderboardProvider()),
         ChangeNotifierProvider(create: (_) => GeofenceProvider()),
         ChangeNotifierProvider(create: (_) => OfflineProvider()),

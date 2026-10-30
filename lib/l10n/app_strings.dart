@@ -448,6 +448,17 @@ class AppStrings {
     },
     'badge_earned_fallback': {'en': 'Explorer badge', 'ar': 'شارة مستكشف'},
     'feed_title': {'en': 'Activity', 'ar': 'النشاط'},
+    'hub_community': {'en': 'Community', 'ar': 'المجتمع'},
+    'hub_leaderboard': {'en': 'Leaderboard', 'ar': 'المتصدرين'},
+    'hub_badges': {'en': 'Badges & Progress', 'ar': 'إنجازاتي'},
+    'login_apple': {
+      'en': 'Continue with Apple',
+      'ar': 'المتابعة باستخدام Apple',
+    },
+    'login_apple_failed': {
+      'en': 'Apple sign-in failed. Please try again.',
+      'ar': 'تعذّر تسجيل الدخول باستخدام Apple. حاول مرة أخرى.',
+    },
     'feed_header_subtitle': {
       'en': 'See what your community is exploring',
       'ar': 'تابع ما يستكشفه مجتمعك',
@@ -458,6 +469,18 @@ class AppStrings {
     'feed_filter_checkin': {'en': 'Check-ins', 'ar': 'الزيارات'},
     'feed_filter_badge': {'en': 'Badges', 'ar': 'الشارات'},
     'feed_filter_suggestion': {'en': 'Suggestions', 'ar': 'الاقتراحات'},
+    'feed_suggest_hidden_gem': {
+      'en': 'Suggest a Hidden Gem',
+      'ar': 'اقترح مكاناً مخفياً',
+    },
+    'feed_friend_requests_summary': {
+      'en': '{count} Friend Requests — Tap to view',
+      'ar': '{count} طلبات صداقة — اضغط للعرض',
+    },
+    'feed_notifications_summary': {
+      'en': '{count} Notifications — Tap to view',
+      'ar': '{count} إشعارات — اضغط للعرض',
+    },
     'feed_filter_empty': {
       'en': 'No activity in this category yet.',
       'ar': 'لا يوجد نشاط في هذه الفئة بعد.',
@@ -826,7 +849,7 @@ class AppStrings {
       'en': 'Check in at places to earn badges',
       'ar': 'سجّل زياراتك للأماكن لتكسب الشارات',
     },
-    'ach_first_steps_name': {'en': 'First Step', 'ar': 'أول خطوة'},
+    'ach_first_steps_name': {'en': 'First Steps', 'ar': 'الخطوات الأولى'},
     'ach_first_steps_desc': {
       'en': 'Check in at your first place',
       'ar': 'سجّل دخولك في أول مكان',

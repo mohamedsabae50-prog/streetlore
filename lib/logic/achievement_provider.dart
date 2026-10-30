@@ -257,7 +257,7 @@ class AchievementProvider extends ChangeNotifier {
         cur = _friendCount;
       } else {
         switch (def.id) {
-          case 'first_steps':
+          case 'first_step':
           case 'explorer_5':
           case 'explorer_10':
           case 'explorer_25':
@@ -274,9 +274,6 @@ class AchievementProvider extends ChangeNotifier {
             if (def.id == 'culture_buff' || def.id == 'history_nerd') {
               cur += _countVisitedIn(checkedInPlaces, ['Culture']);
             }
-            break;
-          case 'culture_vulture':
-            cur = _countVisitedIn(checkedInPlaces, ['Culture']);
             break;
           case 'foodie':
           case 'gourmet':

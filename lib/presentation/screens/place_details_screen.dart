@@ -22,6 +22,7 @@ import '../../core/widgets/shimmer_image.dart';
 import '../../data/mock_data.dart';
 import '../../data/models/place_model.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/blocked_users_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/review_provider.dart';
 import '../../logic/streak_provider.dart';
@@ -1570,6 +1571,25 @@ class _ReviewItem extends StatelessWidget {
   final ReviewModel review;
   const _ReviewItem({required this.review});
 
+  Future<void> _block(BuildContext context) async {
+    final blockedUsers = context.read<BlockedUsersProvider>();
+    final reviewProvider = context.read<ReviewProvider>();
+    try {
+      await blockedUsers.blockUser(review.userId);
+      reviewProvider.refreshBlockedContent();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('user_blocked'))));
+    } catch (error, stackTrace) {
+      debugPrint('PlaceDetailsScreen: user block failed: $error\n$stackTrace');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('block_user_failed'))));
+    }
+  }
+
   Future<void> _confirmDelete(BuildContext context) async {
     final provider = context.read<ReviewProvider>();
     final confirmed = await showDialog<bool>(
@@ -1613,6 +1633,12 @@ class _ReviewItem extends StatelessWidget {
     final textSec = theme.textTheme.bodyMedium?.color ?? Colors.grey;
     final auth = context.watch<AuthProvider>();
     final canDelete = auth.isAdmin || auth.userId == review.userId;
+    final canBlock =
+        !auth.isGuest &&
+        auth.userId.isNotEmpty &&
+        auth.userId != review.userId &&
+        review.userId.isNotEmpty &&
+        review.userId != 'me';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -1689,6 +1715,13 @@ class _ReviewItem extends StatelessWidget {
                             authorName: review.userName,
                           ),
                           icon: const Icon(Icons.flag_outlined, size: 18),
+                        ),
+                      if (canBlock)
+                        IconButton(
+                          tooltip: context.tr('block_user'),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _block(context),
+                          icon: const Icon(Icons.block_rounded, size: 18),
                         ),
                       if (canDelete)
                         IconButton(

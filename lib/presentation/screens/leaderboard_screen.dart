@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -13,13 +15,22 @@ import '../../l10n/app_strings.dart';
 import '../../logic/gamification_provider.dart';
 import '../../logic/leaderboard_provider.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/place_provider.dart';
 import '../../core/services/supabase_service.dart';
 import 'user_profile_screen.dart';
+import 'achievements_screen.dart';
 import '../widgets/monthly_pro_reward_banner.dart';
 import '../widgets/social_user_widgets.dart';
 
 class LeaderboardScreen extends StatefulWidget {
-  const LeaderboardScreen({super.key});
+  const LeaderboardScreen({
+    super.key,
+    this.embedded = false,
+    this.onShowBadges,
+  });
+
+  final bool embedded;
+  final VoidCallback? onShowBadges;
 
   @override
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
@@ -35,6 +46,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<LeaderboardProvider>().load();
+      final auth = context.read<AuthProvider>();
+      if (auth.isLoggedIn && !auth.isGuest) {
+        context.read<PlaceProvider>().fetchRemoteCounts(auth.userId);
+      }
     });
   }
 
@@ -75,6 +90,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               builder: (context, lb, g, _) {
                 final entries = lb.entries;
                 final myStats = g.stats;
+                final visitedPlacesCount = math.max(
+                  myStats.placesVisited,
+                  context.watch<PlaceProvider>().remoteCheckinCount,
+                );
                 final myRank = _computeMyRank(entries, myStats);
                 CityLeaderboardEntry? myStanding;
                 for (final entry in entries) {
@@ -92,53 +111,58 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 return CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
-                    SliverAppBar(
-                      floating: true,
-                      backgroundColor: context.bgColor,
-                      elevation: 0,
-                      title: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.tr('lb_city_title'),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.textSec,
+                    if (!widget.embedded)
+                      SliverAppBar(
+                        floating: true,
+                        backgroundColor: context.bgColor,
+                        elevation: 0,
+                        title: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              context.tr('lb_city_title'),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: context.textSec,
+                              ),
                             ),
-                          ),
-                          Text(
-                            context.tr('lb_title'),
-                            style: AppTextStyles.screenTitle.copyWith(
-                              color: context.textPri,
+                            Text(
+                              context.tr('lb_title'),
+                              style: AppTextStyles.screenTitle.copyWith(
+                                color: context.textPri,
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 16),
+                            child: SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: AnimatedLottieIcon(
+                                animation: LottieAnimations.trophy,
+                                size: 40,
+                                color: AppColors.warning,
+                                secondaryColor: AppColors.goldLight,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      actions: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: 16),
-                          child: SizedBox(
-                            width: 40,
-                            height: 40,
-                            child: AnimatedLottieIcon(
-                              animation: LottieAnimations.trophy,
-                              size: 40,
-                              color: AppColors.warning,
-                              secondaryColor: AppColors.goldLight,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                     const SliverToBoxAdapter(child: MonthlyProRewardBanner()),
                     SliverToBoxAdapter(
                       child: _MyCard(
                         stats: myStats,
                         rank: myRank,
+                        checkIns: math
+                            .max(visitedPlacesCount, myStanding?.checkIns ?? 0)
+                            .toInt(),
                         score: myStanding == null
                             ? null
                             : _metricValue(myStanding, lb.metric),
                         metric: lb.metric,
+                        onShowBadges: widget.onShowBadges,
                       ),
                     ),
                     SliverToBoxAdapter(
@@ -306,7 +330,9 @@ int _metricValue(CityLeaderboardEntry entry, LeaderboardMetric metric) {
 }
 
 String _badgeName(BuildContext context, Badge badge) {
-  final achievement = AchievementCatalog.byId(badge.id);
+  final achievement = AchievementCatalog.byId(
+    AchievementCatalog.canonicalId(badge.id),
+  );
   if (achievement != null) return context.tr(achievement.nameKey);
   if (badge.id.startsWith('lvl_')) {
     final level = AppStrings.level(context, badge.id.substring(4));
@@ -318,13 +344,17 @@ String _badgeName(BuildContext context, Badge badge) {
 class _MyCard extends StatelessWidget {
   final GamificationStats stats;
   final int? rank;
+  final int checkIns;
   final int? score;
   final LeaderboardMetric metric;
+  final VoidCallback? onShowBadges;
   const _MyCard({
     required this.stats,
     required this.rank,
+    required this.checkIns,
     required this.score,
     required this.metric,
+    required this.onShowBadges,
   });
 
   @override
@@ -333,10 +363,12 @@ class _MyCard extends StatelessWidget {
     final uniqueBadges = <String, Badge>{};
     for (final badge in stats.badges) {
       uniqueBadges.putIfAbsent(
-        _badgeName(context, badge).trim().toLowerCase(),
+        AchievementCatalog.canonicalId(badge.id),
         () => badge,
       );
     }
+    final visibleBadges = uniqueBadges.values.take(4).toList(growable: false);
+    final moreBadgesCount = uniqueBadges.length - visibleBadges.length;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       padding: const EdgeInsets.all(18),
@@ -447,8 +479,8 @@ class _MyCard extends StatelessWidget {
             children: [
               _miniStat(
                 Icons.location_on_rounded,
-                '${stats.placesVisited}',
-                context.tr('stat_visited'),
+                '$checkIns',
+                context.tr('lb_stat_checkins'),
               ),
               const SizedBox(width: 16),
               _miniStat(
@@ -463,39 +495,59 @@ class _MyCard extends StatelessWidget {
             Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: uniqueBadges.values
-                  .map(
-                    (b) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.workspace_premium,
+              children: [
+                ...visibleBadges.map(
+                  (b) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.workspace_premium,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _badgeName(context, b),
+                          style: const TextStyle(
                             color: Colors.white,
-                            size: 12,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _badgeName(context, b),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (moreBadgesCount > 0)
+                  ActionChip(
+                    label: Text(
+                      '+$moreBadgesCount ${context.tr('quick_badges')}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  )
-                  .toList(),
+                    backgroundColor: Colors.white.withValues(alpha: 0.15),
+                    side: BorderSide.none,
+                    onPressed:
+                        onShowBadges ??
+                        () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const AchievementsScreen(),
+                          ),
+                        ),
+                  ),
+              ],
             ),
           ],
         ],
@@ -529,6 +581,13 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stats = entry.stats;
+    final auth = context.watch<AuthProvider>();
+    final visitedPlacesCount = context
+        .watch<PlaceProvider>()
+        .remoteCheckinCount;
+    final visibleCheckIns = stats.userId == auth.userId
+        ? math.max(entry.checkIns, visitedPlacesCount)
+        : entry.checkIns;
     Color? avatarColor;
     if (stats.avatarColorHex != null && stats.avatarColorHex!.isNotEmpty) {
       try {
@@ -637,7 +696,7 @@ class _Row extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${_metricValue(entry, metric)}',
+                  '${metric == LeaderboardMetric.checkIns ? visibleCheckIns : _metricValue(entry, metric)}',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w900,

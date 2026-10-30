@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -796,6 +799,74 @@ class AuthProvider extends ChangeNotifier {
 
       return 'google_error';
     }
+  }
+
+  Future<String?> signInWithApple() async {
+    if (!AppConfig.supabaseEnabled) return 'supabase_disabled';
+    final isNativeApple =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS);
+    try {
+      if (!isNativeApple) {
+        await SupabaseService.instance.signInWithApple(
+          redirectTo: kIsWeb
+              ? (kReleaseMode ? AppConfig.webRedirectUrl : Uri.base.origin)
+              : AppConfig.webRedirectUrl,
+        );
+        return null;
+      }
+
+      final rawNonce = _createAppleNonce();
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: const [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
+      );
+      final idToken = credential.identityToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw StateError('Apple did not return an identity token.');
+      }
+
+      final fullName = [credential.givenName, credential.familyName]
+          .whereType<String>()
+          .map((part) => part.trim())
+          .where((part) => part.isNotEmpty)
+          .join(' ');
+      await SupabaseService.instance.signInWithApple(
+        idToken: idToken,
+        nonce: rawNonce,
+        userData: {
+          if (fullName.isNotEmpty) 'full_name': fullName,
+          if (credential.givenName?.trim().isNotEmpty == true)
+            'given_name': credential.givenName!.trim(),
+          if (credential.familyName?.trim().isNotEmpty == true)
+            'family_name': credential.familyName!.trim(),
+        },
+      );
+
+      await _syncFromSupabase();
+      return null;
+    } catch (error, stackTrace) {
+      final message = error.toString().toLowerCase();
+      if (message.contains('canceled') || message.contains('cancelled')) {
+        return 'cancelled';
+      }
+      debugPrint('Apple sign-in failed: $error\n$stackTrace');
+      return 'apple_error';
+    }
+  }
+
+  String _createAppleNonce([int length = 32]) {
+    const characters =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => characters[random.nextInt(characters.length)],
+    ).join();
   }
 
   Future<void> completeOnboarding() async {

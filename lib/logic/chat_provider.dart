@@ -9,19 +9,27 @@ class ChatProvider extends ChangeNotifier {
   final Map<String, List<ChatMessage>> _byPlace = {};
   final Map<String, StreamSubscription> _subs = {};
   final Future<dynamic> Function(ChatMessage) _post;
+  final bool Function(String userId) _isBlocked;
 
   /// [postMessage] is injectable for tests; it defaults to the Supabase insert.
-  ChatProvider({Future<dynamic> Function(ChatMessage)? postMessage})
-    : _post = postMessage ?? SupabaseService.instance.postMessage;
+  ChatProvider({
+    Future<dynamic> Function(ChatMessage)? postMessage,
+    bool Function(String userId)? isBlocked,
+  }) : _post = postMessage ?? SupabaseService.instance.postMessage,
+       _isBlocked = isBlocked ?? _neverBlocked;
+
+  static bool _neverBlocked(String _) => false;
 
   SupabaseService get _supa => SupabaseService.instance;
 
   List<ChatMessage> messagesFor(String placeId) =>
-      _byPlace[placeId] ?? const [];
+      (_byPlace[placeId] ?? const [])
+          .where((message) => !_isBlocked(message.userId))
+          .toList(growable: false);
 
   Future<void> load(String placeId) async {
     final msgs = await _supa.fetchMessages(placeId);
-    _byPlace[placeId] = msgs;
+    _byPlace[placeId] = _visibleMessages(msgs);
     notifyListeners();
     _subscribe(placeId);
   }
@@ -32,7 +40,7 @@ class ChatProvider extends ChangeNotifier {
     if (stream == null) return;
     _subs[placeId] = swallowTransientRealtimeErrors(stream).listen(
       (rows) {
-        _byPlace[placeId] = rows;
+        _byPlace[placeId] = _visibleMessages(rows);
         notifyListeners();
       },
       onError: (Object error, StackTrace stackTrace) {
@@ -40,6 +48,16 @@ class ChatProvider extends ChangeNotifier {
       },
     );
   }
+
+  void refreshBlockedContent() {
+    for (final entry in _byPlace.entries) {
+      entry.value.removeWhere((message) => _isBlocked(message.userId));
+    }
+    notifyListeners();
+  }
+
+  List<ChatMessage> _visibleMessages(Iterable<ChatMessage> messages) =>
+      messages.where((message) => !_isBlocked(message.userId)).toList();
 
   /// Shows [message] immediately, then posts it. If the post fails the
   /// optimistic copy is removed again and the error is rethrown so the UI can

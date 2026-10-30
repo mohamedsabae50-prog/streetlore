@@ -30,6 +30,39 @@ class SupabaseService {
   SupabaseClient? get clientOrNull => _client;
   bool get isLive => _client != null;
 
+  Future<void> signInWithApple({
+    String? idToken,
+    String? nonce,
+    String? redirectTo,
+    Map<String, dynamic>? userData,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+
+    if (idToken == null || idToken.isEmpty) {
+      await client.auth.signInWithOAuth(
+        OAuthProvider.apple,
+        redirectTo: redirectTo,
+        authScreenLaunchMode: LaunchMode.platformDefault,
+      );
+      return;
+    }
+    if (nonce == null || nonce.isEmpty) {
+      throw ArgumentError.value(nonce, 'nonce', 'A nonce is required.');
+    }
+
+    await client.auth.signInWithIdToken(
+      provider: OAuthProvider.apple,
+      idToken: idToken,
+      nonce: nonce,
+    );
+    if (userData != null && userData.isNotEmpty) {
+      await client.auth.updateUser(UserAttributes(data: userData));
+    }
+  }
+
   String? resolveUuidUserId(String? userId) {
     final candidate = userId?.trim() ?? '';
     if (_uuidPattern.hasMatch(candidate)) return candidate;
@@ -1341,28 +1374,19 @@ class SupabaseService {
     }
   }
 
-  /// Request full account + data deletion per Apple App Store and
-  /// Google Play Store account-deletion requirements (PR #6). Calls
-  /// the `delete-user-account` Edge Function which uses the service_role key
-  /// to drop every user-owned row, then the auth.users entry itself.
-  Future<Map<String, dynamic>> deleteAccount({String? accessToken}) async {
+  /// Deletes the authenticated user's account and cascading user-owned data.
+  Future<Map<String, dynamic>> deleteAccount() async {
     final client = clientOrNull;
     if (client == null) {
       throw Exception('Supabase client not initialized');
     }
-    final token = accessToken ?? client.auth.currentSession?.accessToken ?? '';
-    if (token.isEmpty) {
+    if (client.auth.currentSession?.accessToken == null) {
       throw Exception('Not signed in');
     }
-    final response = await client.functions.invoke(
-      'delete-user-account',
-      headers: {'Authorization': 'Bearer $token'},
-      body: const <String, dynamic>{},
-    );
-    final result = response.data;
-    if (response.status != 200 || result is! Map || result['ok'] != true) {
+    final deleted = await client.rpc('delete_my_account');
+    if (deleted != true) {
       throw const FormatException('Invalid account deletion response.');
     }
-    return Map<String, dynamic>.from(result);
+    return const {'ok': true};
   }
 }

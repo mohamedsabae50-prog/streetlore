@@ -23,8 +23,110 @@
 
   <title>EgyptLore</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #060d1a;
+    }
+    #explorer-preloader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: radial-gradient(ellipse at 50% 40%, #14263c 0%, #0d1b2a 52%, #060d1a 100%);
+      opacity: 1;
+      transition: opacity 650ms ease, visibility 650ms ease;
+    }
+    #explorer-preloader.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .preloader-orbit {
+      position: absolute;
+      width: min(76vw, 360px);
+      aspect-ratio: 1;
+      border: 1px solid rgba(212, 175, 55, .22);
+      border-radius: 50%;
+      box-shadow: inset 0 0 35px rgba(212, 175, 55, .04), 0 0 35px rgba(59, 204, 210, .06);
+      animation: orbit 18s linear infinite;
+    }
+    .preloader-orbit::before, .preloader-orbit::after {
+      content: "";
+      position: absolute;
+      inset: 13%;
+      border: 1px solid rgba(212, 175, 55, .19);
+      border-radius: 50%;
+      animation: sonar 3.2s ease-out infinite;
+    }
+    .preloader-orbit::after {
+      animation-delay: 1.6s;
+    }
+    .preloader-content {
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      gap: 20px;
+      color: #f4e7c8;
+      font: 500 15px system-ui, sans-serif;
+      text-align: center;
+    }
+    .preloader-logo {
+      width: min(42vw, 174px);
+      filter: drop-shadow(0 0 25px rgba(212, 175, 55, .38));
+      animation: arrive 1.4s cubic-bezier(.2, 1.35, .45, 1) both;
+    }
+    .preloader-title {
+      font: 500 clamp(25px, 6vw, 34px) Georgia, serif;
+      letter-spacing: .08em;
+    }
+    .preloader-tagline {
+      color: #e7d6af;
+      font-size: 13px;
+    }
+    .preloader-progress {
+      width: 118px;
+      height: 2px;
+      margin-top: 5px;
+      background: linear-gradient(90deg, #d4af37, #f59e0b, #3bccd2);
+      background-size: 220% 100%;
+      animation: shimmer 1.8s linear infinite;
+      box-shadow: 0 0 12px rgba(212, 175, 55, .45);
+    }
+    @keyframes sonar {
+      from { transform: scale(.62); opacity: .7; }
+      to { transform: scale(1.42); opacity: 0; }
+    }
+    @keyframes orbit { to { transform: rotate(360deg); } }
+    @keyframes arrive {
+      from { opacity: 0; transform: scale(.65); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes shimmer { to { background-position: -220% 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; }
+    }
+  </style>
 </head>
 <body>
+  <div id="explorer-preloader" role="status" aria-label="EgyptLore loading">
+    <div class="preloader-orbit" aria-hidden="true"></div>
+    <div class="preloader-content">
+      <img class="preloader-logo" src="assets/assets/images/compass_only.png" alt="">
+      <div class="preloader-title">EgyptLore</div>
+      <div class="preloader-tagline">Discover the Hidden Stories Around You</div>
+      <div class="preloader-progress" aria-hidden="true"></div>
+    </div>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var preloader = document.getElementById('explorer-preloader');
+      if (preloader) preloader.classList.add('is-hidden');
+    }, { once: true });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

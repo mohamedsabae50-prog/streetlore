@@ -3979,6 +3979,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Google Sign-In failed. Try email login instead.'**
   String get google_general_error;
+
+  /// No description provided for @hub_community.
+  ///
+  /// In en, this message translates to:
+  /// **'Community'**
+  String get hub_community;
+
+  /// No description provided for @hub_leaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboard'**
+  String get hub_leaderboard;
+
+  /// No description provided for @hub_badges.
+  ///
+  /// In en, this message translates to:
+  /// **'Badges & Progress'**
+  String get hub_badges;
+
+  /// No description provided for @login_apple.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get login_apple;
+
+  /// No description provided for @login_apple_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple sign-in failed. Please try again.'**
+  String get login_apple_failed;
+
+  /// No description provided for @ach_alex_foodie_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Alexandria Foodie'**
+  String get ach_alex_foodie_name;
+
+  /// No description provided for @ach_alex_foodie_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Try 5 food places in Alexandria'**
+  String get ach_alex_foodie_desc;
+
+  /// No description provided for @ach_alexandria_legend_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Alexandria Legend'**
+  String get ach_alexandria_legend_name;
+
+  /// No description provided for @ach_alexandria_legend_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 30 places'**
+  String get ach_alexandria_legend_desc;
+
+  /// No description provided for @ach_culture_vulture_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Culture Vulture'**
+  String get ach_culture_vulture_name;
+
+  /// No description provided for @ach_culture_vulture_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 5 cultural places'**
+  String get ach_culture_vulture_desc;
+
+  /// No description provided for @ach_lore_master_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Lore Master'**
+  String get ach_lore_master_name;
+
+  /// No description provided for @ach_lore_master_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 15 places'**
+  String get ach_lore_master_desc;
+
+  /// No description provided for @ach_nature_lover_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Nature Lover'**
+  String get ach_nature_lover_name;
+
+  /// No description provided for @ach_nature_lover_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 3 nature places'**
+  String get ach_nature_lover_desc;
+
+  /// No description provided for @ach_social_explorer_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Social Explorer'**
+  String get ach_social_explorer_name;
+
+  /// No description provided for @ach_social_explorer_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Make 3 friends'**
+  String get ach_social_explorer_desc;
+
+  /// No description provided for @ach_street_explorer_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Alexandria Explorer'**
+  String get ach_street_explorer_name;
+
+  /// No description provided for @ach_street_explorer_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 5 different places in Alexandria'**
+  String get ach_street_explorer_desc;
+
+  /// No description provided for @ach_time_traveler_name.
+  ///
+  /// In en, this message translates to:
+  /// **'History Buff'**
+  String get ach_time_traveler_name;
+
+  /// No description provided for @ach_time_traveler_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 5 historical places'**
+  String get ach_time_traveler_desc;
+
+  /// No description provided for @badge_bookmark_collector_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark Collector'**
+  String get badge_bookmark_collector_name;
+
+  /// No description provided for @badge_bookmark_collector_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Save 5 places'**
+  String get badge_bookmark_collector_desc;
+
+  /// No description provided for @badge_cafe_hopper_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Cafe Hopper'**
+  String get badge_cafe_hopper_name;
+
+  /// No description provided for @badge_cafe_hopper_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit 4 cafes'**
+  String get badge_cafe_hopper_desc;
+
+  /// No description provided for @badge_community_spark_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Community Spark'**
+  String get badge_community_spark_name;
+
+  /// No description provided for @badge_community_spark_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Send 5 chat messages'**
+  String get badge_community_spark_desc;
+
+  /// No description provided for @badge_grand_tour_master_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Grand Tour Master'**
+  String get badge_grand_tour_master_name;
+
+  /// No description provided for @badge_grand_tour_master_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 3 tours'**
+  String get badge_grand_tour_master_desc;
+
+  /// No description provided for @badge_lens_of_alexandria_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Lens of Alexandria'**
+  String get badge_lens_of_alexandria_name;
+
+  /// No description provided for @badge_lens_of_alexandria_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload 3 photos'**
+  String get badge_lens_of_alexandria_desc;
+
+  /// No description provided for @badge_tour_finisher_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Tour Finisher'**
+  String get badge_tour_finisher_name;
+
+  /// No description provided for @badge_tour_finisher_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete a tour'**
+  String get badge_tour_finisher_desc;
+
+  /// No description provided for @feed_suggest_hidden_gem.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest a Hidden Gem'**
+  String get feed_suggest_hidden_gem;
+
+  /// No description provided for @feed_friend_requests_summary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Friend Requests — Tap to view'**
+  String feed_friend_requests_summary(Object count);
+
+  /// No description provided for @feed_notifications_summary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Notifications — Tap to view'**
+  String feed_notifications_summary(Object count);
 }
 
 class _AppLocalizationsDelegate

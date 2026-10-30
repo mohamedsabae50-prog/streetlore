@@ -79,6 +79,12 @@
 	<string>EgyptLore uses your location to verify check-ins and show routes.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>EgyptLore uses background location only when nearby alerts are enabled, so it can notify you when you approach selected places.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>EgyptLore uses the camera when you choose to add a place or profile photo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>EgyptLore accesses your photo library only when you choose a photo to upload.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>EgyptLore saves images to your photo library only when you request it.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

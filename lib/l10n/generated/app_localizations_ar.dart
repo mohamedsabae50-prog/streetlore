@@ -2102,4 +2102,117 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get google_general_error =>
       'فشل تسجيل جوجل. جرّب الإيميل بدلاً من كده.';
+
+  @override
+  String get hub_community => 'المجتمع';
+
+  @override
+  String get hub_leaderboard => 'المتصدرين';
+
+  @override
+  String get hub_badges => 'إنجازاتي';
+
+  @override
+  String get login_apple => 'المتابعة باستخدام Apple';
+
+  @override
+  String get login_apple_failed =>
+      'تعذّر تسجيل الدخول باستخدام Apple. حاول مرة أخرى.';
+
+  @override
+  String get ach_alex_foodie_name => 'ذوّاق الإسكندرية';
+
+  @override
+  String get ach_alex_foodie_desc => 'جرّب 5 أماكن للطعام في الإسكندرية';
+
+  @override
+  String get ach_alexandria_legend_name => 'أسطورة الإسكندرية';
+
+  @override
+  String get ach_alexandria_legend_desc => 'زُر 30 مكانًا';
+
+  @override
+  String get ach_culture_vulture_name => 'عاشق الثقافة';
+
+  @override
+  String get ach_culture_vulture_desc => 'زُر 5 أماكن ثقافية';
+
+  @override
+  String get ach_lore_master_name => 'سيد الحكايات';
+
+  @override
+  String get ach_lore_master_desc => 'زُر 15 مكانًا';
+
+  @override
+  String get ach_nature_lover_name => 'عاشق الطبيعة';
+
+  @override
+  String get ach_nature_lover_desc => 'زُر 3 أماكن طبيعية';
+
+  @override
+  String get ach_social_explorer_name => 'مستكشف اجتماعي';
+
+  @override
+  String get ach_social_explorer_desc => 'كوّن 3 صداقات';
+
+  @override
+  String get ach_street_explorer_name => 'مستكشف الإسكندرية';
+
+  @override
+  String get ach_street_explorer_desc => 'زُر 5 أماكن مختلفة في الإسكندرية';
+
+  @override
+  String get ach_time_traveler_name => 'عاشق التاريخ';
+
+  @override
+  String get ach_time_traveler_desc => 'زُر 5 أماكن تاريخية';
+
+  @override
+  String get badge_bookmark_collector_name => 'جامع الإشارات المرجعية';
+
+  @override
+  String get badge_bookmark_collector_desc => 'احفظ 5 أماكن';
+
+  @override
+  String get badge_cafe_hopper_name => 'عاشق المقاهي';
+
+  @override
+  String get badge_cafe_hopper_desc => 'زُر 4 مقاهٍ';
+
+  @override
+  String get badge_community_spark_name => 'شرارة المجتمع';
+
+  @override
+  String get badge_community_spark_desc => 'أرسل 5 رسائل في الدردشة';
+
+  @override
+  String get badge_grand_tour_master_name => 'خبير الجولات';
+
+  @override
+  String get badge_grand_tour_master_desc => 'أكمل 3 جولات';
+
+  @override
+  String get badge_lens_of_alexandria_name => 'عدسة الإسكندرية';
+
+  @override
+  String get badge_lens_of_alexandria_desc => 'ارفع 3 صور';
+
+  @override
+  String get badge_tour_finisher_name => 'منهي الجولات';
+
+  @override
+  String get badge_tour_finisher_desc => 'أكمل جولة';
+
+  @override
+  String get feed_suggest_hidden_gem => 'اقترح مكاناً مخفياً';
+
+  @override
+  String feed_friend_requests_summary(Object count) {
+    return '$count طلبات صداقة — اضغط للعرض';
+  }
+
+  @override
+  String feed_notifications_summary(Object count) {
+    return '$count إشعارات — اضغط للعرض';
+  }
 }

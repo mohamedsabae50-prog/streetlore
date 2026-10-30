@@ -9,6 +9,7 @@ import '../../data/models/chat_message.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/blocked_users_provider.dart';
 import '../../logic/chat_provider.dart';
 import '../../logic/gamification_provider.dart';
 import '../widgets/report_content_sheet.dart';
@@ -216,10 +217,34 @@ class _MessageBubble extends StatelessWidget {
     }
   }
 
+  Future<void> _block(BuildContext context) async {
+    final blockedUsers = context.read<BlockedUsersProvider>();
+    final chatProvider = context.read<ChatProvider>();
+    try {
+      await blockedUsers.blockUser(message.userId);
+      chatProvider.refreshBlockedContent();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('user_blocked'))));
+    } catch (error, stackTrace) {
+      debugPrint('LiveChatScreen: user block failed: $error\n$stackTrace');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('block_user_failed'))));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final canDelete = auth.isAdmin || auth.userId == message.userId;
+    final canBlock =
+        !auth.isGuest &&
+        auth.userId.isNotEmpty &&
+        auth.userId != message.userId &&
+        message.userId.isNotEmpty;
     final color = message.userAvatarColor == null
         ? AppColors.primary
         : Color(int.parse(message.userAvatarColor!.replaceFirst('0x', '0xff')));
@@ -302,6 +327,13 @@ class _MessageBubble extends StatelessWidget {
                               ),
                         icon: const Icon(Icons.flag_outlined, size: 18),
                       ),
+                      if (canBlock)
+                        IconButton(
+                          tooltip: context.tr('block_user'),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _block(context),
+                          icon: const Icon(Icons.block_rounded, size: 18),
+                        ),
                       if (canDelete)
                         IconButton(
                           tooltip: context.tr('delete'),

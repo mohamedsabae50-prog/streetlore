@@ -114,6 +114,51 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  Future<void> _signInWithApple() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final auth = context.read<AuthProvider>();
+    if (!AppConfig.supabaseEnabled) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(context.tr('login_google_unavailable'))),
+      );
+      return;
+    }
+    if (auth.isLoggedIn) {
+      await _routeAfterAuth();
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final errorKey = await auth.signInWithApple();
+      if (!mounted) return;
+      if (errorKey == 'cancelled') return;
+      if (errorKey != null) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(context.tr('login_apple_failed')),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      if (auth.isLoggedIn) await _routeAfterAuth();
+    } catch (error, stackTrace) {
+      debugPrint('Apple sign-in failed: $error\n$stackTrace');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(context.tr('login_apple_failed')),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   String _authErrorMessage(String key) {
     switch (key) {
       case 'account_exists':
@@ -270,15 +315,22 @@ class _LoginScreenState extends State<LoginScreen>
                                 autocorrect: false,
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
-                                    return context.tr('login_err_username_empty');
+                                    return context.tr(
+                                      'login_err_username_empty',
+                                    );
                                   }
                                   final u = v.trim();
                                   if (u.length < 3 || u.length > 20) {
-                                    return context.tr('login_err_username_length');
+                                    return context.tr(
+                                      'login_err_username_length',
+                                    );
                                   }
-                                  if (!RegExp(r'^[A-Za-z0-9._-]+$')
-                                      .hasMatch(u)) {
-                                    return context.tr('login_err_username_chars');
+                                  if (!RegExp(
+                                    r'^[A-Za-z0-9._-]+$',
+                                  ).hasMatch(u)) {
+                                    return context.tr(
+                                      'login_err_username_chars',
+                                    );
                                   }
                                   return null;
                                 },
@@ -447,7 +499,8 @@ class _LoginScreenState extends State<LoginScreen>
                                       await _routeAfterAuth();
                                     }
                                   } else {
-                                    final errorKey = await auth.signInWithGoogleNative();
+                                    final errorKey = await auth
+                                        .signInWithGoogleNative();
                                     if (!context.mounted) return;
                                     if (errorKey != null) {
                                       if (errorKey == 'cancelled') {
@@ -456,13 +509,21 @@ class _LoginScreenState extends State<LoginScreen>
                                       }
                                       String errMsg;
                                       if (errorKey == 'sha1_mismatch') {
-                                        errMsg = context.tr('google_sha1_error');
+                                        errMsg = context.tr(
+                                          'google_sha1_error',
+                                        );
                                       } else if (errorKey == 'config_error') {
-                                        errMsg = context.tr('google_config_error');
+                                        errMsg = context.tr(
+                                          'google_config_error',
+                                        );
                                       } else if (errorKey == 'network_error') {
-                                        errMsg = context.tr('google_network_error');
+                                        errMsg = context.tr(
+                                          'google_network_error',
+                                        );
                                       } else {
-                                        errMsg = context.tr('google_general_error');
+                                        errMsg = context.tr(
+                                          'google_general_error',
+                                        );
                                       }
                                       messenger.showSnackBar(
                                         SnackBar(
@@ -563,6 +624,19 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 700),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: _SocialButton(
+                          label: context.tr('login_apple'),
+                          icon: Icons.apple,
+                          color: context.textPri,
+                          onTap: _isLoading ? () {} : _signInWithApple,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),

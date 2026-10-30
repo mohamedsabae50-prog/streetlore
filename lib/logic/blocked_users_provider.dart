@@ -25,7 +25,7 @@ class BlockedUsersProvider extends ChangeNotifier {
     if (authenticatedId == null || authenticatedId != userId) return;
     try {
       final rows = await client!
-          .from('blocked_users')
+          .from('user_blocked_users')
           .select('blocked_user_id')
           .eq('blocker_id', authenticatedId);
       if (_userId != userId) return;
@@ -63,7 +63,7 @@ class BlockedUsersProvider extends ChangeNotifier {
     }
     try {
       await client!
-          .from('blocked_users')
+          .from('user_blocked_users')
           .upsert(
             {
               'blocker_id': authenticatedId,
@@ -90,7 +90,7 @@ class BlockedUsersProvider extends ChangeNotifier {
         resolvedBlockedUserId != authenticatedId) {
       try {
         await client!
-            .from('blocked_users')
+            .from('user_blocked_users')
             .delete()
             .eq('blocker_id', authenticatedId)
             .eq('blocked_user_id', resolvedBlockedUserId);
