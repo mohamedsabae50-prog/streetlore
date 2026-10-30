@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,7 +11,12 @@ import 'main_navigation.dart';
 import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({
+    super.key,
+    this.minimumDisplayDuration = const Duration(milliseconds: 2800),
+  });
+
+  final Duration minimumDisplayDuration;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -28,7 +32,7 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _logoScale;
   Timer? _navigationTimer;
   Timer? _stageTimer;
-  bool _showPyramids = kIsWeb;
+  bool _showPyramids = false;
 
   @override
   void initState() {
@@ -57,21 +61,23 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2400),
     );
-    if (_showPyramids) {
-      _pyramidsProgressController.forward();
-    } else {
-      _stageTimer = Timer(const Duration(milliseconds: 2600), () {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _stageTimer = Timer(const Duration(milliseconds: 800), () {
         if (!mounted) return;
         setState(() => _showPyramids = true);
         _pyramidsProgressController.forward();
       });
-    }
+      _navigationTimer = Timer(
+        widget.minimumDisplayDuration,
+        _exitThenNavigate,
+      );
+    });
 
     _exitController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _navigationTimer = Timer(const Duration(seconds: 5), _exitThenNavigate);
   }
 
   @override
@@ -129,7 +135,7 @@ class _SplashScreenState extends State<SplashScreen>
       body: FadeTransition(
         opacity: ReverseAnimation(_exitController),
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 700),
+          duration: const Duration(milliseconds: 400),
           switchInCurve: Curves.easeInOut,
           switchOutCurve: Curves.easeInOut,
           child: _showPyramids
@@ -382,6 +388,20 @@ class _SplashScreenState extends State<SplashScreen>
                 width: 72,
                 height: 72,
                 fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          const Align(
+            alignment: Alignment(0, -0.02),
+            child: Text(
+              'EGYPTLORE',
+              key: ValueKey('pyramids-title'),
+              style: TextStyle(
+                color: Color(0xFFF4E7C8),
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 5,
+                shadows: [Shadow(color: Color(0x99D4AF37), blurRadius: 20)],
               ),
             ),
           ),

@@ -27,7 +27,7 @@
     html, body {
       margin: 0;
       min-height: 100%;
-      background: #060d1a;
+      background: #060d1a url("assets/assets/images/splash_bg.png") center / cover no-repeat fixed;
     }
     #explorer-preloader {
       position: fixed;
@@ -38,7 +38,7 @@
       overflow: hidden;
       background: radial-gradient(ellipse at 50% 40%, #14263c 0%, #0d1b2a 52%, #060d1a 100%);
       opacity: 1;
-      transition: opacity 650ms ease, visibility 650ms ease;
+      transition: opacity 250ms ease, visibility 250ms ease;
     }
     #explorer-preloader.is-hidden {
       opacity: 0;
@@ -122,11 +122,87 @@
     </div>
   </div>
   <script>
-    window.addEventListener('flutter-first-frame', function () {
+    (function () {
+      var startedAt = Date.now();
       var preloader = document.getElementById('explorer-preloader');
-      if (preloader) preloader.classList.add('is-hidden');
-    }, { once: true });
+      var hidden = false;
+
+      function hidePreloader() {
+        if (hidden) return;
+        hidden = true;
+        if (preloader) preloader.classList.add('is-hidden');
+      }
+
+      var fallbackTimer = window.setTimeout(hidePreloader, 800);
+      window.addEventListener('flutter-first-frame', function () {
+        window.setTimeout(function () {
+          window.clearTimeout(fallbackTimer);
+          hidePreloader();
+        }, Math.max(0, 700 - (Date.now() - startedAt)));
+      }, { once: true });
+
+      var bootstrap = document.createElement('script');
+      bootstrap.src = 'flutter_bootstrap.js?v=2.1.35-236';
+      bootstrap.async = true;
+      bootstrap.onerror = function (error) {
+        console.error('Unable to load Flutter bootstrap:', error);
+      };
+
+      function loadFlutter() {
+        document.body.appendChild(bootstrap);
+      }
+
+      function clearFlutterCaches(basePath) {
+        if (!('caches' in window)) return Promise.resolve();
+        return window.caches.keys().then(function (names) {
+          return Promise.all(names.filter(function (name) {
+            return name.indexOf('flutter-') === 0;
+          }).map(function (name) {
+            return window.caches.open(name).then(function (cache) {
+              return cache.keys().then(function (requests) {
+                return Promise.all(requests.filter(function (request) {
+                  var url = new URL(request.url);
+                  return url.origin === location.origin &&
+                    url.pathname.indexOf(basePath) === 0;
+                }).map(function (request) {
+                  return cache.delete(request);
+                }));
+              }).then(function () {
+                return cache.keys();
+              }).then(function (remaining) {
+                if (remaining.length === 0) return window.caches.delete(name);
+              });
+            });
+          }));
+        });
+      }
+
+      var basePath = new URL(document.querySelector('base').href).pathname;
+      if (!('serviceWorker' in navigator)) {
+        loadFlutter();
+        return;
+      }
+
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        var stale = registrations.filter(function (registration) {
+          return [registration.active, registration.waiting, registration.installing]
+            .some(function (worker) {
+              if (!worker) return false;
+              var url = new URL(worker.scriptURL);
+              return url.origin === location.origin &&
+                url.pathname === basePath + 'flutter_service_worker.js';
+            });
+        });
+        return Promise.all(stale.map(function (registration) {
+          return registration.unregister();
+        })).then(function () {
+          return clearFlutterCaches(basePath);
+        });
+      }).then(loadFlutter).catch(function (error) {
+        console.error('Unable to clear the legacy Flutter service worker:', error);
+        loadFlutter();
+      });
+    })();
   </script>
-  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

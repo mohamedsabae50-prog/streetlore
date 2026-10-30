@@ -9,9 +9,17 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: SplashScreen()));
 
     expect(find.byKey(const ValueKey('radar-stage')), findsOneWidget);
-    await tester.pump(const Duration(milliseconds: 3400));
+    await tester.pump(const Duration(milliseconds: 799));
+    expect(find.byKey(const ValueKey('radar-stage')), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(find.byKey(const ValueKey('pyramids-stage')), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 416));
+    expect(find.byKey(const ValueKey('radar-stage')), findsNothing);
+    await tester.pump(const Duration(milliseconds: 1583));
 
     expect(find.byKey(const ValueKey('pyramids-stage')), findsOneWidget);
+    expect(find.byKey(const ValueKey('pyramids-title')), findsOneWidget);
     expect(find.byKey(const ValueKey('pyramids-progress')), findsOneWidget);
     final background = tester.widget<Image>(
       find.byKey(const ValueKey('pyramids-background-image')),
