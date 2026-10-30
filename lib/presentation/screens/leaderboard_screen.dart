@@ -21,6 +21,7 @@ import 'user_profile_screen.dart';
 import 'achievements_screen.dart';
 import '../widgets/monthly_pro_reward_banner.dart';
 import '../widgets/social_user_widgets.dart';
+import '../widgets/report_content_sheet.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({
@@ -709,6 +710,21 @@ class _Row extends StatelessWidget {
                 ),
               ],
             ),
+            if (!auth.isGuest &&
+                auth.userId.isNotEmpty &&
+                stats.userId != auth.userId)
+              IconButton(
+                tooltip: context.tr('report_account'),
+                visualDensity: VisualDensity.compact,
+                onPressed: () => ReportContentSheet.show(
+                  context,
+                  targetId: stats.userId,
+                  targetType: 'user',
+                  authorName: stats.userName,
+                  targetAvatarUrl: stats.avatarUrl,
+                ),
+                icon: const Icon(Icons.flag_outlined, size: 18),
+              ),
           ],
         ),
       ),

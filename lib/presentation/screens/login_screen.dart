@@ -632,10 +632,13 @@ class _LoginScreenState extends State<LoginScreen>
                       child: SizedBox(
                         width: double.infinity,
                         child: _SocialButton(
+                          key: const ValueKey('login-apple-button'),
                           label: context.tr('login_apple'),
                           icon: Icons.apple,
                           color: context.textPri,
-                          onTap: _isLoading ? () {} : _signInWithApple,
+                          onTap: _isLoading
+                              ? null
+                              : () => unawaited(_signInWithApple()),
                         ),
                       ),
                     ),
@@ -832,8 +835,9 @@ class _SocialButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const _SocialButton({
+    super.key,
     required this.label,
     required this.icon,
     required this.color,

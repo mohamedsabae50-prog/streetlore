@@ -29,6 +29,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
   Package? _weeklyPackage;
   Package? _monthlyPackage;
   Package? _annualPackage;
+  StoreProduct? _weeklyProduct;
+  StoreProduct? _monthlyProduct;
+  StoreProduct? _annualProduct;
   bool _loading = false;
   bool _loadingPackages = false;
   bool _restoring = false;
@@ -45,24 +48,34 @@ class _PaywallScreenState extends State<PaywallScreen> {
       return;
     }
     setState(() => _loadingPackages = true);
+    List<Package> packages = const [];
+    List<StoreProduct> products = const [];
     try {
-      final packages = await RevenueCatService.instance.offeringPackages(
-        auth.userId,
-      );
-      if (!mounted) return;
-      setState(() {
-        _weeklyPackage = _packageOf(packages, PackageType.weekly);
-        _monthlyPackage = _packageOf(packages, PackageType.monthly);
-        _annualPackage = _packageOf(packages, PackageType.annual);
-      });
+      packages = await RevenueCatService.instance.offeringPackages(auth.userId);
     } catch (error, stackTrace) {
       debugPrint(
         'PaywallScreen: failed to load RevenueCat offerings: '
         '$error\n$stackTrace',
       );
-    } finally {
-      if (mounted) setState(() => _loadingPackages = false);
     }
+    try {
+      products = await RevenueCatService.instance.storeProducts(auth.userId);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'PaywallScreen: failed to load RevenueCat store products: '
+        '$error\n$stackTrace',
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _weeklyPackage = _packageOf(packages, PackageType.weekly);
+      _monthlyPackage = _packageOf(packages, PackageType.monthly);
+      _annualPackage = _packageOf(packages, PackageType.annual);
+      _weeklyProduct = _productOf(products, PackageType.weekly);
+      _monthlyProduct = _productOf(products, PackageType.monthly);
+      _annualProduct = _productOf(products, PackageType.annual);
+      _loadingPackages = false;
+    });
   }
 
   Package? _packageOf(List<Package> packages, PackageType type) {
@@ -76,9 +89,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
     for (final package in packages) {
       if (package.packageType == type) return package;
       final aliases = switch (type) {
-        PackageType.weekly => const ['weekly', r'$rc_weekly'],
-        PackageType.monthly => const ['monthly', r'$rc_monthly'],
-        PackageType.annual => const ['annual', 'yearly', r'$rc_annual'],
+        PackageType.weekly => const ['weekly', r'$rc_weekly', 'week', 'explorer'],
+        PackageType.monthly => const ['monthly', r'$rc_monthly', 'month'],
+        PackageType.annual => const [
+          'annual',
+          'yearly',
+          r'$rc_annual',
+          'year',
+        ],
         _ => const <String>[],
       };
       final identifiers = [
@@ -91,6 +109,29 @@ class _PaywallScreenState extends State<PaywallScreen> {
             aliases.any(identifier.contains),
       )) {
         return package;
+      }
+    }
+    return null;
+  }
+
+  StoreProduct? _productOf(List<StoreProduct> products, PackageType type) {
+    final expectedId = switch (type) {
+      PackageType.weekly => RevenueCatService.weeklyProductId,
+      PackageType.monthly => RevenueCatService.monthlyProductId,
+      PackageType.annual => RevenueCatService.annualProductId,
+      _ => '',
+    };
+    final aliases = switch (type) {
+      PackageType.weekly => const ['weekly', 'week', 'explorer'],
+      PackageType.monthly => const ['monthly', 'month'],
+      PackageType.annual => const ['annual', 'yearly', 'year'],
+      _ => const <String>[],
+    };
+    for (final product in products) {
+      final identifier = product.identifier.toLowerCase();
+      if (identifier == expectedId.toLowerCase() ||
+          aliases.any(identifier.contains)) {
+        return product;
       }
     }
     return null;
@@ -168,25 +209,48 @@ class _PaywallScreenState extends State<PaywallScreen> {
       return;
     }
     if (!RevenueCatService.instance.isConfigured) {
-      _showMessage(context.tr('pro_setup_required'));
+      _showMessage(context.tr('pro_native_unavailable'));
       return;
     }
 
     setState(() => _loading = true);
     try {
-      final package = switch (type) {
+      var package = switch (type) {
         PackageType.weekly => _weeklyPackage,
         PackageType.monthly => _monthlyPackage,
         PackageType.annual => _annualPackage,
         _ => null,
       };
-      if (package == null) {
-        _showMessage(context.tr('pro_offering_unavailable'));
+      var storeProduct = switch (type) {
+        PackageType.weekly => _weeklyProduct,
+        PackageType.monthly => _monthlyProduct,
+        PackageType.annual => _annualProduct,
+        _ => null,
+      };
+      if (package == null && storeProduct == null) {
+        await _loadPackages();
+        if (!mounted) return;
+        package = switch (type) {
+          PackageType.weekly => _weeklyPackage,
+          PackageType.monthly => _monthlyPackage,
+          PackageType.annual => _annualPackage,
+          _ => null,
+        };
+        storeProduct = switch (type) {
+          PackageType.weekly => _weeklyProduct,
+          PackageType.monthly => _monthlyProduct,
+          PackageType.annual => _annualProduct,
+          _ => null,
+        };
+      }
+      if (package == null && storeProduct == null) {
+        _showMessage(context.tr('pro_native_unavailable'));
         return;
       }
       final activated = await RevenueCatService.instance.purchase(
-        package,
-        auth.userId,
+        package: package,
+        storeProduct: storeProduct,
+        userId: auth.userId,
       );
       if (!mounted) return;
       RevenueCatSubscriptionState? state;
@@ -444,17 +508,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
     String? badge,
     bool featured = false,
   }) {
-    final isConfigured = RevenueCatService.instance.isConfigured;
     final isLoading = _loading || _loadingPackages || _restoring;
-    final label = isConfigured
-        ? Text(
-            context.tr('pro_subscribe'),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-          )
-        : Text(
-            context.tr('pro_coming_soon'),
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-          );
+    final label = Text(
+      context.tr('pro_subscribe'),
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+    );
+    const gold = Color(0xFFF59E0B);
+    final iconColor = context.isDark ? Colors.white : const Color(0xFFB45309);
+    final badgeColor = context.isDark ? const Color(0xFFFFD166) : const Color(0xFF92400E);
 
     return Container(
       padding: const EdgeInsets.all(17),
@@ -488,10 +549,19 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.13),
+                  color: gold.withValues(alpha: context.isDark ? 0.24 : 0.16),
                   borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: gold.withValues(alpha: context.isDark ? 0.72 : 0.48),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gold.withValues(alpha: context.isDark ? 0.18 : 0.1),
+                      blurRadius: 12,
+                    ),
+                  ],
                 ),
-                child: Icon(icon, color: accent, size: 24),
+                child: Icon(icon, color: iconColor, size: 24),
               ),
               const SizedBox(width: 13),
               Expanded(
@@ -521,13 +591,22 @@ class _PaywallScreenState extends State<PaywallScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
               decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.15),
+                color: gold.withValues(alpha: context.isDark ? 0.22 : 0.15),
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: gold.withValues(alpha: context.isDark ? 0.72 : 0.52),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: gold.withValues(alpha: context.isDark ? 0.15 : 0.08),
+                    blurRadius: 10,
+                  ),
+                ],
               ),
               child: Text(
                 badge,
                 style: TextStyle(
-                  color: accent,
+                  color: badgeColor,
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                 ),
@@ -536,7 +615,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
           ],
           const SizedBox(height: 14),
           PaywallStorePrice(
-            product: package?.storeProduct,
+            product:
+                package?.storeProduct ??
+                switch (type) {
+                  PackageType.weekly => _weeklyProduct,
+                  PackageType.monthly => _monthlyProduct,
+                  PackageType.annual => _annualProduct,
+                  _ => null,
+                },
             fallbackPrice: price,
             packageType: type,
           ),
@@ -591,9 +677,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: !isConfigured || isLoading
-                  ? null
-                  : () => _purchase(type),
+              onPressed: isLoading ? null : () => _purchase(type),
               style: FilledButton.styleFrom(
                 backgroundColor: accent,
                 foregroundColor: Colors.white,

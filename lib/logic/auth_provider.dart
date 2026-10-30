@@ -29,6 +29,8 @@ class AuthProvider extends ChangeNotifier {
   bool _isGuest = false;
   bool _isPro = false;
   String? _subscriptionTier;
+  RealtimeChannel? _profileRealtimeChannel;
+  String? _profileRealtimeUserId;
 
   bool get isLoggedIn => _isLoggedIn;
   bool get hasSeenOnboarding => _hasSeenOnboarding;
@@ -189,8 +191,10 @@ class AuthProvider extends ChangeNotifier {
             event == AuthChangeEvent.tokenRefreshed) {
           unawaited(_syncFromSupabase());
         } else if (event == AuthChangeEvent.signedOut) {
+          _removeProfileRealtimeChannel();
           _isLoggedIn = false;
           _isGuest = false;
+          _userId = '';
           _isPro = false;
           _subscriptionTier = null;
           _avatarUrl = '';
@@ -199,6 +203,51 @@ class AuthProvider extends ChangeNotifier {
         }
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _removeProfileRealtimeChannel();
+    super.dispose();
+  }
+
+  void _watchProfileUpdates(String userId) {
+    if (_profileRealtimeUserId == userId) return;
+    _removeProfileRealtimeChannel();
+    _profileRealtimeUserId = userId;
+    _profileRealtimeChannel = Supabase.instance.client
+        .channel('profile-pro-$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'profiles',
+          callback: (payload) {
+            if (payload.newRecord['user_id']?.toString() != userId) return;
+            unawaited(_syncFromSupabase());
+          },
+        )
+        .subscribe((status, error) {
+          if (error != null) {
+            debugPrint('AuthProvider: profile realtime subscription failed: $error');
+          }
+        });
+  }
+
+  void _removeProfileRealtimeChannel() {
+    final channel = _profileRealtimeChannel;
+    _profileRealtimeChannel = null;
+    _profileRealtimeUserId = null;
+    if (channel == null) return;
+    unawaited(
+      Supabase.instance.client.removeChannel(channel).then<void>((_) {}).catchError(
+        (Object error, StackTrace stack) {
+          debugPrint(
+            'AuthProvider: profile realtime channel removal failed: '
+            '$error\n$stack',
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _clearPersistedAuthSnapshot() async {
@@ -325,6 +374,7 @@ class AuthProvider extends ChangeNotifier {
     _isLoggedIn = true;
     _isGuest = false;
     _userId = user.id;
+    _watchProfileUpdates(user.id);
     await _restoreCachedProStatus(user.id);
     final meta = user.userMetadata ?? const <String, dynamic>{};
     _avatarUrl =
@@ -349,10 +399,14 @@ class AuthProvider extends ChangeNotifier {
       if (profile != null) {
         _isPro = profileGrantsPro(profile);
         _subscriptionTier = profile['subscription_tier'] as String?;
+        final remoteDisplayName =
+            (profile['display_name'] as String?)?.trim() ?? '';
+        if (remoteDisplayName.isNotEmpty) _userName = remoteDisplayName;
         final remote = (profile['username'] as String?)?.trim() ?? '';
         if (remote.isNotEmpty) _username = remote;
-        final remoteAvatar = (profile['avatar_url'] as String?)?.trim() ?? '';
-        if (remoteAvatar.isNotEmpty) _avatarUrl = remoteAvatar;
+        if (profile.containsKey('avatar_url')) {
+          _avatarUrl = (profile['avatar_url'] as String?)?.trim() ?? '';
+        }
         await _persistCachedProStatus(user.id);
       }
       await _persistCachedUsername(user.id);
@@ -803,49 +857,73 @@ class AuthProvider extends ChangeNotifier {
 
   Future<String?> signInWithApple() async {
     if (!AppConfig.supabaseEnabled) return 'supabase_disabled';
-    final isNativeApple =
-        !kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.iOS ||
-            defaultTargetPlatform == TargetPlatform.macOS);
+    final isNativeApple = usesNativeAppleCredentials(
+      isWeb: kIsWeb,
+      targetPlatform: defaultTargetPlatform,
+    );
     try {
       if (!isNativeApple) {
         await SupabaseService.instance.signInWithApple(
-          redirectTo: kIsWeb
-              ? (kReleaseMode ? AppConfig.webRedirectUrl : Uri.base.origin)
-              : AppConfig.webRedirectUrl,
+          redirectTo: appleOAuthRedirectForPlatform(
+            isWeb: kIsWeb,
+            isRelease: kReleaseMode,
+            webOrigin: Uri.base,
+          ),
         );
         return null;
       }
 
-      final rawNonce = _createAppleNonce();
-      final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: const [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-        nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
-      );
-      final idToken = credential.identityToken;
-      if (idToken == null || idToken.isEmpty) {
-        throw StateError('Apple did not return an identity token.');
-      }
+      try {
+        final rawNonce = _createAppleNonce();
+        final credential = await SignInWithApple.getAppleIDCredential(
+          scopes: const [
+            AppleIDAuthorizationScopes.email,
+            AppleIDAuthorizationScopes.fullName,
+          ],
+          nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
+        );
+        final idToken = credential.identityToken;
+        if (idToken == null || idToken.isEmpty) {
+          throw StateError('Apple did not return an identity token.');
+        }
 
-      final fullName = [credential.givenName, credential.familyName]
-          .whereType<String>()
-          .map((part) => part.trim())
-          .where((part) => part.isNotEmpty)
-          .join(' ');
-      await SupabaseService.instance.signInWithApple(
-        idToken: idToken,
-        nonce: rawNonce,
-        userData: {
-          if (fullName.isNotEmpty) 'full_name': fullName,
-          if (credential.givenName?.trim().isNotEmpty == true)
-            'given_name': credential.givenName!.trim(),
-          if (credential.familyName?.trim().isNotEmpty == true)
-            'family_name': credential.familyName!.trim(),
-        },
-      );
+        final fullName = [credential.givenName, credential.familyName]
+            .whereType<String>()
+            .map((part) => part.trim())
+            .where((part) => part.isNotEmpty)
+            .join(' ');
+        await SupabaseService.instance.signInWithApple(
+          idToken: idToken,
+          nonce: rawNonce,
+          userData: {
+            if (fullName.isNotEmpty) ...{
+              'display_name': fullName,
+              'full_name': fullName,
+              'name': fullName,
+            },
+            if (credential.givenName?.trim().isNotEmpty == true)
+              'given_name': credential.givenName!.trim(),
+            if (credential.familyName?.trim().isNotEmpty == true)
+              'family_name': credential.familyName!.trim(),
+          },
+        );
+      } catch (error, stackTrace) {
+        final message = error.toString().toLowerCase();
+        if (message.contains('canceled') || message.contains('cancelled')) {
+          return 'cancelled';
+        }
+        debugPrint(
+          'Native Apple sign-in unavailable; falling back to OAuth: '
+          '$error\n$stackTrace',
+        );
+        await SupabaseService.instance.signInWithApple(
+          redirectTo: appleOAuthRedirectForPlatform(
+            isWeb: false,
+            isRelease: kReleaseMode,
+            webOrigin: Uri.base,
+          ),
+        );
+      }
 
       await _syncFromSupabase();
       return null;
@@ -857,6 +935,25 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('Apple sign-in failed: $error\n$stackTrace');
       return 'apple_error';
     }
+  }
+
+  @visibleForTesting
+  static bool usesNativeAppleCredentials({
+    required bool isWeb,
+    required TargetPlatform targetPlatform,
+  }) =>
+      !isWeb &&
+      (targetPlatform == TargetPlatform.iOS ||
+          targetPlatform == TargetPlatform.macOS);
+
+  @visibleForTesting
+  static String appleOAuthRedirectForPlatform({
+    required bool isWeb,
+    required bool isRelease,
+    required Uri webOrigin,
+  }) {
+    if (!isWeb) return AppConfig.mobileRedirectUrl;
+    return isRelease ? AppConfig.webRedirectUrl : webOrigin.origin;
   }
 
   String _createAppleNonce([int length = 32]) {

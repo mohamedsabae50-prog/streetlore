@@ -812,6 +812,9 @@ class SupabaseService {
     required String reason,
     String? targetContext,
     String? authorName,
+    String? userId,
+    String? name,
+    String? avatarUrl,
   }) async {
     final client = _client;
     if (client == null) {
@@ -822,7 +825,23 @@ class SupabaseService {
       throw StateError('Sign in to submit reports.');
     }
 
-    if (targetId.trim().isEmpty ||
+    final resolvedTargetId = (userId ?? targetId).trim();
+    final resolvedAuthorName = (name ?? authorName)?.trim() ?? '';
+    final allowedReasons = targetType == 'user'
+        ? const {
+            'Inappropriate profile picture',
+            'Offensive username or profile',
+            'Spam or fake account',
+          }
+        : const {
+            'Inappropriate content',
+            'Spam',
+            'Harassment',
+            'False information',
+            'Offensive language',
+            'Other',
+          };
+    if (resolvedTargetId.isEmpty ||
         (targetContext != null &&
             targetType == 'ai_message' &&
             targetContext.trim().isEmpty) ||
@@ -833,15 +852,31 @@ class SupabaseService {
           'ai_message',
           'chat',
         }.contains(targetType) ||
-        !const {
-          'Inappropriate content',
-          'Spam',
-          'Harassment',
-          'False information',
-          'Offensive language',
-          'Other',
-        }.contains(reason)) {
+        !allowedReasons.contains(reason)) {
       throw ArgumentError('Invalid report details.');
+    }
+    if (targetType == 'user') {
+      if (resolvedTargetId == resolvedReporterId) {
+        throw ArgumentError('You cannot report your own account.');
+      }
+      final context = targetContext?.trim() ?? '';
+      await client.from('content_reports').insert({
+        'target_type': 'user',
+        'target_id': resolvedTargetId,
+        'place_id': '',
+        'reason': reason,
+        'reporter_id': resolvedReporterId,
+        'content_preview': context.length > 2000
+            ? context.substring(0, 2000)
+            : context,
+        'author_name': resolvedAuthorName,
+        if (avatarUrl?.trim().isNotEmpty == true)
+          'target_avatar_url': avatarUrl!.trim().substring(
+            0,
+            avatarUrl.trim().length > 2000 ? 2000 : avatarUrl.trim().length,
+          ),
+      });
+      return;
     }
     if (targetType == 'chat' || targetType == 'review') {
       final context = targetContext?.trim() ?? '';
@@ -854,13 +889,13 @@ class SupabaseService {
         'content_preview': context.contains('\n')
             ? context.substring(context.indexOf('\n') + 1)
             : '',
-        'author_name': authorName?.trim() ?? '',
+        'author_name': resolvedAuthorName,
       });
       return;
     }
     await client.from('reports').insert({
       'reporter_id': resolvedReporterId,
-      'target_id': targetId.trim(),
+      'target_id': resolvedTargetId,
       'target_type': targetType,
       'reason': reason,
       if (targetContext != null)

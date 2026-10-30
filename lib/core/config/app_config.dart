@@ -15,4 +15,8 @@ class AppConfig {
 
   static const String mobileRedirectUrl =
       'io.supabase.streetlore://login-callback/';
+
+  static const String revenueCatApiKey =
+      'goog_rUOBKQKNQSCDxomWWuBnYLgAweH';
+  static const String revenueCatAndroidApiKey = revenueCatApiKey;
 }

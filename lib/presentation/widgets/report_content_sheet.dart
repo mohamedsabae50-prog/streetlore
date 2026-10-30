@@ -5,12 +5,14 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_service.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import 'social_user_widgets.dart';
 
 class ReportContentSheet extends StatefulWidget {
   final String targetId;
   final String targetType;
   final String? targetContext;
   final String? authorName;
+  final String? targetAvatarUrl;
 
   const ReportContentSheet({
     super.key,
@@ -18,6 +20,7 @@ class ReportContentSheet extends StatefulWidget {
     required this.targetType,
     this.targetContext,
     this.authorName,
+    this.targetAvatarUrl,
   });
 
   static Future<void> show(
@@ -26,6 +29,7 @@ class ReportContentSheet extends StatefulWidget {
     required String targetType,
     String? targetContext,
     String? authorName,
+    String? targetAvatarUrl,
   }) => showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -35,6 +39,7 @@ class ReportContentSheet extends StatefulWidget {
       targetType: targetType,
       targetContext: targetContext,
       authorName: authorName,
+      targetAvatarUrl: targetAvatarUrl,
     ),
   );
 
@@ -55,9 +60,44 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
     'report_reason_inappropriate',
     'report_reason_spam',
   ];
-  String _selectedReasonKey = 'report_reason_inappropriate';
+  static const _userReasonKeys = [
+    'report_user_reason_avatar',
+    'report_user_reason_offensive_profile',
+    'report_user_reason_fake_account',
+  ];
+  late String _selectedReasonKey;
+  late String _targetAvatarUrl;
   bool _submitting = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedReasonKey = widget.targetType == 'user'
+        ? _userReasonKeys.first
+        : 'report_reason_inappropriate';
+    _targetAvatarUrl = widget.targetAvatarUrl?.trim() ?? '';
+    if (widget.targetType == 'user' &&
+        _targetAvatarUrl.isEmpty &&
+        widget.targetId.trim().isNotEmpty) {
+      _loadTargetAvatar();
+    }
+  }
+
+  Future<void> _loadTargetAvatar() async {
+    try {
+      final target = await SupabaseService.instance.getSocialUser(
+        widget.targetId,
+      );
+      if (!mounted || target == null || target.avatarUrl.trim().isEmpty) return;
+      setState(() => _targetAvatarUrl = target.avatarUrl.trim());
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ReportContentSheet: target avatar could not be loaded: '
+        '$error\n$stackTrace',
+      );
+    }
+  }
 
   Future<void> _submit() async {
     final reporterId = context.read<AuthProvider>().userId;
@@ -72,7 +112,14 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
         targetType: widget.targetType,
         targetContext: widget.targetContext,
         authorName: widget.authorName,
+        userId: widget.targetType == 'user' ? widget.targetId : null,
+        name: widget.targetType == 'user' ? widget.authorName : null,
+        avatarUrl: widget.targetType == 'user' ? _targetAvatarUrl : null,
         reason: switch (_selectedReasonKey) {
+          'report_user_reason_avatar' => 'Inappropriate profile picture',
+          'report_user_reason_offensive_profile' =>
+            'Offensive username or profile',
+          'report_user_reason_fake_account' => 'Spam or fake account',
           'report_reason_inappropriate' => 'Inappropriate content',
           'report_reason_spam' => 'Spam',
           'report_reason_offensive' => 'Offensive language',
@@ -111,12 +158,37 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              context.tr('report_title'),
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-            ),
+            if (widget.targetType == 'user')
+              Row(
+                children: [
+                  _TargetAvatar(
+                    url: _targetAvatarUrl,
+                    displayName: widget.authorName ?? '',
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.tr('report_account'),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        if (widget.authorName?.trim().isNotEmpty == true)
+                          Text(widget.authorName!.trim()),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            else
+              Text(
+                context.tr('report_title'),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
             const SizedBox(height: 8),
             Text(context.tr('report_reason_prompt')),
             const SizedBox(height: 8),
@@ -124,11 +196,12 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final reasonKey
-                    in widget.targetType == 'chat' ||
-                            widget.targetType == 'review'
-                        ? _contentReasonKeys
-                        : _generalReasonKeys)
+                for (final reasonKey in widget.targetType == 'user'
+                    ? _userReasonKeys
+                    : widget.targetType == 'chat' ||
+                          widget.targetType == 'review'
+                    ? _contentReasonKeys
+                    : _generalReasonKeys)
                   ChoiceChip(
                     label: Text(context.tr(reasonKey)),
                     selected: _selectedReasonKey == reasonKey,
@@ -156,4 +229,17 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
       ),
     );
   }
+}
+
+class _TargetAvatar extends StatelessWidget {
+  const _TargetAvatar({required this.url, required this.displayName});
+  final String url;
+  final String displayName;
+
+  @override
+  Widget build(BuildContext context) => ExplorerAvatar(
+    avatarUrl: url,
+    displayName: displayName,
+    radius: 22,
+  );
 }

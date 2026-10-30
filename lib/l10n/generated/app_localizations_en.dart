@@ -1650,6 +1650,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get report_reason_prompt => 'Why are you reporting this?';
 
   @override
+  String get report_user_reason_avatar => 'Inappropriate profile picture';
+
+  @override
+  String get report_user_reason_offensive_profile =>
+      'Offensive username or profile';
+
+  @override
+  String get report_user_reason_fake_account => 'Spam or fake account';
+
+  @override
   String get report_reason_inappropriate => 'Inappropriate content';
 
   @override
@@ -2033,7 +2043,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pro_includes_free => 'Everything in Free, plus:';
 
   @override
-  String get pro_subscribe => 'Choose this plan';
+  String get pro_subscribe => 'Subscribe Now';
 
   @override
   String get pro_store_note =>
@@ -2041,7 +2051,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pro_setup_note =>
-      'Pro subscriptions are coming soon. Stay tuned for the official launch!';
+      'Subscriptions require a supported iOS or Android store and an active store product.';
 
   @override
   String get pro_coming_soon => 'Coming soon';
@@ -2049,6 +2059,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pro_setup_required =>
       'Purchases are not configured yet. Add the RevenueCat public SDK keys to enable them.';
+
+  @override
+  String get pro_native_unavailable =>
+      'Native billing is not available on this device or the selected store product is not active yet. Please try again later.';
 
   @override
   String get pro_sign_in_required => 'Sign in to subscribe to EgyptLore Pro.';

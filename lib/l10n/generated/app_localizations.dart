@@ -3146,6 +3146,24 @@ abstract class AppLocalizations {
   /// **'Why are you reporting this?'**
   String get report_reason_prompt;
 
+  /// No description provided for @report_user_reason_avatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Inappropriate profile picture'**
+  String get report_user_reason_avatar;
+
+  /// No description provided for @report_user_reason_offensive_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Offensive username or profile'**
+  String get report_user_reason_offensive_profile;
+
+  /// No description provided for @report_user_reason_fake_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam or fake account'**
+  String get report_user_reason_fake_account;
+
   /// No description provided for @report_reason_inappropriate.
   ///
   /// In en, this message translates to:
@@ -3815,7 +3833,7 @@ abstract class AppLocalizations {
   /// No description provided for @pro_subscribe.
   ///
   /// In en, this message translates to:
-  /// **'Choose this plan'**
+  /// **'Subscribe Now'**
   String get pro_subscribe;
 
   /// No description provided for @pro_store_note.
@@ -3827,7 +3845,7 @@ abstract class AppLocalizations {
   /// No description provided for @pro_setup_note.
   ///
   /// In en, this message translates to:
-  /// **'Pro subscriptions are coming soon. Stay tuned for the official launch!'**
+  /// **'Subscriptions require a supported iOS or Android store and an active store product.'**
   String get pro_setup_note;
 
   /// No description provided for @pro_coming_soon.
@@ -3841,6 +3859,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Purchases are not configured yet. Add the RevenueCat public SDK keys to enable them.'**
   String get pro_setup_required;
+
+  /// No description provided for @pro_native_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Native billing is not available on this device or the selected store product is not active yet. Please try again later.'**
+  String get pro_native_unavailable;
 
   /// No description provided for @pro_sign_in_required.
   ///

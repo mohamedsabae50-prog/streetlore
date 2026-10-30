@@ -245,6 +245,11 @@ class _MessageBubble extends StatelessWidget {
         auth.userId.isNotEmpty &&
         auth.userId != message.userId &&
         message.userId.isNotEmpty;
+    final canReportAccount =
+        !auth.isGuest &&
+        auth.userId.isNotEmpty &&
+        auth.userId != message.userId &&
+        message.userId.isNotEmpty;
     final color = message.userAvatarColor == null
         ? AppColors.primary
         : Color(int.parse(message.userAvatarColor!.replaceFirst('0x', '0xff')));
@@ -327,6 +332,22 @@ class _MessageBubble extends StatelessWidget {
                               ),
                         icon: const Icon(Icons.flag_outlined, size: 18),
                       ),
+                      if (canReportAccount)
+                        IconButton(
+                          tooltip: context.tr('report_account'),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => ReportContentSheet.show(
+                            context,
+                            targetId: message.userId,
+                            targetType: 'user',
+                            authorName: message.userName,
+                            targetAvatarUrl: message.avatarUrl,
+                          ),
+                          icon: const Icon(
+                            Icons.person_off_outlined,
+                            size: 18,
+                          ),
+                        ),
                       if (canBlock)
                         IconButton(
                           tooltip: context.tr('block_user'),

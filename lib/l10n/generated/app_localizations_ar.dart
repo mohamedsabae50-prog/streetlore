@@ -1636,6 +1636,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get report_reason_prompt => 'لماذا تريد الإبلاغ عن هذا المحتوى؟';
 
   @override
+  String get report_user_reason_avatar => 'صورة شخصية غير لائقة';
+
+  @override
+  String get report_user_reason_offensive_profile => 'اسم مستخدم أو حساب مسيء';
+
+  @override
+  String get report_user_reason_fake_account => 'حساب مزيف أو إعلاني';
+
+  @override
   String get report_reason_inappropriate => 'محتوى غير لائق';
 
   @override
@@ -2011,14 +2020,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pro_includes_free => 'كل مزايا الخطة المجانية، بالإضافة إلى:';
 
   @override
-  String get pro_subscribe => 'اختر هذه الخطة';
+  String get pro_subscribe => 'اشترك الآن';
 
   @override
   String get pro_store_note => 'شراء آمن عبر App Store أو Google Play.';
 
   @override
   String get pro_setup_note =>
-      'اشتراكات برو قادمة قريباً. ترقّبوا الإطلاق الرسمي!';
+      'تتطلب الاشتراكات متجرًا مدعومًا على iOS أو Android ومنتجًا مفعّلًا في المتجر.';
 
   @override
   String get pro_coming_soon => 'قريباً';
@@ -2026,6 +2035,10 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get pro_setup_required =>
       'لم يتم إعداد عمليات الشراء بعد. أضف مفاتيح RevenueCat العامة لتفعيلها.';
+
+  @override
+  String get pro_native_unavailable =>
+      'الشراء غير متاح على هذا الجهاز أو أن المنتج لم يُفعّل في المتجر بعد. يُرجى المحاولة لاحقًا.';
 
   @override
   String get pro_sign_in_required => 'سجّل الدخول للاشتراك في إيجيبت لور برو.';

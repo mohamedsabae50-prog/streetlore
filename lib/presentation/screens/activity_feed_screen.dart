@@ -24,6 +24,7 @@ import 'place_details_screen.dart';
 import 'suggest_place_screen.dart';
 import 'user_profile_screen.dart';
 import '../widgets/social_user_widgets.dart';
+import '../widgets/report_content_sheet.dart';
 
 class ActivityFeedScreen extends StatefulWidget {
   const ActivityFeedScreen({super.key});
@@ -667,7 +668,11 @@ class _ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     final type = activity['event_type'] as String? ?? '';
+    final actorId = actor?.userId ?? activity['actor_id']?.toString() ?? '';
+    final canReportActor =
+        !auth.isGuest && auth.userId.isNotEmpty && actorId != auth.userId;
     final icon = switch (type) {
       'checkin' => Icons.place_rounded,
       'badge' => Icons.workspace_premium_rounded,
@@ -797,6 +802,24 @@ class _ActivityCard extends StatelessWidget {
                           icon: icon,
                           type: type,
                         ),
+                        if (canReportActor)
+                          IconButton(
+                            tooltip: context.tr('report_account'),
+                            visualDensity: VisualDensity.compact,
+                            constraints: const BoxConstraints.tightFor(
+                              width: 32,
+                              height: 32,
+                            ),
+                            padding: EdgeInsets.zero,
+                            onPressed: () => ReportContentSheet.show(
+                              context,
+                              targetId: actorId,
+                              targetType: 'user',
+                              authorName: actorName,
+                              targetAvatarUrl: actor?.avatarUrl,
+                            ),
+                            icon: const Icon(Icons.flag_outlined, size: 17),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -1025,7 +1048,14 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     final type = notification['type']?.toString() ?? '';
+    final actorId = actor?.userId ?? notification['actor_id']?.toString() ?? '';
+    final canReportActor =
+        actor != null &&
+        !auth.isGuest &&
+        auth.userId.isNotEmpty &&
+        actorId != auth.userId;
     final pending = type == 'friend_request' && notification['read_at'] == null;
     final metadata = notification['metadata'];
     final metadataMap = metadata is Map
@@ -1135,6 +1165,19 @@ class _NotificationCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (canReportActor)
+                IconButton(
+                  tooltip: context.tr('report_account'),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => ReportContentSheet.show(
+                    context,
+                    targetId: actorId,
+                    targetType: 'user',
+                    authorName: actorName,
+                    targetAvatarUrl: actor?.avatarUrl,
+                  ),
+                  icon: const Icon(Icons.flag_outlined, size: 18),
+                ),
               if (unread)
                 Container(
                   width: 9,

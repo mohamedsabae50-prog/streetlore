@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/app_config.dart';
+
 class RevenueCatService {
   RevenueCatService._();
 
@@ -13,7 +15,10 @@ class RevenueCatService {
     'ENABLE_REVENUECAT',
     defaultValue: true,
   );
-  static const _apiKey = String.fromEnvironment('REVENUECAT_API_KEY');
+  static const _apiKey = String.fromEnvironment(
+    'REVENUECAT_API_KEY',
+    defaultValue: AppConfig.revenueCatApiKey,
+  );
   static const _androidApiKey = String.fromEnvironment(
     'REVENUECAT_ANDROID_API_KEY',
   );
@@ -32,14 +37,17 @@ class RevenueCatService {
     defaultValue: 'annual',
   );
 
-  bool get isConfigured =>
-      _enabled &&
-      !kIsWeb &&
-      (Platform.isAndroid || Platform.isIOS) &&
-      (_androidKey.isNotEmpty || _iosApiKey.isNotEmpty);
+  bool get isConfigured => _enabled && _platformApiKey.isNotEmpty;
 
   String get _androidKey =>
       _androidApiKey.isNotEmpty ? _androidApiKey : _apiKey;
+
+  String get _platformApiKey {
+    if (kIsWeb) return '';
+    if (Platform.isAndroid) return _androidKey;
+    if (Platform.isIOS) return _iosApiKey;
+    return '';
+  }
 
   Future<bool> configure(String userId) async {
     if (!isConfigured) return false;
@@ -50,11 +58,7 @@ class RevenueCatService {
       return true;
     }
 
-    final apiKey = Platform.isAndroid
-        ? _androidKey
-        : Platform.isIOS
-        ? _iosApiKey
-        : '';
+    final apiKey = _platformApiKey;
     if (apiKey.isEmpty) return false;
 
     await Purchases.configure(
@@ -66,13 +70,43 @@ class RevenueCatService {
 
   Future<List<Package>> offeringPackages(String userId) async {
     if (!await configure(userId)) return const [];
-    final offering = (await Purchases.getOfferings()).current;
-    return offering?.availablePackages ?? const [];
+    final offerings = await Purchases.getOfferings();
+    final packages = <Package>[];
+    final seen = <String>{};
+    for (final offering in [
+      if (offerings.current != null) offerings.current!,
+      ...offerings.all.values,
+    ]) {
+      for (final package in offering.availablePackages) {
+        final key =
+            '${package.identifier}:${package.storeProduct.identifier}';
+        if (seen.add(key)) packages.add(package);
+      }
+    }
+    return packages;
   }
 
-  Future<bool> purchase(Package package, String userId) async {
+  Future<List<StoreProduct>> storeProducts(String userId) async {
+    if (!await configure(userId)) return const [];
+    return Purchases.getProducts([
+      weeklyProductId,
+      monthlyProductId,
+      annualProductId,
+    ]);
+  }
+
+  Future<bool> purchase({
+    Package? package,
+    StoreProduct? storeProduct,
+    required String userId,
+  }) async {
     if (!await configure(userId)) return false;
-    final result = await Purchases.purchase(PurchaseParams.package(package));
+    final params = package != null
+        ? PurchaseParams.package(package)
+        : storeProduct != null
+        ? PurchaseParams.storeProduct(storeProduct)
+        : throw ArgumentError('A RevenueCat package or store product is required.');
+    final result = await Purchases.purchase(params);
     return result.customerInfo.entitlements.active.containsKey(entitlementId);
   }
 

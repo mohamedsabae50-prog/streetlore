@@ -3,10 +3,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:streetlore/logic/auth_provider.dart';
 import 'package:streetlore/logic/locale_provider.dart';
+import 'package:streetlore/presentation/screens/paywall_screen.dart';
 import 'package:streetlore/presentation/widgets/paywall_store_price.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await Supabase.initialize(
+      url: 'https://example.supabase.co',
+      publishableKey: 'test-anon-key',
+    );
+  });
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
@@ -57,5 +68,39 @@ void main() {
 
     expect(find.text('49 EGP / week'), findsOneWidget);
     expect(find.textContaining(r'$'), findsNothing);
+  });
+
+  testWidgets('all plan cards show an enabled subscribe action', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => LocaleProvider()),
+          ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ],
+        child: const MaterialApp(home: PaywallScreen()),
+      ),
+    );
+    await tester.pump();
+
+    for (final title in [
+      'Explorer Pass',
+      'Monthly Pro Plan',
+      'Annual Pro Plan',
+    ]) {
+      await tester.scrollUntilVisible(
+        find.text(title),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      final subscribeButton = find
+          .widgetWithText(FilledButton, 'Subscribe Now')
+          .last;
+      await tester.ensureVisible(subscribeButton);
+      await tester.pump();
+      expect(tester.widget<FilledButton>(subscribeButton).onPressed, isNotNull);
+    }
+    expect(find.text('Coming soon'), findsNothing);
   });
 }

@@ -527,6 +527,19 @@ class AppStrings {
       'en': 'Why are you reporting this?',
       'ar': 'لماذا تريد الإبلاغ عن هذا المحتوى؟',
     },
+    'report_account': {'en': 'Report account', 'ar': 'الإبلاغ عن الحساب'},
+    'report_user_reason_avatar': {
+      'en': 'Inappropriate profile picture',
+      'ar': 'صورة شخصية غير لائقة',
+    },
+    'report_user_reason_offensive_profile': {
+      'en': 'Offensive username or profile',
+      'ar': 'اسم مستخدم أو حساب مسيء',
+    },
+    'report_user_reason_fake_account': {
+      'en': 'Spam or fake account',
+      'ar': 'حساب مزيف أو إعلاني',
+    },
     'report_reason_inappropriate': {
       'en': 'Inappropriate content',
       'ar': 'محتوى غير لائق',
@@ -582,6 +595,47 @@ class AppStrings {
     'admin_chat_moderation': {
       'en': 'Chat & reports',
       'ar': 'إدارة الشات والبلاغات',
+    },
+    'admin_accounts_avatars': {
+      'en': 'Accounts & avatars',
+      'ar': 'الحسابات والصور الشخصية',
+    },
+    'admin_accounts_empty': {
+      'en': 'No accounts found.',
+      'ar': 'لم يتم العثور على حسابات.',
+    },
+    'admin_reported_account': {
+      'en': 'Reported account',
+      'ar': 'الحساب المُبلّغ عنه',
+    },
+    'admin_reported_by': {'en': 'Reported by {name}', 'ar': 'أبلغ عنه {name}'},
+    'admin_clear_avatar': {
+      'en': 'Remove avatar',
+      'ar': 'إزالة الصورة الشخصية',
+    },
+    'admin_clear_avatar_q': {
+      'en': 'Remove this account’s avatar?',
+      'ar': 'هل تريد إزالة الصورة الشخصية لهذا الحساب؟',
+    },
+    'admin_reset_account_name': {
+      'en': 'Reset name',
+      'ar': 'إعادة تعيين الاسم',
+    },
+    'admin_reset_account_name_q': {
+      'en': 'Reset this account name to Explorer?',
+      'ar': 'هل تريد إعادة تعيين اسم هذا الحساب إلى مستكشف؟',
+    },
+    'admin_enable_account_pro': {'en': 'Enable Pro', 'ar': 'تفعيل برو'},
+    'admin_disable_account_pro': {'en': 'Disable Pro', 'ar': 'إلغاء برو'},
+    'admin_account_pro': {'en': 'Pro', 'ar': 'برو'},
+    'admin_account_free': {'en': 'Free', 'ar': 'مجاني'},
+    'admin_account_report_count': {
+      'en': '{count} reports',
+      'ar': '{count} بلاغات',
+    },
+    'admin_account_open_reports': {
+      'en': '{count} open',
+      'ar': '{count} مفتوحة',
     },
     'admin_reviews_empty': {
       'en': 'No community reviews to moderate.',
@@ -1488,15 +1542,16 @@ class AppStrings {
       'en': 'Everything in Free, plus:',
       'ar': 'كل مزايا الخطة المجانية، بالإضافة إلى:',
     },
-    'pro_subscribe': {'en': 'Choose this plan', 'ar': 'اختر هذه الخطة'},
+    'pro_subscribe': {'en': 'Subscribe Now', 'ar': 'اشترك الآن'},
     'pro_store_note': {
       'en': 'Secure purchase through the App Store or Google Play.',
       'ar': 'شراء آمن عبر App Store أو Google Play.',
     },
     'pro_setup_note': {
       'en':
-          'Pro subscriptions are coming soon. Stay tuned for the official launch!',
-      'ar': 'اشتراكات برو قادمة قريباً. ترقّبوا الإطلاق الرسمي!',
+          'Subscriptions require a supported iOS or Android store and an active store product.',
+      'ar':
+          'تتطلب الاشتراكات متجرًا مدعومًا على iOS أو Android ومنتجًا مفعّلًا في المتجر.',
     },
     'pro_coming_soon': {'en': 'Coming soon', 'ar': 'قريباً'},
     'pro_setup_required': {
@@ -1504,6 +1559,12 @@ class AppStrings {
           'Purchases are not configured yet. Add the RevenueCat public SDK keys to enable them.',
       'ar':
           'لم يتم إعداد عمليات الشراء بعد. أضف مفاتيح RevenueCat العامة لتفعيلها.',
+    },
+    'pro_native_unavailable': {
+      'en':
+          'Native billing is not available on this device or the selected store product is not active yet. Please try again later.',
+      'ar':
+          'الشراء غير متاح على هذا الجهاز أو أن المنتج لم يُفعّل في المتجر بعد. يُرجى المحاولة لاحقًا.',
     },
     'pro_sign_in_required': {
       'en': 'Sign in to subscribe to EgyptLore Pro.',

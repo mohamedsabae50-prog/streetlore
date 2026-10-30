@@ -1716,6 +1716,25 @@ class _ReviewItem extends StatelessWidget {
                           ),
                           icon: const Icon(Icons.flag_outlined, size: 18),
                         ),
+                      if (!auth.isGuest &&
+                          auth.userId.isNotEmpty &&
+                          review.userId.isNotEmpty &&
+                          review.userId != 'me' &&
+                          review.userId != auth.userId)
+                        IconButton(
+                          tooltip: context.tr('report_account'),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => ReportContentSheet.show(
+                            context,
+                            targetId: review.userId,
+                            targetType: 'user',
+                            authorName: review.userName,
+                          ),
+                          icon: const Icon(
+                            Icons.person_off_outlined,
+                            size: 18,
+                          ),
+                        ),
                       if (canBlock)
                         IconButton(
                           tooltip: context.tr('block_user'),
