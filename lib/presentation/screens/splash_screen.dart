@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,9 +23,12 @@ class _SplashScreenState extends State<SplashScreen>
   late final AnimationController _introController;
   late final AnimationController _ambientController;
   late final AnimationController _exitController;
+  late final AnimationController _pyramidsProgressController;
   late final Animation<double> _introFade;
   late final Animation<double> _logoScale;
   Timer? _navigationTimer;
+  Timer? _stageTimer;
+  bool _showPyramids = kIsWeb;
 
   @override
   void initState() {
@@ -49,6 +53,20 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 18),
     )..repeat();
 
+    _pyramidsProgressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    );
+    if (_showPyramids) {
+      _pyramidsProgressController.forward();
+    } else {
+      _stageTimer = Timer(const Duration(milliseconds: 2600), () {
+        if (!mounted) return;
+        setState(() => _showPyramids = true);
+        _pyramidsProgressController.forward();
+      });
+    }
+
     _exitController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -59,8 +77,10 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _navigationTimer?.cancel();
+    _stageTimer?.cancel();
     _ambientController.dispose();
     _introController.dispose();
+    _pyramidsProgressController.dispose();
     _exitController.dispose();
     super.dispose();
   }
@@ -108,225 +128,309 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: const Color(0xFF060D1A),
       body: FadeTransition(
         opacity: ReverseAnimation(_exitController),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Semantics(
-              key: const ValueKey('splash-background'),
-              container: true,
-              label:
-                  'EgyptLore. Egypt Unseen — Discover Egypt’s Hidden Stories. اكتشف حكايات وكنوز مصر المخفية',
-              child: const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: Alignment(0, -0.22),
-                    radius: 1.15,
-                    colors: [
-                      Color(0xFF14263C),
-                      Color(0xFF0D1B2A),
-                      Color(0xFF060D1A),
-                    ],
-                    stops: [0, 0.52, 1],
-                  ),
-                ),
-              ),
-            ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0, -0.2),
-                  radius: 0.5,
-                  colors: [
-                    Color(0x22D4AF37),
-                    Color(0x0DD4AF37),
-                    Color(0x00D4AF37),
-                  ],
-                  stops: [0, 0.48, 1],
-                ),
-              ),
-            ),
-            RepaintBoundary(
-              child: CustomPaint(
-                painter: _ExplorerSkyPainter(_ambientController),
-                child: const SizedBox.expand(),
-              ),
-            ),
-            SafeArea(
-              child: FadeTransition(
-                opacity: _introFade,
-                child: Column(
-                  children: [
-                    const Spacer(flex: 2),
-                    ScaleTransition(
-                      scale: _logoScale,
-                      child: Semantics(
-                        image: true,
-                        label: 'EgyptLore compass',
-                        child: Container(
-                          width: 204,
-                          height: 204,
-                          padding: const EdgeInsets.all(25),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(
-                              0xFF15253A,
-                            ).withValues(alpha: .5),
-                            border: Border.all(
-                              color: const Color(0x66D4AF37),
-                              width: 1,
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x44D4AF37),
-                                blurRadius: 60,
-                                spreadRadius: 5,
-                              ),
-                              BoxShadow(
-                                color: Color(0x663BCCD2),
-                                blurRadius: 100,
-                                spreadRadius: -10,
-                              ),
-                            ],
-                          ),
-                          child: AnimatedBuilder(
-                            animation: _ambientController,
-                            child: Image.asset(
-                              'assets/images/compass_only.png',
-                              fit: BoxFit.contain,
-                            ),
-                            builder: (context, logo) => ShaderMask(
-                              blendMode: BlendMode.srcATop,
-                              shaderCallback: (bounds) => LinearGradient(
-                                begin: Alignment(
-                                  -1.6 + 3.2 * _ambientController.value,
-                                  -0.5,
-                                ),
-                                end: Alignment(
-                                  -0.8 + 3.2 * _ambientController.value,
-                                  0.5,
-                                ),
-                                colors: const [
-                                  Color(0x00FFE7A3),
-                                  Color(0x44FFE7A3),
-                                  Color(0x00FFE7A3),
-                                ],
-                                stops: const [0, 0.5, 1],
-                              ).createShader(bounds),
-                              child: logo,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    SlideTransition(
-                      position:
-                          Tween<Offset>(
-                            begin: const Offset(0, .24),
-                            end: Offset.zero,
-                          ).animate(
-                            CurvedAnimation(
-                              parent: _introController,
-                              curve: const Interval(
-                                .24,
-                                .78,
-                                curve: Curves.easeOutCubic,
-                              ),
-                            ),
-                          ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'EgyptLore',
-                            textDirection: isArabic
-                                ? TextDirection.rtl
-                                : TextDirection.ltr,
-                            style: const TextStyle(
-                              color: Color(0xFFF4E7C8),
-                              fontSize: 34,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 2.2,
-                              shadows: [
-                                Shadow(
-                                  color: Color(0x66D4AF37),
-                                  blurRadius: 22,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 17,
-                              vertical: 9,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0x1AD4AF37),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: const Color(0x55D4AF37),
-                              ),
-                            ),
-                            child: Text(
-                              isArabic
-                                  ? 'استكشف الحكايات والكنوز من حولك'
-                                  : 'Discover the Hidden Stories Around You',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Color(0xFFE7D6AF),
-                                fontSize: 13,
-                                letterSpacing: .25,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(flex: 2),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(48, 0, 48, 36),
-                      child: AnimatedBuilder(
-                        animation: _ambientController,
-                        builder: (context, child) => Container(
-                          height: 3,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
-                            gradient: LinearGradient(
-                              begin: Alignment(
-                                -1 + 2 * _ambientController.value,
-                                0,
-                              ),
-                              end: Alignment(
-                                1 + 2 * _ambientController.value,
-                                0,
-                              ),
-                              colors: const [
-                                Color(0x223BCCD2),
-                                Color(0xFFD4AF37),
-                                Color(0xFFF59E0B),
-                                Color(0xFF3BCCD2),
-                                Color(0x223BCCD2),
-                              ],
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x66D4AF37),
-                                blurRadius: 12,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 700),
+          switchInCurve: Curves.easeInOut,
+          switchOutCurve: Curves.easeInOut,
+          child: _showPyramids
+              ? _buildPyramidsStage()
+              : _buildRadarStage(isArabic),
         ),
       ),
     );
   }
+
+  Widget _buildRadarStage(bool isArabic) {
+    return KeyedSubtree(
+      key: const ValueKey('radar-stage'),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Semantics(
+            key: const ValueKey('radar-background'),
+            container: true,
+            label:
+                'EgyptLore. Egypt Unseen — Discover Egypt’s Hidden Stories. اكتشف حكايات وكنوز مصر المخفية',
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(0, -0.22),
+                  radius: 1.15,
+                  colors: [
+                    Color(0xFF14263C),
+                    Color(0xFF0D1B2A),
+                    Color(0xFF060D1A),
+                  ],
+                  stops: [0, 0.52, 1],
+                ),
+              ),
+            ),
+          ),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(0, -0.2),
+                radius: 0.5,
+                colors: [
+                  Color(0x22D4AF37),
+                  Color(0x0DD4AF37),
+                  Color(0x00D4AF37),
+                ],
+                stops: [0, 0.48, 1],
+              ),
+            ),
+          ),
+          RepaintBoundary(
+            child: CustomPaint(
+              painter: _ExplorerSkyPainter(_ambientController),
+              child: const SizedBox.expand(),
+            ),
+          ),
+          SafeArea(
+            child: FadeTransition(
+              opacity: _introFade,
+              child: Column(
+                children: [
+                  const Spacer(flex: 2),
+                  ScaleTransition(
+                    scale: _logoScale,
+                    child: Semantics(
+                      image: true,
+                      label: 'EgyptLore compass',
+                      child: Container(
+                        width: 204,
+                        height: 204,
+                        padding: const EdgeInsets.all(25),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF15253A).withValues(alpha: .5),
+                          border: Border.all(
+                            color: const Color(0x66D4AF37),
+                            width: 1,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x44D4AF37),
+                              blurRadius: 60,
+                              spreadRadius: 5,
+                            ),
+                            BoxShadow(
+                              color: Color(0x663BCCD2),
+                              blurRadius: 100,
+                              spreadRadius: -10,
+                            ),
+                          ],
+                        ),
+                        child: AnimatedBuilder(
+                          animation: _ambientController,
+                          child: Image.asset(
+                            'assets/images/compass_only.png',
+                            fit: BoxFit.contain,
+                          ),
+                          builder: (context, logo) => ShaderMask(
+                            blendMode: BlendMode.srcATop,
+                            shaderCallback: (bounds) => LinearGradient(
+                              begin: Alignment(
+                                -1.6 + 3.2 * _ambientController.value,
+                                -0.5,
+                              ),
+                              end: Alignment(
+                                -0.8 + 3.2 * _ambientController.value,
+                                0.5,
+                              ),
+                              colors: const [
+                                Color(0x00FFE7A3),
+                                Color(0x44FFE7A3),
+                                Color(0x00FFE7A3),
+                              ],
+                              stops: const [0, 0.5, 1],
+                            ).createShader(bounds),
+                            child: logo,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SlideTransition(
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0, .24),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: _introController,
+                            curve: const Interval(
+                              .24,
+                              .78,
+                              curve: Curves.easeOutCubic,
+                            ),
+                          ),
+                        ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'EgyptLore',
+                          textDirection: isArabic
+                              ? TextDirection.rtl
+                              : TextDirection.ltr,
+                          style: const TextStyle(
+                            color: Color(0xFFF4E7C8),
+                            fontSize: 34,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 2.2,
+                            shadows: [
+                              Shadow(color: Color(0x66D4AF37), blurRadius: 22),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 17,
+                            vertical: 9,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0x1AD4AF37),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: const Color(0x55D4AF37)),
+                          ),
+                          child: Text(
+                            isArabic
+                                ? 'استكشف الحكايات والكنوز من حولك'
+                                : 'Discover the Hidden Stories Around You',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFFE7D6AF),
+                              fontSize: 13,
+                              letterSpacing: .25,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(flex: 2),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(48, 0, 48, 36),
+                    child: AnimatedBuilder(
+                      animation: _ambientController,
+                      builder: (context, child) => Container(
+                        height: 3,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(4),
+                          gradient: LinearGradient(
+                            begin: Alignment(
+                              -1 + 2 * _ambientController.value,
+                              0,
+                            ),
+                            end: Alignment(1 + 2 * _ambientController.value, 0),
+                            colors: const [
+                              Color(0x223BCCD2),
+                              Color(0xFFD4AF37),
+                              Color(0xFFF59E0B),
+                              Color(0xFF3BCCD2),
+                              Color(0x223BCCD2),
+                            ],
+                          ),
+                          boxShadow: const [
+                            BoxShadow(color: Color(0x66D4AF37), blurRadius: 12),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPyramidsStage() {
+    return KeyedSubtree(
+      key: const ValueKey('pyramids-stage'),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Semantics(
+            container: true,
+            label:
+                'EgyptLore. Egypt Unseen — Discover Egypt’s Hidden Stories. اكتشف حكايات وكنوز مصر المخفية',
+            child: Image.asset(
+              'assets/images/splash_bg.png',
+              key: const ValueKey('pyramids-background-image'),
+              fit: BoxFit.cover,
+              excludeFromSemantics: true,
+            ),
+          ),
+          RepaintBoundary(
+            child: CustomPaint(
+              painter: _GoldenParticlesPainter(_ambientController),
+              child: const SizedBox.expand(),
+            ),
+          ),
+          Align(
+            alignment: const Alignment(0, -0.36),
+            child: RotationTransition(
+              turns: _ambientController,
+              child: Image.asset(
+                'assets/images/compass_only.png',
+                key: const ValueKey('pyramids-compass-image'),
+                width: 72,
+                height: 72,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 48,
+            right: 48,
+            bottom: 56,
+            child: AnimatedBuilder(
+              animation: _pyramidsProgressController,
+              builder: (context, _) => ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  key: const ValueKey('pyramids-progress'),
+                  value: _pyramidsProgressController.value,
+                  minHeight: 3,
+                  backgroundColor: const Color(0x55D4AF37),
+                  valueColor: const AlwaysStoppedAnimation(Color(0xFFD4AF37)),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GoldenParticlesPainter extends CustomPainter {
+  _GoldenParticlesPainter(this.animation) : super(repaint: animation);
+
+  final Animation<double> animation;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final random = math.Random(29);
+    final time = animation.value;
+    for (var i = 0; i < 36; i++) {
+      final x = random.nextDouble() * size.width;
+      final baseY = random.nextDouble() * size.height;
+      final y = (baseY - time * size.height * .16) % size.height;
+      final twinkle = .25 + .75 * (1 + math.sin(time * math.pi * 4 + i)) / 2;
+      final paint = Paint()
+        ..color = const Color(0xFFFFD978).withValues(alpha: .42 * twinkle);
+      canvas.drawCircle(Offset(x, y), i % 7 == 0 ? 1.6 : 1, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GoldenParticlesPainter oldDelegate) => false;
 }
 
 class _ExplorerSkyPainter extends CustomPainter {
