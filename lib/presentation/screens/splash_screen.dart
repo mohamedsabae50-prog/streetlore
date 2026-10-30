@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -25,20 +26,21 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   static const _radarStageDuration = Duration(milliseconds: 800);
-  static const _stageTransitionDuration = Duration(milliseconds: 400);
+  static const _stageTransitionDuration = Duration(milliseconds: 250);
   static const _pyramidsVisibleDuration = Duration(milliseconds: 1600);
 
   late final AnimationController _introController;
   late final AnimationController _ambientController;
   late final AnimationController _exitController;
-  late final AnimationController _pyramidsProgressController;
-  late final AnimationController _stageTransitionController;
+  late final AnimationController _progressController;
+  late final AnimationController _radarFadeController;
+  late final AnimationController _pyramidsFadeController;
   late final Animation<double> _introFade;
   late final Animation<double> _logoScale;
   final Stopwatch _splashStopwatch = Stopwatch();
   Timer? _navigationTimer;
   Timer? _stageTimer;
-  bool _showPyramids = false;
+  bool _showPyramids = kIsWeb;
 
   @override
   void initState() {
@@ -63,30 +65,41 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 18),
     )..repeat();
 
-    _pyramidsProgressController = AnimationController(
+    _progressController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
+      duration: widget.minimumDisplayDuration,
     );
-    _stageTransitionController =
-        AnimationController(vsync: this, duration: _stageTransitionDuration)
-          ..addStatusListener((status) {
-            if (status != AnimationStatus.completed) return;
-            final remaining =
-                widget.minimumDisplayDuration - _splashStopwatch.elapsed;
-            final visibleDuration = remaining > _pyramidsVisibleDuration
-                ? remaining
-                : _pyramidsVisibleDuration;
-            _navigationTimer = Timer(visibleDuration, _exitThenNavigate);
-          });
+    _radarFadeController =
+        AnimationController(
+          vsync: this,
+          duration: _stageTransitionDuration,
+          value: 1,
+        )..addStatusListener((status) {
+          if (status != AnimationStatus.dismissed || kIsWeb || !mounted) return;
+          setState(() => _showPyramids = true);
+          _pyramidsFadeController.forward();
+        });
+    _pyramidsFadeController =
+        AnimationController(
+          vsync: this,
+          duration: _stageTransitionDuration,
+          value: kIsWeb ? 1 : 0,
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed && !kIsWeb && mounted) {
+            _scheduleNavigation();
+          }
+        });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _splashStopwatch.start();
-      _stageTimer = Timer(_radarStageDuration, () {
-        if (!mounted) return;
-        setState(() => _showPyramids = true);
-        _pyramidsProgressController.forward();
-        _stageTransitionController.forward();
-      });
+      _progressController.forward();
+      if (kIsWeb) {
+        _scheduleNavigation();
+      } else {
+        _stageTimer = Timer(_radarStageDuration, () {
+          if (mounted) _radarFadeController.reverse();
+        });
+      }
     });
 
     _exitController = AnimationController(
@@ -101,10 +114,19 @@ class _SplashScreenState extends State<SplashScreen>
     _stageTimer?.cancel();
     _ambientController.dispose();
     _introController.dispose();
-    _pyramidsProgressController.dispose();
-    _stageTransitionController.dispose();
+    _progressController.dispose();
+    _radarFadeController.dispose();
+    _pyramidsFadeController.dispose();
     _exitController.dispose();
     super.dispose();
+  }
+
+  void _scheduleNavigation() {
+    final remaining = widget.minimumDisplayDuration - _splashStopwatch.elapsed;
+    final visibleDuration = remaining > _pyramidsVisibleDuration
+        ? remaining
+        : _pyramidsVisibleDuration;
+    _navigationTimer = Timer(visibleDuration, _exitThenNavigate);
   }
 
   Future<void> _exitThenNavigate() async {
@@ -150,19 +172,44 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: const Color(0xFF060D1A),
       body: FadeTransition(
         opacity: ReverseAnimation(_exitController),
-        child: AnimatedSwitcher(
-          duration: _stageTransitionDuration,
-          switchInCurve: Curves.easeInOut,
-          switchOutCurve: Curves.easeInOut,
-          child: _showPyramids
-              ? _buildPyramidsStage()
-              : _buildRadarStage(isArabic),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_showPyramids)
+              FadeTransition(
+                opacity: _pyramidsFadeController,
+                child: _buildPyramidsSplash(),
+              )
+            else
+              FadeTransition(
+                opacity: _radarFadeController,
+                child: _buildRadarEntrance(isArabic),
+              ),
+            Positioned(
+              left: 48,
+              right: 48,
+              bottom: 56,
+              child: AnimatedBuilder(
+                animation: _progressController,
+                builder: (context, _) => ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    key: const ValueKey('splash-progress'),
+                    value: _progressController.value,
+                    minHeight: 3,
+                    backgroundColor: const Color(0x55D4AF37),
+                    valueColor: const AlwaysStoppedAnimation(Color(0xFFD4AF37)),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildRadarStage(bool isArabic) {
+  Widget _buildRadarEntrance(bool isArabic) {
     return KeyedSubtree(
       key: const ValueKey('radar-stage'),
       child: Stack(
@@ -333,35 +380,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                   const Spacer(flex: 2),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(48, 0, 48, 36),
-                    child: AnimatedBuilder(
-                      animation: _ambientController,
-                      builder: (context, child) => Container(
-                        height: 3,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(4),
-                          gradient: LinearGradient(
-                            begin: Alignment(
-                              -1 + 2 * _ambientController.value,
-                              0,
-                            ),
-                            end: Alignment(1 + 2 * _ambientController.value, 0),
-                            colors: const [
-                              Color(0x223BCCD2),
-                              Color(0xFFD4AF37),
-                              Color(0xFFF59E0B),
-                              Color(0xFF3BCCD2),
-                              Color(0x223BCCD2),
-                            ],
-                          ),
-                          boxShadow: const [
-                            BoxShadow(color: Color(0x66D4AF37), blurRadius: 12),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 39),
                 ],
               ),
             ),
@@ -371,7 +390,7 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  Widget _buildPyramidsStage() {
+  Widget _buildPyramidsSplash() {
     return KeyedSubtree(
       key: const ValueKey('pyramids-stage'),
       child: Stack(
@@ -388,55 +407,24 @@ class _SplashScreenState extends State<SplashScreen>
               excludeFromSemantics: true,
             ),
           ),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0x08081422),
+                  Color(0x0010182B),
+                  Color(0x1210182B),
+                ],
+                stops: [0, 0.48, 1],
+              ),
+            ),
+          ),
           RepaintBoundary(
             child: CustomPaint(
               painter: _GoldenParticlesPainter(_ambientController),
               child: const SizedBox.expand(),
-            ),
-          ),
-          Align(
-            alignment: const Alignment(0, -0.36),
-            child: RotationTransition(
-              turns: _ambientController,
-              child: Image.asset(
-                'assets/images/compass_only.png',
-                key: const ValueKey('pyramids-compass-image'),
-                width: 72,
-                height: 72,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-          const Align(
-            alignment: Alignment(0, -0.02),
-            child: Text(
-              'EGYPTLORE',
-              key: ValueKey('pyramids-title'),
-              style: TextStyle(
-                color: Color(0xFFF4E7C8),
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 5,
-                shadows: [Shadow(color: Color(0x99D4AF37), blurRadius: 20)],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 48,
-            right: 48,
-            bottom: 56,
-            child: AnimatedBuilder(
-              animation: _pyramidsProgressController,
-              builder: (context, _) => ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  key: const ValueKey('pyramids-progress'),
-                  value: _pyramidsProgressController.value,
-                  minHeight: 3,
-                  backgroundColor: const Color(0x55D4AF37),
-                  valueColor: const AlwaysStoppedAnimation(Color(0xFFD4AF37)),
-                ),
-              ),
             ),
           ),
         ],

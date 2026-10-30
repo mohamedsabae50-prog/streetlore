@@ -36,13 +36,12 @@
       display: grid;
       place-items: center;
       overflow: hidden;
-      background: radial-gradient(ellipse at 50% 40%, #14263c 0%, #0d1b2a 52%, #060d1a 100%);
+      background: #060D1A;
       opacity: 1;
-      transition: opacity 250ms ease, visibility 250ms ease;
+      transition: opacity 250ms ease;
     }
     #explorer-preloader.is-hidden {
       opacity: 0;
-      visibility: hidden;
       pointer-events: none;
     }
     .preloader-orbit {
@@ -123,26 +122,23 @@
   </div>
   <script>
     (function () {
-      var startedAt = Date.now();
       var preloader = document.getElementById('explorer-preloader');
-      var hidden = false;
 
       function hidePreloader() {
-        if (hidden) return;
-        hidden = true;
-        if (preloader) preloader.classList.add('is-hidden');
+        if (!preloader) return;
+        preloader.classList.add('is-hidden');
+        var removePreloader = function (event) {
+          if (event && (event.target !== preloader || event.propertyName !== 'opacity')) return;
+          preloader.remove();
+        };
+        preloader.addEventListener('transitionend', removePreloader, { once: true });
+        window.setTimeout(removePreloader, 300);
       }
 
-      var fallbackTimer = window.setTimeout(hidePreloader, 800);
-      window.addEventListener('flutter-first-frame', function () {
-        window.setTimeout(function () {
-          window.clearTimeout(fallbackTimer);
-          hidePreloader();
-        }, Math.max(0, 700 - (Date.now() - startedAt)));
-      }, { once: true });
+      window.setTimeout(hidePreloader, 900);
 
       var bootstrap = document.createElement('script');
-      bootstrap.src = 'flutter_bootstrap.js?v=2.1.35-236-splash-20261030';
+      bootstrap.src = 'flutter_bootstrap.js?v=2.1.35-236-clean-splash';
       bootstrap.async = true;
       bootstrap.onerror = function (error) {
         console.error('Unable to load Flutter bootstrap:', error);

@@ -492,7 +492,7 @@ class _EgyptLoreAppState extends State<EgyptLoreApp>
               theme: _lightTheme(),
               darkTheme: _darkTheme(),
               home: const SplashScreen(
-                minimumDisplayDuration: Duration(milliseconds: 2800),
+                minimumDisplayDuration: Duration(milliseconds: 3000),
               ),
             );
           },

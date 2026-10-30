@@ -9,18 +9,31 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: SplashScreen()));
 
     expect(find.byKey(const ValueKey('radar-stage')), findsOneWidget);
+    expect(find.text('EgyptLore'), findsOneWidget);
+    expect(find.byKey(const ValueKey('splash-progress')), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    expect(find.byKey(const ValueKey('pyramids-stage')), findsNothing);
+
     await tester.pump(const Duration(milliseconds: 799));
     expect(find.byKey(const ValueKey('radar-stage')), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 1));
-    expect(find.byKey(const ValueKey('pyramids-stage')), findsOneWidget);
-    await tester.pump(const Duration(milliseconds: 416));
+    expect(find.byKey(const ValueKey('radar-stage')), findsOneWidget);
+    expect(find.byKey(const ValueKey('pyramids-stage')), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 249));
+    expect(find.byKey(const ValueKey('radar-stage')), findsOneWidget);
+    expect(find.byKey(const ValueKey('pyramids-stage')), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 5));
     expect(find.byKey(const ValueKey('radar-stage')), findsNothing);
-    await tester.pump(const Duration(milliseconds: 1583));
 
     expect(find.byKey(const ValueKey('pyramids-stage')), findsOneWidget);
-    expect(find.byKey(const ValueKey('pyramids-title')), findsOneWidget);
-    expect(find.byKey(const ValueKey('pyramids-progress')), findsOneWidget);
+    expect(find.text('EgyptLore'), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    expect(find.byKey(const ValueKey('pyramids-compass-image')), findsNothing);
+    await tester.pump(const Duration(milliseconds: 250));
     final background = tester.widget<Image>(
       find.byKey(const ValueKey('pyramids-background-image')),
     );
@@ -29,19 +42,14 @@ void main() {
       (background.image as AssetImage).assetName,
       'assets/images/splash_bg.png',
     );
-    final compass = tester.widget<Image>(
-      find.byKey(const ValueKey('pyramids-compass-image')),
-    );
-    expect(compass.image, isA<AssetImage>());
-    expect(
-      (compass.image as AssetImage).assetName,
-      'assets/images/compass_only.png',
-    );
     expect(
       find.bySemanticsLabel(
         'EgyptLore. Egypt Unseen — Discover Egypt’s Hidden Stories. اكتشف حكايات وكنوز مصر المخفية',
       ),
       findsOneWidget,
     );
+    await tester.pump(const Duration(milliseconds: 1590));
+    expect(find.byKey(const ValueKey('pyramids-stage')), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
   });
 }
