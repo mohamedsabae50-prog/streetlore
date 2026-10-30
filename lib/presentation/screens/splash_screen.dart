@@ -24,12 +24,18 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
+  static const _radarStageDuration = Duration(milliseconds: 800);
+  static const _stageTransitionDuration = Duration(milliseconds: 400);
+  static const _pyramidsVisibleDuration = Duration(milliseconds: 1600);
+
   late final AnimationController _introController;
   late final AnimationController _ambientController;
   late final AnimationController _exitController;
   late final AnimationController _pyramidsProgressController;
+  late final AnimationController _stageTransitionController;
   late final Animation<double> _introFade;
   late final Animation<double> _logoScale;
+  final Stopwatch _splashStopwatch = Stopwatch();
   Timer? _navigationTimer;
   Timer? _stageTimer;
   bool _showPyramids = false;
@@ -61,17 +67,26 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2400),
     );
+    _stageTransitionController =
+        AnimationController(vsync: this, duration: _stageTransitionDuration)
+          ..addStatusListener((status) {
+            if (status != AnimationStatus.completed) return;
+            final remaining =
+                widget.minimumDisplayDuration - _splashStopwatch.elapsed;
+            final visibleDuration = remaining > _pyramidsVisibleDuration
+                ? remaining
+                : _pyramidsVisibleDuration;
+            _navigationTimer = Timer(visibleDuration, _exitThenNavigate);
+          });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _stageTimer = Timer(const Duration(milliseconds: 800), () {
+      _splashStopwatch.start();
+      _stageTimer = Timer(_radarStageDuration, () {
         if (!mounted) return;
         setState(() => _showPyramids = true);
         _pyramidsProgressController.forward();
+        _stageTransitionController.forward();
       });
-      _navigationTimer = Timer(
-        widget.minimumDisplayDuration,
-        _exitThenNavigate,
-      );
     });
 
     _exitController = AnimationController(
@@ -87,6 +102,7 @@ class _SplashScreenState extends State<SplashScreen>
     _ambientController.dispose();
     _introController.dispose();
     _pyramidsProgressController.dispose();
+    _stageTransitionController.dispose();
     _exitController.dispose();
     super.dispose();
   }
@@ -135,7 +151,7 @@ class _SplashScreenState extends State<SplashScreen>
       body: FadeTransition(
         opacity: ReverseAnimation(_exitController),
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 400),
+          duration: _stageTransitionDuration,
           switchInCurve: Curves.easeInOut,
           switchOutCurve: Curves.easeInOut,
           child: _showPyramids
