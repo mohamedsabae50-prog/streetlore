@@ -3,7 +3,7 @@
 
 _flutter.buildConfig.builds.forEach((build) => {
   if (build.mainJsPath) {
-    build.mainJsPath += '?v=2.1.36-237-clean-splash';
+    build.mainJsPath += '?v=2.1.36-237-apple-coming-soon';
   }
 });
 

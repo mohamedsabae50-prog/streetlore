@@ -87,7 +87,7 @@ void main() {
     );
   });
 
-  testWidgets('Apple sign-in button renders and calls AuthProvider', (
+  testWidgets('Apple sign-in is disabled by default with a localized notice', (
     tester,
   ) async {
     final auth = _AppleSignInAuthProvider();
@@ -105,14 +105,43 @@ void main() {
     final button = find.byKey(const ValueKey('login-apple-button'));
 
     expect(button, findsOneWidget);
+    expect(find.text('Continue with Apple (Coming soon)'), findsOneWidget);
+    final pressScale = find.descendant(
+      of: button,
+      matching: find.byType(PressScale),
+    );
+    tester.widget<PressScale>(pressScale).onTap!.call();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Sign in with Apple is coming soon!'), findsOneWidget);
+    expect(auth.appleSignInCalls, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('enabled Apple sign-in calls AuthProvider', (tester) async {
+    final auth = _AppleSignInAuthProvider();
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => LocaleProvider()),
+          ChangeNotifierProvider<AuthProvider>.value(value: auth),
+        ],
+        child: const MaterialApp(home: LoginScreen(appleSignInEnabled: true)),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 2));
+
+    final button = find.byKey(const ValueKey('login-apple-button'));
+    expect(button, findsOneWidget);
     expect(find.text('Continue with Apple'), findsOneWidget);
     final pressScale = find.descendant(
       of: button,
       matching: find.byType(PressScale),
     );
     tester.widget<PressScale>(pressScale).onTap!.call();
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(auth.appleSignInCalls, 1);
+    expect(tester.takeException(), isNull);
   });
 }

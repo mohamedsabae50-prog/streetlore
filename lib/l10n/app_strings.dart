@@ -455,6 +455,14 @@ class AppStrings {
       'en': 'Continue with Apple',
       'ar': 'المتابعة باستخدام Apple',
     },
+    'login_apple_coming_soon': {
+      'en': 'Continue with Apple (Coming soon)',
+      'ar': 'المتابعة باستخدام Apple (قريباً)',
+    },
+    'login_apple_coming_soon_notice': {
+      'en': 'Sign in with Apple is coming soon!',
+      'ar': 'تسجيل الدخول عبر Apple سيتوفر قريباً!',
+    },
     'login_apple_failed': {
       'en': 'Apple sign-in failed. Please try again.',
       'ar': 'تعذّر تسجيل الدخول باستخدام Apple. حاول مرة أخرى.',

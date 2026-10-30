@@ -2129,6 +2129,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get login_apple => 'المتابعة باستخدام Apple';
 
   @override
+  String get login_apple_coming_soon => 'المتابعة باستخدام Apple (قريباً)';
+
+  @override
+  String get login_apple_coming_soon_notice =>
+      'تسجيل الدخول عبر Apple سيتوفر قريباً!';
+
+  @override
   String get login_apple_failed =>
       'تعذّر تسجيل الدخول باستخدام Apple. حاول مرة أخرى.';
 

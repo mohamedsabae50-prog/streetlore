@@ -15,7 +15,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.appleSignInEnabled});
+
+  final bool? appleSignInEnabled;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -34,6 +36,9 @@ class _LoginScreenState extends State<LoginScreen>
   bool _isSignUp = false;
   bool _obscurePassword = true;
   String? _focusedField;
+
+  bool get _appleSignInEnabled =>
+      widget.appleSignInEnabled ?? AppConfig.appleSignInEnabled;
 
   late final AnimationController _animCtrl;
   late final Animation<double> _bgBlob1;
@@ -116,6 +121,16 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _signInWithApple() async {
     final messenger = ScaffoldMessenger.of(context);
+    if (!_appleSignInEnabled) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(context.tr('login_apple_coming_soon_notice')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final auth = context.read<AuthProvider>();
     if (!AppConfig.supabaseEnabled) {
       messenger.showSnackBar(
@@ -633,7 +648,11 @@ class _LoginScreenState extends State<LoginScreen>
                         width: double.infinity,
                         child: _SocialButton(
                           key: const ValueKey('login-apple-button'),
-                          label: context.tr('login_apple'),
+                          label: context.tr(
+                            _appleSignInEnabled
+                                ? 'login_apple'
+                                : 'login_apple_coming_soon',
+                          ),
                           icon: Icons.apple,
                           color: context.textPri,
                           onTap: _isLoading

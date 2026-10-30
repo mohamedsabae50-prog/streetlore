@@ -1052,6 +1052,8 @@
   "hub_leaderboard": "Leaderboard",
   "hub_badges": "Badges & Progress",
   "login_apple": "Continue with Apple",
+  "login_apple_coming_soon": "Continue with Apple (Coming soon)",
+  "login_apple_coming_soon_notice": "Sign in with Apple is coming soon!",
   "login_apple_failed": "Apple sign-in failed. Please try again.",
   "ach_alex_foodie_name": "Alexandria Foodie",
   "ach_alex_foodie_desc": "Try 5 food places in Alexandria",

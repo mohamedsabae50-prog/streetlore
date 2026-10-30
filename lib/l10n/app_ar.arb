@@ -1052,6 +1052,8 @@
   "hub_leaderboard": "المتصدرين",
   "hub_badges": "إنجازاتي",
   "login_apple": "المتابعة باستخدام Apple",
+  "login_apple_coming_soon": "المتابعة باستخدام Apple (قريباً)",
+  "login_apple_coming_soon_notice": "تسجيل الدخول عبر Apple سيتوفر قريباً!",
   "login_apple_failed": "تعذّر تسجيل الدخول باستخدام Apple. حاول مرة أخرى.",
   "ach_alex_foodie_name": "ذوّاق الإسكندرية",
   "ach_alex_foodie_desc": "جرّب 5 أماكن للطعام في الإسكندرية",

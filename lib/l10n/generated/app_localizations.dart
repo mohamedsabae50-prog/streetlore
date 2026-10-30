@@ -4028,6 +4028,18 @@ abstract class AppLocalizations {
   /// **'Continue with Apple'**
   String get login_apple;
 
+  /// No description provided for @login_apple_coming_soon.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple (Coming soon)'**
+  String get login_apple_coming_soon;
+
+  /// No description provided for @login_apple_coming_soon_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Apple is coming soon!'**
+  String get login_apple_coming_soon_notice;
+
   /// No description provided for @login_apple_failed.
   ///
   /// In en, this message translates to:

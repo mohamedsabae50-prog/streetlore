@@ -2158,6 +2158,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get login_apple => 'Continue with Apple';
 
   @override
+  String get login_apple_coming_soon => 'Continue with Apple (Coming soon)';
+
+  @override
+  String get login_apple_coming_soon_notice =>
+      'Sign in with Apple is coming soon!';
+
+  @override
   String get login_apple_failed => 'Apple sign-in failed. Please try again.';
 
   @override
