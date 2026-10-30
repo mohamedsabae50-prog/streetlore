@@ -501,8 +501,30 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
+  DELETE FROM public.ai_quota
+  WHERE user_id = account_id::text;
+
+  DELETE FROM public.ai_quota_today
+  WHERE user_id = account_id::text;
+
+  DELETE FROM public.place_chat
+  WHERE user_id = account_id::text;
+
+  DELETE FROM public.place_photos
+  WHERE user_id = account_id::text;
+
+  DELETE FROM public.reviews
+  WHERE user_id::text = account_id::text;
+
+  DELETE FROM public.saved_places
+  WHERE user_id = account_id::text;
+
   DELETE FROM public.leaderboard
   WHERE user_id = account_id::text;
+
+  DELETE FROM public.notifications
+  WHERE recipient_id = account_id
+     OR actor_id = account_id;
 
   DELETE FROM auth.users
   WHERE id = account_id;
