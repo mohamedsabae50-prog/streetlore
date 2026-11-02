@@ -26,16 +26,32 @@ class RevenueCatService {
   static const entitlementId = 'pro';
   static const weeklyProductId = String.fromEnvironment(
     'REVENUECAT_WEEKLY_PRODUCT_ID',
-    defaultValue: 'weekly',
+    defaultValue: AppConfig.weeklyProductId,
   );
   static const monthlyProductId = String.fromEnvironment(
     'REVENUECAT_MONTHLY_PRODUCT_ID',
-    defaultValue: 'monthly',
+    defaultValue: AppConfig.monthlyProductId,
   );
   static const annualProductId = String.fromEnvironment(
     'REVENUECAT_ANNUAL_PRODUCT_ID',
-    defaultValue: 'annual',
+    defaultValue: AppConfig.annualProductId,
   );
+  static const _candidateProductIds = [
+    'pro_weekly',
+    'pro_monthly_base',
+    'pro_yearly',
+    'pro_monthly',
+    'streetlore_pro_weekly',
+    'streetlore_pro_monthly',
+    'streetlore_pro_yearly',
+    'egyptlore_pro_weekly',
+    'egyptlore_pro_monthly',
+    'egyptlore_pro_yearly',
+  ];
+
+  String? _lastBillingDiagnostic;
+
+  String? get lastBillingDiagnostic => _lastBillingDiagnostic;
 
   bool get isConfigured => _enabled && _platformApiKey.isNotEmpty;
 
@@ -49,50 +65,104 @@ class RevenueCatService {
     return '';
   }
 
+  static bool matchesProductId(String identifier, PackageType type) {
+    final productId = identifier.toLowerCase().split(':').first;
+    final productIds = switch (type) {
+      PackageType.weekly => [weeklyProductId, 'pro_weekly'],
+      PackageType.monthly => [monthlyProductId, 'pro_monthly_base'],
+      PackageType.annual => [annualProductId, 'pro_yearly'],
+      _ => const <String>[],
+    };
+    if (productIds.any((id) => productId == id.toLowerCase())) return true;
+
+    final aliases = switch (type) {
+      PackageType.weekly => const ['weekly', 'week', 'explorer'],
+      PackageType.monthly => const ['monthly', 'month'],
+      PackageType.annual => const ['annual', 'yearly', 'year'],
+      _ => const <String>[],
+    };
+    return aliases.any(productId.contains);
+  }
+
   Future<bool> configure(String userId) async {
-    if (!isConfigured) return false;
-    if (await Purchases.isConfigured) {
-      if (userId.isNotEmpty && await Purchases.appUserID != userId) {
-        await Purchases.logIn(userId);
-      }
-      return true;
+    if (!isConfigured) {
+      _lastBillingDiagnostic = _enabled
+          ? 'RevenueCat is unavailable for this platform or its public SDK key is missing.'
+          : 'RevenueCat is disabled by the ENABLE_REVENUECAT build flag.';
+      return false;
     }
+    try {
+      if (await Purchases.isConfigured) {
+        if (userId.isNotEmpty && await Purchases.appUserID != userId) {
+          await Purchases.logIn(userId);
+        }
+        return true;
+      }
 
-    final apiKey = _platformApiKey;
-    if (apiKey.isEmpty) return false;
+      final apiKey = _platformApiKey;
+      if (apiKey.isEmpty) {
+        _lastBillingDiagnostic =
+            'No RevenueCat public SDK key is configured for this platform.';
+        return false;
+      }
 
-    await Purchases.configure(
-      PurchasesConfiguration(apiKey)
-        ..appUserID = userId.isEmpty ? null : userId,
-    );
-    return true;
+      await Purchases.configure(
+        PurchasesConfiguration(apiKey)
+          ..appUserID = userId.isEmpty ? null : userId,
+      );
+      _lastBillingDiagnostic = null;
+      return true;
+    } catch (error) {
+      _lastBillingDiagnostic = 'RevenueCat configuration failed: $error';
+      rethrow;
+    }
   }
 
   Future<List<Package>> offeringPackages(String userId) async {
     if (!await configure(userId)) return const [];
-    final offerings = await Purchases.getOfferings();
-    final packages = <Package>[];
-    final seen = <String>{};
-    for (final offering in [
-      if (offerings.current != null) offerings.current!,
-      ...offerings.all.values,
-    ]) {
-      for (final package in offering.availablePackages) {
-        final key =
-            '${package.identifier}:${package.storeProduct.identifier}';
-        if (seen.add(key)) packages.add(package);
+    try {
+      final offerings = await Purchases.getOfferings();
+      final packages = <Package>[];
+      final seen = <String>{};
+      for (final offering in [
+        if (offerings.current != null) offerings.current!,
+        ...offerings.all.values,
+      ]) {
+        for (final package in offering.availablePackages) {
+          final key =
+              '${package.identifier}:${package.storeProduct.identifier}';
+          if (seen.add(key)) packages.add(package);
+        }
       }
+      if (packages.isEmpty) {
+        _lastBillingDiagnostic =
+            'RevenueCat returned no offering packages. Check the current offering, package configuration, and store product availability.';
+      } else {
+        _lastBillingDiagnostic = null;
+      }
+      return packages;
+    } catch (error) {
+      _lastBillingDiagnostic = 'Loading RevenueCat offerings failed: $error';
+      rethrow;
     }
-    return packages;
   }
 
   Future<List<StoreProduct>> storeProducts(String userId) async {
     if (!await configure(userId)) return const [];
-    return Purchases.getProducts([
-      weeklyProductId,
-      monthlyProductId,
-      annualProductId,
-    ]);
+    try {
+      final products = await Purchases.getProducts(_candidateProductIds);
+      if (products.isEmpty) {
+        _lastBillingDiagnostic =
+            'Google Play returned no store products for the configured product IDs. Verify product IDs, base plans, tester access, and Play Store availability.';
+      } else {
+        _lastBillingDiagnostic = null;
+      }
+      return products;
+    } catch (error) {
+      _lastBillingDiagnostic =
+          'Querying Google Play store products failed: $error';
+      rethrow;
+    }
   }
 
   Future<bool> purchase({
@@ -105,7 +175,9 @@ class RevenueCatService {
         ? PurchaseParams.package(package)
         : storeProduct != null
         ? PurchaseParams.storeProduct(storeProduct)
-        : throw ArgumentError('A RevenueCat package or store product is required.');
+        : throw ArgumentError(
+            'A RevenueCat package or store product is required.',
+          );
     final result = await Purchases.purchase(params);
     return result.customerInfo.entitlements.active.containsKey(entitlementId);
   }

@@ -1958,10 +1958,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pro_monthly_description => 'مثالي للرحلات القصيرة';
 
   @override
-  String get pro_monthly_badge => 'الأكثر شيوعًا';
+  String get pro_monthly_badge => 'شهري';
 
   @override
-  String get pro_monthly_price => '99 جنيهًا مصريًا / شهر';
+  String get pro_monthly_price => '49 جنيهًا مصريًا / شهر';
+
+  @override
+  String get pro_monthly_usd => '~\$0.99 USD';
 
   @override
   String get pro_annual => 'اشتراك برو سنوي';
@@ -1970,10 +1973,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pro_annual_description => 'عام كامل من مزايا برو';
 
   @override
-  String get pro_annual_badge => 'أفضل قيمة · وفّر ٤٠٪';
+  String get pro_annual_badge => 'سنوي';
 
   @override
-  String get pro_annual_price => '699 جنيهًا مصريًا / سنة';
+  String get pro_annual_price => '199 جنيهًا مصريًا / سنة';
+
+  @override
+  String get pro_weekly_usd => '~\$0.99 USD';
+
+  @override
+  String get pro_annual_usd => '~\$4.99 USD';
 
   @override
   String get pro_annual_monthly_equivalent =>
@@ -2021,6 +2030,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get pro_subscribe => 'اشترك الآن';
+
+  @override
+  String get pro_admin_billing_diagnostic =>
+      'اختبار المسؤول عند عدم اكتشاف منتجات المتجر';
+
+  @override
+  String get pro_admin_preview_action => 'تفعيل معاينة برو للمسؤول';
+
+  @override
+  String get pro_admin_preview_activated => 'تم تفعيل معاينة برو للمسؤول.';
+
+  @override
+  String get pro_admin_preview_failed => 'تعذر تفعيل معاينة برو للمسؤول.';
 
   @override
   String get pro_store_note => 'شراء آمن عبر App Store أو Google Play.';

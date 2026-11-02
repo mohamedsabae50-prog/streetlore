@@ -617,18 +617,12 @@ class AppStrings {
       'ar': 'الحساب المُبلّغ عنه',
     },
     'admin_reported_by': {'en': 'Reported by {name}', 'ar': 'أبلغ عنه {name}'},
-    'admin_clear_avatar': {
-      'en': 'Remove avatar',
-      'ar': 'إزالة الصورة الشخصية',
-    },
+    'admin_clear_avatar': {'en': 'Remove avatar', 'ar': 'إزالة الصورة الشخصية'},
     'admin_clear_avatar_q': {
       'en': 'Remove this account’s avatar?',
       'ar': 'هل تريد إزالة الصورة الشخصية لهذا الحساب؟',
     },
-    'admin_reset_account_name': {
-      'en': 'Reset name',
-      'ar': 'إعادة تعيين الاسم',
-    },
+    'admin_reset_account_name': {'en': 'Reset name', 'ar': 'إعادة تعيين الاسم'},
     'admin_reset_account_name_q': {
       'en': 'Reset this account name to Explorer?',
       'ar': 'هل تريد إعادة تعيين اسم هذا الحساب إلى مستكشف؟',
@@ -1507,29 +1501,29 @@ class AppStrings {
       'en': '49 EGP / week',
       'ar': '49 جنيهًا مصريًا / أسبوع',
     },
-    'pro_monthly': {'en': 'Monthly Pro Plan', 'ar': 'اشتراك برو شهري'},
+    'pro_monthly': {'en': 'Monthly Plan', 'ar': 'اشتراك برو شهري'},
     'pro_monthly_description': {
       'en': 'Perfect for short trips',
       'ar': 'مثالي للرحلات القصيرة',
     },
-    'pro_monthly_badge': {'en': 'MOST POPULAR', 'ar': 'الأكثر شيوعًا'},
+    'pro_monthly_badge': {'en': 'MONTHLY', 'ar': 'شهري'},
     'pro_monthly_price': {
-      'en': '99 EGP / month',
-      'ar': '99 جنيهًا مصريًا / شهر',
+      'en': '49 EGP / month',
+      'ar': '49 جنيهًا مصريًا / شهر',
     },
-    'pro_annual': {'en': 'Annual Pro Plan', 'ar': 'اشتراك برو سنوي'},
+    'pro_monthly_usd': {'en': '~\$0.99 USD', 'ar': '~\$0.99 USD'},
+    'pro_annual': {'en': 'Annual Plan', 'ar': 'اشتراك برو سنوي'},
     'pro_annual_description': {
       'en': 'One year of complete Pro access',
       'ar': 'عام كامل من مزايا برو',
     },
-    'pro_annual_badge': {
-      'en': 'BEST VALUE · SAVE 40%',
-      'ar': 'أفضل قيمة · وفّر ٤٠٪',
-    },
+    'pro_annual_badge': {'en': 'ANNUAL', 'ar': 'سنوي'},
     'pro_annual_price': {
-      'en': '699 EGP / year',
-      'ar': '699 جنيهًا مصريًا / سنة',
+      'en': '199 EGP / year',
+      'ar': '199 جنيهًا مصريًا / سنة',
     },
+    'pro_weekly_usd': {'en': '~\$0.99 USD', 'ar': '~\$0.99 USD'},
+    'pro_annual_usd': {'en': '~\$4.99 USD', 'ar': '~\$4.99 USD'},
     'pro_annual_monthly_equivalent': {
       'en': 'Equivalent to ~58 EGP / month',
       'ar': 'ما يعادل نحو 58 جنيهًا مصريًا / شهر',
@@ -1551,6 +1545,22 @@ class AppStrings {
       'ar': 'كل مزايا الخطة المجانية، بالإضافة إلى:',
     },
     'pro_subscribe': {'en': 'Subscribe Now', 'ar': 'اشترك الآن'},
+    'pro_admin_billing_diagnostic': {
+      'en': 'Admin testing when no store products are detected',
+      'ar': 'اختبار المسؤول عند عدم اكتشاف منتجات المتجر',
+    },
+    'pro_admin_preview_action': {
+      'en': 'Activate Admin Pro Preview',
+      'ar': 'تفعيل معاينة برو للمسؤول',
+    },
+    'pro_admin_preview_activated': {
+      'en': 'Admin Pro preview activated.',
+      'ar': 'تم تفعيل معاينة برو للمسؤول.',
+    },
+    'pro_admin_preview_failed': {
+      'en': 'Could not activate Admin Pro preview.',
+      'ar': 'تعذر تفعيل معاينة برو للمسؤول.',
+    },
     'pro_store_note': {
       'en': 'Secure purchase through the App Store or Google Play.',
       'ar': 'شراء آمن عبر App Store أو Google Play.',

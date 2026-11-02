@@ -1976,28 +1976,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pro_weekly_price => '49 EGP / week';
 
   @override
-  String get pro_monthly => 'Monthly Pro Plan';
+  String get pro_monthly => 'Monthly Plan';
 
   @override
   String get pro_monthly_description => 'Perfect for short trips';
 
   @override
-  String get pro_monthly_badge => 'MOST POPULAR';
+  String get pro_monthly_badge => 'MONTHLY';
 
   @override
-  String get pro_monthly_price => '99 EGP / month';
+  String get pro_monthly_price => '49 EGP / month';
 
   @override
-  String get pro_annual => 'Annual Pro Plan';
+  String get pro_monthly_usd => '~\$0.99 USD';
+
+  @override
+  String get pro_annual => 'Annual Plan';
 
   @override
   String get pro_annual_description => 'One year of complete Pro access';
 
   @override
-  String get pro_annual_badge => 'BEST VALUE · SAVE 40%';
+  String get pro_annual_badge => 'ANNUAL';
 
   @override
-  String get pro_annual_price => '699 EGP / year';
+  String get pro_annual_price => '199 EGP / year';
+
+  @override
+  String get pro_weekly_usd => '~\$0.99 USD';
+
+  @override
+  String get pro_annual_usd => '~\$4.99 USD';
 
   @override
   String get pro_annual_monthly_equivalent => 'Equivalent to ~58 EGP / month';
@@ -2044,6 +2053,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pro_subscribe => 'Subscribe Now';
+
+  @override
+  String get pro_admin_billing_diagnostic =>
+      'Admin testing when no store products are detected';
+
+  @override
+  String get pro_admin_preview_action => 'Activate Admin Pro Preview';
+
+  @override
+  String get pro_admin_preview_activated => 'Admin Pro preview activated.';
+
+  @override
+  String get pro_admin_preview_failed =>
+      'Could not activate Admin Pro preview.';
 
   @override
   String get pro_store_note =>

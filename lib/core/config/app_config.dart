@@ -20,7 +20,9 @@ class AppConfig {
   static const String mobileRedirectUrl =
       'io.supabase.streetlore://login-callback/';
 
-  static const String revenueCatApiKey =
-      'goog_rUOBKQKNQSCDxomWWuBnYLgAweH';
+  static const String revenueCatApiKey = 'goog_rUOBKQKNQSCDxomWWuBnYLgAweH';
   static const String revenueCatAndroidApiKey = revenueCatApiKey;
+  static const String weeklyProductId = 'pro_weekly';
+  static const String monthlyProductId = 'pro_monthly_base';
+  static const String annualProductId = 'pro_yearly';
 }

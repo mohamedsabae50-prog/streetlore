@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/services/revenuecat_service.dart';
 import '../../logic/auth_provider.dart';
 import '../../l10n/app_strings.dart';
@@ -35,6 +35,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
   bool _loading = false;
   bool _loadingPackages = false;
   bool _restoring = false;
+  bool _billingCheckComplete = false;
+  bool _hasStoreProducts = false;
+  bool _adminPreviewLoading = false;
+  String? _billingDiagnostic;
 
   @override
   void initState() {
@@ -44,7 +48,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   Future<void> _loadPackages() async {
     final auth = context.read<AuthProvider>();
-    if (auth.userId.isEmpty || !RevenueCatService.instance.isConfigured) {
+    if (auth.userId.isEmpty) {
+      setState(() {
+        _billingCheckComplete = true;
+        _hasStoreProducts = false;
+      });
       return;
     }
     setState(() => _loadingPackages = true);
@@ -74,40 +82,31 @@ class _PaywallScreenState extends State<PaywallScreen> {
       _weeklyProduct = _productOf(products, PackageType.weekly);
       _monthlyProduct = _productOf(products, PackageType.monthly);
       _annualProduct = _productOf(products, PackageType.annual);
+      _hasStoreProducts =
+          _weeklyPackage != null ||
+          _monthlyPackage != null ||
+          _annualPackage != null ||
+          _weeklyProduct != null ||
+          _monthlyProduct != null ||
+          _annualProduct != null;
+      _billingDiagnostic = RevenueCatService.instance.lastBillingDiagnostic;
+      if (!_hasStoreProducts && _billingDiagnostic == null) {
+        _billingDiagnostic =
+            'Billing returned no products matching the configured weekly, monthly, or yearly plans.';
+      }
+      _billingCheckComplete = true;
       _loadingPackages = false;
     });
   }
 
   Package? _packageOf(List<Package> packages, PackageType type) {
-    final expectedId = switch (type) {
-      PackageType.weekly => RevenueCatService.weeklyProductId,
-      PackageType.monthly => RevenueCatService.monthlyProductId,
-      PackageType.annual => RevenueCatService.annualProductId,
-      _ => '',
-    };
-
     for (final package in packages) {
       if (package.packageType == type) return package;
-      final aliases = switch (type) {
-        PackageType.weekly => const ['weekly', r'$rc_weekly', 'week', 'explorer'],
-        PackageType.monthly => const ['monthly', r'$rc_monthly', 'month'],
-        PackageType.annual => const [
-          'annual',
-          'yearly',
-          r'$rc_annual',
-          'year',
-        ],
-        _ => const <String>[],
-      };
-      final identifiers = [
-        package.identifier.toLowerCase(),
-        package.storeProduct.identifier.toLowerCase(),
-      ];
-      if (identifiers.any(
-        (identifier) =>
-            identifier == expectedId.toLowerCase() ||
-            aliases.any(identifier.contains),
-      )) {
+      if (RevenueCatService.matchesProductId(package.identifier, type) ||
+          RevenueCatService.matchesProductId(
+            package.storeProduct.identifier,
+            type,
+          )) {
         return package;
       }
     }
@@ -115,26 +114,39 @@ class _PaywallScreenState extends State<PaywallScreen> {
   }
 
   StoreProduct? _productOf(List<StoreProduct> products, PackageType type) {
-    final expectedId = switch (type) {
-      PackageType.weekly => RevenueCatService.weeklyProductId,
-      PackageType.monthly => RevenueCatService.monthlyProductId,
-      PackageType.annual => RevenueCatService.annualProductId,
-      _ => '',
-    };
-    final aliases = switch (type) {
-      PackageType.weekly => const ['weekly', 'week', 'explorer'],
-      PackageType.monthly => const ['monthly', 'month'],
-      PackageType.annual => const ['annual', 'yearly', 'year'],
-      _ => const <String>[],
-    };
     for (final product in products) {
-      final identifier = product.identifier.toLowerCase();
-      if (identifier == expectedId.toLowerCase() ||
-          aliases.any(identifier.contains)) {
+      if (RevenueCatService.matchesProductId(product.identifier, type)) {
         return product;
       }
     }
     return null;
+  }
+
+  Future<void> _activateAdminPreview() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isAdmin || auth.userId.isEmpty || _adminPreviewLoading) return;
+
+    setState(() => _adminPreviewLoading = true);
+    try {
+      await Supabase.instance.client.rpc(
+        'admin_set_user_pro',
+        params: {'target_user_id': auth.userId, 'pro_enabled': true},
+      );
+      await auth.refreshProStatus();
+      if (!mounted) return;
+      if (auth.isPro) {
+        _showMessage(context.tr('pro_admin_preview_activated'));
+      } else {
+        throw StateError('Admin Pro preview was not reflected in the profile.');
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        'PaywallScreen: admin Pro preview failed: $error\n$stackTrace',
+      );
+      if (mounted) _showMessage(context.tr('pro_admin_preview_failed'));
+    } finally {
+      if (mounted) setState(() => _adminPreviewLoading = false);
+    }
   }
 
   Future<void> _restorePurchases() async {
@@ -322,6 +334,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final compactHero = MediaQuery.sizeOf(context).width < 360;
     final benefits = [
       context.tr('pro_benefit_hidden_gems'),
       context.tr('pro_benefit_premium_tours'),
@@ -331,66 +345,83 @@ class _PaywallScreenState extends State<PaywallScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: context.bgColor,
+      backgroundColor: const Color(0xFF0D0F14),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFF0D0F14),
+        foregroundColor: const Color(0xFFFFF8E8),
         title: Text(context.tr('pro_title')),
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           children: [
             Container(
-              padding: const EdgeInsets.fromLTRB(24, 30, 24, 26),
+              key: const ValueKey('paywall-hero-card'),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
               decoration: BoxDecoration(
-                gradient: AppColors.goldGradient,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.ratingGold.withValues(alpha: 0.24),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
+                color: const Color(0xFF14171F),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: const Color(0xFFC8A24A).withValues(alpha: 0.68),
+                ),
               ),
-              child: Column(
+              child: Row(
                 children: [
-                  const Icon(
-                    Icons.workspace_premium_rounded,
-                    color: Colors.white,
-                    size: 54,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    context.tr('pro_title'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'EgyptLore',
+                          style: TextStyle(
+                            color: Color(0xFFFFF8E8),
+                            fontSize: compactHero ? 22 : 26,
+                            fontWeight: FontWeight.w700,
+                            height: 1.15,
+                          ),
+                        ),
+                        Text(
+                          'Pro',
+                          style: TextStyle(
+                            color: Color(0xFFE5C165),
+                            fontSize: compactHero ? 30 : 34,
+                            fontWeight: FontWeight.w900,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          context.tr('pro_subtitle'),
+                          style: const TextStyle(
+                            color: Color(0xFFE7D6AF),
+                            fontSize: 13,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    context.tr('pro_subtitle'),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      height: 1.5,
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: compactHero ? 104 : 138,
+                    height: compactHero ? 75 : 100,
+                    child: CustomPaint(
+                      key: const ValueKey('paywall-wedjat-emblem'),
+                      painter: WedjatPainter(),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             _planCard(
               type: PackageType.weekly,
               title: context.tr('pro_weekly'),
               description: context.tr('pro_weekly_description'),
               price: context.tr('pro_weekly_price'),
+              usdEquivalent: context.tr('pro_weekly_usd'),
               package: _weeklyPackage,
-              icon: Icons.calendar_view_week_rounded,
-              accent: AppColors.primary,
+              accent: const Color(0xFFC8A24A),
               badge: context.tr('pro_weekly_badge'),
               benefits: benefits,
             ),
@@ -400,9 +431,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
               title: context.tr('pro_monthly'),
               description: context.tr('pro_monthly_description'),
               price: context.tr('pro_monthly_price'),
+              usdEquivalent: context.tr('pro_monthly_usd'),
               package: _monthlyPackage,
-              icon: Icons.calendar_month_rounded,
-              accent: AppColors.primary,
+              accent: const Color(0xFFC8A24A),
               badge: context.tr('pro_monthly_badge'),
               benefits: benefits,
             ),
@@ -412,10 +443,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
               title: context.tr('pro_annual'),
               description: context.tr('pro_annual_description'),
               price: context.tr('pro_annual_price'),
+              usdEquivalent: context.tr('pro_annual_usd'),
               package: _annualPackage,
-              priceNote: context.tr('pro_annual_monthly_equivalent'),
-              icon: Icons.calendar_month_rounded,
-              accent: const Color(0xFF8B5CF6),
+              accent: const Color(0xFFC8A24A),
               badge: context.tr('pro_annual_badge'),
               benefits: benefits,
               featured: true,
@@ -426,14 +456,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   ? context.tr('pro_store_note')
                   : context.tr('pro_setup_note'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: context.textSec, fontSize: 12),
+              style: const TextStyle(color: Color(0xFFB8AD94), fontSize: 12),
             ),
             const SizedBox(height: 12),
             Text(
               context.tr('subscription_disclosure'),
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: context.textSec,
+              style: const TextStyle(
+                color: Color(0xFFB8AD94),
                 fontSize: 11,
                 height: 1.45,
               ),
@@ -464,12 +494,17 @@ class _PaywallScreenState extends State<PaywallScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            // Debug / verification summary of detected offering / product ids
+            if (auth.isAdmin &&
+                _billingCheckComplete &&
+                !_hasStoreProducts) ...[
+              const SizedBox(height: 14),
+              _adminBillingPreviewCard(),
+            ],
             if (kDebugMode && RevenueCatService.instance.isConfigured) ...[
               const SizedBox(height: 6),
               Text(
                 context.tr('pro_detected_offerings'),
-                style: TextStyle(color: context.textSec, fontSize: 12),
+                style: const TextStyle(color: Color(0xFFB8AD94), fontSize: 12),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
@@ -495,47 +530,90 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
+  Widget _adminBillingPreviewCard() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF151821),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFC8A24A).withValues(alpha: 0.45),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr('pro_admin_billing_diagnostic'),
+            style: const TextStyle(
+              color: Color(0xFFE7D6AF),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (_billingDiagnostic case final diagnostic?) ...[
+            const SizedBox(height: 6),
+            Text(
+              diagnostic,
+              style: const TextStyle(
+                color: Color(0xFFB8AD94),
+                fontSize: 11,
+                height: 1.35,
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              key: const ValueKey('activate-admin-pro-preview'),
+              onPressed: _adminPreviewLoading ? null : _activateAdminPreview,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFE5C165),
+                side: const BorderSide(color: Color(0xFFC8A24A)),
+              ),
+              child: _adminPreviewLoading
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(context.tr('pro_admin_preview_action')),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _planCard({
     required PackageType type,
     required String title,
     required String description,
     required String price,
+    required String usdEquivalent,
     required Package? package,
-    required IconData icon,
     required Color accent,
     required List<String> benefits,
-    String? priceNote,
     String? badge,
     bool featured = false,
   }) {
     final isLoading = _loading || _loadingPackages || _restoring;
-    final label = Text(
-      context.tr('pro_subscribe'),
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-    );
-    const gold = Color(0xFFF59E0B);
-    final iconColor = context.isDark ? Colors.white : const Color(0xFFB45309);
-    final badgeColor = context.isDark ? const Color(0xFFFFD166) : const Color(0xFF92400E);
 
     return Container(
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: featured
-            ? (context.isDark
-                  ? const Color(0xFF302817)
-                  : const Color(0xFFFFFBEB))
-            : context.cardColor,
-        borderRadius: BorderRadius.circular(22),
+        color: const Color(0xFF151821),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: accent.withValues(alpha: featured ? 0.75 : 0.32),
-          width: featured ? 1.7 : 1,
+          color: accent.withValues(alpha: featured ? 0.75 : 0.5),
+          width: featured ? 1.4 : 1,
         ),
         boxShadow: featured
             ? [
                 BoxShadow(
-                  color: accent.withValues(alpha: 0.12),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
+                  color: accent.withValues(alpha: 0.14),
+                  blurRadius: 22,
+                  spreadRadius: 1,
                 ),
               ]
             : null,
@@ -545,75 +623,48 @@ class _PaywallScreenState extends State<PaywallScreen> {
         children: [
           Row(
             children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: gold.withValues(alpha: context.isDark ? 0.24 : 0.16),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: gold.withValues(alpha: context.isDark ? 0.72 : 0.48),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: gold.withValues(alpha: context.isDark ? 0.18 : 0.1),
-                      blurRadius: 12,
-                    ),
-                  ],
-                ),
-                child: Icon(icon, color: iconColor, size: 24),
-              ),
-              const SizedBox(width: 13),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: context.textPri,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFFFFF8E8),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
+              if (badge != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDAB356),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Text(
+                    badge,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFF17130A),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 6),
           Text(
             description,
-            style: TextStyle(color: context.textSec, fontSize: 12, height: 1.4),
-          ),
-          if (badge != null) ...[
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-              decoration: BoxDecoration(
-                color: gold.withValues(alpha: context.isDark ? 0.22 : 0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: gold.withValues(alpha: context.isDark ? 0.72 : 0.52),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: gold.withValues(alpha: context.isDark ? 0.15 : 0.08),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: Text(
-                badge,
-                style: TextStyle(
-                  color: badgeColor,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+            style: const TextStyle(
+              color: Color(0xFFB8AD94),
+              fontSize: 12,
+              height: 1.4,
             ),
-          ],
-          const SizedBox(height: 14),
+          ),
+          const SizedBox(height: 17),
           PaywallStorePrice(
             product:
                 package?.storeProduct ??
@@ -625,23 +676,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 },
             fallbackPrice: price,
             packageType: type,
+            usdEquivalent: usdEquivalent,
           ),
-          if (priceNote != null && package == null) ...[
-            const SizedBox(height: 3),
-            Text(
-              priceNote,
-              style: TextStyle(
-                color: context.textSec,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
           Text(
             context.tr('pro_includes_free'),
-            style: TextStyle(
-              color: context.textPri,
+            style: const TextStyle(
+              color: Color(0xFFE7D6AF),
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -654,16 +695,16 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(
-                    Icons.check_circle_rounded,
-                    color: AppColors.success,
-                    size: 17,
+                    Icons.check_rounded,
+                    color: Color(0xFFE5C165),
+                    size: 18,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       benefit,
-                      style: TextStyle(
-                        color: context.textPri,
+                      style: const TextStyle(
+                        color: Color(0xFFF3EBDD),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -676,31 +717,117 @@ class _PaywallScreenState extends State<PaywallScreen> {
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
-            child: FilledButton(
-              onPressed: isLoading ? null : () => _purchase(type),
-              style: FilledButton.styleFrom(
-                backgroundColor: accent,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: accent.withValues(alpha: 0.72),
-                disabledForegroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: ValueKey('paywall-subscribe-${type.name}'),
+                onTap: isLoading ? null : () => _purchase(type),
+                borderRadius: BorderRadius.circular(40),
+                child: Ink(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFE5C165), Color(0xFFC89B3C)],
+                    ),
+                    borderRadius: BorderRadius.circular(40),
+                  ),
+                  child: Center(
+                    child: _loading && !_restoring
+                        ? const SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFF161208),
+                            ),
+                          )
+                        : Text(
+                            context.tr('pro_subscribe'),
+                            style: const TextStyle(
+                              color: Color(0xFF161208),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                  ),
                 ),
               ),
-              child: _loading
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : label,
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class WedjatPainter extends CustomPainter {
+  const WedjatPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(size.width / 180, size.height / 110);
+
+    final gold = Paint()
+      ..color = const Color(0xFFE5C165)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final highlight = Paint()
+      ..color = const Color(0xFFC8A24A)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final upperLid = Path()
+      ..moveTo(13, 49)
+      ..cubicTo(45, 23, 100, 17, 151, 46)
+      ..cubicTo(160, 51, 166, 56, 170, 61);
+    final eye = Path()
+      ..moveTo(15, 51)
+      ..cubicTo(48, 28, 99, 27, 145, 49)
+      ..cubicTo(130, 70, 92, 83, 55, 70)
+      ..cubicTo(38, 65, 25, 58, 15, 51)
+      ..close();
+    final lowerCrease = Path()
+      ..moveTo(34, 73)
+      ..cubicTo(61, 91, 98, 91, 123, 80)
+      ..cubicTo(134, 75, 141, 68, 148, 61);
+    final falconMark = Path()
+      ..moveTo(41, 66)
+      ..cubicTo(39, 78, 42, 90, 50, 97)
+      ..cubicTo(57, 103, 65, 102, 69, 96)
+      ..cubicTo(73, 90, 70, 84, 65, 82)
+      ..cubicTo(61, 80, 57, 83, 57, 87);
+    final browAccent = Path()
+      ..moveTo(29, 42)
+      ..cubicTo(59, 20, 107, 15, 143, 34);
+
+    canvas.drawPath(eye, gold);
+    canvas.drawPath(upperLid, highlight);
+    canvas.drawPath(lowerCrease, highlight);
+    canvas.drawPath(falconMark, gold);
+    canvas.drawPath(browAccent, highlight);
+
+    final iris = Paint()
+      ..color = const Color(0xFFE5C165)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+    canvas.drawCircle(const Offset(91, 53), 17, iris);
+    canvas.drawCircle(
+      const Offset(91, 53),
+      6,
+      Paint()..color = const Color(0xFFE5C165),
+    );
+    canvas.drawCircle(
+      const Offset(91, 53),
+      2.5,
+      Paint()..color = const Color(0xFF151821),
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant WedjatPainter oldDelegate) => false;
 }

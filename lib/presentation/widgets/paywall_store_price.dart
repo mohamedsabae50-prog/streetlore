@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../l10n/app_strings.dart';
 
 class PaywallStorePrice extends StatelessWidget {
@@ -9,23 +8,26 @@ class PaywallStorePrice extends StatelessWidget {
     required this.product,
     required this.fallbackPrice,
     required this.packageType,
+    required this.usdEquivalent,
     super.key,
   });
 
   final StoreProduct? product;
   final String fallbackPrice;
   final PackageType packageType;
+  final String usdEquivalent;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           product?.priceString ?? fallbackPrice,
+          textAlign: TextAlign.center,
           style: TextStyle(
-            color: context.textPri,
-            fontSize: 25,
+            color: const Color(0xFFFFF8E8),
+            fontSize: 27,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -36,12 +38,23 @@ class PaywallStorePrice extends StatelessWidget {
                   _localizedPeriod(context, product!.subscriptionPeriod) ??
                   _defaultPeriod(context),
             }),
+            textAlign: TextAlign.center,
             style: TextStyle(
-              color: context.textSec,
+              color: const Color(0xFFE7D6AF),
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
+        const SizedBox(height: 3),
+        Text(
+          usdEquivalent,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xFFD8C28F),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }

@@ -3719,7 +3719,7 @@ abstract class AppLocalizations {
   /// No description provided for @pro_monthly.
   ///
   /// In en, this message translates to:
-  /// **'Monthly Pro Plan'**
+  /// **'Monthly Plan'**
   String get pro_monthly;
 
   /// No description provided for @pro_monthly_description.
@@ -3731,19 +3731,25 @@ abstract class AppLocalizations {
   /// No description provided for @pro_monthly_badge.
   ///
   /// In en, this message translates to:
-  /// **'MOST POPULAR'**
+  /// **'MONTHLY'**
   String get pro_monthly_badge;
 
   /// No description provided for @pro_monthly_price.
   ///
   /// In en, this message translates to:
-  /// **'99 EGP / month'**
+  /// **'49 EGP / month'**
   String get pro_monthly_price;
+
+  /// No description provided for @pro_monthly_usd.
+  ///
+  /// In en, this message translates to:
+  /// **'~\$0.99 USD'**
+  String get pro_monthly_usd;
 
   /// No description provided for @pro_annual.
   ///
   /// In en, this message translates to:
-  /// **'Annual Pro Plan'**
+  /// **'Annual Plan'**
   String get pro_annual;
 
   /// No description provided for @pro_annual_description.
@@ -3755,14 +3761,26 @@ abstract class AppLocalizations {
   /// No description provided for @pro_annual_badge.
   ///
   /// In en, this message translates to:
-  /// **'BEST VALUE · SAVE 40%'**
+  /// **'ANNUAL'**
   String get pro_annual_badge;
 
   /// No description provided for @pro_annual_price.
   ///
   /// In en, this message translates to:
-  /// **'699 EGP / year'**
+  /// **'199 EGP / year'**
   String get pro_annual_price;
+
+  /// No description provided for @pro_weekly_usd.
+  ///
+  /// In en, this message translates to:
+  /// **'~\$0.99 USD'**
+  String get pro_weekly_usd;
+
+  /// No description provided for @pro_annual_usd.
+  ///
+  /// In en, this message translates to:
+  /// **'~\$4.99 USD'**
+  String get pro_annual_usd;
 
   /// No description provided for @pro_annual_monthly_equivalent.
   ///
@@ -3835,6 +3853,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Subscribe Now'**
   String get pro_subscribe;
+
+  /// No description provided for @pro_admin_billing_diagnostic.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin testing when no store products are detected'**
+  String get pro_admin_billing_diagnostic;
+
+  /// No description provided for @pro_admin_preview_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate Admin Pro Preview'**
+  String get pro_admin_preview_action;
+
+  /// No description provided for @pro_admin_preview_activated.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin Pro preview activated.'**
+  String get pro_admin_preview_activated;
+
+  /// No description provided for @pro_admin_preview_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not activate Admin Pro preview.'**
+  String get pro_admin_preview_failed;
 
   /// No description provided for @pro_store_note.
   ///
