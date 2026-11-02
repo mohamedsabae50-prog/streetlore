@@ -14,7 +14,7 @@ import 'onboarding_screen.dart';
 class SplashScreen extends StatefulWidget {
   const SplashScreen({
     super.key,
-    this.minimumDisplayDuration = const Duration(milliseconds: 2800),
+    this.minimumDisplayDuration = const Duration(milliseconds: 3300),
   });
 
   final Duration minimumDisplayDuration;
@@ -25,9 +25,9 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  static const _radarStageDuration = Duration(milliseconds: 800);
+  static const _radarStageDuration = Duration(milliseconds: 1400);
   static const _stageTransitionDuration = Duration(milliseconds: 250);
-  static const _pyramidsVisibleDuration = Duration(milliseconds: 1600);
+  static const _pyramidsVisibleDuration = Duration(milliseconds: 1400);
 
   late final AnimationController _introController;
   late final AnimationController _ambientController;
@@ -35,6 +35,7 @@ class _SplashScreenState extends State<SplashScreen>
   late final AnimationController _progressController;
   late final AnimationController _radarFadeController;
   late final AnimationController _pyramidsFadeController;
+  late final Animation<double> _progress;
   late final Animation<double> _introFade;
   late final Animation<double> _logoScale;
   final Stopwatch _splashStopwatch = Stopwatch();
@@ -49,6 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
     _introController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2500),
+      value: 1,
     );
     _introFade = CurvedAnimation(
       parent: _introController,
@@ -58,17 +60,40 @@ class _SplashScreenState extends State<SplashScreen>
       parent: _introController,
       curve: const Interval(0, 0.7, curve: Curves.elasticOut),
     );
-    _introController.forward();
-
     _ambientController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 18),
     )..repeat();
 
+    final pyramidsProgressDuration =
+        widget.minimumDisplayDuration -
+        _radarStageDuration -
+        _stageTransitionDuration * 2;
+    final stageTwoProgressDuration =
+        pyramidsProgressDuration > _pyramidsVisibleDuration
+        ? pyramidsProgressDuration
+        : _pyramidsVisibleDuration;
     _progressController = AnimationController(
       vsync: this,
-      duration: widget.minimumDisplayDuration,
+      duration:
+          _radarStageDuration +
+          _stageTransitionDuration * 2 +
+          stageTwoProgressDuration,
     );
+    _progress = TweenSequence<double>([
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 0, end: 0.5),
+        weight: _radarStageDuration.inMilliseconds.toDouble(),
+      ),
+      TweenSequenceItem<double>(
+        tween: ConstantTween<double>(0.5),
+        weight: (_stageTransitionDuration * 2).inMilliseconds.toDouble(),
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 0.5, end: 1),
+        weight: stageTwoProgressDuration.inMilliseconds.toDouble(),
+      ),
+    ]).animate(_progressController);
     _radarFadeController =
         AnimationController(
           vsync: this,
@@ -188,17 +213,22 @@ class _SplashScreenState extends State<SplashScreen>
             Positioned(
               left: 48,
               right: 48,
-              bottom: 56,
-              child: AnimatedBuilder(
-                animation: _progressController,
-                builder: (context, _) => ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    key: const ValueKey('splash-progress'),
-                    value: _progressController.value,
-                    minHeight: 3,
-                    backgroundColor: const Color(0x55D4AF37),
-                    valueColor: const AlwaysStoppedAnimation(Color(0xFFD4AF37)),
+              bottom: 10,
+              child: SafeArea(
+                bottom: false,
+                child: AnimatedBuilder(
+                  animation: _progress,
+                  builder: (context, _) => ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      key: const ValueKey('splash-progress'),
+                      value: _progress.value,
+                      minHeight: 3,
+                      backgroundColor: const Color(0x55D4AF37),
+                      valueColor: const AlwaysStoppedAnimation(
+                        Color(0xFFD4AF37),
+                      ),
+                    ),
                   ),
                 ),
               ),
