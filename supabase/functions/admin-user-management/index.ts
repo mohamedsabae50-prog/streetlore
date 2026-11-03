@@ -93,14 +93,12 @@ async function listUsers(query: string, page: number, perPage: number) {
       perPage,
     });
     if (error) throw error;
-    const users = data.users
-      .filter((user) => !isProtectedAdmin(user.email))
-      .map((user) => ({
-        id: user.id,
-        email: user.email ?? "",
-        name: displayName(user),
-        created_at: user.created_at,
-      }));
+    const users = data.users.map((user) => ({
+      id: user.id,
+      email: user.email ?? "",
+      name: displayName(user),
+      created_at: user.created_at,
+    }));
     return { users: await includeProStatus(users), has_more: data.users.length === perPage };
   }
 
@@ -118,7 +116,6 @@ async function listUsers(query: string, page: number, perPage: number) {
     });
     if (error) throw error;
     for (const user of data.users) {
-      if (isProtectedAdmin(user.email)) continue;
       const name = displayName(user);
       const email = user.email ?? "";
       if (
