@@ -665,7 +665,11 @@ serve(async (req: Request): Promise<Response> => {
     }
   }
 
-  if (body.action === "set_plan" || body.action === "set_pro") {
+  if (
+    body.action === "set_plan" ||
+    body.action === "update_plan" ||
+    body.action === "set_pro"
+  ) {
     const userId = typeof body.user_id === "string" ? body.user_id.trim() : "";
     if (!userId) return json({ error: "user_id_required" }, 400);
     const { data: target, error: targetError } =
