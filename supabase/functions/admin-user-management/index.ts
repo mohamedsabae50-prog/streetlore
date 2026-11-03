@@ -167,14 +167,10 @@ async function includeProStatus<T extends { id: string }>(users: T[]) {
   }));
 }
 
-async function requireManageableUser(userId: string, callerId: string) {
+async function requireManageableUser(userId: string) {
   if (!userId) throw new Error("user_id_required");
-  if (userId === callerId) throw new Error("cannot_manage_own_admin_account");
   const { data, error } = await admin.auth.admin.getUserById(userId);
   if (error || !data.user) throw new Error("user_not_found");
-  if (isProtectedAdmin(data.user.email)) {
-    throw new Error("cannot_manage_admin_account");
-  }
   return data.user;
 }
 
@@ -201,11 +197,10 @@ async function getUserVisitState(userId: string) {
 
 async function updateUserVisits(
   userId: string,
-  callerId: string,
   placeIds: string[],
   operation: "add" | "remove",
 ) {
-  await requireManageableUser(userId, callerId);
+  await requireManageableUser(userId);
   if (
     placeIds.length === 0 ||
     placeIds.length > 100 ||
@@ -612,7 +607,7 @@ serve(async (req: Request): Promise<Response> => {
   if (body.action === "visits") {
     const userId = typeof body.user_id === "string" ? body.user_id.trim() : "";
     try {
-      await requireManageableUser(userId, caller.id);
+      await requireManageableUser(userId);
       return json(await getUserVisitState(userId));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
@@ -642,7 +637,7 @@ serve(async (req: Request): Promise<Response> => {
     const operation = body.action === "add_visits" ? "add" : "remove";
     try {
       return json(
-        await updateUserVisits(userId, caller.id, placeIds, operation),
+        await updateUserVisits(userId, placeIds, operation),
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
@@ -663,18 +658,11 @@ serve(async (req: Request): Promise<Response> => {
   if (body.action === "set_plan" || body.action === "set_pro") {
     const userId = typeof body.user_id === "string" ? body.user_id.trim() : "";
     if (!userId) return json({ error: "user_id_required" }, 400);
-    if (userId === caller.id) {
-      return json({ error: "cannot_change_own_admin_account" }, 400);
-    }
     const { data: target, error: targetError } =
       await admin.auth.admin.getUserById(userId);
     if (targetError || !target.user) {
       return json({ error: "user_not_found" }, 404);
     }
-    if (isProtectedAdmin(target.user.email)) {
-      return json({ error: "cannot_change_admin_account" }, 400);
-    }
-
     const plan = body.action === "set_pro"
       ? (body.is_pro === true ? "monthly" : "free")
       : body.plan;

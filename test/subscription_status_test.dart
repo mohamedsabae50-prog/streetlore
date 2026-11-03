@@ -8,6 +8,14 @@ void main() {
     test('is false without a profile or without is_pro', () {
       expect(profileGrantsPro(null, now: now), isFalse);
       expect(profileGrantsPro({'is_pro': false}, now: now), isFalse);
+      expect(
+        profileGrantsPro({
+          'is_admin': true,
+          'is_pro': false,
+          'subscription_tier': 'lifetime',
+        }, now: now),
+        isFalse,
+      );
       expect(profileGrantsPro({'subscription_tier': 'monthly'}, now: now),
           isFalse);
     });

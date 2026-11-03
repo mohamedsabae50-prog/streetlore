@@ -46,7 +46,7 @@ class AuthProvider extends ChangeNotifier {
   String get userId => _userId;
   String get avatarUrl => _avatarUrl;
   bool get isGuest => _isGuest;
-  bool get isPro => _isPro || isAdmin;
+  bool get isPro => _isPro;
   String? get subscriptionTier => _subscriptionTier;
 
   Future<void> refreshProStatus() async {
