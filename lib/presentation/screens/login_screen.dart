@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/remote_config_service.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../widgets/compass_brand.dart';
@@ -15,9 +16,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.appleSignInEnabled});
+  const LoginScreen({
+    super.key,
+    this.appleSignInEnabled,
+    this.remoteConfigService,
+  });
 
   final bool? appleSignInEnabled;
+  final RemoteConfigService? remoteConfigService;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -37,8 +43,13 @@ class _LoginScreenState extends State<LoginScreen>
   bool _obscurePassword = true;
   String? _focusedField;
 
+  RemoteConfigService get _remoteConfigService =>
+      widget.remoteConfigService ?? RemoteConfigService.instance;
+
   bool get _appleSignInEnabled =>
-      widget.appleSignInEnabled ?? AppConfig.appleSignInEnabled;
+      widget.appleSignInEnabled ??
+      (AppConfig.appleSignInEnabled ||
+          _remoteConfigService.config.appleSignInEnabled);
 
   late final AnimationController _animCtrl;
   late final Animation<double> _bgBlob1;
@@ -644,20 +655,23 @@ class _LoginScreenState extends State<LoginScreen>
                     const SizedBox(height: 10),
                     FadeInUp(
                       delay: const Duration(milliseconds: 700),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: _SocialButton(
-                          key: const ValueKey('login-apple-button'),
-                          label: context.tr(
-                            _appleSignInEnabled
-                                ? 'login_apple'
-                                : 'login_apple_coming_soon',
+                      child: AnimatedBuilder(
+                        animation: _remoteConfigService,
+                        builder: (context, _) => SizedBox(
+                          width: double.infinity,
+                          child: _SocialButton(
+                            key: const ValueKey('login-apple-button'),
+                            label: context.tr(
+                              _appleSignInEnabled
+                                  ? 'login_apple'
+                                  : 'login_apple_coming_soon',
+                            ),
+                            icon: Icons.apple,
+                            color: context.textPri,
+                            onTap: _isLoading
+                                ? null
+                                : () => unawaited(_signInWithApple()),
                           ),
-                          icon: Icons.apple,
-                          color: context.textPri,
-                          onTap: _isLoading
-                              ? null
-                              : () => unawaited(_signInWithApple()),
                         ),
                       ),
                     ),

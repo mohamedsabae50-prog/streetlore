@@ -6,13 +6,18 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/constants/app_version.dart';
+import '../../core/services/remote_config_service.dart';
 import '../../core/services/revenuecat_service.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/locale_provider.dart';
 import '../../l10n/app_strings.dart';
 import '../widgets/paywall_store_price.dart';
 
 class PaywallScreen extends StatefulWidget {
-  const PaywallScreen({super.key});
+  const PaywallScreen({super.key, this.remoteConfigService});
+
+  final RemoteConfigService? remoteConfigService;
 
   @override
   State<PaywallScreen> createState() => _PaywallScreenState();
@@ -38,12 +43,39 @@ class _PaywallScreenState extends State<PaywallScreen> {
   bool _billingCheckComplete = false;
   bool _hasStoreProducts = false;
   bool _adminPreviewLoading = false;
+  bool _updateBannerDismissed = false;
+  bool _previewUpdateBanner = false;
   String? _billingDiagnostic;
+
+  RemoteConfigService get _remoteConfigService =>
+      widget.remoteConfigService ?? RemoteConfigService.instance;
 
   @override
   void initState() {
     super.initState();
+    _remoteConfigService.addListener(_handleRemoteConfigChanged);
     _loadPackages();
+  }
+
+  @override
+  void didUpdateWidget(covariant PaywallScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldService =
+        oldWidget.remoteConfigService ?? RemoteConfigService.instance;
+    if (oldService != _remoteConfigService) {
+      oldService.removeListener(_handleRemoteConfigChanged);
+      _remoteConfigService.addListener(_handleRemoteConfigChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    _remoteConfigService.removeListener(_handleRemoteConfigChanged);
+    super.dispose();
+  }
+
+  void _handleRemoteConfigChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadPackages() async {
@@ -332,9 +364,262 @@ class _PaywallScreenState extends State<PaywallScreen> {
     }
   }
 
+  Future<void> _openDirectApk(String url) async {
+    try {
+      final uri = Uri.tryParse(url);
+      if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
+        throw const FormatException('The direct APK URL is invalid.');
+      }
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) throw StateError('No browser could open $uri.');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'PaywallScreen: could not open direct APK: $error\n$stackTrace',
+      );
+      if (mounted) {
+        _showMessage(
+          context.read<LocaleProvider>().isArabic
+              ? 'تعذر فتح رابط التحديث.'
+              : 'Unable to open the update link.',
+        );
+      }
+    }
+  }
+
+  Future<void> _editRemoteConfig() async {
+    final config = _remoteConfigService.config;
+    final controllers = <String, TextEditingController>{
+      'weekly_price_en': TextEditingController(text: config.weeklyPriceEn),
+      'weekly_price_ar': TextEditingController(text: config.weeklyPriceAr),
+      'weekly_usd_label': TextEditingController(text: config.weeklyUsdLabel),
+      'monthly_price_en': TextEditingController(text: config.monthlyPriceEn),
+      'monthly_price_ar': TextEditingController(text: config.monthlyPriceAr),
+      'monthly_usd_label': TextEditingController(text: config.monthlyUsdLabel),
+      'annual_price_en': TextEditingController(text: config.annualPriceEn),
+      'annual_price_ar': TextEditingController(text: config.annualPriceAr),
+      'annual_usd_label': TextEditingController(text: config.annualUsdLabel),
+      'promo_banner_en': TextEditingController(text: config.promoBannerEn),
+      'promo_banner_ar': TextEditingController(text: config.promoBannerAr),
+      'latest_app_version': TextEditingController(
+        text: config.latestAppVersion,
+      ),
+      'latest_build_number': TextEditingController(
+        text: config.latestBuildNumber.toString(),
+      ),
+      'direct_apk_url': TextEditingController(text: config.directApkUrl),
+      'release_notes_en': TextEditingController(text: config.releaseNotesEn),
+      'release_notes_ar': TextEditingController(text: config.releaseNotesAr),
+    };
+    var appleEnabled = config.appleSignInEnabled;
+    var promoEnabled = config.promoBannerEnabled;
+    var isSaving = false;
+    String? saveError;
+    final isArabic = context.read<LocaleProvider>().isArabic;
+
+    try {
+      final saved = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (dialogContext, setDialogState) => AlertDialog(
+            backgroundColor: const Color(0xFF151821),
+            title: Text(
+              isArabic
+                  ? 'إعدادات الدفع والتحديث المباشر'
+                  : 'Edit Live Paywall & Remote Config',
+              style: const TextStyle(color: Color(0xFFFFF8E8)),
+            ),
+            content: SizedBox(
+              width: 520,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        isArabic ? 'تفعيل تسجيل Apple' : 'Enable Apple Sign-In',
+                        style: const TextStyle(color: Color(0xFFE7D6AF)),
+                      ),
+                      value: appleEnabled,
+                      onChanged: isSaving
+                          ? null
+                          : (value) =>
+                                setDialogState(() => appleEnabled = value),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        isArabic
+                            ? 'تفعيل العرض الترويجي'
+                            : 'Enable promo banner',
+                        style: const TextStyle(color: Color(0xFFE7D6AF)),
+                      ),
+                      value: promoEnabled,
+                      onChanged: isSaving
+                          ? null
+                          : (value) =>
+                                setDialogState(() => promoEnabled = value),
+                    ),
+                    for (final entry in controllers.entries)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: TextField(
+                          controller: entry.value,
+                          keyboardType: entry.key == 'latest_build_number'
+                              ? TextInputType.number
+                              : TextInputType.text,
+                          maxLines: entry.key.startsWith('release_notes_')
+                              ? 3
+                              : 1,
+                          style: const TextStyle(color: Color(0xFFFFF8E8)),
+                          decoration: InputDecoration(
+                            labelText: entry.key.replaceAll('_', ' '),
+                            labelStyle: const TextStyle(
+                              color: Color(0xFFE7D6AF),
+                            ),
+                            enabledBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF5B5038)),
+                            ),
+                            focusedBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFFE5C165)),
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (saveError != null)
+                      Text(
+                        saveError!,
+                        style: const TextStyle(color: Color(0xFFFF8A80)),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSaving
+                    ? null
+                    : () => Navigator.pop(dialogContext, false),
+                child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+              ),
+              FilledButton(
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        final buildNumber = int.tryParse(
+                          controllers['latest_build_number']!.text.trim(),
+                        );
+                        if (buildNumber == null || buildNumber < 0) {
+                          setDialogState(
+                            () => saveError = isArabic
+                                ? 'أدخل رقم إصدار صحيحاً.'
+                                : 'Enter a valid build number.',
+                          );
+                          return;
+                        }
+                        setDialogState(() {
+                          isSaving = true;
+                          saveError = null;
+                        });
+                        try {
+                          await _remoteConfigService.updateRemoteConfig(
+                            config.copyWith(
+                              appleSignInEnabled: appleEnabled,
+                              weeklyPriceEn: controllers['weekly_price_en']!
+                                  .text
+                                  .trim(),
+                              weeklyPriceAr: controllers['weekly_price_ar']!
+                                  .text
+                                  .trim(),
+                              weeklyUsdLabel: controllers['weekly_usd_label']!
+                                  .text
+                                  .trim(),
+                              monthlyPriceEn: controllers['monthly_price_en']!
+                                  .text
+                                  .trim(),
+                              monthlyPriceAr: controllers['monthly_price_ar']!
+                                  .text
+                                  .trim(),
+                              monthlyUsdLabel: controllers['monthly_usd_label']!
+                                  .text
+                                  .trim(),
+                              annualPriceEn: controllers['annual_price_en']!
+                                  .text
+                                  .trim(),
+                              annualPriceAr: controllers['annual_price_ar']!
+                                  .text
+                                  .trim(),
+                              annualUsdLabel: controllers['annual_usd_label']!
+                                  .text
+                                  .trim(),
+                              promoBannerEnabled: promoEnabled,
+                              promoBannerEn: controllers['promo_banner_en']!
+                                  .text
+                                  .trim(),
+                              promoBannerAr: controllers['promo_banner_ar']!
+                                  .text
+                                  .trim(),
+                              latestAppVersion:
+                                  controllers['latest_app_version']!.text
+                                      .trim(),
+                              latestBuildNumber: buildNumber,
+                              directApkUrl: controllers['direct_apk_url']!.text
+                                  .trim(),
+                              releaseNotesEn: controllers['release_notes_en']!
+                                  .text
+                                  .trim(),
+                              releaseNotesAr: controllers['release_notes_ar']!
+                                  .text
+                                  .trim(),
+                            ),
+                          );
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext, true);
+                          }
+                        } catch (error, stackTrace) {
+                          debugPrint(
+                            'PaywallScreen: remote config save failed: '
+                            '$error\n$stackTrace',
+                          );
+                          if (!dialogContext.mounted) return;
+                          setDialogState(() {
+                            isSaving = false;
+                            saveError = isArabic
+                                ? 'تعذر حفظ الإعدادات. تحقق من صلاحيات المسؤول والاتصال.'
+                                : 'Could not save. Check admin access and connectivity.';
+                          });
+                        }
+                      },
+                child: isSaving
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(isArabic ? 'حفظ مباشر' : 'Save live'),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (saved == true && mounted) {
+        _showMessage(
+          isArabic ? 'تم حفظ الإعدادات المباشرة.' : 'Live settings saved.',
+        );
+      }
+    } finally {
+      for (final controller in controllers.values) {
+        controller.dispose();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final isArabic = context.watch<LocaleProvider>().isArabic;
     final compactHero = MediaQuery.sizeOf(context).width < 360;
     final benefits = [
       context.tr('pro_benefit_hidden_gems'),
@@ -343,6 +628,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
       context.tr('pro_benefit_offline'),
       context.tr('pro_benefit_badges'),
     ];
+    final config = _remoteConfigService.config;
+    final updateAvailable =
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        _remoteConfigService.isUpdateAvailable(kAppVersion, kAppBuildNumber);
+    final showUpdateBanner =
+        !_updateBannerDismissed &&
+        (updateAvailable || (auth.isAdmin && _previewUpdateBanner));
+    final promoText = isArabic ? config.promoBannerAr : config.promoBannerEn;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0F14),
@@ -413,13 +707,29 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 ],
               ),
             ),
+            if (auth.isAdmin) ...[
+              const SizedBox(height: 12),
+              _adminRemoteConfigCard(isArabic),
+            ],
+            if (config.promoBannerEnabled && promoText.trim().isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _promoBanner(promoText),
+            ],
+            if (showUpdateBanner) ...[
+              const SizedBox(height: 12),
+              _directUpdateBanner(
+                config,
+                isArabic,
+                onDismiss: () => setState(() => _updateBannerDismissed = true),
+              ),
+            ],
             const SizedBox(height: 20),
             _planCard(
               type: PackageType.weekly,
               title: context.tr('pro_weekly'),
               description: context.tr('pro_weekly_description'),
-              price: context.tr('pro_weekly_price'),
-              usdEquivalent: context.tr('pro_weekly_usd'),
+              price: isArabic ? config.weeklyPriceAr : config.weeklyPriceEn,
+              usdEquivalent: config.weeklyUsdLabel,
               package: _weeklyPackage,
               accent: const Color(0xFFC8A24A),
               badge: context.tr('pro_weekly_badge'),
@@ -430,8 +740,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
               type: PackageType.monthly,
               title: context.tr('pro_monthly'),
               description: context.tr('pro_monthly_description'),
-              price: context.tr('pro_monthly_price'),
-              usdEquivalent: context.tr('pro_monthly_usd'),
+              price: isArabic ? config.monthlyPriceAr : config.monthlyPriceEn,
+              usdEquivalent: config.monthlyUsdLabel,
               package: _monthlyPackage,
               accent: const Color(0xFFC8A24A),
               badge: context.tr('pro_monthly_badge'),
@@ -442,8 +752,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
               type: PackageType.annual,
               title: context.tr('pro_annual'),
               description: context.tr('pro_annual_description'),
-              price: context.tr('pro_annual_price'),
-              usdEquivalent: context.tr('pro_annual_usd'),
+              price: isArabic ? config.annualPriceAr : config.annualPriceEn,
+              usdEquivalent: config.annualUsdLabel,
               package: _annualPackage,
               accent: const Color(0xFFC8A24A),
               badge: context.tr('pro_annual_badge'),
@@ -526,6 +836,142 @@ class _PaywallScreenState extends State<PaywallScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _adminRemoteConfigCard(bool isArabic) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF151821),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFC8A24A)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            isArabic ? 'إدارة إعدادات التطبيق المباشرة' : 'Live app controls',
+            style: const TextStyle(
+              color: Color(0xFFE7D6AF),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            key: const ValueKey('edit-live-remote-config'),
+            onPressed: _editRemoteConfig,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFFE5C165),
+              side: const BorderSide(color: Color(0xFFC8A24A)),
+            ),
+            child: Text(
+              isArabic
+                  ? 'تعديل الدفع والإعدادات المباشرة'
+                  : 'Edit Live Paywall & Remote Config',
+            ),
+          ),
+          TextButton(
+            key: const ValueKey('preview-direct-update'),
+            onPressed: () => setState(() {
+              _previewUpdateBanner = !_previewUpdateBanner;
+              _updateBannerDismissed = false;
+            }),
+            child: Text(
+              _previewUpdateBanner
+                  ? (isArabic ? 'إخفاء معاينة التحديث' : 'Hide update preview')
+                  : (isArabic ? 'معاينة شريط التحديث' : 'Preview OTA banner'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _promoBanner(String text) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A2415),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFC8A24A)),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Color(0xFFFFE7A8),
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _directUpdateBanner(
+    RemoteConfigData config,
+    bool isArabic, {
+    required VoidCallback onDismiss,
+  }) {
+    final notes = isArabic ? config.releaseNotesAr : config.releaseNotesEn;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF211D13),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5C165), width: 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.system_update_alt_rounded,
+                color: Color(0xFFE5C165),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  isArabic
+                      ? 'تحديث فوري متاح · ${config.latestAppVersion}'
+                      : 'Instant update available · ${config.latestAppVersion}',
+                  style: const TextStyle(
+                    color: Color(0xFFFFE7A8),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: isArabic ? 'إغلاق' : 'Dismiss',
+                onPressed: onDismiss,
+                icon: const Icon(Icons.close_rounded, color: Color(0xFFE7D6AF)),
+              ),
+            ],
+          ),
+          if (notes.trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                notes,
+                style: const TextStyle(color: Color(0xFFE7D6AF)),
+              ),
+            ),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => _openDirectApk(config.directApkUrl),
+              icon: const Icon(Icons.download_rounded),
+              label: Text(
+                isArabic ? 'تحميل التحديث الفوري' : 'Download Instant Update',
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFE5C165),
+                foregroundColor: const Color(0xFF17130A),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

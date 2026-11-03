@@ -7,6 +7,7 @@ import 'package:streetlore/logic/auth_provider.dart';
 import 'package:streetlore/logic/locale_provider.dart';
 import 'package:streetlore/core/config/app_config.dart';
 import 'package:streetlore/core/services/revenuecat_service.dart';
+import 'package:streetlore/core/services/remote_config_service.dart';
 import 'package:streetlore/presentation/screens/paywall_screen.dart';
 import 'package:streetlore/presentation/widgets/paywall_store_price.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -181,5 +182,58 @@ void main() {
     expect(find.text('ANNUAL'), findsOneWidget);
     expect(find.text('199 EGP / year'), findsOneWidget);
     expect(find.text('~\$4.99 USD'), findsOneWidget);
+  });
+
+  testWidgets('paywall uses live prices when store products are unavailable', (
+    tester,
+  ) async {
+    final remoteConfig = RemoteConfigService(
+      initialConfig: const RemoteConfigData(
+        weeklyPriceEn: '65 EGP / week',
+        weeklyUsdLabel: '~\$1.29 USD',
+        monthlyPriceEn: '120 EGP / month',
+        monthlyUsdLabel: '~\$2.49 USD',
+        annualPriceEn: '900 EGP / year',
+        annualUsdLabel: '~\$18.99 USD',
+      ),
+    );
+    addTearDown(remoteConfig.dispose);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => LocaleProvider()),
+          ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ],
+        child: MaterialApp(
+          home: PaywallScreen(remoteConfigService: remoteConfig),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.scrollUntilVisible(
+      find.text('WEEKLY PLAN'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('65 EGP / week'), findsOneWidget);
+    expect(find.text('~\$1.29 USD'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('MONTHLY'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('120 EGP / month'), findsOneWidget);
+    expect(find.text('~\$2.49 USD'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('ANNUAL'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('900 EGP / year'), findsOneWidget);
+    expect(find.text('~\$18.99 USD'), findsOneWidget);
   });
 }

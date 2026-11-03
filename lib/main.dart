@@ -16,6 +16,7 @@ import 'core/services/supabase_service.dart';
 import 'core/services/sync_queue_service.dart';
 import 'core/services/realtime_resilience.dart';
 import 'core/services/carplay_service.dart';
+import 'core/services/remote_config_service.dart';
 import 'core/config/app_config.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'l10n/app_strings.dart';
@@ -118,6 +119,7 @@ Future<void> _runApplication() async {
     publishableKey: AppConfig.supabaseAnonKey,
     authOptions: const FlutterAuthClientOptions(autoRefreshToken: true),
   );
+  unawaited(RemoteConfigService.instance.initialize());
 
   await OfflineStorageService.instance.init();
   await SupabaseService.instance.init();
