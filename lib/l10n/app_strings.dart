@@ -1557,9 +1557,31 @@ class AppStrings {
       'en': 'Admin Pro preview activated.',
       'ar': 'تم تفعيل معاينة برو للمسؤول.',
     },
+    'pro_admin_preview_deactivated': {
+      'en': 'Admin Pro preview disabled. Your account is Free.',
+      'ar': 'تم إيقاف معاينة برو. حسابك الآن مجاني.',
+    },
+    'pro_admin_preview_revoke_action': {
+      'en': 'Admin Preview: Switch to Free',
+      'ar': 'معاينة المسؤول: التبديل إلى المجاني',
+    },
     'pro_admin_preview_failed': {
       'en': 'Could not activate Admin Pro preview.',
       'ar': 'تعذر تفعيل معاينة برو للمسؤول.',
+    },
+    'pro_web_billing_title': {
+      'en': 'Continue with EgyptLore Pro',
+      'ar': 'تابع مع إيجيبت لور برو',
+    },
+    'pro_web_billing_message': {
+      'en':
+          'Subscriptions are processed securely through Google Play in the EgyptLore Android app. Download the app to choose a plan and subscribe.',
+      'ar':
+          'تتم معالجة الاشتراكات بأمان عبر Google Play داخل تطبيق إيجيبت لور على Android. حمّل التطبيق لاختيار الخطة والاشتراك.',
+    },
+    'pro_download_android_app': {
+      'en': 'Download the Android app',
+      'ar': 'تحميل تطبيق Android',
     },
     'pro_store_note': {
       'en': 'Secure purchase through the App Store or Google Play.',

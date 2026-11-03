@@ -50,6 +50,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
   RemoteConfigService get _remoteConfigService =>
       widget.remoteConfigService ?? RemoteConfigService.instance;
 
+  bool get _supportsNativeBilling =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
   @override
   void initState() {
     super.initState();
@@ -79,6 +84,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
   }
 
   Future<void> _loadPackages() async {
+    if (!_supportsNativeBilling) {
+      setState(() {
+        _billingCheckComplete = true;
+        _hasStoreProducts = false;
+        _billingDiagnostic =
+            'Native store billing is unavailable on this platform.';
+      });
+      return;
+    }
     final auth = context.read<AuthProvider>();
     if (auth.userId.isEmpty) {
       setState(() {
@@ -158,18 +172,30 @@ class _PaywallScreenState extends State<PaywallScreen> {
     final auth = context.read<AuthProvider>();
     if (!auth.isAdmin || auth.userId.isEmpty || _adminPreviewLoading) return;
 
+    final enablePro = !auth.isPro;
     setState(() => _adminPreviewLoading = true);
     try {
       await Supabase.instance.client.rpc(
-        'admin_set_user_pro',
-        params: {'target_user_id': auth.userId, 'pro_enabled': true},
+        'admin_update_user_plan',
+        params: {
+          'p_user_id': auth.userId,
+          'p_tier': enablePro ? 'lifetime' : 'free',
+        },
       );
       await auth.refreshProStatus();
       if (!mounted) return;
-      if (auth.isPro) {
-        _showMessage(context.tr('pro_admin_preview_activated'));
+      if (auth.isPro == enablePro) {
+        _showMessage(
+          context.tr(
+            enablePro
+                ? 'pro_admin_preview_activated'
+                : 'pro_admin_preview_deactivated',
+          ),
+        );
       } else {
-        throw StateError('Admin Pro preview was not reflected in the profile.');
+        throw StateError(
+          'Admin plan preview was not reflected in the profile.',
+        );
       }
     } catch (error, stackTrace) {
       debugPrint(
@@ -247,16 +273,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
   }
 
   Future<void> _purchase(PackageType type) async {
+    if (!_supportsNativeBilling || !RevenueCatService.instance.isConfigured) {
+      await _showBillingUnavailableDialog();
+      return;
+    }
     final auth = context.read<AuthProvider>();
     if (auth.userId.isEmpty) {
       _showMessage(context.tr('pro_sign_in_required'));
       return;
     }
-    if (!RevenueCatService.instance.isConfigured) {
-      _showMessage(context.tr('pro_native_unavailable'));
-      return;
-    }
-
     setState(() => _loading = true);
     try {
       var package = switch (type) {
@@ -288,7 +313,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
         };
       }
       if (package == null && storeProduct == null) {
-        _showMessage(context.tr('pro_native_unavailable'));
+        await _showBillingUnavailableDialog();
         return;
       }
       final activated = await RevenueCatService.instance.purchase(
@@ -347,6 +372,106 @@ class _PaywallScreenState extends State<PaywallScreen> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _showBillingUnavailableDialog() async {
+    final auth = context.read<AuthProvider>();
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF14171F),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0xFFC8A24A)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 16, 22, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFC8A24A),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Icon(
+                Icons.workspace_premium_rounded,
+                color: Color(0xFFE5C165),
+                size: 38,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                context.tr('pro_web_billing_title'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFFFE7A8),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                context.tr('pro_web_billing_message'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFFE7D6AF), height: 1.5),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    _openDirectApk(_remoteConfigService.config.directApkUrl);
+                  },
+                  icon: const Icon(Icons.android_rounded),
+                  label: Text(context.tr('pro_download_android_app')),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFE5C165),
+                    foregroundColor: const Color(0xFF17130A),
+                  ),
+                ),
+              ),
+              if (auth.isAdmin) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _adminPreviewLoading
+                        ? null
+                        : () async {
+                            Navigator.of(sheetContext).pop();
+                            await _activateAdminPreview();
+                          },
+                    icon: const Icon(Icons.admin_panel_settings_rounded),
+                    label: Text(
+                      context.tr(
+                        auth.isPro
+                            ? 'pro_admin_preview_revoke_action'
+                            : 'pro_admin_preview_action',
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFE5C165),
+                      side: const BorderSide(color: Color(0xFFC8A24A)),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.of(sheetContext).pop(),
+                child: Text(context.tr('cancel')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _openPublicPage(Uri uri) async {
@@ -977,6 +1102,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
   }
 
   Widget _adminBillingPreviewCard() {
+    final auth = context.watch<AuthProvider>();
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -1023,7 +1149,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
                       dimension: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(context.tr('pro_admin_preview_action')),
+                  : Text(
+                      context.tr(
+                        auth.isPro
+                            ? 'pro_admin_preview_revoke_action'
+                            : 'pro_admin_preview_action',
+                      ),
+                    ),
             ),
           ),
         ],

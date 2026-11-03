@@ -2065,8 +2065,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pro_admin_preview_activated => 'Admin Pro preview activated.';
 
   @override
+  String get pro_admin_preview_deactivated =>
+      'Admin Pro preview disabled. Your account is Free.';
+
+  @override
+  String get pro_admin_preview_revoke_action => 'Admin Preview: Switch to Free';
+
+  @override
   String get pro_admin_preview_failed =>
       'Could not activate Admin Pro preview.';
+
+  @override
+  String get pro_web_billing_title => 'Continue with EgyptLore Pro';
+
+  @override
+  String get pro_web_billing_message =>
+      'Subscriptions are processed securely through Google Play in the EgyptLore Android app. Download the app to choose a plan and subscribe.';
+
+  @override
+  String get pro_download_android_app => 'Download the Android app';
 
   @override
   String get pro_store_note =>

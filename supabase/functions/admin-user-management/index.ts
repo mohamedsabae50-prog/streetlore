@@ -115,19 +115,23 @@ async function listUsers(query: string, page: number, perPage: number) {
       perPage: batchSize,
     });
     if (error) throw error;
-    for (const user of data.users) {
-      const name = displayName(user);
-      const email = user.email ?? "";
+    const batchUsers = data.users.map((user) => ({
+      id: user.id,
+      email: user.email ?? "",
+      name: displayName(user),
+      created_at: user.created_at,
+    }));
+    const enrichedUsers = await includeProStatus(batchUsers);
+    for (const user of enrichedUsers) {
       if (
-        name.toLowerCase().includes(normalizedQuery) ||
-        email.toLowerCase().includes(normalizedQuery)
+        [
+          user.name,
+          user.display_name,
+          user.username,
+          user.email,
+        ].some((value) => value?.toLowerCase().includes(normalizedQuery))
       ) {
-        matches.push({
-          id: user.id,
-          email,
-          name,
-          created_at: user.created_at,
-        });
+        matches.push(user);
       }
     }
     if (data.users.length < batchSize) break;
@@ -144,7 +148,9 @@ async function includeProStatus<T extends { id: string }>(users: T[]) {
   if (!users.length) return users;
   const { data, error } = await admin
     .from("profiles")
-    .select("user_id, is_pro, subscription_tier, subscription_end_date")
+    .select(
+      "user_id, username, display_name, is_pro, subscription_tier, subscription_end_date",
+    )
     .in("user_id", users.map((user) => user.id));
   if (error) throw error;
   const statuses = new Map(
@@ -154,6 +160,8 @@ async function includeProStatus<T extends { id: string }>(users: T[]) {
         is_pro: profile.is_pro === true,
         subscription_tier: profile.subscription_tier,
         subscription_end_date: profile.subscription_end_date,
+        username: profile.username,
+        display_name: profile.display_name,
       },
     ]),
   );
@@ -163,6 +171,8 @@ async function includeProStatus<T extends { id: string }>(users: T[]) {
       is_pro: false,
       subscription_tier: null,
       subscription_end_date: null,
+      username: null,
+      display_name: null,
     }),
   }));
 }
@@ -663,9 +673,14 @@ serve(async (req: Request): Promise<Response> => {
     if (targetError || !target.user) {
       return json({ error: "user_not_found" }, 404);
     }
-    const plan = body.action === "set_pro"
+    const requestedPlan = body.action === "set_pro"
       ? (body.is_pro === true ? "monthly" : "free")
       : body.plan;
+    const plan = requestedPlan === "yearly"
+      ? "annual"
+      : requestedPlan === "pro"
+      ? "lifetime"
+      : requestedPlan;
     if (
       plan !== "weekly" &&
       plan !== "monthly" &&

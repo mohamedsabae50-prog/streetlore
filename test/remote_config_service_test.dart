@@ -42,8 +42,8 @@ void main() {
     expect(config.annualPriceAr, '199 ج.م / سنة');
     expect(config.annualUsdLabel, '~\$4.99 USD');
     expect(config.promoBannerEnabled, isFalse);
-    expect(config.latestAppVersion, '2.1.40');
-    expect(config.latestBuildNumber, 243);
+    expect(config.latestAppVersion, '2.1.41');
+    expect(config.latestBuildNumber, 244);
     expect(
       config.directApkUrl,
       'https://github.com/mohamedsabae50-prog/streetlore/releases/latest/download/app-release.apk',
@@ -72,16 +72,16 @@ void main() {
   test('compares semantic versions and build numbers', () {
     final config = RemoteConfigService(
       initialConfig: const RemoteConfigData(
-        latestAppVersion: '2.1.40',
-        latestBuildNumber: 243,
+        latestAppVersion: '2.1.41',
+        latestBuildNumber: 244,
       ),
     );
 
-    expect(config.isUpdateAvailable('2.1.40', 242), isTrue);
-    expect(config.isUpdateAvailable('2.1.39', 243), isTrue);
-    expect(config.isUpdateAvailable('2.1.40', 243), isFalse);
+    expect(config.isUpdateAvailable('2.1.41', 243), isTrue);
+    expect(config.isUpdateAvailable('2.1.40', 244), isTrue);
     expect(config.isUpdateAvailable('2.1.41', 244), isFalse);
-    expect(config.isUpdateAvailable('2.1.40-rc.1', 243), isTrue);
+    expect(config.isUpdateAvailable('2.1.42', 245), isFalse);
+    expect(config.isUpdateAvailable('2.1.41-rc.1', 244), isTrue);
     config.dispose();
   });
 

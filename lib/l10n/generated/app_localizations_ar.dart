@@ -2042,7 +2042,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pro_admin_preview_activated => 'تم تفعيل معاينة برو للمسؤول.';
 
   @override
+  String get pro_admin_preview_deactivated =>
+      'تم إيقاف معاينة برو. حسابك الآن مجاني.';
+
+  @override
+  String get pro_admin_preview_revoke_action =>
+      'معاينة المسؤول: التبديل إلى المجاني';
+
+  @override
   String get pro_admin_preview_failed => 'تعذر تفعيل معاينة برو للمسؤول.';
+
+  @override
+  String get pro_web_billing_title => 'تابع مع إيجيبت لور برو';
+
+  @override
+  String get pro_web_billing_message =>
+      'تتم معالجة الاشتراكات بأمان عبر Google Play داخل تطبيق إيجيبت لور على Android. حمّل التطبيق لاختيار الخطة والاشتراك.';
+
+  @override
+  String get pro_download_android_app => 'تحميل تطبيق Android';
 
   @override
   String get pro_store_note => 'شراء آمن عبر App Store أو Google Play.';

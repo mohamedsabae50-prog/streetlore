@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'
+    show debugDefaultTargetPlatformOverride;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:provider/provider.dart';
@@ -108,6 +110,45 @@ void main() {
       expect(tester.widget<InkWell>(subscribeButton).onTap, isNotNull);
     }
     expect(find.text('Coming soon'), findsNothing);
+  });
+
+  testWidgets('web subscribe opens Android billing guidance', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    try {
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => LocaleProvider()),
+            ChangeNotifierProvider(create: (_) => AuthProvider()),
+          ],
+          child: const MaterialApp(home: PaywallScreen()),
+        ),
+      );
+      await tester.pump();
+
+      final subscribeButton = find.byKey(
+        const ValueKey('paywall-subscribe-weekly'),
+      );
+      await tester.ensureVisible(subscribeButton);
+      await tester.tap(subscribeButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Subscriptions are processed securely through Google Play in the EgyptLore Android app. Download the app to choose a plan and subscribe.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Download the Android app'), findsOneWidget);
+      expect(
+        find.text(
+          'Native billing is not available on this device or the selected store product is not active yet. Please try again later.',
+        ),
+        findsNothing,
+      );
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   test('uses the active Google Play subscription product IDs', () {

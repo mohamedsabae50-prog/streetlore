@@ -3872,11 +3872,41 @@ abstract class AppLocalizations {
   /// **'Admin Pro preview activated.'**
   String get pro_admin_preview_activated;
 
+  /// No description provided for @pro_admin_preview_deactivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin Pro preview disabled. Your account is Free.'**
+  String get pro_admin_preview_deactivated;
+
+  /// No description provided for @pro_admin_preview_revoke_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin Preview: Switch to Free'**
+  String get pro_admin_preview_revoke_action;
+
   /// No description provided for @pro_admin_preview_failed.
   ///
   /// In en, this message translates to:
   /// **'Could not activate Admin Pro preview.'**
   String get pro_admin_preview_failed;
+
+  /// No description provided for @pro_web_billing_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with EgyptLore Pro'**
+  String get pro_web_billing_title;
+
+  /// No description provided for @pro_web_billing_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions are processed securely through Google Play in the EgyptLore Android app. Download the app to choose a plan and subscribe.'**
+  String get pro_web_billing_message;
+
+  /// No description provided for @pro_download_android_app.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the Android app'**
+  String get pro_download_android_app;
 
   /// No description provided for @pro_store_note.
   ///

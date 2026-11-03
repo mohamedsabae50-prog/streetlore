@@ -18,8 +18,8 @@ class RemoteConfigData {
     this.promoBannerEnabled = false,
     this.promoBannerEn = '',
     this.promoBannerAr = '',
-    this.latestAppVersion = '2.1.40',
-    this.latestBuildNumber = 243,
+    this.latestAppVersion = '2.1.41',
+    this.latestBuildNumber = 244,
     this.directApkUrl =
         'https://github.com/mohamedsabae50-prog/streetlore/releases/latest/download/app-release.apk',
     this.releaseNotesEn = '',
@@ -80,8 +80,8 @@ class RemoteConfigData {
       promoBannerEnabled: boolValue('promo_banner_enabled', false),
       promoBannerEn: stringValue('promo_banner_en', ''),
       promoBannerAr: stringValue('promo_banner_ar', ''),
-      latestAppVersion: stringValue('latest_app_version', '2.1.40'),
-      latestBuildNumber: intValue('latest_build_number', 243),
+      latestAppVersion: stringValue('latest_app_version', '2.1.41'),
+      latestBuildNumber: intValue('latest_build_number', 244),
       directApkUrl: stringValue(
         'direct_apk_url',
         'https://github.com/mohamedsabae50-prog/streetlore/releases/latest/download/app-release.apk',
