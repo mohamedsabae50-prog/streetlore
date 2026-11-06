@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:streetlore/data/models/chat_message.dart';
 import 'package:streetlore/logic/chat_provider.dart';
+import 'package:streetlore/presentation/widgets/chat_text_direction.dart';
 
 // A row exactly as PostgREST / realtime return it for public.place_chat
 // (supabase_setup.sql): id bigint identity, message text, user_id uuid.
@@ -25,6 +27,32 @@ ChatMessage _local() => ChatMessage(
 );
 
 void main() {
+  test('Arabic message text is detected independently of the app locale', () {
+    expect(containsArabicCharacters('مرحبا EgyptLore'), isTrue);
+    expect(containsArabicCharacters('Hello, welcome to EgyptLore'), isFalse);
+  });
+
+  testWidgets('Arabic chat text is RTL in an English-locale app', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        locale: Locale('en'),
+        home: ChatMessageText(text: 'مرحبا EgyptLore'),
+      ),
+    );
+
+    final direction = tester.widget<Directionality>(
+      find.descendant(
+        of: find.byType(ChatMessageText),
+        matching: find.byType(Directionality),
+      ),
+    );
+    final text = tester.widget<Text>(find.text('مرحبا EgyptLore'));
+    expect(direction.textDirection, TextDirection.rtl);
+    expect(text.textAlign, TextAlign.right);
+  });
+
   group('ChatMessage.toJson', () {
     test('only sends columns the place_chat table can accept', () {
       expect(_local().toJson(), {

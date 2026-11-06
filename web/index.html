@@ -44,10 +44,16 @@
       opacity: 0;
       pointer-events: none;
     }
+    .preloader-compass-stack {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: min(70vw, 260px);
+      aspect-ratio: 1;
+    }
     .preloader-orbit {
       position: absolute;
-      width: min(76vw, 360px);
-      aspect-ratio: 1;
+      inset: 0;
       border: 1px solid rgba(212, 175, 55, .22);
       border-radius: 50%;
       box-shadow: inset 0 0 35px rgba(212, 175, 55, .04), 0 0 35px rgba(59, 204, 210, .06);
@@ -74,9 +80,11 @@
       text-align: center;
     }
     .preloader-logo {
+      position: relative;
       width: min(42vw, 174px);
       filter: drop-shadow(0 0 25px rgba(212, 175, 55, .38));
       animation: arrive 1.4s cubic-bezier(.2, 1.35, .45, 1) both;
+      z-index: 1;
     }
     .preloader-title {
       font: 500 clamp(25px, 6vw, 34px) Georgia, serif;
@@ -112,9 +120,11 @@
 </head>
 <body>
   <div id="explorer-preloader" role="status" aria-label="EgyptLore loading">
-    <div class="preloader-orbit" aria-hidden="true"></div>
     <div class="preloader-content">
-      <img class="preloader-logo" src="assets/assets/images/compass_only.png" alt="">
+      <div class="preloader-compass-stack">
+        <div class="preloader-orbit" aria-hidden="true"></div>
+        <img class="preloader-logo" src="assets/assets/images/compass_only.png" alt="">
+      </div>
       <div class="preloader-title">EgyptLore</div>
       <div class="preloader-tagline">Discover the Hidden Stories Around You</div>
       <div class="preloader-progress" aria-hidden="true"></div>
@@ -138,7 +148,7 @@
       window.setTimeout(hidePreloader, 900);
 
       var bootstrap = document.createElement('script');
-      bootstrap.src = 'flutter_bootstrap.js?v=2.1.41-244';
+      bootstrap.src = 'flutter_bootstrap.js?v=2.1.42-245';
       bootstrap.async = true;
       bootstrap.onerror = function (error) {
         console.error('Unable to load Flutter bootstrap:', error);

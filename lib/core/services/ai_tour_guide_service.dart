@@ -227,9 +227,7 @@ family-friendliness, safety, and accessibility.''';
     } catch (e, stackTrace) {
       debugPrint('Gemini Error: $e\n$stackTrace');
       debugPrint('AITourGuideService.send error: $e');
-      final isDailyLimit =
-          e is GeminiApiException &&
-          e.statusCode == 429;
+      final isDailyLimit = e is GeminiApiException && e.statusCode == 429;
       final reply = isDailyLimit
           ? _localizedDailyLimit(userText)
           : _offlineErrorReply(userText);
@@ -458,7 +456,7 @@ $userText''';
         '''You are the street-level local tourism expert inside the "EgyptLore" app. You answer questions about travel, places, food, history, and culture for the city or area the user is currently exploring.
 
 STRICT RULES:
-1. ONLY answer questions related to travel, places, history, culture, food, or tourism in the city or area the user is exploring.
+1. Answer greetings, how-are-you messages, questions about your identity or availability, and casual emotional check-ins warmly in the user's language. Then guide the user toward local places, history, food, and tours. ONLY decline genuinely unrelated questions.
 2. If the user asks about coding, mathematics, general chat, politics, news, medical advice, or any non-tourism topic, politely decline and state your specific role (e.g. "I'm your local EgyptLore guide — I can only help with travel, places, history, and culture here.").
 3. Be concise but COMPLETE. Never cut a sentence mid-thought. If you would run out of tokens, wrap the answer cleanly with a final full sentence.
 4. Use specific local details when possible (well-known landmarks, neighbourhoods, signature foods, transit options) for the city or area the user is in. Do NOT hard-code any single city — adapt to whichever city or area the user is asking about.

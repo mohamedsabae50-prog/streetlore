@@ -8,6 +8,7 @@ import '../../core/widgets/ai_quota_banner.dart';
 import '../../l10n/app_strings.dart';
 import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
+import '../widgets/chat_text_direction.dart';
 
 class GeneralAITourGuideScreen extends StatefulWidget {
   const GeneralAITourGuideScreen({super.key});
@@ -106,11 +107,11 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
         _messages[_messages.length - 1] = _Msg(
           id: '',
           role: _Role.bot,
-              text: e.statusCode == 429
-                  ? context.tr('ai_daily_limit_body')
-                  : 'Could not reach the AI right now (${e.message}). Try again '
-                        'in a moment.',
-              isDailyLimitExceeded: e.statusCode == 429,
+          text: e.statusCode == 429
+              ? context.tr('ai_daily_limit_body')
+              : 'Could not reach the AI right now (${e.message}). Try again '
+                    'in a moment.',
+          isDailyLimitExceeded: e.statusCode == 429,
         );
         _busy = false;
       });
@@ -172,10 +173,8 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
               controller: _scroll,
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               itemCount: _messages.length,
-              itemBuilder: (context, i) => _Bubble(
-                msg: _messages[i],
-                onUpgrade: _openPaywall,
-              ),
+              itemBuilder: (context, i) =>
+                  _Bubble(msg: _messages[i], onUpgrade: _openPaywall),
             ),
           ),
           if (_busy)
@@ -251,12 +250,13 @@ class _Bubble extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: const Color(0xFF393326),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
               ),
               child: const Icon(
                 Icons.travel_explore_rounded,
-                color: AppColors.primary,
+                color: Color(0xFFFFD978),
                 size: 20,
               ),
             ),
@@ -278,8 +278,8 @@ class _Bubble extends StatelessWidget {
                       : context.borderColor.withValues(alpha: 0.5),
                 ),
               ),
-              child: Text(
-                msg.text,
+              child: ChatMessageText(
+                text: msg.text,
                 style: TextStyle(
                   color: isUser ? Colors.white : context.textPri,
                   fontSize: 15,

@@ -210,36 +210,49 @@ class _SplashScreenState extends State<SplashScreen>
                 opacity: _radarFadeController,
                 child: _buildRadarEntrance(isArabic),
               ),
-            Positioned(
-              left: 48,
-              right: 48,
-              bottom: 10,
-              child: SafeArea(
-                bottom: false,
-                child: AnimatedBuilder(
-                  animation: _progress,
-                  builder: (context, _) => ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      key: const ValueKey('splash-progress'),
-                      value: _progress.value,
-                      minHeight: 3,
-                      backgroundColor: const Color(0x55D4AF37),
-                      valueColor: const AlwaysStoppedAnimation(
-                        Color(0xFFD4AF37),
-                      ),
-                    ),
-                  ),
+            if (_showPyramids)
+              Positioned(
+                left: 48,
+                right: 48,
+                bottom: 10,
+                child: SafeArea(
+                  bottom: false,
+                  child: _buildProgressIndicator(),
                 ),
               ),
-            ),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildProgressIndicator() => AnimatedBuilder(
+    animation: _progress,
+    builder: (context, _) => ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        color: const Color(0x55D4AF37),
+        child: ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [Color(0xFFD4AF37), Color(0xFFF59E0B), Color(0xFF3BCCD2)],
+          ).createShader(bounds),
+          child: LinearProgressIndicator(
+            key: const ValueKey('splash-progress'),
+            value: _progress.value,
+            minHeight: 3,
+            backgroundColor: Colors.transparent,
+            valueColor: const AlwaysStoppedAnimation(Colors.white),
+          ),
+        ),
+      ),
+    ),
+  );
+
   Widget _buildRadarEntrance(bool isArabic) {
+    final stackSize = (MediaQuery.sizeOf(context).height - 210)
+        .clamp(140.0, 260.0)
+        .toDouble();
     return KeyedSubtree(
       key: const ValueKey('radar-stage'),
       child: Stack(
@@ -265,20 +278,6 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0, -0.2),
-                radius: 0.5,
-                colors: [
-                  Color(0x22D4AF37),
-                  Color(0x0DD4AF37),
-                  Color(0x00D4AF37),
-                ],
-                stops: [0, 0.48, 1],
-              ),
-            ),
-          ),
           RepaintBoundary(
             child: CustomPaint(
               painter: _ExplorerSkyPainter(_ambientController),
@@ -293,64 +292,95 @@ class _SplashScreenState extends State<SplashScreen>
                   const Spacer(flex: 2),
                   ScaleTransition(
                     scale: _logoScale,
-                    child: Semantics(
-                      image: true,
-                      label: 'EgyptLore compass',
-                      child: Container(
-                        width: 204,
-                        height: 204,
-                        padding: const EdgeInsets.all(25),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFF15253A).withValues(alpha: .5),
-                          border: Border.all(
-                            color: const Color(0x66D4AF37),
-                            width: 1,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x44D4AF37),
-                              blurRadius: 60,
-                              spreadRadius: 5,
-                            ),
-                            BoxShadow(
-                              color: Color(0x663BCCD2),
-                              blurRadius: 100,
-                              spreadRadius: -10,
-                            ),
-                          ],
-                        ),
-                        child: AnimatedBuilder(
-                          animation: _ambientController,
-                          child: Image.asset(
-                            'assets/images/compass_only.png',
-                            fit: BoxFit.contain,
-                          ),
-                          builder: (context, logo) => ShaderMask(
-                            blendMode: BlendMode.srcATop,
-                            shaderCallback: (bounds) => LinearGradient(
-                              begin: Alignment(
-                                -1.6 + 3.2 * _ambientController.value,
-                                -0.5,
+                    child: SizedBox.square(
+                      key: const ValueKey('splash-compass-rings'),
+                      dimension: stackSize,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    Color(0x22D4AF37),
+                                    Color(0x0DD4AF37),
+                                    Color(0x00D4AF37),
+                                  ],
+                                  stops: [0, 0.55, 1],
+                                ),
                               ),
-                              end: Alignment(
-                                -0.8 + 3.2 * _ambientController.value,
-                                0.5,
-                              ),
-                              colors: const [
-                                Color(0x00FFE7A3),
-                                Color(0x44FFE7A3),
-                                Color(0x00FFE7A3),
-                              ],
-                              stops: const [0, 0.5, 1],
-                            ).createShader(bounds),
-                            child: logo,
+                            ),
                           ),
-                        ),
+                          CustomPaint(
+                            size: Size(stackSize, stackSize),
+                            painter: const _CompassRingsPainter(),
+                          ),
+                          Semantics(
+                            image: true,
+                            label: 'EgyptLore compass',
+                            child: Container(
+                              key: const ValueKey('splash-compass-emblem'),
+                              width: stackSize * .785,
+                              height: stackSize * .785,
+                              padding: EdgeInsets.all(stackSize * .096),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(
+                                  0xFF15253A,
+                                ).withValues(alpha: .5),
+                                border: Border.all(
+                                  color: const Color(0x66D4AF37),
+                                  width: 1,
+                                ),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x44D4AF37),
+                                    blurRadius: 60,
+                                    spreadRadius: 5,
+                                  ),
+                                  BoxShadow(
+                                    color: Color(0x663BCCD2),
+                                    blurRadius: 100,
+                                    spreadRadius: -10,
+                                  ),
+                                ],
+                              ),
+                              child: AnimatedBuilder(
+                                animation: _ambientController,
+                                child: Image.asset(
+                                  'assets/images/compass_only.png',
+                                  fit: BoxFit.contain,
+                                ),
+                                builder: (context, logo) => ShaderMask(
+                                  blendMode: BlendMode.srcATop,
+                                  shaderCallback: (bounds) => LinearGradient(
+                                    begin: Alignment(
+                                      -1.6 + 3.2 * _ambientController.value,
+                                      -0.5,
+                                    ),
+                                    end: Alignment(
+                                      -0.8 + 3.2 * _ambientController.value,
+                                      0.5,
+                                    ),
+                                    colors: const [
+                                      Color(0x00FFE7A3),
+                                      Color(0x44FFE7A3),
+                                      Color(0x00FFE7A3),
+                                    ],
+                                    stops: const [0, 0.5, 1],
+                                  ).createShader(bounds),
+                                  child: logo,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
                   SlideTransition(
                     position:
                         Tween<Offset>(
@@ -410,7 +440,10 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                   const Spacer(flex: 2),
-                  const SizedBox(height: 39),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(48, 0, 48, 10),
+                    child: _buildProgressIndicator(),
+                  ),
                 ],
               ),
             ),
@@ -497,18 +530,6 @@ class _ExplorerSkyPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height * .4);
     final maxRadius = size.shortestSide * .46;
     final time = animation.value;
-    final ringPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    for (var i = 0; i < 3; i++) {
-      final phase = (time + i / 3) % 1;
-      ringPaint.color = const Color(
-        0xFFD4AF37,
-      ).withValues(alpha: (1 - phase) * .17);
-      canvas.drawCircle(center, maxRadius * (.28 + phase * .72), ringPaint);
-    }
-
     final hexPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.8;
@@ -548,28 +569,6 @@ class _ExplorerSkyPainter extends CustomPainter {
       }
     }
 
-    final compassRadius = size.shortestSide * .31;
-    final compassPaint = Paint()
-      ..color = const Color(0x44D4AF37)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(time * math.pi * 2);
-    canvas.drawCircle(Offset.zero, compassRadius, compassPaint);
-    canvas.drawCircle(Offset.zero, compassRadius - 5, compassPaint);
-    for (var point = 0; point < 16; point++) {
-      final angle = math.pi * 2 * point / 16;
-      final inner = compassRadius - (point.isEven ? 13 : 7);
-      final outer = compassRadius - 1;
-      canvas.drawLine(
-        Offset(math.cos(angle) * inner, math.sin(angle) * inner),
-        Offset(math.cos(angle) * outer, math.sin(angle) * outer),
-        compassPaint,
-      );
-    }
-    canvas.restore();
-
     final random = math.Random(29);
     final particlePaint = Paint();
     for (var i = 0; i < 42; i++) {
@@ -586,4 +585,24 @@ class _ExplorerSkyPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ExplorerSkyPainter oldDelegate) => false;
+}
+
+class _CompassRingsPainter extends CustomPainter {
+  const _CompassRingsPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.shortestSide / 2;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = const Color(0x66D4AF37);
+    canvas.drawCircle(center, radius * .435, paint);
+    paint.color = const Color(0x44D4AF37);
+    canvas.drawCircle(center, radius * .488, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CompassRingsPainter oldDelegate) => false;
 }

@@ -44,9 +44,8 @@
 //   - public.consume_ai_quota(p_user_id text) returns whether a call is allowed.
 //   - The body is parsed and validated BEFORE the quota is consumed, so a
 //     malformed request (HTTP 400) costs nothing.
-//   - If no 2xx answer could be produced (every model failed, or the upstream
-//     rejected the request) the unit is handed back with
-//     public.refund_ai_quota(p_user_id text) — at most once per request.
+//   - Empty and guardrail-refusal responses are refunded just like upstream
+//     failures. Streaming responses are checked before being returned.
 //
 // To deploy:
 //   supabase functions deploy ai-proxy --no-verify-jwt --project-ref tbivoxyxclwjjspwsgvc
@@ -56,6 +55,11 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import {
+  conversationalReply,
+  isSubstantiveAnswer,
+  prepareResponse,
+} from "./chat-policy.ts";
 
 const ADMIN_EMAIL = (Deno.env.get("ADMIN_EMAIL") ?? "mohamedsabae50@gmail.com")
   .toLowerCase()
@@ -80,6 +84,14 @@ const MAX_REQUEST_BYTES = 256 * 1024; // raw HTTP body, rejected above this
 const MAX_UPSTREAM_BODY_BYTES = 64 * 1024; // rebuilt Gemini body
 const MAX_TURNS = 40;
 const MAX_SYSTEM_INSTRUCTION_CHARS = 8000;
+const SERVER_GUIDE_POLICY =
+  "Highest-priority guide policy: Answer greetings, how-are-you messages, " +
+  "questions about your identity or availability, and casual emotional " +
+  "check-ins warmly in the user's language; guide them toward local places, " +
+  "history, food, and tours. Only decline genuinely unrelated requests. " +
+  "Prefix a genuine off-topic refusal with [OUT_OF_SCOPE] and never use that " +
+  "marker for local-guide conversation. Arabic answers must begin with Arabic " +
+  "words; wrap inline EgyptLore in Unicode directional isolates.";
 const MAX_OUTPUT_TOKENS = 2048; // app uses 800 / 1024 / 2048
 const DEFAULT_MAX_OUTPUT_TOKENS = 1024;
 const MAX_LOG_PROMPT_CHARS = 2000;
@@ -96,12 +108,14 @@ const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+  "";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error(
@@ -128,7 +142,8 @@ function json(body: unknown, status = 200): Response {
 }
 
 async function userIdFromAuthHeader(req: Request): Promise<string | null> {
-  const auth = req.headers.get("authorization") ?? req.headers.get("Authorization");
+  const auth = req.headers.get("authorization") ??
+    req.headers.get("Authorization");
   if (!auth) return null;
   const m = auth.match(/^Bearer\s+(.+)$/i);
   if (!m) return null;
@@ -197,9 +212,11 @@ async function serviceAccountAccessToken(): Promise<string> {
     signingKey,
     new TextEncoder().encode(unsignedToken),
   );
-  const assertion = `${unsignedToken}.${base64UrlEncode(
-    new Uint8Array(signature),
-  )}`;
+  const assertion = `${unsignedToken}.${
+    base64UrlEncode(
+      new Uint8Array(signature),
+    )
+  }`;
   const tokenUri = serviceAccount.token_uri ?? GOOGLE_TOKEN_ENDPOINT;
   const response = await fetch(tokenUri, {
     method: "POST",
@@ -218,7 +235,9 @@ async function serviceAccountAccessToken(): Promise<string> {
     typeof tokenResponse.access_token !== "string" ||
     typeof tokenResponse.expires_in !== "number"
   ) {
-    throw new Error("Google OAuth response did not include a valid access token");
+    throw new Error(
+      "Google OAuth response did not include a valid access token",
+    );
   }
   cachedAccessToken = {
     value: tokenResponse.access_token,
@@ -384,7 +403,11 @@ function sanitizeSystemInstruction(
   return chars === 0 ? undefined : { parts };
 }
 
-function clampNumber(value: unknown, min: number, max: number): number | undefined {
+function clampNumber(
+  value: unknown,
+  min: number,
+  max: number,
+): number | undefined {
   return typeof value === "number" && Number.isFinite(value)
     ? Math.min(Math.max(value, min), max)
     : undefined;
@@ -404,7 +427,11 @@ function sanitizeGenerationConfig(
   if (topP !== undefined) config.topP = topP;
   const topK = clampNumber(input.topK, 1, 64);
   if (topK !== undefined) config.topK = Math.floor(topK);
-  const requestedTokens = clampNumber(input.maxOutputTokens, 1, MAX_OUTPUT_TOKENS);
+  const requestedTokens = clampNumber(
+    input.maxOutputTokens,
+    1,
+    MAX_OUTPUT_TOKENS,
+  );
   config.maxOutputTokens = requestedTokens === undefined
     ? DEFAULT_MAX_OUTPUT_TOKENS
     : Math.floor(requestedTokens);
@@ -427,8 +454,10 @@ function fitContents(
   rest: Omit<GeminiBody, "contents">,
 ): GeminiContent[] | null {
   let kept = turns.slice(-MAX_TURNS);
-  while (byteLength(JSON.stringify({ ...rest, contents: kept })) >
-    MAX_UPSTREAM_BODY_BYTES) {
+  while (
+    byteLength(JSON.stringify({ ...rest, contents: kept })) >
+      MAX_UPSTREAM_BODY_BYTES
+  ) {
     if (kept.length <= 1) return null;
     kept = kept.slice(1);
   }
@@ -472,8 +501,19 @@ async function parseRequest(req: Request): Promise<ParseResult> {
     return { ok: false, error: generationConfig };
   }
 
+  const policyBudget = SERVER_GUIDE_POLICY.length + 2;
+  const systemText = systemInstruction?.parts.map((part) => part.text).join(
+    "\n",
+  );
   const rest: Omit<GeminiBody, "contents"> = {
-    ...(systemInstruction ? { systemInstruction } : {}),
+    systemInstruction: {
+      parts: [{
+        text: `${
+          systemText?.slice(0, MAX_SYSTEM_INSTRUCTION_CHARS - policyBudget) ??
+            ""
+        }\n${SERVER_GUIDE_POLICY}`,
+      }],
+    },
     generationConfig,
   };
   const contents = fitContents(turns, rest);
@@ -483,7 +523,9 @@ async function parseRequest(req: Request): Promise<ParseResult> {
   let model = requestedModel;
   if (!ALLOWED_MODELS.has(requestedModel)) {
     console.warn(
-      `ai-proxy: model "${truncate(requestedModel, 80)}" is not allowed; using ${MODEL}`,
+      `ai-proxy: model "${
+        truncate(requestedModel, 80)
+      }" is not allowed; using ${MODEL}`,
     );
     model = MODEL;
   }
@@ -529,10 +571,40 @@ function responseTextFromStream(streamText: string): string {
     try {
       chunks.push(responseText(JSON.parse(data)));
     } catch (error) {
-      console.error("ai-proxy: could not parse streamed response for logging", error);
+      console.error(
+        "ai-proxy: could not parse streamed response for logging",
+        error,
+      );
     }
   }
   return chunks.join("");
+}
+
+function streamResponse(text: string): Response {
+  const event = JSON.stringify({
+    candidates: [{ content: { role: "model", parts: [{ text }] } }],
+  });
+  return new Response(`data: ${event}\n\n`, {
+    headers: {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      ...CORS_HEADERS,
+    },
+  });
+}
+
+function responseWithText(parsed: unknown, text: string): unknown {
+  if (!parsed || typeof parsed !== "object") return parsed;
+  const result = parsed as {
+    candidates?: Array<{
+      content?: { parts?: Array<{ text?: string }> };
+    }>;
+  };
+  const candidate = result.candidates?.[0];
+  if (!candidate?.content) return parsed;
+  candidate.content.parts = [{ text }];
+  return parsed;
 }
 
 async function logInteraction(
@@ -561,9 +633,8 @@ function upstreamUnavailable(): Response {
   }, 503);
 }
 
-// Calls Gemini (walking the fallback chain) and builds the response. Any
-// non-2xx outcome returns a generic error and hands the quota unit back via
-// `refund`; upstream error bodies are logged here and never sent to the client.
+// Calls Gemini (walking the fallback chain) and refunds when no substantive
+// answer was produced. Upstream error bodies are logged but never sent through.
 async function generate(
   userId: string,
   request: ValidRequest,
@@ -571,18 +642,29 @@ async function generate(
 ): Promise<Response> {
   const { model, streaming, sessionId, logPrompt: prompt } = request;
   const upstreamBody = JSON.stringify(request.body);
-  const endpoint = streaming ? "streamGenerateContent?alt=sse" : "generateContent";
+  const endpoint = streaming
+    ? "streamGenerateContent?alt=sse"
+    : "generateContent";
   const models = [...new Set([model, ...MODEL_FALLBACK_CHAIN])];
+  const deadline = Date.now() + 36_000;
   let upstream: Response | null = null;
   let selectedModel = model;
   let fetchFailure: unknown;
   for (let index = 0; index < models.length; index++) {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) {
+      fetchFailure = new Error("AI request deadline exceeded");
+      upstream = null;
+      break;
+    }
     selectedModel = models[index];
-    const url =
-      `${GEMINI_ENDPOINT_BASE}/${encodeURIComponent(selectedModel)}:${endpoint}`;
+    const url = `${GEMINI_ENDPOINT_BASE}/${
+      encodeURIComponent(selectedModel)
+    }:${endpoint}`;
     try {
       upstream = await fetch(url, {
         method: "POST",
+        signal: AbortSignal.timeout(Math.min(14_000, remainingMs)),
         headers: {
           "Content-Type": "application/json",
           ...await geminiAuthHeaders(),
@@ -611,7 +693,12 @@ async function generate(
   if (!upstream) {
     console.error("ai-proxy: all upstream requests failed:", fetchFailure);
     await refund();
-    await logInteraction(userId, prompt, "AI service temporarily unavailable.", sessionId);
+    await logInteraction(
+      userId,
+      prompt,
+      "AI service temporarily unavailable.",
+      sessionId,
+    );
     return upstreamUnavailable();
   }
   if (!upstream.ok) {
@@ -622,7 +709,12 @@ async function generate(
     );
     await refund();
     if (FALLBACK_STATUSES.includes(upstream.status)) {
-      await logInteraction(userId, prompt, "AI service temporarily unavailable.", sessionId);
+      await logInteraction(
+        userId,
+        prompt,
+        "AI service temporarily unavailable.",
+        sessionId,
+      );
       return upstreamUnavailable();
     }
     // A 4xx the chain cannot fix (bad argument, auth/config problem): do not
@@ -636,22 +728,20 @@ async function generate(
   }
 
   if (streaming) {
-    const responseForLogging = upstream.clone();
-    const logging = responseForLogging.text().then((text) =>
-      logInteraction(userId, prompt, responseTextFromStream(text), sessionId)
-    ).catch((error) => {
-      console.error("ai-proxy: failed to read streamed response for logging:", error);
-    });
-    EdgeRuntime.waitUntil(logging);
-    return new Response(upstream.body, {
-      status: upstream.status,
-      headers: {
-        "Content-Type": "text/event-stream; charset=utf-8",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        ...CORS_HEADERS,
-      },
-    });
+    const upstreamText = await upstream.text();
+    const generatedText = responseTextFromStream(upstreamText);
+    const answer = prepareResponse(generatedText);
+    await logInteraction(userId, prompt, answer, sessionId);
+    if (!generatedText.trim()) {
+      await refund();
+      return json({
+        error: "empty_ai_response",
+        code: "UPSTREAM_ERROR",
+        message: "The AI guide could not answer this request.",
+      }, 502);
+    }
+    if (!isSubstantiveAnswer(generatedText)) await refund();
+    return streamResponse(answer);
   }
 
   const text = await upstream.text();
@@ -661,11 +751,22 @@ async function generate(
   } catch {
     parsed = { raw: text };
   }
-  const aiResponse = typeof parsed === "object" && parsed !== null
+  const generatedText = typeof parsed === "object" && parsed !== null
     ? responseText(parsed)
     : "";
-  await logInteraction(userId, prompt, aiResponse, sessionId);
-  return new Response(JSON.stringify(parsed), {
+  const answer = prepareResponse(generatedText);
+  await logInteraction(userId, prompt, answer, sessionId);
+  if (!generatedText.trim()) {
+    await refund();
+    return json({
+      error: "empty_ai_response",
+      code: "UPSTREAM_ERROR",
+      message: "The AI guide could not answer this request.",
+    }, 502);
+  }
+  if (!isSubstantiveAnswer(generatedText)) await refund();
+  const normalizedResponse = responseWithText(parsed, answer);
+  return new Response(JSON.stringify(normalizedResponse), {
     status: upstream.status,
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
@@ -684,7 +785,14 @@ serve(async (req: Request): Promise<Response> => {
 
   // Validate first: a malformed request must not cost the user a quota unit.
   const parsed = await parseRequest(req);
-  if (!parsed.ok) return json({ error: parsed.error, code: "BAD_REQUEST" }, 400);
+  if (!parsed.ok) {
+    return json({ error: parsed.error, code: "BAD_REQUEST" }, 400);
+  }
+
+  const contents = parsed.value.body.contents;
+  const lastTurn = contents[contents.length - 1];
+  const prompt = lastTurn.parts.map((part) => part.text).join("");
+  const smallTalkReply = conversationalReply(prompt);
 
   const adminUser = await isAdmin(userId);
   let charged = false;
@@ -697,7 +805,8 @@ serve(async (req: Request): Promise<Response> => {
       return json({
         error: "daily_limit_exceeded",
         code: "DAILY_LIMIT_EXCEEDED",
-        message: "You have reached your daily limit, please come back tomorrow.",
+        message:
+          "You have reached your daily limit, please come back tomorrow.",
       }, 429);
     }
     charged = true;
@@ -713,6 +822,20 @@ serve(async (req: Request): Promise<Response> => {
   };
 
   try {
+    if (smallTalkReply) {
+      await logInteraction(
+        userId,
+        parsed.value.logPrompt,
+        smallTalkReply,
+        parsed.value.sessionId,
+      );
+      return parsed.value.streaming ? streamResponse(smallTalkReply) : json({
+        candidates: [{
+          content: { role: "model", parts: [{ text: smallTalkReply }] },
+          finishReason: "STOP",
+        }],
+      });
+    }
     return await generate(userId, parsed.value, refund);
   } catch (error) {
     console.error("ai-proxy: unexpected failure:", error);

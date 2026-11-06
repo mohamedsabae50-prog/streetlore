@@ -3,6 +3,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:streetlore/presentation/screens/splash_screen.dart';
 
 void main() {
+  testWidgets('compass emblem is centered in its ring stack without overflow', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: SplashScreen()));
+    await tester.pump();
+
+    final rings = find.byKey(const ValueKey('splash-compass-rings'));
+    final compass = find.byKey(const ValueKey('splash-compass-emblem'));
+    expect(rings, findsOneWidget);
+    expect(compass, findsOneWidget);
+    expect(tester.getCenter(rings), tester.getCenter(compass));
+    expect(tester.getSize(rings).width, tester.getSize(rings).height);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('transitions from radar entrance to pyramids splash', (
     tester,
   ) async {

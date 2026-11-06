@@ -8,6 +8,7 @@ import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
+import '../widgets/chat_text_direction.dart';
 
 class AITourGuideScreen extends StatefulWidget {
   final PlaceModel place;
@@ -160,21 +161,21 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
       itemCount: msgs.length + (_streamingReply == null ? 0 : 1),
       itemBuilder: (context, i) {
         if (i == msgs.length) {
+          return _MessageBubble(
+            text: _streamingReply!,
+            isUser: false,
+            id: '',
+            onUpgrade: _openPaywall,
+          );
+        }
+        final m = msgs[i];
         return _MessageBubble(
-          text: _streamingReply!,
-          isUser: false,
-          id: '',
+          text: m.text,
+          isUser: m.isUser,
+          id: m.id,
+          isDailyLimitExceeded: m.isDailyLimitExceeded,
           onUpgrade: _openPaywall,
         );
-      }
-      final m = msgs[i];
-      return _MessageBubble(
-        text: m.text,
-        isUser: m.isUser,
-        id: m.id,
-        isDailyLimitExceeded: m.isDailyLimitExceeded,
-        onUpgrade: _openPaywall,
-      );
       },
     );
   }
@@ -273,12 +274,13 @@ class _MessageBubble extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
+                color: const Color(0xFF393326),
                 shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
               ),
               child: const Icon(
                 Icons.smart_toy_rounded,
-                color: Colors.white,
+                color: Color(0xFFFFD978),
                 size: 18,
               ),
             ),
@@ -298,8 +300,8 @@ class _MessageBubble extends StatelessWidget {
                     ? null
                     : Border.all(color: context.borderColor, width: 0.5),
               ),
-              child: Text(
-                text,
+              child: ChatMessageText(
+                text: text,
                 style: TextStyle(
                   color: isUser ? Colors.white : context.textPri,
                   fontSize: 14,
