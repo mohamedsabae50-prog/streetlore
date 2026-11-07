@@ -1062,7 +1062,7 @@
   "google_general_error": "Google Sign-In failed. Try email login instead.",
   "hub_community": "Community",
   "hub_leaderboard": "Leaderboard",
-  "hub_badges": "Badges & Progress",
+  "hub_badges": "Badges",
   "login_apple": "Continue with Apple",
   "login_apple_coming_soon": "Continue with Apple (Coming soon)",
   "login_apple_coming_soon_notice": "Sign in with Apple is coming soon!",

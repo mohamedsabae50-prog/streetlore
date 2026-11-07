@@ -17,6 +17,7 @@ import 'core/services/sync_queue_service.dart';
 import 'core/services/realtime_resilience.dart';
 import 'core/services/carplay_service.dart';
 import 'core/services/remote_config_service.dart';
+import 'core/widgets/offline_mode_banner.dart';
 import 'core/config/app_config.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'l10n/app_strings.dart';
@@ -34,7 +35,6 @@ import 'logic/squad_provider.dart';
 import 'logic/journal_provider.dart';
 import 'logic/achievement_provider.dart';
 import 'presentation/screens/splash_screen.dart';
-import 'presentation/screens/no_internet_screen.dart';
 import 'logic/trip_provider.dart';
 import 'logic/review_provider.dart';
 import 'logic/ai_features_providers.dart';
@@ -478,11 +478,23 @@ class _EgyptLoreAppState extends State<EgyptLoreApp>
                         context.tr('offline_mode_notice'),
                       );
                       return Stack(
-                        fit: StackFit.expand,
                         children: [
-                          app ?? const SizedBox.shrink(),
-                          if (!auth.isPro && connectivity.hasInternet == false)
-                            const NoInternetScreen(),
+                          Column(
+                            children: [
+                              if (connectivity.hasInternet == false)
+                                const SafeArea(
+                                  bottom: false,
+                                  child: OfflineModeBanner(),
+                                ),
+                              Expanded(
+                                child: MediaQuery.removePadding(
+                                  context: context,
+                                  removeTop: connectivity.hasInternet == false,
+                                  child: app ?? const SizedBox.shrink(),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       );
                     },

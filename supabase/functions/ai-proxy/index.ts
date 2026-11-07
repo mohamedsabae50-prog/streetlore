@@ -111,6 +111,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Expose-Headers": "X-AI-Quota-Status",
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -126,6 +127,98 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
+
+type QuotaStatus = {
+  used: number;
+  used_today: number;
+  daily_limit: number;
+  remaining: number;
+  resets_at: string;
+  next_reset_at: string;
+};
+
+function timeZoneParts(
+  date: Date,
+): Record<string, number> {
+  return Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "Africa/Cairo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(date)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, Number(part.value)]),
+  );
+}
+
+function nextCairoMidnight(now: Date): Date {
+  const local = timeZoneParts(now);
+  const target = Date.UTC(local.year, local.month - 1, local.day + 1);
+  let guess = target;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const parts = timeZoneParts(new Date(guess));
+    const represented = Date.UTC(
+      parts.year,
+      parts.month - 1,
+      parts.day,
+      parts.hour,
+      parts.minute,
+      parts.second,
+    );
+    guess += target - represented;
+  }
+  return new Date(guess);
+}
+
+function cairoDateKey(date: Date): string {
+  const parts = timeZoneParts(date);
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${
+    String(parts.day).padStart(2, "0")
+  }`;
+}
+
+async function getQuotaStatus(userId: string): Promise<QuotaStatus> {
+  const [profileResult, quotaResult] = await Promise.all([
+    admin.from("profiles")
+      .select("is_pro,subscription_end_date")
+      .eq("user_id", userId)
+      .maybeSingle(),
+    admin.from("ai_quota")
+      .select("used_today,window_start")
+      .eq("user_id", userId)
+      .maybeSingle(),
+  ]);
+  if (profileResult.error) throw profileResult.error;
+  if (quotaResult.error) throw quotaResult.error;
+
+  const now = new Date();
+  const quotaDate = quotaResult.data?.window_start
+    ? cairoDateKey(new Date(quotaResult.data.window_start))
+    : null;
+  const subscriptionEnd = profileResult.data?.subscription_end_date
+    ? Date.parse(profileResult.data.subscription_end_date)
+    : null;
+  const isPro = profileResult.data?.is_pro === true &&
+    (subscriptionEnd === null || subscriptionEnd > now.getTime());
+  const dailyLimit = isPro ? 50 : 3;
+  const used = quotaDate === cairoDateKey(now)
+    ? Number(quotaResult.data?.used_today ?? 0)
+    : 0;
+  const resetsAt = nextCairoMidnight(now).toISOString();
+  return {
+    used,
+    used_today: used,
+    daily_limit: dailyLimit,
+    remaining: Math.max(dailyLimit - used, 0),
+    resets_at: resetsAt,
+    next_reset_at: resetsAt,
+  };
+}
 
 type CachedAccessToken = {
   value: string;
@@ -580,7 +673,7 @@ function responseTextFromStream(streamText: string): string {
   return chunks.join("");
 }
 
-function streamResponse(text: string): Response {
+function streamResponse(text: string, quota?: QuotaStatus | null): Response {
   const event = JSON.stringify({
     candidates: [{ content: { role: "model", parts: [{ text }] } }],
   });
@@ -589,6 +682,9 @@ function streamResponse(text: string): Response {
       "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache",
       "Connection": "keep-alive",
+      ...(quota
+        ? { "X-AI-Quota-Status": JSON.stringify(quota) }
+        : {}),
       ...CORS_HEADERS,
     },
   });
@@ -639,6 +735,7 @@ async function generate(
   userId: string,
   request: ValidRequest,
   refund: () => Promise<void>,
+  quotaStatus: () => Promise<QuotaStatus | null>,
 ): Promise<Response> {
   const { model, streaming, sessionId, logPrompt: prompt } = request;
   const upstreamBody = JSON.stringify(request.body);
@@ -741,7 +838,7 @@ async function generate(
       }, 502);
     }
     if (!isSubstantiveAnswer(generatedText)) await refund();
-    return streamResponse(answer);
+    return streamResponse(answer, await quotaStatus());
   }
 
   const text = await upstream.text();
@@ -765,7 +862,11 @@ async function generate(
     }, 502);
   }
   if (!isSubstantiveAnswer(generatedText)) await refund();
+  const quota = await quotaStatus();
   const normalizedResponse = responseWithText(parsed, answer);
+  if (quota && normalizedResponse && typeof normalizedResponse === "object") {
+    Object.assign(normalizedResponse, { quota });
+  }
   return new Response(JSON.stringify(normalizedResponse), {
     status: upstream.status,
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
@@ -795,6 +896,34 @@ serve(async (req: Request): Promise<Response> => {
   const smallTalkReply = conversationalReply(prompt);
 
   const adminUser = await isAdmin(userId);
+  if (smallTalkReply) {
+    let quota: QuotaStatus | null = null;
+    if (!adminUser) {
+      try {
+        quota = await getQuotaStatus(userId);
+      } catch (error) {
+        console.error("ai-proxy: could not read quota for greeting:", error);
+        return json({ error: "quota_unavailable", code: "BAD_REQUEST" }, 503);
+      }
+    }
+    const answer = prepareResponse(smallTalkReply);
+    await logInteraction(
+      userId,
+      parsed.value.logPrompt,
+      answer,
+      parsed.value.sessionId,
+    );
+    return parsed.value.streaming
+      ? streamResponse(answer, quota)
+      : json({
+        candidates: [{
+          content: { role: "model", parts: [{ text: answer }] },
+          finishReason: "STOP",
+        }],
+        ...(quota ? { quota } : {}),
+      });
+  }
+
   let charged = false;
   if (!adminUser) {
     const ok = await consumeQuota(userId);
@@ -820,23 +949,11 @@ serve(async (req: Request): Promise<Response> => {
     refunded = true;
     await refundQuota(userId);
   };
+  const quotaStatus = async () =>
+    adminUser ? null : await getQuotaStatus(userId);
 
   try {
-    if (smallTalkReply) {
-      await logInteraction(
-        userId,
-        parsed.value.logPrompt,
-        smallTalkReply,
-        parsed.value.sessionId,
-      );
-      return parsed.value.streaming ? streamResponse(smallTalkReply) : json({
-        candidates: [{
-          content: { role: "model", parts: [{ text: smallTalkReply }] },
-          finishReason: "STOP",
-        }],
-      });
-    }
-    return await generate(userId, parsed.value, refund);
+    return await generate(userId, parsed.value, refund, quotaStatus);
   } catch (error) {
     console.error("ai-proxy: unexpected failure:", error);
     await refund();

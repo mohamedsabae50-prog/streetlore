@@ -499,6 +499,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                         images: place.officialImages,
                         placeId: place.id,
                         fallbackCategory: place.category,
+                        fallbackTitle: place.localizedName(locale),
                         height: double.infinity,
                         fit: BoxFit.cover,
                         heroTag: 'place-image-${place.id}',
@@ -1730,10 +1731,7 @@ class _ReviewItem extends StatelessWidget {
                             targetType: 'user',
                             authorName: review.userName,
                           ),
-                          icon: const Icon(
-                            Icons.person_off_outlined,
-                            size: 18,
-                          ),
+                          icon: const Icon(Icons.person_off_outlined, size: 18),
                         ),
                       if (canBlock)
                         IconButton(

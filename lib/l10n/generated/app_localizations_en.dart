@@ -2192,7 +2192,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hub_leaderboard => 'Leaderboard';
 
   @override
-  String get hub_badges => 'Badges & Progress';
+  String get hub_badges => 'Badges';
 
   @override
   String get login_apple => 'Continue with Apple';

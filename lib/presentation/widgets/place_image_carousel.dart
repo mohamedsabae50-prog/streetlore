@@ -12,6 +12,7 @@ class PlaceImageCarousel extends StatefulWidget {
   final List<String> images;
   final String? placeId;
   final String? fallbackCategory;
+  final String? fallbackTitle;
   final BoxFit fit;
   final double height;
   final BorderRadius? borderRadius;
@@ -28,6 +29,7 @@ class PlaceImageCarousel extends StatefulWidget {
     required this.images,
     this.placeId,
     this.fallbackCategory,
+    this.fallbackTitle,
     this.fit = BoxFit.cover,
     this.height = 320,
     this.borderRadius,
@@ -175,6 +177,7 @@ class _PlaceImageCarouselState extends State<PlaceImageCarousel> {
           CategoryImageFallback(
             category: widget.fallbackCategory,
             fit: widget.fit,
+            title: widget.fallbackTitle,
           ),
     );
     Widget img = networkImage;
@@ -207,6 +210,7 @@ class _PlaceImageCarouselState extends State<PlaceImageCarousel> {
       child: CategoryImageFallback(
         category: widget.fallbackCategory,
         fit: widget.fit,
+        title: widget.fallbackTitle,
       ),
     );
   }

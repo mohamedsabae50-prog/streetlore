@@ -450,7 +450,7 @@ class AppStrings {
     'feed_title': {'en': 'Activity', 'ar': 'النشاط'},
     'hub_community': {'en': 'Community', 'ar': 'المجتمع'},
     'hub_leaderboard': {'en': 'Leaderboard', 'ar': 'المتصدرين'},
-    'hub_badges': {'en': 'Badges & Progress', 'ar': 'إنجازاتي'},
+    'hub_badges': {'en': 'Badges', 'ar': 'الشارات'},
     'login_apple': {
       'en': 'Continue with Apple',
       'ar': 'المتابعة باستخدام Apple',

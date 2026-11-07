@@ -274,13 +274,13 @@ class _MessageBubble extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFF393326),
+                color: const Color(0xFF514116),
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
               ),
               child: const Icon(
                 Icons.smart_toy_rounded,
-                color: Color(0xFFFFD978),
+                color: Color(0xFFFFE082),
                 size: 18,
               ),
             ),

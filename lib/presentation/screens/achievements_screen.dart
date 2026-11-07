@@ -284,13 +284,23 @@ class _CategoryMastery extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const categories = <(String, String, IconData)>[
-      ('Historical', 'cat_historical', Icons.history_edu_rounded),
-      ('Food', 'cat_food', Icons.restaurant_rounded),
-      ('Cafe', 'cat_cafes', Icons.local_cafe_rounded),
-      ('Shopping', 'cat_shopping', Icons.shopping_bag_rounded),
-      ('Nature', 'cat_nature', Icons.park_rounded),
-      ('Culture', 'cat_culture', Icons.museum_rounded),
+    const categories = <(String, String, IconData, Color)>[
+      (
+        'Historical',
+        'cat_historical',
+        Icons.history_edu_rounded,
+        Color(0xFFB7791F),
+      ),
+      ('Food', 'cat_food', Icons.restaurant_rounded, Color(0xFFEF6C45)),
+      ('Cafe', 'cat_cafes', Icons.local_cafe_rounded, Color(0xFF9B72CF)),
+      (
+        'Shopping',
+        'cat_shopping',
+        Icons.shopping_bag_rounded,
+        Color(0xFFE05A8A),
+      ),
+      ('Nature', 'cat_nature', Icons.park_rounded, Color(0xFF28A879)),
+      ('Culture', 'cat_culture', Icons.museum_rounded, Color(0xFF4285D4)),
     ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
@@ -306,11 +316,20 @@ class _CategoryMastery extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          for (final (category, labelKey, icon) in categories) ...[
+          for (final (category, labelKey, icon, color) in categories) ...[
             Row(
               children: [
-                Icon(icon, size: 16, color: AppColors.primary),
-                const SizedBox(width: 7),
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(icon, size: 16, color: color),
+                ),
+                const SizedBox(width: 9),
                 Expanded(
                   child: Text(
                     context.tr(labelKey),
@@ -440,7 +459,7 @@ class _Header extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
@@ -462,8 +481,8 @@ class _Header extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.22),
                     borderRadius: BorderRadius.circular(16),
@@ -492,7 +511,7 @@ class _Header extends StatelessWidget {
                         '$unlocked / $total unlocked',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 22,
+                          fontSize: 20,
                           fontWeight: FontWeight.w900,
                         ),
                       ),

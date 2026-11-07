@@ -52,7 +52,12 @@ export function prepareResponse(text: string): string {
   if (!ARABIC_CHARACTERS.test(cleanText)) return cleanText;
   const response = cleanText
     .replace(/EgyptLore/gi, "\u2066EgyptLore\u2069");
-  return /^[\s\u0600-\u06FF]/.test(response) ? response : `أكيد، ${response}`;
+  const arabicResponse = /^[\s\u0600-\u06FF]/.test(response)
+    ? response
+    : `أكيد، ${response}`;
+  return /[.!?؟؛،]$/.test(arabicResponse)
+    ? `${arabicResponse}\u200F`
+    : arabicResponse;
 }
 
 export function isSubstantiveAnswer(text: string): boolean {

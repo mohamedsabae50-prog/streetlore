@@ -2,13 +2,12 @@ class OfflinePack {
   final String id;
   final String name;
   final String description;
-  
-  
+
   final List<String> placeIds;
-  
-  
+
   final List<String> categories;
   final int sizeMb;
+  final int downloadedCount;
   final DateTime? downloadedAt;
   final String coverEmoji;
 
@@ -19,22 +18,25 @@ class OfflinePack {
     this.placeIds = const [],
     this.categories = const [],
     this.sizeMb = 0,
+    this.downloadedCount = 0,
     this.downloadedAt,
     this.coverEmoji = '',
   });
 
   bool get isDownloaded => downloadedAt != null;
 
-  OfflinePack copyWith({DateTime? downloadedAt}) => OfflinePack(
-    id: id,
-    name: name,
-    description: description,
-    placeIds: placeIds,
-    categories: categories,
-    sizeMb: sizeMb,
-    downloadedAt: downloadedAt ?? this.downloadedAt,
-    coverEmoji: coverEmoji,
-  );
+  OfflinePack copyWith({DateTime? downloadedAt, int? downloadedCount}) =>
+      OfflinePack(
+        id: id,
+        name: name,
+        description: description,
+        placeIds: placeIds,
+        categories: categories,
+        sizeMb: sizeMb,
+        downloadedCount: downloadedCount ?? this.downloadedCount,
+        downloadedAt: downloadedAt ?? this.downloadedAt,
+        coverEmoji: coverEmoji,
+      );
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -43,6 +45,7 @@ class OfflinePack {
     'place_ids': placeIds,
     'categories': categories,
     'size_mb': sizeMb,
+    'downloaded_count': downloadedCount,
     'downloaded_at': downloadedAt?.toIso8601String(),
     'cover_emoji': coverEmoji,
   };
@@ -56,6 +59,7 @@ class OfflinePack {
     categories: ((json['categories'] as List<dynamic>?) ?? const [])
         .cast<String>(),
     sizeMb: (json['size_mb'] as num?)?.toInt() ?? 0,
+    downloadedCount: (json['downloaded_count'] as num?)?.toInt() ?? 0,
     downloadedAt: json['downloaded_at'] == null
         ? null
         : DateTime.parse(json['downloaded_at'] as String),

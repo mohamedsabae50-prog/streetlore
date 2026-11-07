@@ -207,16 +207,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         .toList();
   }
 
-  List<PlaceModel> _filtered(
-    List<PlaceModel> all,
-    Set<String> visitedPlaceIds,
-  ) {
-    final unvisited = all
-        .where((place) => !visitedPlaceIds.contains(place.id))
-        .toList(growable: false);
-    final base = _isSearching
-        ? _searchResults(unvisited)
-        : _categoryFiltered(unvisited);
+  List<PlaceModel> _filtered(List<PlaceModel> all) {
+    final base = _isSearching ? _searchResults(all) : _categoryFiltered(all);
     final isPro = context.read<AuthProvider>().isPro;
     var result = isPro
         ? base
@@ -275,11 +267,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final placeProvider = context.watch<PlaceProvider>();
-    final tripProvider = context.watch<TripProvider>();
-    final filtered = _filtered(
-      placeProvider.places,
-      tripProvider.visitedPlaceIds,
-    );
+    final filtered = _filtered(placeProvider.places);
     final isSearching = _isSearching;
 
     return Scaffold(
@@ -325,7 +313,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           const SizedBox(height: 2),
                           ShaderMask(
                             shaderCallback: (bounds) => const LinearGradient(
-                              colors: [AppColors.primary, Color(0xFF22C55E)],
+                              colors: [
+                                Color(0xFF34D399),
+                                Color(0xFFF5C45E),
+                                Color(0xFF22C55E),
+                              ],
                             ).createShader(bounds),
                             child: const Text(
                               'EgyptLore',
@@ -381,7 +373,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.25),
+                          color: const Color(0xFFD4AF37),
                           width: 2,
                         ),
                       ),
@@ -393,7 +385,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ? auth.userName
                               : 'Alexandria',
                           radius: 18,
-                          fallbackColor: AppColors.primary,
+                          fallbackColor: const Color(0xFF0F766E),
                         ),
                       ),
                     ),
@@ -466,6 +458,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
 
             Expanded(
               child: _isLoading && !placeProvider.hasPlaces
@@ -894,7 +887,7 @@ class _QuickAccessGrid extends StatelessWidget {
         ),
       ),
       _QuickItem(
-        icon: Icons.emoji_events_rounded,
+        icon: Icons.leaderboard_rounded,
         label: 'quick_ranking',
         color: AppColors.warning,
         onTap: () => Navigator.push(
@@ -903,7 +896,7 @@ class _QuickAccessGrid extends StatelessWidget {
         ),
       ),
       _QuickItem(
-        icon: Icons.emoji_events_rounded,
+        icon: Icons.workspace_premium_rounded,
         label: 'quick_badges',
         color: const Color(0xFFFFB347),
         onTap: () => Navigator.push(

@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/animated_icons.dart';
+import '../../core/widgets/ai_quota_banner.dart';
 import '../../core/utils/profanity_filter.dart';
 import '../../data/models/chat_message.dart';
 import '../../data/models/place_model.dart';
@@ -12,6 +13,7 @@ import '../../logic/auth_provider.dart';
 import '../../logic/blocked_users_provider.dart';
 import '../../logic/chat_provider.dart';
 import '../../logic/gamification_provider.dart';
+import '../widgets/chat_text_direction.dart';
 import '../widgets/report_content_sheet.dart';
 
 class LiveChatScreen extends StatefulWidget {
@@ -25,6 +27,8 @@ class LiveChatScreen extends StatefulWidget {
 class _LiveChatScreenState extends State<LiveChatScreen> {
   final _input = TextEditingController();
   final _scroll = ScrollController();
+  final GlobalKey<AiQuotaBannerState> _quotaKey =
+      GlobalKey<AiQuotaBannerState>();
 
   @override
   void initState() {
@@ -192,6 +196,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                 },
               ),
             ),
+            AiQuotaBanner(key: _quotaKey),
             _Composer(controller: _input, onSend: _send),
           ],
         ),
@@ -311,8 +316,8 @@ class _MessageBubble extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    message.text,
+                  ChatMessageText(
+                    text: message.text,
                     style: const TextStyle(fontSize: 14, height: 1.4),
                   ),
                   Row(
@@ -343,10 +348,7 @@ class _MessageBubble extends StatelessWidget {
                             authorName: message.userName,
                             targetAvatarUrl: message.avatarUrl,
                           ),
-                          icon: const Icon(
-                            Icons.person_off_outlined,
-                            size: 18,
-                          ),
+                          icon: const Icon(Icons.person_off_outlined, size: 18),
                         ),
                       if (canBlock)
                         IconButton(

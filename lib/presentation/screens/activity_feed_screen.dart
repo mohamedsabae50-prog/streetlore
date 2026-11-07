@@ -391,13 +391,42 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(context.tr('feed_title')),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: context.tr('hub_community')),
-            Tab(text: context.tr('hub_leaderboard')),
-            Tab(text: context.tr('hub_badges')),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+            child: Container(
+              height: 46,
+              decoration: BoxDecoration(
+                color: context.cardColor,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: context.borderColor),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                dividerColor: Colors.transparent,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                labelStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                tabs: [
+                  Tab(text: context.tr('hub_community')),
+                  Tab(text: context.tr('hub_leaderboard')),
+                  Tab(text: context.tr('hub_badges')),
+                ],
+              ),
+            ),
+          ),
         ),
         actions: [
           IconButton(

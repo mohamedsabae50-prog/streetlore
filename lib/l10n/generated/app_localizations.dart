@@ -4091,7 +4091,7 @@ abstract class AppLocalizations {
   /// No description provided for @hub_badges.
   ///
   /// In en, this message translates to:
-  /// **'Badges & Progress'**
+  /// **'Badges'**
   String get hub_badges;
 
   /// No description provided for @login_apple.

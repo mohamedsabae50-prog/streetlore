@@ -52,7 +52,7 @@ void main() {
     });
 
     test(
-      'provider merge collapses ID, bilingual-name, and nearby duplicates',
+      'provider merge keeps distinct same-name places and merges nearby duplicates',
       () {
         final original = PlaceModel(
           id: 'remote-delices',
@@ -104,8 +104,9 @@ void main() {
           sameEnglishName,
         ]);
 
-        expect(merged, hasLength(1));
-        expect(merged.single.id, nearby.id);
+        expect(merged, hasLength(2));
+        expect(merged.map((place) => place.id), contains(nearby.id));
+        expect(merged.map((place) => place.id), contains(sameEnglishName.id));
         expect(
           PlaceProvider.deduplicatePlaces([
             ...fallbackPlaces,

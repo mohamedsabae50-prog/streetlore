@@ -1,7 +1,7 @@
 name: streetlore
 description: Discover the unseen stories of your city with EgyptLore.
 publish_to: 'none'
-version: 2.1.42+245
+version: 2.1.43+246
 
 environment:
   sdk: ^3.12.0

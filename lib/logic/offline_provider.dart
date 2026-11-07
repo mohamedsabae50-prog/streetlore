@@ -288,7 +288,10 @@ class OfflineProvider extends ChangeNotifier {
         onProgress?.call(total, total, imageOk: imageOk, imageFail: imageFail);
       }
 
-      final updated = pack.copyWith(downloadedAt: DateTime.now());
+      final updated = pack.copyWith(
+        downloadedAt: DateTime.now(),
+        downloadedCount: places.length,
+      );
       await _storage.savePack(updated);
       _packs = _storage.getAllPacks();
       _cachedPlaces = _storage.getCachedPlaces();

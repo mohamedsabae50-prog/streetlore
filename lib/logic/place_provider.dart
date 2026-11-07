@@ -462,13 +462,10 @@ class PlaceProvider extends ChangeNotifier {
     final bEnglish = _normalizePlaceName(b.nameEn);
     final aArabic = _normalizePlaceName(a.nameAr ?? '');
     final bArabic = _normalizePlaceName(b.nameAr ?? '');
-    if ((aEnglish.isNotEmpty && aEnglish == bEnglish) ||
-        (aArabic.isNotEmpty && aArabic == bArabic)) {
-      return true;
-    }
-
     return _distanceMeters(a.lat, a.lng, b.lat, b.lng) < 45 &&
-        (_similarPlaceName(aEnglish, bEnglish) ||
+        ((aEnglish.isNotEmpty && aEnglish == bEnglish) ||
+            (aArabic.isNotEmpty && aArabic == bArabic) ||
+            _similarPlaceName(aEnglish, bEnglish) ||
             _similarPlaceName(aArabic, bArabic));
   }
 

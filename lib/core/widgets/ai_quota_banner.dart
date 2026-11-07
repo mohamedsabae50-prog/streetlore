@@ -8,7 +8,9 @@ import '../../logic/auth_provider.dart';
 import '../services/supabase_service.dart';
 
 class AiQuotaBanner extends StatefulWidget {
-  const AiQuotaBanner({super.key});
+  const AiQuotaBanner({super.key, this.fetchQuotaStatus});
+
+  final Future<Map<String, dynamic>> Function()? fetchQuotaStatus;
 
   @override
   State<AiQuotaBanner> createState() => AiQuotaBannerState();
@@ -23,17 +25,26 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
   @override
   void initState() {
     super.initState();
-    if (SupabaseService.instance.isLive) refresh();
+    if (widget.fetchQuotaStatus != null || SupabaseService.instance.isLive) {
+      final auth = context.read<AuthProvider>();
+      if (!auth.isPro && !auth.isAdmin) {
+        _status = const {'used_today': 0, 'daily_limit': 3, 'remaining': 3};
+        _loading = false;
+      }
+      refresh();
+    }
   }
 
   Future<void> refresh() async {
     _resetTimer?.cancel();
     setState(() {
-      _loading = true;
+      _loading = _status == null;
       _error = null;
     });
     try {
-      final status = await SupabaseService.instance.fetchAiQuotaStatus();
+      final status =
+          await (widget.fetchQuotaStatus?.call() ??
+              SupabaseService.instance.fetchAiQuotaStatus());
       if (!mounted) return;
       setState(() {
         _status = status;
@@ -64,7 +75,7 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
 
   @override
   Widget build(BuildContext context) {
-    if (!SupabaseService.instance.isLive) {
+    if (widget.fetchQuotaStatus == null && !SupabaseService.instance.isLive) {
       return const SizedBox.shrink();
     }
     if (context.select<AuthProvider, bool>((auth) => auth.isAdmin)) {
@@ -80,6 +91,7 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
             'limit': '${_status!['daily_limit']}',
           });
     return Padding(
+      key: const ValueKey('ai-quota-banner'),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Row(
         children: [

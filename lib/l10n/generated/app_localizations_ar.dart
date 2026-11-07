@@ -2163,7 +2163,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get hub_leaderboard => 'المتصدرين';
 
   @override
-  String get hub_badges => 'إنجازاتي';
+  String get hub_badges => 'الشارات';
 
   @override
   String get login_apple => 'المتابعة باستخدام Apple';

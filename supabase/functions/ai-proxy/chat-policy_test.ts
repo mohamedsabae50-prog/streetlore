@@ -60,11 +60,15 @@ Deno.test("unrelated questions are not treated as small talk", () => {
 Deno.test("Arabic output leads with Arabic and isolates the Latin brand", () => {
   assertEquals(
     prepareResponse("EgyptLore أنا دليلك المحلي."),
-    "أكيد، \u2066EgyptLore\u2069 أنا دليلك المحلي.",
+    "أكيد، \u2066EgyptLore\u2069 أنا دليلك المحلي.\u200F",
   );
   assertEquals(
     prepareResponse("أهلاً من EgyptLore"),
     "أهلاً من \u2066EgyptLore\u2069",
+  );
+  assertEquals(
+    prepareResponse(conversationalReply("عامل اي")!),
+    "أهلاً بيك! 😊 عامل إيه؟ أقدر أساعدك تكتشف أماكن مصر والإسكندرية وتاريخها وأكلها وجولاتها.\u200F",
   );
 });
 

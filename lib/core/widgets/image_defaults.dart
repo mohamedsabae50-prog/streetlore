@@ -39,23 +39,54 @@ class CategoryImageFallback extends StatelessWidget {
     this.fit = BoxFit.cover,
     this.width,
     this.height,
+    this.title,
   });
 
   final String? category;
   final BoxFit fit;
   final double? width;
   final double? height;
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: width,
       height: height,
-      color: const Color(0xFF1C2433),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF18283A), Color(0xFF101722)],
+        ),
+      ),
       alignment: Alignment.center,
-      child: Icon(
-        imageFallbackIconForCategory(category),
-        color: Colors.white54,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            imageFallbackIconForCategory(category),
+            color: const Color(0xFFD4AF37),
+            size: 36,
+          ),
+          if (title?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                title!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
