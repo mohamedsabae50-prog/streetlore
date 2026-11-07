@@ -25,6 +25,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
+  static const _compassStackSize = 280.0;
   static const _radarStageDuration = Duration(milliseconds: 1400);
   static const _stageTransitionDuration = Duration(milliseconds: 250);
   static const _pyramidsVisibleDuration = Duration(milliseconds: 1400);
@@ -250,9 +251,6 @@ class _SplashScreenState extends State<SplashScreen>
   );
 
   Widget _buildRadarEntrance(bool isArabic) {
-    final stackSize = (MediaQuery.sizeOf(context).height - 210)
-        .clamp(140.0, 260.0)
-        .toDouble();
     return KeyedSubtree(
       key: const ValueKey('radar-stage'),
       child: Stack(
@@ -265,9 +263,9 @@ class _SplashScreenState extends State<SplashScreen>
                 'EgyptLore. Egypt Unseen — Discover Egypt’s Hidden Stories. اكتشف حكايات وكنوز مصر المخفية',
             child: const DecoratedBox(
               decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0, -0.22),
-                  radius: 1.15,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [
                     Color(0xFF14263C),
                     Color(0xFF0D1B2A),
@@ -294,7 +292,7 @@ class _SplashScreenState extends State<SplashScreen>
                     scale: _logoScale,
                     child: SizedBox.square(
                       key: const ValueKey('splash-compass-rings'),
-                      dimension: stackSize,
+                      dimension: _compassStackSize,
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
@@ -314,7 +312,7 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ),
                           CustomPaint(
-                            size: Size(stackSize, stackSize),
+                            size: const Size.square(_compassStackSize),
                             painter: const _CompassRingsPainter(),
                           ),
                           Semantics(
@@ -322,9 +320,9 @@ class _SplashScreenState extends State<SplashScreen>
                             label: 'EgyptLore compass',
                             child: Container(
                               key: const ValueKey('splash-compass-emblem'),
-                              width: stackSize * .785,
-                              height: stackSize * .785,
-                              padding: EdgeInsets.all(stackSize * .096),
+                              width: _compassStackSize * .785,
+                              height: _compassStackSize * .785,
+                              padding: EdgeInsets.all(_compassStackSize * .096),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: const Color(
@@ -349,9 +347,28 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                               child: AnimatedBuilder(
                                 animation: _ambientController,
-                                child: Image.asset(
-                                  'assets/images/compass_only.png',
-                                  fit: BoxFit.contain,
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final imageScale = math.min(
+                                      constraints.maxWidth / 677,
+                                      constraints.maxHeight / 713,
+                                    );
+                                    // The PNG's visible bounds are shifted 6 px
+                                    // right and 12 px down within its canvas.
+                                    return Transform.translate(
+                                      offset: Offset(
+                                        -6 * imageScale,
+                                        -12 * imageScale,
+                                      ),
+                                      child: Image.asset(
+                                        'assets/images/compass_only.png',
+                                        key: const ValueKey(
+                                          'splash-compass-asset',
+                                        ),
+                                        fit: BoxFit.contain,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 builder: (context, logo) => ShaderMask(
                                   blendMode: BlendMode.srcATop,
@@ -601,6 +618,24 @@ class _CompassRingsPainter extends CustomPainter {
     canvas.drawCircle(center, radius * .435, paint);
     paint.color = const Color(0x44D4AF37);
     canvas.drawCircle(center, radius * .488, paint);
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    for (var tick = 0; tick < 60; tick++) {
+      final isMajor = tick % 5 == 0;
+      final startRadius = radius * (isMajor ? .425 : .458);
+      final endRadius = radius * .488;
+      final angle = tick * math.pi / 30;
+      paint
+        ..color = Color(isMajor ? 0x66D4AF37 : 0x33D4AF37)
+        ..strokeWidth = isMajor ? 1.2 : .7;
+      canvas.drawLine(
+        Offset(startRadius * math.cos(angle), startRadius * math.sin(angle)),
+        Offset(endRadius * math.cos(angle), endRadius * math.sin(angle)),
+        paint,
+      );
+    }
+    canvas.restore();
   }
 
   @override

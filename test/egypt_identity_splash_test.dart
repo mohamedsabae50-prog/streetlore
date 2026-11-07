@@ -3,23 +3,49 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:streetlore/presentation/screens/splash_screen.dart';
 
 void main() {
-  testWidgets('compass emblem is centered in its ring stack without overflow', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(800, 600);
+  testWidgets('mobile compass emblem is centered in its rings', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: SplashScreen()));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(360, 800),
+            padding: EdgeInsets.only(top: 40, bottom: 24),
+          ),
+          child: SplashScreen(),
+        ),
+      ),
+    );
     await tester.pump();
 
     final rings = find.byKey(const ValueKey('splash-compass-rings'));
     final compass = find.byKey(const ValueKey('splash-compass-emblem'));
     expect(rings, findsOneWidget);
     expect(compass, findsOneWidget);
-    expect(tester.getCenter(rings), tester.getCenter(compass));
+    final ringsCenter = tester.getCenter(rings);
+    final compassCenter = tester.getCenter(compass);
+    expect((ringsCenter.dx - compassCenter.dx).abs(), lessThanOrEqualTo(.01));
+    expect((ringsCenter.dy - compassCenter.dy).abs(), lessThanOrEqualTo(.01));
+    expect(tester.getSize(rings), const Size(280, 280));
     expect(tester.getSize(rings).width, tester.getSize(rings).height);
+
+    final compassAsset = find.byKey(const ValueKey('splash-compass-asset'));
+    final centeringTransform = tester.widget<Transform>(
+      find.ancestor(of: compassAsset, matching: find.byType(Transform)).first,
+    );
+    final imageScale = (280 * (.785 - 2 * .096) - 2) / 713;
+    expect(
+      centeringTransform.transform.getTranslation().x,
+      closeTo(-6 * imageScale, .01),
+    );
+    expect(
+      centeringTransform.transform.getTranslation().y,
+      closeTo(-12 * imageScale, .01),
+    );
     expect(tester.takeException(), isNull);
   });
 
