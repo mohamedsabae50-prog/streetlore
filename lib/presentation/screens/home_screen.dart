@@ -34,6 +34,12 @@ import 'general_ai_tour_guide_screen.dart';
 import 'paywall_screen.dart';
 import 'saved_tours_screen.dart';
 
+const List<Color> kExploreTitleGradientColors = [
+  Color(0xFF34D399),
+  Color(0xFFF5C45E),
+  Color(0xFF22C55E),
+];
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -312,15 +318,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                           const SizedBox(height: 2),
                           ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(
-                              colors: [
-                                Color(0xFF34D399),
-                                Color(0xFFF5C45E),
-                                Color(0xFF22C55E),
-                              ],
+                            key: const ValueKey('explore-title-gradient'),
+                            shaderCallback: (bounds) => LinearGradient(
+                              colors: kExploreTitleGradientColors,
                             ).createShader(bounds),
                             child: const Text(
                               'EgyptLore',
+                              key: ValueKey('explore-title'),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 28,
@@ -417,6 +421,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 child: TextField(
+                  key: const ValueKey('explore-search-field'),
                   controller: _searchController,
                   focusNode: _searchFocus,
                   style: TextStyle(
@@ -978,6 +983,7 @@ class _QuickCircleTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
+            key: ValueKey('quick-${item.label}'),
             width: 55,
             height: 55,
             decoration: BoxDecoration(

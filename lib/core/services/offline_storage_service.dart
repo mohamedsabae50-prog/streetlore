@@ -12,8 +12,10 @@ import 'package:path_provider/path_provider.dart';
 import '../../data/models/offline_pack.dart';
 import '../../data/models/place_model.dart';
 import '../../data/models/review_model.dart';
+import '../../data/models/itinerary_model.dart';
+import 'offline_pack_storage.dart';
 
-class OfflineStorageService {
+class OfflineStorageService implements OfflinePackStorage {
   OfflineStorageService._();
   static final OfflineStorageService instance = OfflineStorageService._();
 
@@ -21,6 +23,8 @@ class OfflineStorageService {
   static const _placesBox = 'offline_places';
   static const _reviewsBox = 'offline_reviews';
   static const _apiResponsesBox = 'offline_api_responses';
+  static const _packPayloadsBox = 'offline_pack_payloads';
+  static const _webImagesBox = 'offline_web_images';
   static const syncQueueBox = 'sync_queue';
   static const _tileTemplates = [
     'https://a.tile.openstreetmap.fr/hot',
@@ -61,6 +65,7 @@ class OfflineStorageService {
   String? _legacyTileDirectoryPath;
   String? _routeDirectoryPath;
 
+  @override
   Future<void> init() async {
     if (_ready) return;
     if (kIsWeb) {
@@ -70,6 +75,8 @@ class OfflineStorageService {
         await Hive.openBox(_placesBox);
         await Hive.openBox(_reviewsBox);
         await Hive.openBox(_apiResponsesBox);
+        await Hive.openBox(_packPayloadsBox);
+        await Hive.openBox(_webImagesBox);
         await Hive.openBox(syncQueueBox);
         _ready = true;
         debugPrint('OfflineStorageService: Hive ready (web / IndexedDB)');
@@ -86,6 +93,8 @@ class OfflineStorageService {
       await Hive.openBox(_placesBox);
       await Hive.openBox(_reviewsBox);
       await Hive.openBox(_apiResponsesBox);
+      await Hive.openBox(_packPayloadsBox);
+      await Hive.openBox(_webImagesBox);
       await Hive.openBox(syncQueueBox);
       _ready = true;
       debugPrint('OfflineStorageService: Hive ready at ${dir.path}');
@@ -99,6 +108,8 @@ class OfflineStorageService {
         await Hive.openBox(_placesBox);
         await Hive.openBox(_reviewsBox);
         await Hive.openBox(_apiResponsesBox);
+        await Hive.openBox(_packPayloadsBox);
+        await Hive.openBox(_webImagesBox);
         await Hive.openBox(syncQueueBox);
         _ready = true;
       } catch (e2) {
@@ -696,6 +707,7 @@ class OfflineStorageService {
     }
   }
 
+  @override
   List<OfflinePack> getAllPacks() {
     if (!_ready) return const [];
     final box = Hive.box(_packsBox);
@@ -708,18 +720,22 @@ class OfflineStorageService {
         .toList();
   }
 
+  @override
   Future<void> savePack(OfflinePack pack) async {
     if (!_ready) return;
     final box = Hive.box(_packsBox);
     await box.put(pack.id, jsonEncode(pack.toJson()));
   }
 
+  @override
   Future<void> deletePack(String packId) async {
     if (!_ready) return;
     final box = Hive.box(_packsBox);
     await box.delete(packId);
+    await Hive.box(_packPayloadsBox).delete(packId);
   }
 
+  @override
   Future<void> cachePlaces(List<PlaceModel> places) async {
     if (!_ready) await init();
     if (!_ready) {
@@ -732,49 +748,130 @@ class OfflineStorageService {
     await box.flush();
   }
 
+  @override
+  Future<int> cachePackPayload(
+    String packId, {
+    required List<PlaceModel> places,
+    required List<ItineraryModel> tours,
+  }) async {
+    if (!_ready) await init();
+    if (!_ready) {
+      throw StateError('Offline storage is not available');
+    }
+    final payload = <String, dynamic>{
+      'places': places.map((place) => place.toJson()).toList(growable: false),
+      'tours': tours.map((tour) => tour.toJson()).toList(growable: false),
+    };
+    final encoded = jsonEncode(payload);
+    await Hive.box(_packPayloadsBox).put(packId, encoded);
+    await Hive.box(_packPayloadsBox).flush();
+    return utf8.encode(encoded).length;
+  }
+
+  @override
+  Map<String, dynamic>? getPackPayload(String packId) {
+    if (!_ready) return null;
+    try {
+      final encoded = Hive.box(_packPayloadsBox).get(packId);
+      if (encoded is! String) return null;
+      final decoded = jsonDecode(encoded);
+      if (decoded is! Map) {
+        throw const FormatException('Offline pack payload was not an object');
+      }
+      return Map<String, dynamic>.from(decoded);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'OfflineStorageService.getPackPayload($packId) failed: '
+        '$error\n$stackTrace',
+      );
+      return null;
+    }
+  }
+
+  @override
+  List<ItineraryModel> getDownloadedTours() {
+    if (!_ready) return const [];
+    final tours = <String, ItineraryModel>{};
+    for (final value in Hive.box(_packPayloadsBox).values) {
+      try {
+        if (value is! String) continue;
+        final payload = jsonDecode(value);
+        if (payload is! Map || payload['tours'] is! List) continue;
+        for (final row in payload['tours'] as List) {
+          if (row is! Map) continue;
+          final tour = ItineraryModel.fromJson(Map<String, dynamic>.from(row));
+          tours[tour.id] = tour;
+        }
+      } catch (error, stackTrace) {
+        debugPrint(
+          'OfflineStorageService.getDownloadedTours failed: '
+          '$error\n$stackTrace',
+        );
+      }
+    }
+    return tours.values.toList(growable: false);
+  }
+
   /// Permanently stores arbitrary image URLs (e.g. a tour cover) under
   /// `offline_images/<folderId>`, and warms the shared image cache used by
   /// CachedNetworkImage so the image renders while offline.
-  Future<({int ok, int failed})> prefetchExtraImages(
+  @override
+  Future<ImagePrefetchResult> prefetchExtraImages(
     String folderId,
-    Iterable<String> urls,
-  ) async {
+    Iterable<String> urls, {
+    OfflineImageProgress? onProgress,
+  }) async {
     int ok = 0;
     int failed = 0;
-    if (kIsWeb) return (ok: 0, failed: 0);
-    final Directory docs;
-    try {
-      docs = await getApplicationDocumentsDirectory();
-    } catch (e) {
-      debugPrint('OfflineStorageService.prefetchExtraImages: $e');
-      return (ok: 0, failed: urls.length);
+    int bytes = 0;
+    Directory? docs;
+    if (!kIsWeb) {
+      try {
+        docs = await getApplicationDocumentsDirectory();
+      } catch (e) {
+        debugPrint('OfflineStorageService.prefetchExtraImages: $e');
+      }
     }
-    final manager = DefaultCacheManager();
     for (final url in urls.toSet()) {
       final cleanUrl = url.trim();
       if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
         continue;
       }
       try {
-        final dir = Directory(
-          '${docs.path}/offline_images/${_safeSegment(folderId)}',
-        );
-        if (!await dir.exists()) await dir.create(recursive: true);
-        final info = await manager.downloadFile(cleanUrl);
-        if (await info.file.exists()) {
-          await File(
-            '${dir.path}/${_imageFileName(cleanUrl)}',
-          ).writeAsBytes(await info.file.readAsBytes(), flush: true);
+        if (kIsWeb) {
+          final downloaded = await _downloadForWeb(cleanUrl);
+          bytes += downloaded;
           ok++;
+          onProgress?.call(bytes: downloaded, cached: true);
+        } else if (docs != null) {
+          final dir = Directory(
+            '${docs.path}/offline_images/${_safeSegment(folderId)}',
+          );
+          if (!await dir.exists()) await dir.create(recursive: true);
+          final downloaded = await _downloadForDevice(cleanUrl);
+          if (downloaded == null) {
+            failed++;
+            onProgress?.call(bytes: 0, cached: false);
+          } else {
+            final fileBytes = downloaded;
+            await File(
+              '${dir.path}/${_imageFileName(cleanUrl)}',
+            ).writeAsBytes(fileBytes, flush: true);
+            bytes += fileBytes.length;
+            ok++;
+            onProgress?.call(bytes: fileBytes.length, cached: true);
+          }
         } else {
           failed++;
+          onProgress?.call(bytes: 0, cached: false);
         }
       } catch (e) {
         debugPrint('OfflineStorageService.prefetchExtraImages: $cleanUrl: $e');
         failed++;
+        onProgress?.call(bytes: 0, cached: false);
       }
     }
-    return (ok: ok, failed: failed);
+    return ImagePrefetchResult(ok: ok, failed: failed, bytes: bytes);
   }
 
   Future<Box<dynamic>> get boxForPlaces async {
@@ -784,27 +881,27 @@ class OfflineStorageService {
     return Hive.box(_placesBox);
   }
 
-  Future<({int ok, int failed})> prefetchImages(
+  @override
+  Future<ImagePrefetchResult> prefetchImages(
     List<PlaceModel> places, {
     Map<String, List<String>> additionalImageUrls = const {},
+    bool primaryOnly = false,
+    OfflineImageProgress? onProgress,
   }) async {
     int ok = 0;
     int failed = 0;
-    if (kIsWeb) {
-      return (ok: places.length, failed: 0);
-    }
+    int bytes = 0;
     Directory? docs;
-    try {
-      docs = await getApplicationDocumentsDirectory();
-    } catch (e) {
-      debugPrint('OfflineStorageService.prefetchImages: docs dir failed: $e');
+    if (!kIsWeb) {
+      try {
+        docs = await getApplicationDocumentsDirectory();
+      } catch (e) {
+        debugPrint('OfflineStorageService.prefetchImages: docs dir failed: $e');
+      }
     }
-    if (docs == null) {
-      return (ok: 0, failed: places.length);
-    }
-    final manager = DefaultCacheManager();
     for (final p in places) {
-      final imageUrls = {...p.officialImages, ...?additionalImageUrls[p.id]};
+      final urls = primaryOnly ? p.officialImages.take(1) : p.officialImages;
+      final imageUrls = {...urls, ...?additionalImageUrls[p.id]};
       for (final url in imageUrls) {
         final cleanUrl = url.trim();
         if (cleanUrl.isEmpty ||
@@ -813,21 +910,33 @@ class OfflineStorageService {
           continue;
         }
         try {
-          final dir = Directory(
-            '${docs.path}/offline_images/${_safeSegment(p.id)}',
-          );
-          if (!await dir.exists()) {
-            await dir.create(recursive: true);
-          }
-          final target = File('${dir.path}/${_imageFileName(cleanUrl)}');
-          // Keep permanent copies outside the evictable image cache.
-          final info = await manager.downloadFile(cleanUrl);
-          if (await info.file.exists()) {
-            final bytes = await info.file.readAsBytes();
-            await target.writeAsBytes(bytes, flush: true);
+          if (kIsWeb) {
+            final downloaded = await _downloadForWeb(cleanUrl);
+            bytes += downloaded;
             ok++;
+            onProgress?.call(bytes: downloaded, cached: true);
+          } else if (docs != null) {
+            final dir = Directory(
+              '${docs.path}/offline_images/${_safeSegment(p.id)}',
+            );
+            if (!await dir.exists()) {
+              await dir.create(recursive: true);
+            }
+            final target = File('${dir.path}/${_imageFileName(cleanUrl)}');
+            final downloaded = await _downloadForDevice(cleanUrl);
+            if (downloaded != null) {
+              final fileBytes = downloaded;
+              await target.writeAsBytes(fileBytes, flush: true);
+              bytes += fileBytes.length;
+              ok++;
+              onProgress?.call(bytes: fileBytes.length, cached: true);
+            } else {
+              failed++;
+              onProgress?.call(bytes: 0, cached: false);
+            }
           } else {
             failed++;
+            onProgress?.call(bytes: 0, cached: false);
           }
         } catch (e) {
           debugPrint(
@@ -835,10 +944,45 @@ class OfflineStorageService {
             '${p.id} -> $cleanUrl: $e',
           );
           failed++;
+          onProgress?.call(bytes: 0, cached: false);
         }
       }
     }
-    return (ok: ok, failed: failed);
+    return ImagePrefetchResult(ok: ok, failed: failed, bytes: bytes);
+  }
+
+  Future<int> _downloadForWeb(String url) async {
+    final response = await http
+        .get(Uri.parse(url))
+        .timeout(const Duration(seconds: 20));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw HttpException('Image request returned ${response.statusCode}');
+    }
+    final bytes = response.bodyBytes;
+    await Hive.box(_webImagesBox).put(url, base64Encode(bytes));
+    return bytes.length;
+  }
+
+  Uint8List? getCachedImageBytes(String imageUrl) {
+    if (!_ready || !kIsWeb) return null;
+    try {
+      final encoded = Hive.box(_webImagesBox).get(imageUrl);
+      if (encoded is! String) return null;
+      return base64Decode(encoded);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'OfflineStorageService.getCachedImageBytes failed: '
+        '$error\n$stackTrace',
+      );
+      return null;
+    }
+  }
+
+  Future<Uint8List?> _downloadForDevice(String url) async {
+    final manager = DefaultCacheManager();
+    final info = await manager.downloadFile(url);
+    if (!await info.file.exists()) return null;
+    return info.file.readAsBytes();
   }
 
   /// v1.0.78 — look up the permanent copy of an image that
@@ -907,6 +1051,7 @@ class OfflineStorageService {
     return '.jpg';
   }
 
+  @override
   List<PlaceModel> getCachedPlaces() {
     if (!_ready) return const [];
     final box = Hive.box(_placesBox);

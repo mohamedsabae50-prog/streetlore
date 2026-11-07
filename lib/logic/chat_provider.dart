@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../core/services/supabase_service.dart';
+import '../core/services/offline_storage_service.dart';
 import '../core/services/realtime_resilience.dart';
 import '../data/models/chat_message.dart';
 
@@ -28,11 +29,37 @@ class ChatProvider extends ChangeNotifier {
           .toList(growable: false);
 
   Future<void> load(String placeId) async {
-    final msgs = await _supa.fetchMessages(placeId);
-    _byPlace[placeId] = _visibleMessages(msgs);
-    notifyListeners();
-    _subscribe(placeId);
+    final storage = OfflineStorageService.instance;
+    try {
+      final msgs = await _supa.fetchMessages(placeId);
+      _byPlace[placeId] = _visibleMessages(msgs);
+      await storage.cacheApiRows(
+        _chatCacheKey(placeId),
+        _byPlace[placeId]!.map((message) => message.toJson()).toList(),
+      );
+      notifyListeners();
+      _subscribe(placeId);
+    } catch (error, stackTrace) {
+      debugPrint('ChatProvider.load($placeId) failed: $error\n$stackTrace');
+      final rows = storage.getCachedApiRows(_chatCacheKey(placeId));
+      if (rows != null) {
+        try {
+          _byPlace[placeId] = _visibleMessages(rows.map(ChatMessage.fromJson));
+        } catch (cacheError, cacheStackTrace) {
+          debugPrint(
+            'ChatProvider: cached messages for $placeId are invalid: '
+            '$cacheError\n$cacheStackTrace',
+          );
+          _byPlace[placeId] = const [];
+        }
+      } else {
+        _byPlace.putIfAbsent(placeId, () => []);
+      }
+      notifyListeners();
+    }
   }
+
+  String _chatCacheKey(String placeId) => 'place_chat_$placeId';
 
   void _subscribe(String placeId) {
     _subs[placeId]?.cancel();
@@ -41,6 +68,12 @@ class ChatProvider extends ChangeNotifier {
     _subs[placeId] = swallowTransientRealtimeErrors(stream).listen(
       (rows) {
         _byPlace[placeId] = _visibleMessages(rows);
+        unawaited(
+          OfflineStorageService.instance.cacheApiRows(
+            _chatCacheKey(placeId),
+            _byPlace[placeId]!.map((message) => message.toJson()).toList(),
+          ),
+        );
         notifyListeners();
       },
       onError: (Object error, StackTrace stackTrace) {
@@ -78,6 +111,12 @@ class ChatProvider extends ChangeNotifier {
         _byPlace[message.placeId] = current;
         notifyListeners();
       }
+      await OfflineStorageService.instance.cacheApiRows(
+        _chatCacheKey(message.placeId),
+        _visibleMessages(
+          _byPlace[message.placeId] ?? const [],
+        ).map((entry) => entry.toJson()).toList(),
+      );
     } catch (_) {
       final current = List<ChatMessage>.from(
         _byPlace[message.placeId] ?? const [],

@@ -82,6 +82,7 @@ class PlaceProvider extends ChangeNotifier {
   List<PlaceModel> _places;
   RealtimeChannel? _placesChannel;
   final GovernorateProvider? governorates;
+  final bool Function()? isOnline;
   final Set<String> _autoCheckInAttemptedIds = <String>{};
   final StreamController<PlaceModel> _autoCheckInController =
       StreamController<PlaceModel>.broadcast();
@@ -135,6 +136,7 @@ class PlaceProvider extends ChangeNotifier {
   PlaceProvider({
     bool watchRemoteUpdates = true,
     this.governorates,
+    this.isOnline,
     Iterable<PlaceModel> initialPlaces = const <PlaceModel>[],
   }) : _places = deduplicatePlaces(initialPlaces) {
     governorates?.addListener(_onGovernorateChanged);
@@ -319,10 +321,25 @@ class PlaceProvider extends ChangeNotifier {
         }
       }
       if (_places.isEmpty) {
-        _places = deduplicatePlaces(fallbackPlaces);
+        _places = deduplicatePlaces([
+          ...OfflineStorageService.instance.getCachedPlaces(),
+          ...fallbackPlaces,
+        ]);
       }
       mergeSeedHotels();
       notifyListeners();
+    }
+
+    if (isOnline?.call() == false) {
+      _places = deduplicatePlaces([
+        ..._places,
+        ...storage.getCachedPlaces(),
+        ...fallbackPlaces,
+      ]);
+      mergeSeedHotels();
+      _error = null;
+      notifyListeners();
+      return;
     }
 
     _loading = true;
@@ -358,6 +375,7 @@ class PlaceProvider extends ChangeNotifier {
         _error = null;
       } else {
         _places = deduplicatePlaces(filtered);
+        await storage.cachePlaces(_places);
         _error = null;
       }
     } catch (e) {
@@ -368,12 +386,25 @@ class PlaceProvider extends ChangeNotifier {
           final cached = _filterInvalidCoords(
             cachedRows.map(_placeFromSupabase).toList(growable: false),
           );
-          if (cached.isNotEmpty) _places = deduplicatePlaces(cached);
+          if (cached.isNotEmpty) {
+            _places = deduplicatePlaces([
+              ...cached,
+              ...storage.getCachedPlaces(),
+              ...fallbackPlaces,
+            ]);
+          }
         } catch (cacheError) {
           debugPrint(
             'PlaceProvider.loadPlaces: cached response invalid: $cacheError',
           );
         }
+      }
+      if (_places.isEmpty || _places.length < fallbackPlaces.length) {
+        _places = deduplicatePlaces([
+          ..._places,
+          ...storage.getCachedPlaces(),
+          ...fallbackPlaces,
+        ]);
       }
     } finally {
       _loading = false;

@@ -15,6 +15,7 @@ import '../../core/services/offline_tile_provider.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/governorate_provider.dart';
+import '../../logic/connectivity_provider.dart';
 import '../../logic/place_provider.dart';
 
 final Uint8List _kTransparentPng = Uint8List.fromList(<int>[
@@ -280,26 +281,28 @@ class _MapScreenState extends State<MapScreen> {
     final storage = OfflineStorageService.instance;
     final cacheKey =
         widget.cachedRouteKey ?? storage.routeCacheKey(routeLocations);
-    try {
-      final liveRoute = await storage.fetchAndCacheRouteGeometry(
-        cacheKey,
-        routeLocations,
-      );
-      if (!mounted) return;
-      if (liveRoute != null && liveRoute.length >= 2) {
-        setState(() {
-          _routePoints = liveRoute;
-          _routeUnavailable = false;
-          _usingCachedRoadRoute = false;
-          _usingCorridorFallback = false;
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _fitToRoute();
-        });
-        return;
+    if (context.read<ConnectivityProvider>().hasInternet != false) {
+      try {
+        final liveRoute = await storage.fetchAndCacheRouteGeometry(
+          cacheKey,
+          routeLocations,
+        );
+        if (!mounted) return;
+        if (liveRoute != null && liveRoute.length >= 2) {
+          setState(() {
+            _routePoints = liveRoute;
+            _routeUnavailable = false;
+            _usingCachedRoadRoute = false;
+            _usingCorridorFallback = false;
+          });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _fitToRoute();
+          });
+          return;
+        }
+      } catch (e) {
+        debugPrint('MapScreen: live street routing failed: $e');
       }
-    } catch (e) {
-      debugPrint('MapScreen: live street routing failed: $e');
     }
     if (!mounted) return;
 

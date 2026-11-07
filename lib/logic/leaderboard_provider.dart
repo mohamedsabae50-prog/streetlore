@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/services/supabase_service.dart';
+import '../core/services/offline_storage_service.dart';
 import '../data/models/gamification_stats.dart';
 
 enum LeaderboardPeriod {
@@ -50,12 +51,15 @@ class CityLeaderboardEntry {
 }
 
 class LeaderboardProvider extends ChangeNotifier {
+  final bool Function()? isOnline;
   List<CityLeaderboardEntry> _entries = [];
   bool _loading = false;
   String? _error;
   LeaderboardPeriod _period = LeaderboardPeriod.week;
   LeaderboardMetric _metric = LeaderboardMetric.checkIns;
   int _requestGeneration = 0;
+
+  LeaderboardProvider({this.isOnline});
 
   List<CityLeaderboardEntry> get entries =>
       List<CityLeaderboardEntry>.unmodifiable(_entries);
@@ -72,6 +76,15 @@ class LeaderboardProvider extends ChangeNotifier {
     _period = period ?? _period;
     _metric = metric ?? _metric;
     final generation = ++_requestGeneration;
+    final storage = OfflineStorageService.instance;
+    final cacheKey = 'leaderboard_${_period.rpcValue}_${_metric.rpcValue}';
+    if (isOnline?.call() == false) {
+      _loadCachedRows(storage, cacheKey);
+      _loading = false;
+      _error = null;
+      notifyListeners();
+      return;
+    }
     _loading = true;
     _error = null;
     notifyListeners();
@@ -101,16 +114,54 @@ class LeaderboardProvider extends ChangeNotifier {
           },
         });
       }).toList();
+      await storage.cacheApiRows(
+        cacheKey,
+        _entries
+            .map(
+              (entry) => {
+                ...entry.stats.toJson(),
+                'score': entry.score,
+                'check_ins': entry.checkIns,
+                'longest_streak': entry.longestStreak,
+                'hidden_gems': entry.hiddenGems,
+              },
+            )
+            .toList(growable: false),
+      );
     } catch (error, stackTrace) {
       if (generation != _requestGeneration) return;
-      _entries = [];
-      _error = 'Could not load the city leaderboard: $error';
+      final cached = storage.getCachedApiRows(cacheKey);
+      if (cached != null && cached.isNotEmpty) {
+        _loadCachedRows(storage, cacheKey);
+        _error = _entries.isEmpty
+            ? 'Could not load the city leaderboard: $error'
+            : null;
+      } else {
+        _entries = [];
+        _error = 'Could not load the city leaderboard: $error';
+      }
       debugPrint('LeaderboardProvider.load failed: $error\n$stackTrace');
     } finally {
       if (generation == _requestGeneration) {
         _loading = false;
         notifyListeners();
       }
+    }
+  }
+
+  void _loadCachedRows(OfflineStorageService storage, String cacheKey) {
+    final cached = storage.getCachedApiRows(cacheKey);
+    if (cached == null) return;
+    try {
+      _entries = cached
+          .map(CityLeaderboardEntry.fromJson)
+          .toList(growable: false);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'LeaderboardProvider: cached leaderboard is invalid: '
+        '$error\n$stackTrace',
+      );
+      _entries = [];
     }
   }
 }

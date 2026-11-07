@@ -193,8 +193,12 @@ jobs:
       - name: Rename APK
         run: |
           set -e
+          cp build/app/outputs/flutter-apk/app-release.apk \
+             build/app/outputs/flutter-apk/app-release-ota.apk
           mv build/app/outputs/flutter-apk/app-release.apk \
              "build/app/outputs/flutter-apk/egyptlore-${{ steps.resolve_tag.outputs.tag }}-arm64.apk"
+          cp build/app/outputs/flutter-apk/app-release-ota.apk \
+             build/app/outputs/flutter-apk/app-release.apk
           ls -la build/app/outputs/flutter-apk/
 
       - name: Rename AAB
@@ -225,6 +229,7 @@ jobs:
             | File | Purpose |
             |---|---|
             | `egyptlore-${{ steps.resolve_tag.outputs.tag }}-arm64.apk` | Sideload install / non-Play distribution |
+            | `app-release.apk` | Direct Android OTA update |
             | `egyptlore-${{ steps.resolve_tag.outputs.tag }}-arm64.aab` | **Google Play upload** (recommended) |
 
             - APK Size:    ${{ steps.hashes.outputs.size }} bytes
@@ -232,6 +237,7 @@ jobs:
             - APK SHA-256: `${{ steps.hashes.outputs.sha256 }}`
           files: |
             build/app/outputs/flutter-apk/egyptlore-${{ steps.resolve_tag.outputs.tag }}-arm64.apk
+            build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/egyptlore-${{ steps.resolve_tag.outputs.tag }}-arm64.aab
           fail_on_unmatched_files: true
           draft: false

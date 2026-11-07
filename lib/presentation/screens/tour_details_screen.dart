@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +10,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../data/models/itinerary_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/connectivity_provider.dart';
 import '../../logic/tour_provider.dart';
 import '../../logic/offline_provider.dart';
 import '../../logic/place_provider.dart';
@@ -250,10 +250,16 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: Consumer<TourProvider>(
-              builder: (context, tourProvider, child) {
+            child: Consumer2<TourProvider, OfflineProvider>(
+              builder: (context, tourProvider, offline, child) {
                 final isSaved = tourProvider.isSaved(tour.id);
-                final downloading = tourProvider.isDownloadingTour(tour.id);
+                final isOnline =
+                    context.watch<ConnectivityProvider>().hasInternet != false;
+                final downloading =
+                    tourProvider.isDownloadingTour(tour.id) ||
+                    (offline.isDownloading &&
+                        offline.downloadingPackId == 'tour_${tour.id}');
+                final progress = offline.downloadProgress;
                 return _GlassButton(
                   icon: isSaved
                       ? Icons.offline_pin_rounded
@@ -264,43 +270,63 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                       ? context.quickActionSuccess
                       : Colors.white,
                   isLoading: downloading,
-                  loadingLabel: context.tr('downloading_offline'),
+                  loadingLabel: offline.downloadingPackId == 'tour_${tour.id}'
+                      ? context.tr('offline_pack_progress', {
+                          'done': '${progress.itemsDone}',
+                          'total': '${progress.totalItems}',
+                          'images': '${progress.cachedImagesCount}',
+                          'size': progress.sizeMb.toStringAsFixed(1),
+                        })
+                      : context.tr('downloading_offline'),
                   label: isSaved && !downloading
                       ? context.tr('downloaded')
+                      : !isSaved && !isOnline
+                      ? context.tr('offline_download_requires_internet')
                       : null,
-                  onTap: downloading
+                  onTap: downloading || (!isSaved && !isOnline)
                       ? null
                       : () async {
                           HapticFeedback.mediumImpact();
                           final messenger = ScaffoldMessenger.of(context);
-                          final offline = context.read<OfflineProvider>();
                           final savedMsg = context.tr('tour_saved_offline');
                           final removedMsg = context.tr('tour_removed_offline');
-                          if (!isSaved) {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                duration: const Duration(seconds: 2),
-                                content: Text(
-                                  context.tr('downloading_tour_offline'),
-                                ),
-                              ),
+                          final failedMsg = context.tr('download_failed');
+                          String resultMessage;
+                          try {
+                            if (isSaved) {
+                              await tourProvider.toggleTourOffline(tour);
+                              await offline.init();
+                              resultMessage = removedMsg;
+                            } else {
+                              final result = await offline.downloadTour(
+                                tour,
+                                availablePlaces: context
+                                    .read<PlaceProvider>()
+                                    .allPlaces,
+                                isPro: context.read<AuthProvider>().isPro,
+                              );
+                              if (result is! DownloadOk) {
+                                throw StateError(
+                                  'Offline tour download failed',
+                                );
+                              }
+                              tourProvider.toggleTourSaved(tour);
+                              resultMessage =
+                                  '$savedMsg (${result.imagesOk} images'
+                                  '${result.imagesFailed > 0 ? ', ${result.imagesFailed} failed' : ''})';
+                            }
+                          } catch (error, stackTrace) {
+                            debugPrint(
+                              'TourDetailsScreen: offline tour action failed: '
+                              '$error\n$stackTrace',
                             );
+                            resultMessage = failedMsg;
                           }
-                          final result = await tourProvider.toggleTourOffline(
-                            tour,
-                          );
-                          await offline.init();
+                          if (!context.mounted) return;
                           messenger
                             ..hideCurrentSnackBar()
                             ..showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  result == null
-                                      ? removedMsg
-                                      : '$savedMsg (${result.ok} images'
-                                            '${result.failed > 0 ? ', ${result.failed} failed' : ''})',
-                                ),
-                              ),
+                              SnackBar(content: Text(resultMessage)),
                             );
                         },
                 );
@@ -337,18 +363,20 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                           );
                         },
                     child: imageUrl != null
-                        ? CachedNetworkImage(
+                        ? OfflineAwareImage(
                             imageUrl: imageUrl,
+                            cacheId: 'tour_${tour.id}',
                             fit: BoxFit.cover,
                             memCacheWidth: 1080,
-                            memCacheHeight: 1080,
-                            httpHeaders: streetloreImageHeaders,
-                            placeholder: (_, __) =>
-                                Container(color: AppColors.primaryLight),
-                            errorWidget: (context, url, error) =>
-                                CategoryImageFallback(category: 'historical'),
+                            fallback: CategoryImageFallback(
+                              category: 'historical',
+                              title: tour.title,
+                            ),
                           )
-                        : CategoryImageFallback(category: 'historical'),
+                        : CategoryImageFallback(
+                            category: 'historical',
+                            title: tour.title,
+                          ),
                   ),
                   Container(
                     decoration: const BoxDecoration(

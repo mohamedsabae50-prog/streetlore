@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/services/offline_storage_service.dart';
 import '../core/services/supabase_service.dart';
 import '../data/models/itinerary_model.dart';
+import '../data/models/offline_pack.dart';
 import '../data/models/place_model.dart';
 import '../data/mock_data.dart' show fallbackTours;
 import 'governorate_provider.dart';
@@ -83,6 +84,7 @@ class TourProvider extends ChangeNotifier {
 
   List<ItineraryModel> _tours = [];
   final GovernorateProvider? governorates;
+  final bool Function()? isOnline;
   List<ItineraryModel> get tours => List.unmodifiable(
     _tours.where(
       (tour) =>
@@ -208,7 +210,7 @@ class TourProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  TourProvider({this.governorates}) {
+  TourProvider({this.governorates, this.isOnline}) {
     governorates?.addListener(_onGovernorateChanged);
     _loadSavedTours();
   }
@@ -237,7 +239,15 @@ class TourProvider extends ChangeNotifier {
       if (_tours.isEmpty) {
         _tours = List<ItineraryModel>.from(fallbackTours);
       }
+      _mergeDownloadedTours(storage.getDownloadedTours());
       notifyListeners();
+    }
+    if (isOnline?.call() == false) {
+      _mergeDownloadedTours(storage.getDownloadedTours());
+      _error = null;
+      _loading = false;
+      notifyListeners();
+      return;
     }
     _loading = true;
     _error = null;
@@ -259,6 +269,7 @@ class TourProvider extends ChangeNotifier {
       } else {
         _tours = loaded;
       }
+      _mergeDownloadedTours(storage.getDownloadedTours());
       _updateAutomaticallyVisitedTours();
       _error = null;
     } catch (e) {
@@ -267,6 +278,7 @@ class TourProvider extends ChangeNotifier {
       if (_tours.isEmpty) {
         _tours = List<ItineraryModel>.from(fallbackTours);
       }
+      _mergeDownloadedTours(storage.getDownloadedTours());
     } finally {
       _loading = false;
       _updateAutomaticallyVisitedTours();
@@ -275,6 +287,15 @@ class TourProvider extends ChangeNotifier {
   }
 
   Future<void> refresh() => loadTours(force: true);
+
+  void _mergeDownloadedTours(List<ItineraryModel> downloaded) {
+    if (downloaded.isEmpty) return;
+    final merged = <String, ItineraryModel>{
+      for (final tour in downloaded) tour.id: tour,
+      for (final tour in _tours) tour.id: tour,
+    };
+    _tours = merged.values.toList(growable: false);
+  }
 
   ItineraryModel _tourFromSupabase(Map<String, dynamic> json) {
     final placesJson = (json['places'] as List<dynamic>?) ?? const [];
@@ -377,12 +398,28 @@ class TourProvider extends ChangeNotifier {
   Future<void> _loadSavedTours() async {
     final prefs = await SharedPreferences.getInstance();
     final String? toursJson = prefs.getString('saved_tours_data');
-    if (toursJson != null) {
-      final List<dynamic> decodedList = json.decode(toursJson);
-      _savedTours = decodedList
-          .map((item) => ItineraryModel.fromJson(item))
-          .toList();
+    try {
+      final saved = toursJson == null
+          ? <ItineraryModel>[]
+          : (json.decode(toursJson) as List)
+                .map(
+                  (item) => ItineraryModel.fromJson(
+                    Map<String, dynamic>.from(item as Map),
+                  ),
+                )
+                .toList();
+      final downloaded = OfflineStorageService.instance.getDownloadedTours();
+      final merged = <String, ItineraryModel>{
+        for (final tour in downloaded) tour.id: tour,
+        for (final tour in saved) tour.id: tour,
+      };
+      _savedTours = merged.values.toList(growable: false);
+      if (downloaded.isNotEmpty) await _saveToursToStorage();
       notifyListeners();
+    } catch (error, stackTrace) {
+      debugPrint(
+        'TourProvider: failed to load offline tours: $error\n$stackTrace',
+      );
     }
   }
 
@@ -494,6 +531,7 @@ class TourProvider extends ChangeNotifier {
     final isExisting = _savedTours.any((t) => t.id == tour.id);
     if (isExisting) {
       _savedTours.removeWhere((t) => t.id == tour.id);
+      await OfflineStorageService.instance.deletePack('tour_${tour.id}');
       await _saveToursToStorage();
       notifyListeners();
       return null;
@@ -515,6 +553,8 @@ class TourProvider extends ChangeNotifier {
     final storage = OfflineStorageService.instance;
     var ok = 0;
     var failed = 0;
+    var imageBytes = 0;
+    var imageCount = 0;
     try {
       final stops = tour.places.where((p) => p.id.isNotEmpty).toList();
       if (stops.isNotEmpty) {
@@ -549,6 +589,8 @@ class TourProvider extends ChangeNotifier {
         final stopImages = await storage.prefetchImages(stops);
         ok += stopImages.ok;
         failed += stopImages.failed;
+        imageBytes += stopImages.bytes;
+        imageCount += stopImages.ok;
       }
       final coverUrls = <String>{
         if (tour.imageUrl.isNotEmpty) tour.imageUrl,
@@ -561,7 +603,29 @@ class TourProvider extends ChangeNotifier {
         );
         ok += cover.ok;
         failed += cover.failed;
+        imageBytes += cover.bytes;
+        imageCount += cover.ok;
       }
+      final packId = 'tour_${tour.id}';
+      final jsonBytes = await storage.cachePackPayload(
+        packId,
+        places: stops,
+        tours: [tour],
+      );
+      await storage.savePack(
+        OfflinePack(
+          id: packId,
+          name: tour.title,
+          description: tour.description,
+          placeIds: stops.map((place) => place.id).toList(growable: false),
+          sizeMb: (jsonBytes + imageBytes) / (1024 * 1024),
+          downloadedCount: stops.length,
+          placesCount: stops.length,
+          toursCount: 1,
+          cachedImagesCount: imageCount,
+          downloadedAt: DateTime.now(),
+        ),
+      );
       debugPrint(
         'TourProvider: tour ${tour.id} saved offline '
         '(${stops.length} stops, imgOk=$ok, imgFail=$failed)',

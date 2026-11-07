@@ -22,6 +22,7 @@ import '../../core/widgets/shimmer_image.dart';
 import '../../data/mock_data.dart';
 import '../../data/models/place_model.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/connectivity_provider.dart';
 import '../../logic/blocked_users_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/review_provider.dart';
@@ -1060,6 +1061,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                   Expanded(
                                     child: Consumer<OfflineProvider>(
                                       builder: (context, offline, _) {
+                                        final isOnline =
+                                            context
+                                                .watch<ConnectivityProvider>()
+                                                .hasInternet !=
+                                            false;
                                         final cached = offline.isCached(
                                           place.id,
                                         );
@@ -1075,6 +1081,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                 )
                                               : cached
                                               ? context.tr('downloaded')
+                                              : !isOnline
+                                              ? context.tr(
+                                                  'offline_download_requires_internet',
+                                                )
                                               : context.tr('download_offline'),
                                           color: downloading
                                               ? context.quickActionPurple
@@ -1085,7 +1095,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                               ? context.quickActionSuccessBg
                                               : context.quickActionPurpleBg,
                                           isLoading: downloading,
-                                          onTap: downloading
+                                          onTap:
+                                              downloading ||
+                                                  (!cached && !isOnline)
                                               ? null
                                               : () async {
                                                   if (!context

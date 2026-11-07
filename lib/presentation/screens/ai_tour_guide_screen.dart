@@ -6,6 +6,8 @@ import '../../core/widgets/ai_quota_banner.dart';
 import '../../core/services/ai_tour_guide_service.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
+import '../../logic/connectivity_provider.dart';
+import 'package:provider/provider.dart';
 import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
 import '../widgets/chat_text_direction.dart';
@@ -53,6 +55,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
   }
 
   Future<void> _send() async {
+    if (context.read<ConnectivityProvider>().hasInternet == false) return;
     final text = _inputCtrl.text.trim();
     if (text.isEmpty || _sending) return;
     HapticFeedback.lightImpact();
@@ -103,6 +106,8 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isOffline =
+        context.watch<ConnectivityProvider>().hasInternet == false;
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
@@ -143,8 +148,17 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : _buildChatList(),
           ),
+          if (isOffline)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Text(
+                context.tr('ai_offline_notice'),
+                textAlign: TextAlign.center,
+                style: TextStyle(color: context.textSec, fontSize: 12),
+              ),
+            ),
           AiQuotaBanner(key: _quotaKey),
-          _buildInputBar(),
+          _buildInputBar(enabled: !isOffline),
         ],
       ),
     );
@@ -180,7 +194,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
     );
   }
 
-  Widget _buildInputBar() {
+  Widget _buildInputBar({required bool enabled}) {
     return Container(
       padding: EdgeInsets.fromLTRB(
         12,
@@ -197,6 +211,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
           Expanded(
             child: TextField(
               controller: _inputCtrl,
+              enabled: enabled,
               minLines: 1,
               maxLines: 4,
               textInputAction: TextInputAction.send,
@@ -226,7 +241,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
             shape: const CircleBorder(),
             child: InkWell(
               customBorder: const CircleBorder(),
-              onTap: _sending ? null : _send,
+              onTap: _sending || !enabled ? null : _send,
               child: const Padding(
                 padding: EdgeInsets.all(12),
                 child: Icon(Icons.send_rounded, color: Colors.white, size: 20),

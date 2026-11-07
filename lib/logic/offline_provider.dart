@@ -4,7 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/config/app_config.dart';
 import '../core/services/offline_storage_service.dart';
+import '../core/services/offline_pack_storage.dart';
 import '../data/models/offline_pack.dart';
+import '../data/models/itinerary_model.dart';
 import '../data/models/place_model.dart';
 import 'place_provider.dart' show placeModelFromSupabaseRow;
 
@@ -28,21 +30,55 @@ class DownloadEmpty extends DownloadResult {
   const DownloadEmpty(this.pack);
 }
 
-typedef DownloadProgress =
-    void Function(int done, int total, {int imageOk, int imageFail});
+class OfflineDownloadProgress {
+  final double progress;
+  final int itemsDone;
+  final int totalItems;
+  final int placesCount;
+  final int toursCount;
+  final int cachedImagesCount;
+  final int sizeBytes;
+
+  const OfflineDownloadProgress({
+    required this.progress,
+    required this.itemsDone,
+    required this.totalItems,
+    required this.placesCount,
+    required this.toursCount,
+    required this.cachedImagesCount,
+    required this.sizeBytes,
+  });
+
+  double get sizeMb => sizeBytes / (1024 * 1024);
+}
+
+typedef DownloadProgress = void Function(OfflineDownloadProgress progress);
 
 class OfflineProvider extends ChangeNotifier {
   final OfflineStorageService _storage = OfflineStorageService.instance;
+  final OfflinePackStorage _packStorage;
   List<OfflinePack> _packs = const [];
   List<PlaceModel> _cachedPlaces = const [];
+  List<ItineraryModel> _cachedTours = const [];
 
   List<OfflinePack> get packs => List.unmodifiable(_packs);
   List<PlaceModel> get cachedPlaces => List.unmodifiable(_cachedPlaces);
+  List<ItineraryModel> get cachedTours => List.unmodifiable(_cachedTours);
 
   bool _downloading = false;
   bool get isDownloading => _downloading;
   String? _downloadingPackId;
   String? get downloadingPackId => _downloadingPackId;
+  OfflineDownloadProgress _downloadProgress = const OfflineDownloadProgress(
+    progress: 0,
+    itemsDone: 0,
+    totalItems: 0,
+    placesCount: 0,
+    toursCount: 0,
+    cachedImagesCount: 0,
+    sizeBytes: 0,
+  );
+  OfflineDownloadProgress get downloadProgress => _downloadProgress;
   final Set<String> _downloadingPlaceIds = <String>{};
 
   bool isDownloadingPlace(String placeId) =>
@@ -54,14 +90,16 @@ class OfflineProvider extends ChangeNotifier {
   }
 
   static OfflineProvider? _instance;
-  OfflineProvider() {
+  OfflineProvider({OfflinePackStorage? storage})
+    : _packStorage = storage ?? OfflineStorageService.instance {
     _instance = this;
     // Storage is initialised in main() before providers are created, so the
     // downloaded places are available immediately on an offline cold start.
     if (_storage.isReady) {
       try {
-        _packs = _storage.getAllPacks();
-        _cachedPlaces = _storage.getCachedPlaces();
+        _packs = _packStorage.getAllPacks();
+        _cachedPlaces = _packStorage.getCachedPlaces();
+        _cachedTours = _packStorage.getDownloadedTours();
       } catch (e) {
         debugPrint('OfflineProvider: hydrate failed: $e');
       }
@@ -110,9 +148,10 @@ class OfflineProvider extends ChangeNotifier {
   ];
 
   Future<void> init() async {
-    await _storage.init();
-    _packs = _storage.getAllPacks();
-    _cachedPlaces = _storage.getCachedPlaces();
+    await _packStorage.init();
+    _packs = _packStorage.getAllPacks();
+    _cachedPlaces = _packStorage.getCachedPlaces();
+    _cachedTours = _packStorage.getDownloadedTours();
     _instance = this;
     notifyListeners();
   }
@@ -242,8 +281,19 @@ class OfflineProvider extends ChangeNotifier {
   Future<DownloadResult> download(
     OfflinePack pack, {
     required List<PlaceModel> availablePlaces,
+    List<ItineraryModel> availableTours = const [],
+    required bool isPro,
     DownloadProgress? onProgress,
   }) async {
+    if (!isPro) {
+      return DownloadEmpty(
+        OfflinePack(
+          id: pack.id,
+          name: pack.name,
+          description: 'EgyptLore Pro is required to download offline packs.',
+        ),
+      );
+    }
     if (_downloading) {
       return DownloadEmpty(pack);
     }
@@ -251,7 +301,7 @@ class OfflineProvider extends ChangeNotifier {
     _downloadingPackId = pack.id;
     notifyListeners();
     try {
-      final places = availablePlaces.where((p) {
+      final selectedPlaces = availablePlaces.where((p) {
         final matchesAll = pack.placeIds.contains('__all__');
         if (matchesAll) return true;
         if (pack.placeIds.contains(p.id)) return true;
@@ -263,38 +313,129 @@ class OfflineProvider extends ChangeNotifier {
         }
         return false;
       }).toList();
-      if (places.isEmpty) {
+      final selectedIds = selectedPlaces.map((place) => place.id).toSet();
+      final tours = availableTours
+          .where((tour) {
+            if (pack.id == 'tour_${tour.id}') return true;
+            if (pack.placeIds.contains('__all__')) return true;
+            if (pack.categories.isEmpty && pack.placeIds.isEmpty) return false;
+            return tour.places.any((stop) => selectedIds.contains(stop.id));
+          })
+          .toList(growable: false);
+      final placesById = <String, PlaceModel>{
+        for (final place in selectedPlaces) place.id: place,
+      };
+      for (final tour in tours) {
+        for (final stop in tour.places) {
+          if (stop.id.isNotEmpty) placesById.putIfAbsent(stop.id, () => stop);
+        }
+      }
+      final places = placesById.values.toList(growable: false);
+      if (places.isEmpty && tours.isEmpty) {
         debugPrint('OfflineProvider: no places matched pack "${pack.id}"');
         return DownloadEmpty(pack);
       }
 
-      onProgress?.call(0, places.length, imageOk: 0, imageFail: 0);
-      for (var i = 0; i < places.length; i++) {
-        await _storage.cachePlaces([places[i]]);
-        onProgress?.call(i + 1, places.length, imageOk: 0, imageFail: 0);
+      final imageJobs = <({String id, String? url})>[
+        for (final place in places)
+          if (place.primaryImage.startsWith('http'))
+            (id: place.id, url: place.primaryImage),
+        for (final tour in tours)
+          if ((tour.coverImageUrl ?? '').startsWith('http'))
+            (id: 'tour_${tour.id}', url: tour.coverImageUrl),
+      ];
+      final totalItems = places.length + tours.length + imageJobs.length;
+      var itemsDone = 0;
+      var cachedImagesCount = 0;
+      var imageBytes = 0;
+      var jsonBytes = 0;
+      void emitProgress() {
+        final progress = OfflineDownloadProgress(
+          progress: totalItems == 0 ? 1 : itemsDone / totalItems,
+          itemsDone: itemsDone,
+          totalItems: totalItems,
+          placesCount: places.length,
+          toursCount: tours.length,
+          cachedImagesCount: cachedImagesCount,
+          sizeBytes: jsonBytes + imageBytes,
+        );
+        _downloadProgress = progress;
+        onProgress?.call(progress);
+        notifyListeners();
       }
 
-      await _storage.prefetchMapTiles(
-        places.map((place) => LatLng(place.lat, place.lng)),
+      emitProgress();
+      for (final place in places) {
+        await _packStorage.cachePlaces([place]);
+        itemsDone++;
+        emitProgress();
+      }
+      jsonBytes = await _packStorage.cachePackPayload(
+        pack.id,
+        places: places,
+        tours: tours,
       );
+      emitProgress();
+      for (var i = 0; i < tours.length; i++) {
+        itemsDone++;
+        emitProgress();
+      }
 
       int imageOk = 0;
       int imageFail = 0;
-      final total = places.length;
-      for (var i = 0; i < places.length; i++) {
-        final result = await _storage.prefetchImages([places[i]]);
-        imageOk += result.ok;
-        imageFail += result.failed;
-        onProgress?.call(total, total, imageOk: imageOk, imageFail: imageFail);
+      for (final place in places.where(
+        (place) => place.primaryImage.startsWith('http'),
+      )) {
+        await _packStorage.prefetchImages(
+          [place],
+          primaryOnly: true,
+          onProgress: ({required bytes, required cached}) {
+            imageBytes += bytes;
+            if (cached) {
+              cachedImagesCount++;
+              imageOk++;
+            } else {
+              imageFail++;
+            }
+            itemsDone++;
+            emitProgress();
+          },
+        );
+      }
+      for (final tour in tours) {
+        final url = tour.coverImageUrl;
+        if (url == null || !url.startsWith('http')) continue;
+        await _packStorage.prefetchExtraImages(
+          'tour_${tour.id}',
+          [url],
+          onProgress: ({required bytes, required cached}) {
+            imageBytes += bytes;
+            if (cached) {
+              cachedImagesCount++;
+              imageOk++;
+            } else {
+              imageFail++;
+            }
+            itemsDone++;
+            emitProgress();
+          },
+        );
       }
 
       final updated = pack.copyWith(
         downloadedAt: DateTime.now(),
         downloadedCount: places.length,
+        placesCount: places.length,
+        toursCount: tours.length,
+        cachedImagesCount: cachedImagesCount,
+        sizeMb: (jsonBytes + imageBytes) / (1024 * 1024),
       );
-      await _storage.savePack(updated);
-      _packs = _storage.getAllPacks();
-      _cachedPlaces = _storage.getCachedPlaces();
+      await _packStorage.savePack(updated);
+      _packs = _packStorage.getAllPacks();
+      _cachedPlaces = _packStorage.getCachedPlaces();
+      _cachedTours = _packStorage.getDownloadedTours();
+      itemsDone = totalItems;
+      emitProgress();
       notifyListeners();
       return DownloadOk(
         cachedCount: places.length,
@@ -308,14 +449,35 @@ class OfflineProvider extends ChangeNotifier {
     }
   }
 
+  Future<DownloadResult> downloadTour(
+    ItineraryModel tour, {
+    required List<PlaceModel> availablePlaces,
+    required bool isPro,
+    DownloadProgress? onProgress,
+  }) {
+    return download(
+      OfflinePack(
+        id: 'tour_${tour.id}',
+        name: tour.title,
+        description: tour.description,
+        placeIds: tour.places.map((place) => place.id).toList(growable: false),
+      ),
+      availablePlaces: availablePlaces,
+      availableTours: [tour],
+      isPro: isPro,
+      onProgress: onProgress,
+    );
+  }
+
   Future<void> remove(OfflinePack pack) async {
-    await _storage.deletePack(pack.id);
-    _packs = _storage.getAllPacks();
-    _cachedPlaces = _storage.getCachedPlaces();
+    await _packStorage.deletePack(pack.id);
+    _packs = _packStorage.getAllPacks();
+    _cachedPlaces = _packStorage.getCachedPlaces();
+    _cachedTours = _packStorage.getDownloadedTours();
     notifyListeners();
   }
 
   bool isDownloaded(String packId) => _packs.any((p) => p.id == packId);
 
-  int get totalDownloadedMb => _packs.fold(0, (s, p) => s + p.sizeMb);
+  double get totalDownloadedMb => _packs.fold(0, (s, p) => s + p.sizeMb);
 }

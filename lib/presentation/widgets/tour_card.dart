@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../core/widgets/shimmer_image.dart';
+import '../../core/widgets/image_defaults.dart';
 import '../../data/models/itinerary_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
@@ -81,12 +81,14 @@ class TourCard extends StatelessWidget {
                     );
                   },
               child: imageUrl != null
-                  ? ShimmerImage(
+                  ? OfflineAwareImage(
                       imageUrl: imageUrl,
+                      cacheId: 'tour_${tour.id}',
                       fit: BoxFit.cover,
-                      fallbackIcon: Icons.image_not_supported_rounded,
-                      fallbackColor: AppColors.textHint,
-                      fallbackIconSize: 40,
+                      fallback: CategoryImageFallback(
+                        category: 'historical',
+                        title: tour.title,
+                      ),
                     )
                   : const ColoredBox(
                       color: Color(0xFF1C2433),

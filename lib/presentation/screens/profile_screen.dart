@@ -16,9 +16,11 @@ import '../../core/widgets/confetti_overlay.dart';
 import '../../data/achievement_catalog.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/geofence_provider.dart';
+import '../../logic/offline_provider.dart';
 import '../../logic/tour_provider.dart';
 import '../../logic/theme_provider.dart';
 import '../../logic/auth_provider.dart';
+import '../../logic/connectivity_provider.dart';
 import '../../logic/gamification_provider.dart';
 import 'package:flutter/scheduler.dart';
 import '../../logic/achievement_provider.dart';
@@ -62,6 +64,161 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isUploadingAvatar = false;
   String? _privacyError;
   bool _deletingAccount = false;
+  bool _preparingOfflinePack = false;
+
+  Future<void> _downloadOfflinePack() async {
+    if (_preparingOfflinePack) return;
+    setState(() => _preparingOfflinePack = true);
+    try {
+      final places = context.read<PlaceProvider>();
+      final tours = context.read<TourProvider>();
+      await places.refresh();
+      await tours.refresh();
+      if (!mounted) return;
+      final pack = OfflineProvider.catalog.first;
+      final result = await context.read<OfflineProvider>().download(
+        pack,
+        availablePlaces: places.allPlaces,
+        availableTours: tours.tours,
+        isPro: context.read<AuthProvider>().isPro,
+      );
+      if (!mounted) return;
+      if (result is! DownloadOk) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.tr('download_failed'))));
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        'ProfileScreen: offline pack download failed: $error\n$stackTrace',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.tr('download_failed'))));
+      }
+    } finally {
+      if (mounted) setState(() => _preparingOfflinePack = false);
+    }
+  }
+
+  Widget _offlinePackCard({required bool isPro}) {
+    return Consumer<OfflineProvider>(
+      builder: (context, offline, _) {
+        final isOnline =
+            context.watch<ConnectivityProvider>().hasInternet != false;
+        final matchingPacks = offline.packs.where(
+          (item) => item.id == OfflineProvider.catalog.first.id,
+        );
+        final pack = matchingPacks.isEmpty ? null : matchingPacks.first;
+        final isDownloaded = pack?.isDownloaded ?? false;
+        final progress = offline.downloadProgress;
+        final downloading =
+            _preparingOfflinePack ||
+            (offline.isDownloading &&
+                offline.downloadingPackId == OfflineProvider.catalog.first.id);
+        final status = isDownloaded
+            ? context.tr('offline_pack_downloaded', {
+                'places': '${pack!.placesCount}',
+                'tours': '${pack.toursCount}',
+                'size': pack.sizeMb.toStringAsFixed(1),
+              })
+            : context.tr('offline_pack_not_downloaded');
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: context.cardColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: context.borderColor),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.cloud_download_rounded,
+                    color: Color(0xFFD4AF37),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      context.tr('offline_pack_title'),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  if (isDownloaded)
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: context.quickActionSuccess,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(status, style: TextStyle(color: context.textSec)),
+              if (downloading) ...[
+                const SizedBox(height: 12),
+                LinearProgressIndicator(
+                  value: offline.isDownloading ? progress.progress : null,
+                  minHeight: 6,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  context.tr('offline_pack_progress', {
+                    'done': '${progress.itemsDone}',
+                    'total': '${progress.totalItems}',
+                    'images': '${progress.cachedImagesCount}',
+                    'size': progress.sizeMb.toStringAsFixed(1),
+                  }),
+                  style: TextStyle(color: context.textSec, fontSize: 12),
+                ),
+              ],
+              const SizedBox(height: 12),
+              if (!isPro)
+                Text(
+                  context.tr('offline_pack_pro_required'),
+                  style: TextStyle(color: context.textSec),
+                )
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: downloading || !isOnline
+                          ? null
+                          : _downloadOfflinePack,
+                      icon: Icon(
+                        isDownloaded
+                            ? Icons.update_rounded
+                            : Icons.download_rounded,
+                      ),
+                      label: Text(
+                        context.tr(
+                          isDownloaded
+                              ? 'offline_pack_update'
+                              : 'download_offline',
+                        ),
+                      ),
+                    ),
+                    if (isDownloaded)
+                      TextButton.icon(
+                        onPressed: downloading
+                            ? null
+                            : () =>
+                                  context.read<OfflineProvider>().remove(pack!),
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        label: Text(context.tr('offline_pack_remove')),
+                      ),
+                  ],
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -797,6 +954,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     isPro: auth.isPro,
                     subscriptionTier: auth.subscriptionTier,
                   ),
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: _offlinePackCard(isPro: auth.isPro),
                 ),
               ),
 

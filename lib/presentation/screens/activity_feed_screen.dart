@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/image_defaults.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/offline_storage_service.dart';
 import '../../core/services/activity_feed_filter.dart';
 import '../../data/achievement_catalog.dart';
 import '../../data/models/place_model.dart';
@@ -17,6 +18,7 @@ import '../../logic/auth_provider.dart';
 import '../../logic/achievement_provider.dart';
 import '../../logic/blocked_users_provider.dart';
 import '../../logic/gamification_provider.dart';
+import '../../logic/connectivity_provider.dart';
 import 'achievements_screen.dart';
 import 'leaderboard_screen.dart';
 import 'login_screen.dart';
@@ -169,6 +171,31 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen>
     final currentUserId = auth.userId;
     final currentUsername = auth.username;
     final currentDisplayName = auth.userName;
+    final storage = OfflineStorageService.instance;
+    final activityCacheKey = 'activity_feed_$currentUserId';
+    final notificationsCacheKey = 'activity_notifications_$currentUserId';
+    if (context.read<ConnectivityProvider>().hasInternet == false) {
+      final cachedActivities =
+          storage.getCachedApiRows(activityCacheKey) ?? const [];
+      final cachedNotifications =
+          storage.getCachedApiRows(notificationsCacheKey) ?? const [];
+      if (mounted) {
+        setState(() {
+          _activities = cachedActivities;
+          _notifications = _deduplicateNotifications(
+            filterOtherUsersActivity(
+              cachedNotifications,
+              currentUserId,
+              currentUsername: currentUsername,
+              currentDisplayName: currentDisplayName,
+            ),
+          );
+          _loading = false;
+          _error = null;
+        });
+      }
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -189,6 +216,8 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen>
         _activities = activities;
         _notifications = notifications;
       });
+      await storage.cacheApiRows(activityCacheKey, activities);
+      await storage.cacheApiRows(notificationsCacheKey, notifications);
       if (notifications.any(
         (notification) => notification['type'] == 'friend_accepted',
       )) {
@@ -212,9 +241,17 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen>
       );
       final hint = _feedErrorHint(error);
       if (mounted) {
-        setState(
-          () => _error = hint ?? '${context.tr('feed_load_failed')}\n$error',
-        );
+        final cachedActivities =
+            storage.getCachedApiRows(activityCacheKey) ?? const [];
+        final cachedNotifications =
+            storage.getCachedApiRows(notificationsCacheKey) ?? const [];
+        setState(() {
+          _activities = cachedActivities;
+          _notifications = _deduplicateNotifications(cachedNotifications);
+          _error = cachedActivities.isNotEmpty || cachedNotifications.isNotEmpty
+              ? null
+              : hint ?? '${context.tr('feed_load_failed')}\n$error';
+        });
       }
     } finally {
       if (mounted) setState(() => _loading = false);

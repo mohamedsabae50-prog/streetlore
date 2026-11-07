@@ -124,6 +124,7 @@ Future<void> _runApplication() async {
   await OfflineStorageService.instance.init();
   await SupabaseService.instance.init();
   await SyncQueueService.instance.init();
+  final connectivityProvider = ConnectivityProvider();
 
   final auth = AuthProvider();
   await auth.bootstrap();
@@ -138,8 +139,17 @@ Future<void> _runApplication() async {
   unawaited(_bindAuthDeepLink(auth));
 
   final governorateProvider = GovernorateProvider();
-  final placeProvider = PlaceProvider(governorates: governorateProvider);
-  final tourProvider = TourProvider(governorates: governorateProvider);
+  final leaderboardProvider = LeaderboardProvider(
+    isOnline: () => connectivityProvider.hasInternet != false,
+  );
+  final placeProvider = PlaceProvider(
+    governorates: governorateProvider,
+    isOnline: () => connectivityProvider.hasInternet != false,
+  );
+  final tourProvider = TourProvider(
+    governorates: governorateProvider,
+    isOnline: () => connectivityProvider.hasInternet != false,
+  );
   void syncCarPlayPlaces() {
     CarPlayService.instance.syncPlaces(
       places: placeProvider.allPlaces,
@@ -273,7 +283,9 @@ Future<void> _runApplication() async {
             isBlocked: (userId) => blockedUsers.isBlocked(userId),
           ),
         ),
-        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
+        ChangeNotifierProvider<ConnectivityProvider>.value(
+          value: connectivityProvider,
+        ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider<TripProvider>.value(value: tripProvider),
         ChangeNotifierProvider<PlaceProvider>.value(value: placeProvider),
@@ -287,7 +299,9 @@ Future<void> _runApplication() async {
             isBlocked: (userId) => blockedUsers.isBlocked(userId),
           ),
         ),
-        ChangeNotifierProvider(create: (_) => LeaderboardProvider()),
+        ChangeNotifierProvider<LeaderboardProvider>.value(
+          value: leaderboardProvider,
+        ),
         ChangeNotifierProvider(create: (_) => GeofenceProvider()),
         ChangeNotifierProvider(create: (_) => OfflineProvider()),
         ChangeNotifierProvider(create: (_) => PlacePhotosProvider()),

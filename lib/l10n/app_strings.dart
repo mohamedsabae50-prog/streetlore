@@ -83,6 +83,44 @@ class AppStrings {
       'en': 'Offline download failed. Please try again.',
       'ar': 'تعذر التحميل للاستخدام دون اتصال. حاول مرة أخرى.',
     },
+    'offline_pack_title': {
+      'en': 'Premium offline pack',
+      'ar': 'حزمة المحتوى المميز دون اتصال',
+    },
+    'offline_pack_not_downloaded': {
+      'en': 'Places, full stories, tours, and images for offline browsing.',
+      'ar': 'الأماكن والقصص الكاملة والجولات والصور للتصفح دون اتصال.',
+    },
+    'offline_pack_downloaded': {
+      'en': 'Downloaded • {places} Places • {tours} Tours • {size} MB',
+      'ar': 'تم التنزيل • {places} أماكن • {tours} جولات • {size} م.ب',
+    },
+    'offline_pack_progress': {
+      'en': '{done}/{total} items • {images} images • {size} MB',
+      'ar': '{done}/{total} عنصر • {images} صور • {size} م.ب',
+    },
+    'offline_pack_pro_required': {
+      'en': 'EgyptLore Pro is required to download offline packs.',
+      'ar': 'يلزم اشتراك مصر لور برو لتنزيل الحزم دون اتصال.',
+    },
+    'offline_download_requires_internet': {
+      'en':
+          'Connect to the internet to download or update this offline content.',
+      'ar': 'اتصل بالإنترنت لتنزيل هذا المحتوى أو تحديثه للاستخدام دون اتصال.',
+    },
+    'offline_pack_update': {'en': 'Update Pack', 'ar': 'تحديث الحزمة'},
+    'offline_pack_remove': {'en': 'Remove Download', 'ar': 'إزالة التنزيل'},
+    'ai_offline_notice': {
+      'en':
+          'Live AI answers need an internet connection. Your chat history is still available.',
+      'ar':
+          'تتطلب إجابات الذكاء الاصطناعي اتصالاً بالإنترنت. يظل سجل محادثاتك متاحاً.',
+    },
+    'chat_offline_notice': {
+      'en':
+          'Sending messages requires an internet connection. Previous messages remain available.',
+      'ar': 'يتطلب إرسال الرسائل اتصالاً بالإنترنت. تظل الرسائل السابقة متاحة.',
+    },
     'downloading_tour_offline': {
       'en': 'Downloading tour for offline use…',
       'ar': 'جارٍ تحميل الجولة للاستخدام دون اتصال…',

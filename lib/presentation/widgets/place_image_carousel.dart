@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../core/widgets/image_defaults.dart';
@@ -181,8 +183,24 @@ class _PlaceImageCarouselState extends State<PlaceImageCarousel> {
           ),
     );
     Widget img = networkImage;
+    if (kIsWeb) {
+      img = FutureBuilder<Uint8List?>(
+        future: Future.value(
+          OfflineStorageService.instance.getCachedImageBytes(url),
+        ),
+        builder: (context, snapshot) {
+          final bytes = snapshot.data;
+          if (bytes == null) return networkImage;
+          return Image.memory(
+            bytes,
+            fit: widget.fit,
+            errorBuilder: (_, __, ___) => networkImage,
+          );
+        },
+      );
+    }
     final placeId = widget.placeId;
-    if (placeId != null) {
+    if (!kIsWeb && placeId != null) {
       img = FutureBuilder<File?>(
         future: OfflineStorageService.instance.getCachedImageFile(placeId, url),
         builder: (context, snapshot) {

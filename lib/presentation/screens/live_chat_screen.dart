@@ -12,6 +12,7 @@ import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/blocked_users_provider.dart';
 import '../../logic/chat_provider.dart';
+import '../../logic/connectivity_provider.dart';
 import '../../logic/gamification_provider.dart';
 import '../widgets/chat_text_direction.dart';
 import '../widgets/report_content_sheet.dart';
@@ -46,6 +47,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   }
 
   Future<void> _send() async {
+    if (context.read<ConnectivityProvider>().hasInternet == false) return;
     final text = _input.text.trim();
     if (text.isEmpty) return;
     if (ProfanityFilter.containsProfanity(text)) {
@@ -99,6 +101,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   @override
   Widget build(BuildContext context) {
     final place = widget.place;
+    final isOffline =
+        context.watch<ConnectivityProvider>().hasInternet == false;
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
@@ -196,8 +200,17 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                 },
               ),
             ),
+            if (isOffline)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Text(
+                  context.tr('chat_offline_notice'),
+                  style: TextStyle(color: context.textSec, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             AiQuotaBanner(key: _quotaKey),
-            _Composer(controller: _input, onSend: _send),
+            _Composer(controller: _input, onSend: _send, enabled: !isOffline),
           ],
         ),
       ),
@@ -391,7 +404,12 @@ class _MessageBubble extends StatelessWidget {
 class _Composer extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
-  const _Composer({required this.controller, required this.onSend});
+  final bool enabled;
+  const _Composer({
+    required this.controller,
+    required this.onSend,
+    required this.enabled,
+  });
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -424,12 +442,13 @@ class _Composer extends StatelessWidget {
                 ),
               ),
               textInputAction: TextInputAction.send,
+              enabled: enabled,
               onSubmitted: (_) => onSend(),
             ),
           ),
           const SizedBox(width: 8),
           IconButton(
-            onPressed: onSend,
+            onPressed: enabled ? onSend : null,
             icon: const Icon(Icons.send_rounded, color: AppColors.primary),
           ),
         ],

@@ -6,6 +6,8 @@ import '../../core/services/ai_tour_guide_service.dart';
 import '../../core/services/gemini_rest_client.dart';
 import '../../core/widgets/ai_quota_banner.dart';
 import '../../l10n/app_strings.dart';
+import '../../logic/connectivity_provider.dart';
+import 'package:provider/provider.dart';
 import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
 import '../widgets/chat_text_direction.dart';
@@ -54,6 +56,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   }
 
   Future<void> _send() async {
+    if (context.read<ConnectivityProvider>().hasInternet == false) return;
     final text = _input.text.trim();
     if (text.isEmpty || _busy) return;
     final history = _messages
@@ -146,6 +149,8 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isOffline =
+        context.watch<ConnectivityProvider>().hasInternet == false;
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
@@ -195,11 +200,21 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
                 ],
               ),
             ),
+          if (isOffline)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Text(
+                context.tr('ai_offline_notice'),
+                textAlign: TextAlign.center,
+                style: TextStyle(color: context.textSec, fontSize: 12),
+              ),
+            ),
           AiQuotaBanner(key: _quotaKey),
           _Composer(
             controller: _input,
             focusNode: _focus,
             busy: _busy,
+            enabled: !isOffline,
             onSend: _send,
           ),
         ],
@@ -310,11 +325,13 @@ class _Composer extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool busy;
+  final bool enabled;
   final Future<void> Function() onSend;
   const _Composer({
     required this.controller,
     required this.focusNode,
     required this.busy,
+    required this.enabled,
     required this.onSend,
   });
 
@@ -340,6 +357,7 @@ class _Composer extends StatelessWidget {
             child: TextField(
               controller: controller,
               focusNode: focusNode,
+              enabled: enabled,
               minLines: 1,
               maxLines: 4,
               textInputAction: TextInputAction.send,
@@ -368,7 +386,7 @@ class _Composer extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
             ),
             child: IconButton(
-              onPressed: busy ? null : () => onSend(),
+              onPressed: busy || !enabled ? null : () => onSend(),
               icon: busy
                   ? const SizedBox(
                       width: 18,
