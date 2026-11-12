@@ -74,6 +74,7 @@ class _PlaceCardState extends State<PlaceCard> {
       child: PlaceImageCarousel(
         images: widget.place.officialImages,
         placeId: widget.place.id,
+        governorateId: widget.place.governorate,
         fallbackCategory: widget.place.category,
         fallbackTitle: widget.place.localizedName(
           Localizations.localeOf(context).languageCode,

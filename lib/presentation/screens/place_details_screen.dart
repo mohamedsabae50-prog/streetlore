@@ -499,6 +499,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                       PlaceImageCarousel(
                         images: place.officialImages,
                         placeId: place.id,
+                        governorateId: place.governorate,
                         fallbackCategory: place.category,
                         fallbackTitle: place.localizedName(locale),
                         height: double.infinity,
@@ -1068,9 +1069,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                             false;
                                         final cached = offline.isCached(
                                           place.id,
+                                          governorateId: place.governorate,
                                         );
                                         final downloading = offline
-                                            .isDownloadingPlace(place.id);
+                                            .isDownloadingPlace(
+                                              place.id,
+                                              governorateId: place.governorate,
+                                            );
                                         return _QuickAction(
                                           icon: cached
                                               ? Icons.cloud_done_rounded
@@ -1110,6 +1115,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                     await offline
                                                         .removeCachedPlace(
                                                           place.id,
+                                                          governorateId:
+                                                              place.governorate,
                                                         );
                                                     if (!context.mounted) {
                                                       return;

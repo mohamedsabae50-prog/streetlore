@@ -1,5 +1,6 @@
 import 'models/place_model.dart';
 import 'models/itinerary_model.dart';
+import 'cairo_seed.dart';
 
 class MockData {
   MockData._();
@@ -80,12 +81,18 @@ class MockData {
     return result;
   }
 
-  static List<PlaceModel> getFeatured() => fallbackPlaces.take(5).toList();
+  static List<PlaceModel> getFeatured({
+    String governorateId = 'alexandria',
+  }) => places
+      .where((place) => place.governorate == governorateId)
+      .take(5)
+      .toList(growable: false);
 
   static List<PlaceModel> getNearby(PlaceModel current) {
-    return fallbackPlaces
+    return places
         .where(
           (p) =>
+              p.governorate == current.governorate &&
               p.id != current.id &&
               (p.lat - current.lat).abs() < 0.05 &&
               (p.lng - current.lng).abs() < 0.05,
@@ -97,9 +104,15 @@ class MockData {
   static List<PlaceModel> getByCategory(
     String category,
     List<PlaceModel> source,
+    {String? governorateId}
   ) {
-    if (category == 'All') return source;
-    return source.where((p) => p.category == category).toList();
+    final citySource = governorateId == null
+        ? source
+        : source.where((p) => p.governorate == governorateId);
+    if (category == 'All') return citySource.toList(growable: false);
+    return citySource
+        .where((p) => p.category == category)
+        .toList(growable: false);
   }
 
   static bool isOpenNow(String openHours, {DateTime? now}) {
@@ -141,9 +154,11 @@ class MockData {
     return (hour % 12 + (period == 'PM' ? 12 : 0)) * 60 + minute;
   }
 
-  static List<PlaceModel> get places => fallbackPlaces;
+  static List<PlaceModel> get places =>
+      List.unmodifiable([...fallbackPlaces, ...cairoSeedPlaces]);
 
-  static List<ItineraryModel> get tours => _seedTours;
+  static List<ItineraryModel> get tours =>
+      List.unmodifiable([..._seedTours, ...cairoSeedItineraries]);
 }
 
 class MockReview {

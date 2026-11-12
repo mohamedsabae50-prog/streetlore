@@ -15,6 +15,9 @@ const Map<String, String> streetloreImageHeaders = {
 IconData imageFallbackIconForCategory(String? category) {
   final normalized = category?.toLowerCase() ?? '';
   if (normalized.contains('hotel')) return Icons.hotel_rounded;
+  if (normalized.contains('atm') || normalized.contains('cash machine')) {
+    return Icons.atm_rounded;
+  }
   if (normalized.contains('food') || normalized.contains('restaurant')) {
     return Icons.restaurant_rounded;
   }

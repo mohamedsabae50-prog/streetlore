@@ -21,6 +21,7 @@ import '../../logic/governorate_provider.dart';
 import '../widgets/place_card.dart';
 import '../widgets/weather_widget.dart';
 import '../widgets/compass_card.dart';
+import '../widgets/governorate_selector.dart';
 import '../widgets/alexandria_mastery_bar.dart';
 import '../widgets/social_user_widgets.dart';
 import '../../l10n/app_strings.dart';
@@ -395,6 +396,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ],
                 ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 10, 20, 0),
+              child: GovernorateSelector(
+                buttonKey: const ValueKey('home-governorate-selector'),
+                onChanged: (_) {
+                  setState(() {
+                    _selectedCategory = 'All';
+                    _searchQuery = '';
+                    _searchController.clear();
+                    _freeOnly = false;
+                    _hiddenGemsOnly = false;
+                  });
+                },
               ),
             ),
             Padding(

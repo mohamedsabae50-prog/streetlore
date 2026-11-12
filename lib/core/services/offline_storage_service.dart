@@ -711,28 +711,36 @@ class OfflineStorageService implements OfflinePackStorage {
   List<OfflinePack> getAllPacks() {
     if (!_ready) return const [];
     final box = Hive.box(_packsBox);
-    return box.values
-        .map(
-          (e) => OfflinePack.fromJson(
-            Map<String, dynamic>.from(jsonDecode(e as String) as Map),
-          ),
-        )
-        .toList();
+    final packs = <String, OfflinePack>{};
+    for (final value in box.values) {
+      final pack = OfflinePack.fromJson(
+        Map<String, dynamic>.from(jsonDecode(value as String) as Map),
+      );
+      packs[pack.storageKey] = pack;
+    }
+    return packs.values.toList(growable: false);
   }
 
   @override
   Future<void> savePack(OfflinePack pack) async {
     if (!_ready) return;
     final box = Hive.box(_packsBox);
-    await box.put(pack.id, jsonEncode(pack.toJson()));
+    await box.put(pack.storageKey, jsonEncode(pack.toJson()));
+    final legacyKey = _legacyAlexandriaKey(pack.storageKey);
+    if (legacyKey != null) await box.delete(legacyKey);
   }
 
   @override
-  Future<void> deletePack(String packId) async {
+  Future<void> deletePack(String packStorageKey) async {
     if (!_ready) return;
     final box = Hive.box(_packsBox);
-    await box.delete(packId);
-    await Hive.box(_packPayloadsBox).delete(packId);
+    await box.delete(packStorageKey);
+    await Hive.box(_packPayloadsBox).delete(packStorageKey);
+    final legacyKey = _legacyAlexandriaKey(packStorageKey);
+    if (legacyKey != null) {
+      await box.delete(legacyKey);
+      await Hive.box(_packPayloadsBox).delete(legacyKey);
+    }
   }
 
   @override
@@ -743,7 +751,8 @@ class OfflineStorageService implements OfflinePackStorage {
     }
     final box = Hive.box(_placesBox);
     for (final p in places) {
-      await box.put(p.id, jsonEncode(p.toJson()));
+      await box.put(_placeStorageKey(p), jsonEncode(p.toJson()));
+      if (p.governorate == 'alexandria') await box.delete(p.id);
     }
     await box.flush();
   }
@@ -763,8 +772,11 @@ class OfflineStorageService implements OfflinePackStorage {
       'tours': tours.map((tour) => tour.toJson()).toList(growable: false),
     };
     final encoded = jsonEncode(payload);
-    await Hive.box(_packPayloadsBox).put(packId, encoded);
-    await Hive.box(_packPayloadsBox).flush();
+    final box = Hive.box(_packPayloadsBox);
+    await box.put(packId, encoded);
+    final legacyKey = _legacyAlexandriaKey(packId);
+    if (legacyKey != null) await box.delete(legacyKey);
+    await box.flush();
     return utf8.encode(encoded).length;
   }
 
@@ -772,7 +784,11 @@ class OfflineStorageService implements OfflinePackStorage {
   Map<String, dynamic>? getPackPayload(String packId) {
     if (!_ready) return null;
     try {
-      final encoded = Hive.box(_packPayloadsBox).get(packId);
+      final box = Hive.box(_packPayloadsBox);
+      final legacyKey = _legacyAlexandriaKey(packId);
+      final encoded =
+          box.get(packId) ??
+          (legacyKey == null ? null : box.get(legacyKey));
       if (encoded is! String) return null;
       final decoded = jsonDecode(encoded);
       if (decoded is! Map) {
@@ -800,7 +816,7 @@ class OfflineStorageService implements OfflinePackStorage {
         for (final row in payload['tours'] as List) {
           if (row is! Map) continue;
           final tour = ItineraryModel.fromJson(Map<String, dynamic>.from(row));
-          tours[tour.id] = tour;
+          tours['${tour.governorate}::${tour.id}'] = tour;
         }
       } catch (error, stackTrace) {
         debugPrint(
@@ -917,7 +933,8 @@ class OfflineStorageService implements OfflinePackStorage {
             onProgress?.call(bytes: downloaded, cached: true);
           } else if (docs != null) {
             final dir = Directory(
-              '${docs.path}/offline_images/${_safeSegment(p.id)}',
+              '${docs.path}/offline_images/'
+                  '${_safeSegment('${p.governorate}::${p.id}') }',
             );
             if (!await dir.exists()) {
               await dir.create(recursive: true);
@@ -988,35 +1005,59 @@ class OfflineStorageService implements OfflinePackStorage {
   /// v1.0.78 — look up the permanent copy of an image that
   /// [prefetchImages] wrote. Returns `null` if the file isn't there
   /// yet. Survives app restarts and OS cache wipes.
-  Future<File?> getCachedImageFile(String placeId, String imageUrl) async {
+  Future<File?> getCachedImageFile(
+    String placeId,
+    String imageUrl, {
+    String governorateId = 'alexandria',
+  }) async {
     if (kIsWeb) return null;
     try {
       final docs = await getApplicationDocumentsDirectory();
-      final dir = Directory(
-        '${docs.path}/offline_images/${_safeSegment(placeId)}',
-      );
-      if (!await dir.exists()) return null;
-      final f = File('${dir.path}/${_imageFileName(imageUrl)}');
-      if (await f.exists()) return f;
-
-      // Backward compatibility for images cached by earlier app versions.
-      final legacyFile = File('${dir.path}/image${_extForUrl(imageUrl)}');
-      return await legacyFile.exists() ? legacyFile : null;
+      final directories = [
+        Directory(
+          '${docs.path}/offline_images/'
+          '${_safeSegment('$governorateId::$placeId')}',
+        ),
+        if (governorateId == 'alexandria')
+          Directory('${docs.path}/offline_images/${_safeSegment(placeId)}'),
+      ];
+      for (final directory in directories) {
+        if (!await directory.exists()) continue;
+        final file = File(
+          '${directory.path}/${_imageFileName(imageUrl)}',
+        );
+        if (await file.exists()) return file;
+        final legacyFile = File(
+          '${directory.path}/image${_extForUrl(imageUrl)}',
+        );
+        if (await legacyFile.exists()) return legacyFile;
+      }
+      return null;
     } catch (_) {
       return null;
     }
   }
 
-  Future<void> removeCachedPlace(String placeId) async {
+  Future<void> removeCachedPlace(
+    String placeId, {
+    String governorateId = 'alexandria',
+  }) async {
     if (!_ready) return;
-    await Hive.box(_placesBox).delete(placeId);
+    final box = Hive.box(_placesBox);
+    await box.delete('$governorateId::$placeId');
+    if (governorateId == 'alexandria') await box.delete(placeId);
     if (kIsWeb) return;
     final docs = await getApplicationDocumentsDirectory();
-    final imageDir = Directory(
-      '${docs.path}/offline_images/${_safeSegment(placeId)}',
-    );
-    if (await imageDir.exists()) {
-      await imageDir.delete(recursive: true);
+    final imageDirs = [
+      Directory(
+        '${docs.path}/offline_images/'
+        '${_safeSegment('$governorateId::$placeId')}',
+      ),
+      if (governorateId == 'alexandria')
+        Directory('${docs.path}/offline_images/${_safeSegment(placeId)}'),
+    ];
+    for (final imageDir in imageDirs) {
+      if (await imageDir.exists()) await imageDir.delete(recursive: true);
     }
   }
 
@@ -1055,13 +1096,24 @@ class OfflineStorageService implements OfflinePackStorage {
   List<PlaceModel> getCachedPlaces() {
     if (!_ready) return const [];
     final box = Hive.box(_placesBox);
-    return box.values
-        .map(
-          (e) => PlaceModel.fromJson(
-            Map<String, dynamic>.from(jsonDecode(e as String) as Map),
-          ),
-        )
-        .toList();
+    final places = <String, PlaceModel>{};
+    for (final value in box.values) {
+      final place = PlaceModel.fromJson(
+        Map<String, dynamic>.from(jsonDecode(value as String) as Map),
+      );
+      places[_placeStorageKey(place)] = place;
+    }
+    return places.values.toList(growable: false);
+  }
+
+  String _placeStorageKey(PlaceModel place) =>
+      '${place.governorate}::${place.id}';
+
+  String? _legacyAlexandriaKey(String storageKey) {
+    const prefix = 'alexandria::';
+    return storageKey.startsWith(prefix)
+        ? storageKey.substring(prefix.length)
+        : null;
   }
 
   Future<void> queueReview(ReviewModel review) async {

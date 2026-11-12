@@ -2,6 +2,9 @@ class OfflinePack {
   final String id;
   final String name;
   final String description;
+  final String? nameAr;
+  final String? descriptionAr;
+  final String governorateId;
 
   final List<String> placeIds;
 
@@ -18,6 +21,9 @@ class OfflinePack {
     required this.id,
     required this.name,
     required this.description,
+    this.nameAr,
+    this.descriptionAr,
+    this.governorateId = 'alexandria',
     this.placeIds = const [],
     this.categories = const [],
     this.sizeMb = 0,
@@ -30,6 +36,15 @@ class OfflinePack {
   });
 
   bool get isDownloaded => downloadedAt != null;
+  String get storageKey => '$governorateId::$id';
+
+  String localizedName(String locale) =>
+      locale == 'ar' && nameAr != null && nameAr!.isNotEmpty ? nameAr! : name;
+
+  String localizedDescription(String locale) =>
+      locale == 'ar' && descriptionAr != null && descriptionAr!.isNotEmpty
+      ? descriptionAr!
+      : description;
 
   OfflinePack copyWith({
     DateTime? downloadedAt,
@@ -42,6 +57,9 @@ class OfflinePack {
     id: id,
     name: name,
     description: description,
+    nameAr: nameAr,
+    descriptionAr: descriptionAr,
+    governorateId: governorateId,
     placeIds: placeIds,
     categories: categories,
     sizeMb: sizeMb ?? this.sizeMb,
@@ -57,6 +75,9 @@ class OfflinePack {
     'id': id,
     'name': name,
     'description': description,
+    'name_ar': nameAr,
+    'description_ar': descriptionAr,
+    'governorate_id': governorateId,
     'place_ids': placeIds,
     'categories': categories,
     'size_mb': sizeMb,
@@ -72,6 +93,9 @@ class OfflinePack {
     id: json['id'] as String,
     name: json['name'] as String,
     description: json['description'] as String,
+    nameAr: json['name_ar'] as String?,
+    descriptionAr: json['description_ar'] as String?,
+    governorateId: (json['governorate_id'] as String?) ?? 'alexandria',
     placeIds: ((json['place_ids'] as List<dynamic>?) ?? const [])
         .cast<String>(),
     categories: ((json['categories'] as List<dynamic>?) ?? const [])

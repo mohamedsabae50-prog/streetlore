@@ -131,6 +131,31 @@ void main() {
   });
 
   test(
+    'Cairo boundary keeps the core city inside and external points outside',
+    () {
+      final cairo = EgyptGovernorate.byId['cairo']!;
+      final checks = <({double lat, double lng, bool expected})>[
+        (lat: 30.0444, lng: 31.2357, expected: true),
+        (lat: 30.0287, lng: 31.2599, expected: true),
+        (lat: 30.0459, lng: 31.2243, expected: true),
+        (lat: 30.1030, lng: 31.3650, expected: true),
+        (lat: 29.9792, lng: 31.1342, expected: false),
+        (lat: 30.0385, lng: 31.2118, expected: false),
+        (lat: 31.2140, lng: 29.8856, expected: false),
+      ];
+
+      for (final check in checks) {
+        expect(
+          GovernorateService.containsCoordinates(cairo, check.lat, check.lng),
+          check.expected,
+          reason:
+              '(${check.lat}, ${check.lng}) should resolve to ${check.expected}',
+        );
+      }
+    },
+  );
+
+  test(
     'all Alexandria mock places and terrestrial ATMs resolve to Alexandria',
     () {
       void expectComfortablyInside(String id, double lat, double lng) {

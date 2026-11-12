@@ -1,12 +1,14 @@
 name: EgyptLore Release Build
 
 # Builds the arm64 release APK on Ubuntu and publishes it to the
-# GitHub Release that matches the resolved tag. Triggers:
+# GitHub Release that matches the resolved tag. Main pushes only run
+# quality checks and deploy the Web bundle (never APK/AAB builds).
+# Triggers:
 #   - manual `workflow_dispatch` with a `tag` input (recommended for
 #     bypass-local-Windows builds)
 #   - push of a v* tag (so the next release can be auto-built by
 #     `git push origin v1.0.38 --force`)
-#   - push to main (build only - no release upload - for CI sanity)
+#   - push to main (quality checks + Web deployment only)
 on:
   push:
     branches: [main]
@@ -58,6 +60,7 @@ jobs:
         run: flutter test
 
   build:
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     name: Build + Publish APK
     needs: quality
     runs-on: ubuntu-latest
@@ -292,3 +295,42 @@ jobs:
           user_name: 'streetlore-mavis'
           user_email: 'streetlore-mavis@users.noreply.github.com'
           commit_message: 'deploy: web bundle from ${{ steps.resolve_tag.outputs.tag }}'
+
+  deploy_web:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    name: Build + Deploy Web (main only)
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.x
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Flutter Web bundle
+        run: |
+          set -e
+          flutter build web --release --base-href=/streetlore/
+
+      - name: Add public policy pages
+        run: cp docs/privacy.html docs/delete-account.html build/web/
+
+      - name: Deploy Web bundle to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: 'streetlore-mavis'
+          user_email: 'streetlore-mavis@users.noreply.github.com'
+          commit_message: 'deploy: EgyptLore Web from ${{ github.sha }}'

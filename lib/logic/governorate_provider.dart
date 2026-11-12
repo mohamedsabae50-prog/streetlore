@@ -53,6 +53,7 @@ class GovernorateProvider extends ChangeNotifier {
       _fogEnabled = fogEnabled;
       changed = true;
     }
+    if (_unlockedGovernorateIds.add(_activeGovernorate)) changed = true;
     if (changed) notifyListeners();
   }
 
@@ -134,10 +135,10 @@ class GovernorateProvider extends ChangeNotifier {
     final governorate = EgyptGovernorate.byId[id]!;
     if (languageCode == 'ar') {
       return '📍 موقعك الحالي: محافظة ${governorate.nameAr} '
-          '(قريباً تحت الضباب 🔒) — تم فتح خريطة الإسكندرية المتاحة حالياً';
+          '(قريباً تحت الضباب 🔒) — تتوفر الآن خرائط الإسكندرية والقاهرة';
     }
     return '📍 Your current location: ${governorate.nameEn} Governorate '
-        '(coming soon under fog 🔒) — Alexandria is available now';
+        '(coming soon under fog 🔒) — Alexandria and Cairo are available now';
   }
 
   Future<void> _persist() async {

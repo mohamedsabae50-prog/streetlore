@@ -13,6 +13,7 @@ import '../../core/widgets/image_defaults.dart';
 class PlaceImageCarousel extends StatefulWidget {
   final List<String> images;
   final String? placeId;
+  final String governorateId;
   final String? fallbackCategory;
   final String? fallbackTitle;
   final BoxFit fit;
@@ -30,6 +31,7 @@ class PlaceImageCarousel extends StatefulWidget {
     super.key,
     required this.images,
     this.placeId,
+    this.governorateId = 'alexandria',
     this.fallbackCategory,
     this.fallbackTitle,
     this.fit = BoxFit.cover,
@@ -202,7 +204,11 @@ class _PlaceImageCarouselState extends State<PlaceImageCarousel> {
     final placeId = widget.placeId;
     if (!kIsWeb && placeId != null) {
       img = FutureBuilder<File?>(
-        future: OfflineStorageService.instance.getCachedImageFile(placeId, url),
+        future: OfflineStorageService.instance.getCachedImageFile(
+          placeId,
+          url,
+          governorateId: widget.governorateId,
+        ),
         builder: (context, snapshot) {
           final file = snapshot.data;
           if (file != null) {

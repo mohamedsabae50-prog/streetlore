@@ -81,8 +81,13 @@ class OfflineProvider extends ChangeNotifier {
   OfflineDownloadProgress get downloadProgress => _downloadProgress;
   final Set<String> _downloadingPlaceIds = <String>{};
 
-  bool isDownloadingPlace(String placeId) =>
-      _downloadingPlaceIds.contains(placeId);
+  bool isDownloadingPlace(
+    String placeId, {
+    String governorateId = 'alexandria',
+  }) => _downloadingPlaceIds.contains('$governorateId::$placeId');
+
+  bool isDownloadingPack(OfflinePack pack) =>
+      _downloading && _downloadingPackId == pack.storageKey;
 
   static List<PlaceModel> get cachedFallback {
     final i = _instance;
@@ -113,6 +118,9 @@ class OfflineProvider extends ChangeNotifier {
       id: 'all_alexandria',
       name: 'All Alexandria',
       description: 'Every place, every description, every photo URL.',
+      nameAr: 'حزمة الإسكندرية الكاملة',
+      descriptionAr: 'كل أماكن الإسكندرية وأوصافها وصورُها المتاحة.',
+      governorateId: 'alexandria',
       placeIds: const ['__all__'],
       categories: const [],
       sizeMb: 24,
@@ -122,6 +130,9 @@ class OfflineProvider extends ChangeNotifier {
       id: 'historical',
       name: 'Historical Alexandria',
       description: 'Citadels, catacombs, pillars, museums.',
+      nameAr: 'الإسكندرية التاريخية',
+      descriptionAr: 'القلاع والمقابر والأعمدة والمتاحف.',
+      governorateId: 'alexandria',
       placeIds: const [],
       categories: const ['Historical'],
       sizeMb: 9,
@@ -131,6 +142,9 @@ class OfflineProvider extends ChangeNotifier {
       id: 'culture',
       name: 'Culture & Museums',
       description: 'Libraries, museums and cultural landmarks.',
+      nameAr: 'الثقافة والمتاحف',
+      descriptionAr: 'المكتبات والمتاحف والمعالم الثقافية.',
+      governorateId: 'alexandria',
       placeIds: const [],
       categories: const ['Culture', 'Museums'],
       sizeMb: 8,
@@ -140,10 +154,25 @@ class OfflineProvider extends ChangeNotifier {
       id: 'nature_sea',
       name: 'Nature & Sea Breeze',
       description: 'Gardens, corniche, and the Mediterranean breeze.',
+      nameAr: 'الطبيعة ونسيم البحر',
+      descriptionAr: 'الحدائق والكورنيش ونسيم البحر المتوسط.',
+      governorateId: 'alexandria',
       placeIds: const [],
       categories: const ['Nature', 'Beach'],
       sizeMb: 6,
       coverEmoji: 'beach',
+    ),
+    OfflinePack(
+      id: 'all_cairo',
+      name: 'All Cairo',
+      description: 'Cairo landmarks, hotels, ATMs, and curated heritage walks.',
+      nameAr: 'حزمة القاهرة الكاملة',
+      descriptionAr: 'معالم القاهرة وفنادقها وماكيناتها للصرافة وجولاتها التراثية.',
+      governorateId: 'cairo',
+      placeIds: const ['__all__'],
+      categories: const [],
+      sizeMb: 24,
+      coverEmoji: 'book',
     ),
   ];
 
@@ -204,18 +233,26 @@ class OfflineProvider extends ChangeNotifier {
     return null;
   }
 
-  bool isCached(String placeId) => _cachedPlaces.any((p) => p.id == placeId);
+  bool isCached(
+    String placeId, {
+    String governorateId = 'alexandria',
+  }) => _cachedPlaces.any(
+    (place) =>
+        place.id == placeId && place.governorate == governorateId,
+  );
 
   Future<DownloadResult> downloadSinglePlace(
     PlaceModel place, {
     List<String> additionalImageUrls = const [],
   }) async {
-    if (!_downloadingPlaceIds.add(place.id)) {
+    final placeKey = '${place.governorate}::${place.id}';
+    if (!_downloadingPlaceIds.add(placeKey)) {
       return DownloadEmpty(
         OfflinePack(
           id: 'single_${place.id}',
           name: place.nameEn,
           description: 'A download for this place is already in progress.',
+          governorateId: place.governorate,
           placeIds: const [],
           categories: const [],
           sizeMb: 0,
@@ -256,6 +293,7 @@ class OfflineProvider extends ChangeNotifier {
           id: 'single_${place.id}',
           name: place.nameEn,
           description: 'Single-place offline download',
+          governorateId: place.governorate,
           placeIds: const [],
           categories: const [],
           sizeMb: 0,
@@ -264,16 +302,22 @@ class OfflineProvider extends ChangeNotifier {
         ),
       );
     } finally {
-      _downloadingPlaceIds.remove(place.id);
+      _downloadingPlaceIds.remove(placeKey);
       notifyListeners();
     }
   }
 
-  Future<void> removeCachedPlace(String placeId) async {
+  Future<void> removeCachedPlace(
+    String placeId, {
+    String governorateId = 'alexandria',
+  }) async {
     final i = _instance;
     if (i == null) return;
 
-    await i._storage.removeCachedPlace(placeId);
+    await i._storage.removeCachedPlace(
+      placeId,
+      governorateId: governorateId,
+    );
     _cachedPlaces = _storage.getCachedPlaces();
     notifyListeners();
   }
@@ -291,6 +335,7 @@ class OfflineProvider extends ChangeNotifier {
           id: pack.id,
           name: pack.name,
           description: 'EgyptLore Pro is required to download offline packs.',
+          governorateId: pack.governorateId,
         ),
       );
     }
@@ -298,10 +343,13 @@ class OfflineProvider extends ChangeNotifier {
       return DownloadEmpty(pack);
     }
     _downloading = true;
-    _downloadingPackId = pack.id;
+    _downloadingPackId = pack.storageKey;
     notifyListeners();
     try {
-      final selectedPlaces = availablePlaces.where((p) {
+      final cityPlaces = availablePlaces.where(
+        (place) => place.governorate == pack.governorateId,
+      );
+      final selectedPlaces = cityPlaces.where((p) {
         final matchesAll = pack.placeIds.contains('__all__');
         if (matchesAll) return true;
         if (pack.placeIds.contains(p.id)) return true;
@@ -316,6 +364,7 @@ class OfflineProvider extends ChangeNotifier {
       final selectedIds = selectedPlaces.map((place) => place.id).toSet();
       final tours = availableTours
           .where((tour) {
+            if (tour.governorate != pack.governorateId) return false;
             if (pack.id == 'tour_${tour.id}') return true;
             if (pack.placeIds.contains('__all__')) return true;
             if (pack.categories.isEmpty && pack.placeIds.isEmpty) return false;
@@ -327,7 +376,10 @@ class OfflineProvider extends ChangeNotifier {
       };
       for (final tour in tours) {
         for (final stop in tour.places) {
-          if (stop.id.isNotEmpty) placesById.putIfAbsent(stop.id, () => stop);
+          if (stop.id.isNotEmpty &&
+              stop.governorate == pack.governorateId) {
+            placesById.putIfAbsent(stop.id, () => stop);
+          }
         }
       }
       final places = placesById.values.toList(growable: false);
@@ -371,7 +423,7 @@ class OfflineProvider extends ChangeNotifier {
         emitProgress();
       }
       jsonBytes = await _packStorage.cachePackPayload(
-        pack.id,
+        pack.storageKey,
         places: places,
         tours: tours,
       );
@@ -406,7 +458,7 @@ class OfflineProvider extends ChangeNotifier {
         final url = tour.coverImageUrl;
         if (url == null || !url.startsWith('http')) continue;
         await _packStorage.prefetchExtraImages(
-          'tour_${tour.id}',
+          '${tour.governorate}::tour_${tour.id}',
           [url],
           onProgress: ({required bytes, required cached}) {
             imageBytes += bytes;
@@ -460,6 +512,7 @@ class OfflineProvider extends ChangeNotifier {
         id: 'tour_${tour.id}',
         name: tour.title,
         description: tour.description,
+        governorateId: tour.governorate,
         placeIds: tour.places.map((place) => place.id).toList(growable: false),
       ),
       availablePlaces: availablePlaces,
@@ -470,14 +523,20 @@ class OfflineProvider extends ChangeNotifier {
   }
 
   Future<void> remove(OfflinePack pack) async {
-    await _packStorage.deletePack(pack.id);
+    await _packStorage.deletePack(pack.storageKey);
     _packs = _packStorage.getAllPacks();
     _cachedPlaces = _packStorage.getCachedPlaces();
     _cachedTours = _packStorage.getDownloadedTours();
     notifyListeners();
   }
 
-  bool isDownloaded(String packId) => _packs.any((p) => p.id == packId);
+  bool isDownloaded(
+    String packId, {
+    String governorateId = 'alexandria',
+  }) => _packs.any(
+    (pack) =>
+        pack.id == packId && pack.governorateId == governorateId,
+  );
 
   double get totalDownloadedMb => _packs.fold(0, (s, p) => s + p.sizeMb);
 }

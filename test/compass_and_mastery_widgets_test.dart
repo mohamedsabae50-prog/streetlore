@@ -5,7 +5,7 @@ import 'package:streetlore/data/models/place_model.dart';
 import 'package:streetlore/core/services/compass_service.dart';
 import 'package:streetlore/presentation/widgets/alexandria_mastery_bar.dart';
 import 'package:streetlore/presentation/widgets/compass_card.dart';
-import 'package:streetlore/presentation/widgets/governorate_explorer_sheet.dart';
+import 'package:streetlore/presentation/widgets/governorate_selector.dart';
 import 'package:streetlore/presentation/widgets/head_to_head_comparison_card.dart';
 import 'package:streetlore/presentation/widgets/social_user_widgets.dart';
 import 'package:streetlore/logic/auth_provider.dart';
@@ -39,7 +39,7 @@ void main() {
     );
   });
 
-  testWidgets('home screen does not render the governorate switcher', (
+  testWidgets('home screen renders the multi-governorate switcher', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -73,7 +73,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1500));
     await tester.pump(const Duration(milliseconds: 1500));
 
-    expect(find.byType(GovernoratePill), findsNothing);
+    expect(find.byType(GovernorateSelector), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('home-governorate-selector')),
+      findsOneWidget,
+    );
     await tester.pumpWidget(const SizedBox.shrink());
     CompassService.instance.stop();
   });

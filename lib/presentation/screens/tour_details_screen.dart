@@ -256,9 +256,13 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                 final isOnline =
                     context.watch<ConnectivityProvider>().hasInternet != false;
                 final downloading =
-                    tourProvider.isDownloadingTour(tour.id) ||
+                    tourProvider.isDownloadingTour(
+                      tour.id,
+                      governorateId: tour.governorate,
+                    ) ||
                     (offline.isDownloading &&
-                        offline.downloadingPackId == 'tour_${tour.id}');
+                        offline.downloadingPackId ==
+                            '${tour.governorate}::tour_${tour.id}');
                 final progress = offline.downloadProgress;
                 return _GlassButton(
                   icon: isSaved
@@ -270,7 +274,8 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                       ? context.quickActionSuccess
                       : Colors.white,
                   isLoading: downloading,
-                  loadingLabel: offline.downloadingPackId == 'tour_${tour.id}'
+                  loadingLabel: offline.downloadingPackId ==
+                          '${tour.governorate}::tour_${tour.id}'
                       ? context.tr('offline_pack_progress', {
                           'done': '${progress.itemsDone}',
                           'total': '${progress.totalItems}',

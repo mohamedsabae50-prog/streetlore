@@ -229,6 +229,24 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  Future<void> _openLocalPreview() async {
+    if ((!kIsWeb && !kDebugMode) || _isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      await context.read<AuthProvider>().signInAsGuest('Local Preview');
+      if (!mounted) return;
+      await _routeAfterAuth();
+    } catch (error, stackTrace) {
+      debugPrint('Could not open local preview: $error\n$stackTrace');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open local preview: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -509,9 +527,8 @@ class _LoginScreenState extends State<LoginScreen>
 
                                 try {
                                   if (kIsWeb) {
-                                    final redirectTo = kReleaseMode
-                                        ? AppConfig.webRedirectUrl
-                                        : Uri.base.origin;
+                                    final redirectTo =
+                                        AppConfig.webOAuthRedirectFor(Uri.base);
                                     await Supabase.instance.client.auth
                                         .signInWithOAuth(
                                           OAuthProvider.google,
@@ -675,6 +692,23 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                     ),
+                    if (kIsWeb || kDebugMode) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          key: const ValueKey('login-local-preview-button'),
+                          onPressed: _isLoading
+                              ? null
+                              : () => unawaited(_openLocalPreview()),
+                          icon: const Icon(Icons.visibility_outlined),
+                          label: const Text(
+                            'Explore Preview · تصفح المعاينة '
+                            '(الإسكندرية والقاهرة)',
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 32),
                   ],
                 ),

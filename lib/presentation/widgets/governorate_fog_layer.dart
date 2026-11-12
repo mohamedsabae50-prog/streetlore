@@ -209,6 +209,8 @@ class _BumpCloudFogPainter extends CustomPainter {
   static Size? _cachedHexSize;
   static ui.Path? _cachedHexPath;
   static double? _cachedHexRadius;
+  static Size? _cachedCloudSize;
+  static ui.Path? _cachedCloudPath;
 
   const _BumpCloudFogPainter({
     required this.camera,
@@ -241,6 +243,13 @@ class _BumpCloudFogPainter extends CustomPainter {
             colors: [Color(0x9E4A2E1B), Color(0xAD382112)],
           ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
           ..style = PaintingStyle.fill
+          ..isAntiAlias = true,
+      );
+      canvas.drawPath(
+        _noiseCloudBankPath(size),
+        Paint()
+          ..style = PaintingStyle.fill
+          ..color = const Color(0x1BD4A373)
           ..isAntiAlias = true,
       );
       canvas.drawPath(
@@ -292,6 +301,46 @@ class _BumpCloudFogPainter extends CustomPainter {
           ..isAntiAlias = true,
       );
     }
+  }
+
+  ui.Path _noiseCloudBankPath(Size size) {
+    if (_cachedCloudSize == size && _cachedCloudPath != null) {
+      return _cachedCloudPath!;
+    }
+    final path = ui.Path();
+    const spacingX = 122.0;
+    const spacingY = 94.0;
+    final columns = (size.width / spacingX).ceil() + 1;
+    final rows = (size.height / spacingY).ceil() + 1;
+    for (var row = 0; row < rows; row++) {
+      for (var column = 0; column < columns; column++) {
+        final seed = row * 193 + column * 97 + 31;
+        if (seed % 5 == 0) continue;
+        final center = Offset(
+          column * spacingX + (seed % 71),
+          row * spacingY + ((seed ~/ 7) % 61),
+        );
+        final radiusX = 30 + seed % 34;
+        final radiusY = 15 + (seed ~/ 11) % 24;
+        final points = <Offset>[
+          for (var index = 0; index < 10; index++)
+            () {
+              final angle = index * math.pi * 2 / 10;
+              final variation =
+                  0.76 + ((seed * (index + 17) * 37) % 101) / 220;
+              return center +
+                  Offset(
+                    math.cos(angle) * radiusX * variation,
+                    math.sin(angle) * radiusY * variation,
+                  );
+            }(),
+        ];
+        path.addPath(_buildSmoothPolygonPath(points), Offset.zero);
+      }
+    }
+    _cachedCloudSize = size;
+    _cachedCloudPath = path;
+    return path;
   }
 
   ui.Path _hexGridPath(Size size) {

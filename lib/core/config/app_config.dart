@@ -17,6 +17,9 @@ class AppConfig {
   static const String webRedirectUrl =
       'https://mohamedsabae50-prog.github.io/streetlore-web-app/';
 
+  static String webOAuthRedirectFor(Uri currentUri) =>
+      '${currentUri.origin}${currentUri.path}';
+
   static const String mobileRedirectUrl =
       'io.supabase.streetlore://login-callback/';
 

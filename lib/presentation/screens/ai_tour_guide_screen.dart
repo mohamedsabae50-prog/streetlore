@@ -7,6 +7,8 @@ import '../../core/services/ai_tour_guide_service.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/connectivity_provider.dart';
+import '../../logic/place_provider.dart';
+import '../../logic/tour_provider.dart';
 import 'package:provider/provider.dart';
 import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
@@ -38,10 +40,20 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
 
   Future<void> _bootstrap() async {
     final locale = Localizations.localeOf(context).languageCode;
+    final places = context
+        .read<PlaceProvider>()
+        .allPlaces
+        .where((place) => place.governorate == widget.place.governorate);
+    final itineraries = context
+        .read<TourProvider>()
+        .allTours
+        .where((tour) => tour.governorate == widget.place.governorate);
     await AITourGuideService.instance.start(
       widget.place,
       sessionId: _sessionId,
       locale: locale,
+      places: places,
+      itineraries: itineraries,
     );
     if (mounted) setState(() => _started = true);
   }

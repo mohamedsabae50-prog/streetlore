@@ -14,6 +14,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/confetti_overlay.dart';
 import '../../data/achievement_catalog.dart';
+import '../../data/models/offline_pack.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/geofence_provider.dart';
 import '../../logic/offline_provider.dart';
@@ -64,22 +65,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isUploadingAvatar = false;
   String? _privacyError;
   bool _deletingAccount = false;
-  bool _preparingOfflinePack = false;
+  String? _preparingOfflinePackKey;
 
-  Future<void> _downloadOfflinePack() async {
-    if (_preparingOfflinePack) return;
-    setState(() => _preparingOfflinePack = true);
+  Future<void> _downloadOfflinePack(OfflinePack pack) async {
+    if (_preparingOfflinePackKey != null) return;
+    setState(() => _preparingOfflinePackKey = pack.storageKey);
     try {
       final places = context.read<PlaceProvider>();
       final tours = context.read<TourProvider>();
       await places.refresh();
       await tours.refresh();
       if (!mounted) return;
-      final pack = OfflineProvider.catalog.first;
       final result = await context.read<OfflineProvider>().download(
         pack,
         availablePlaces: places.allPlaces,
-        availableTours: tours.tours,
+        availableTours: tours.allTours,
         isPro: context.read<AuthProvider>().isPro,
       );
       if (!mounted) return;
@@ -98,30 +98,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ).showSnackBar(SnackBar(content: Text(context.tr('download_failed'))));
       }
     } finally {
-      if (mounted) setState(() => _preparingOfflinePack = false);
+      if (mounted) setState(() => _preparingOfflinePackKey = null);
     }
   }
 
   Widget _offlinePackCard({required bool isPro}) {
+    final cityPacks = OfflineProvider.catalog
+        .where((pack) => pack.placeIds.contains('__all__'))
+        .toList(growable: false);
+    return Column(
+      children: [
+        for (final pack in cityPacks)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _offlineCityPackCard(pack: pack, isPro: isPro),
+          ),
+      ],
+    );
+  }
+
+  Widget _offlineCityPackCard({
+    required OfflinePack pack,
+    required bool isPro,
+  }) {
     return Consumer<OfflineProvider>(
       builder: (context, offline, _) {
         final isOnline =
             context.watch<ConnectivityProvider>().hasInternet != false;
         final matchingPacks = offline.packs.where(
-          (item) => item.id == OfflineProvider.catalog.first.id,
+          (item) => item.storageKey == pack.storageKey,
         );
-        final pack = matchingPacks.isEmpty ? null : matchingPacks.first;
-        final isDownloaded = pack?.isDownloaded ?? false;
+        final downloadedPack = matchingPacks.isEmpty
+            ? null
+            : matchingPacks.first;
+        final isDownloaded = downloadedPack?.isDownloaded ?? false;
         final progress = offline.downloadProgress;
+        final anyDownloadInProgress =
+            offline.isDownloading || _preparingOfflinePackKey != null;
         final downloading =
-            _preparingOfflinePack ||
-            (offline.isDownloading &&
-                offline.downloadingPackId == OfflineProvider.catalog.first.id);
+            _preparingOfflinePackKey == pack.storageKey ||
+            offline.isDownloadingPack(pack);
         final status = isDownloaded
             ? context.tr('offline_pack_downloaded', {
-                'places': '${pack!.placesCount}',
-                'tours': '${pack.toursCount}',
-                'size': pack.sizeMb.toStringAsFixed(1),
+                'places': '${downloadedPack!.placesCount}',
+                'tours': '${downloadedPack.toursCount}',
+                'size': downloadedPack.sizeMb.toStringAsFixed(1),
               })
             : context.tr('offline_pack_not_downloaded');
         return Container(
@@ -143,7 +164,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      context.tr('offline_pack_title'),
+                    pack.localizedName(
+                      Localizations.localeOf(context).languageCode,
+                    ),
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                   ),
@@ -153,6 +176,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: context.quickActionSuccess,
                     ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                pack.localizedDescription(
+                  Localizations.localeOf(context).languageCode,
+                ),
+                style: TextStyle(color: context.textSec),
               ),
               const SizedBox(height: 8),
               Text(status, style: TextStyle(color: context.textSec)),
@@ -186,9 +216,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   runSpacing: 8,
                   children: [
                     FilledButton.icon(
-                      onPressed: downloading || !isOnline
+                      onPressed: anyDownloadInProgress || !isOnline
                           ? null
-                          : _downloadOfflinePack,
+                          : () => _downloadOfflinePack(pack),
                       icon: Icon(
                         isDownloaded
                             ? Icons.update_rounded
@@ -206,8 +236,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       TextButton.icon(
                         onPressed: downloading
                             ? null
-                            : () =>
-                                  context.read<OfflineProvider>().remove(pack!),
+                            : () => context
+                                  .read<OfflineProvider>()
+                                  .remove(downloadedPack!),
                         icon: const Icon(Icons.delete_outline_rounded),
                         label: Text(context.tr('offline_pack_remove')),
                       ),

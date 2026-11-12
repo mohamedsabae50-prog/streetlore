@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/services/offline_storage_service.dart';
 import '../core/services/supabase_service.dart';
+import '../data/cairo_seed.dart' show cairoSeedItineraries;
 import '../data/models/itinerary_model.dart';
 import '../data/models/offline_pack.dart';
 import '../data/models/place_model.dart';
@@ -85,6 +86,7 @@ class TourProvider extends ChangeNotifier {
   List<ItineraryModel> _tours = [];
   final GovernorateProvider? governorates;
   final bool Function()? isOnline;
+  List<ItineraryModel> get allTours => List.unmodifiable(_tours);
   List<ItineraryModel> get tours => List.unmodifiable(
     _tours.where(
       (tour) =>
@@ -108,7 +110,10 @@ class TourProvider extends ChangeNotifier {
       .toList(growable: false);
   final Set<String> _downloadingTourIds = <String>{};
 
-  bool isDownloadingTour(String tourId) => _downloadingTourIds.contains(tourId);
+  bool isDownloadingTour(
+    String tourId, {
+    String governorateId = 'alexandria',
+  }) => _downloadingTourIds.contains('$governorateId::$tourId');
 
   final Set<String> _checkedInPlaceIds = <String>{};
   final Set<String> _automaticallyVisitedTourIds = <String>{};
@@ -239,10 +244,12 @@ class TourProvider extends ChangeNotifier {
       if (_tours.isEmpty) {
         _tours = List<ItineraryModel>.from(fallbackTours);
       }
+      _mergeLocalSeedTours();
       _mergeDownloadedTours(storage.getDownloadedTours());
       notifyListeners();
     }
     if (isOnline?.call() == false) {
+      _mergeLocalSeedTours();
       _mergeDownloadedTours(storage.getDownloadedTours());
       _error = null;
       _loading = false;
@@ -269,6 +276,7 @@ class TourProvider extends ChangeNotifier {
       } else {
         _tours = loaded;
       }
+      _mergeLocalSeedTours();
       _mergeDownloadedTours(storage.getDownloadedTours());
       _updateAutomaticallyVisitedTours();
       _error = null;
@@ -278,6 +286,7 @@ class TourProvider extends ChangeNotifier {
       if (_tours.isEmpty) {
         _tours = List<ItineraryModel>.from(fallbackTours);
       }
+      _mergeLocalSeedTours();
       _mergeDownloadedTours(storage.getDownloadedTours());
     } finally {
       _loading = false;
@@ -289,9 +298,17 @@ class TourProvider extends ChangeNotifier {
   Future<void> refresh() => loadTours(force: true);
 
   void _mergeDownloadedTours(List<ItineraryModel> downloaded) {
-    if (downloaded.isEmpty) return;
+    final merged = <String, ItineraryModel>{};
+    for (final tour in [..._tours, ...downloaded]) {
+      merged.putIfAbsent(tour.id, () => tour);
+    }
+    _tours = merged.values.toList(growable: false);
+  }
+
+  void _mergeLocalSeedTours() {
     final merged = <String, ItineraryModel>{
-      for (final tour in downloaded) tour.id: tour,
+      for (final tour in [...fallbackTours, ...cairoSeedItineraries])
+        tour.id: tour,
       for (final tour in _tours) tour.id: tour,
     };
     _tours = merged.values.toList(growable: false);
@@ -527,16 +544,21 @@ class TourProvider extends ChangeNotifier {
   ///   * stop images + tour cover   -> `<docs>/offline_images/...` (permanent)
   /// Returns `null` when the tour was removed, otherwise the image result.
   Future<({int ok, int failed})?> toggleTourOffline(ItineraryModel tour) async {
-    if (isDownloadingTour(tour.id)) return (ok: 0, failed: 0);
+    final downloadKey = '${tour.governorate}::${tour.id}';
+    if (isDownloadingTour(tour.id, governorateId: tour.governorate)) {
+      return (ok: 0, failed: 0);
+    }
     final isExisting = _savedTours.any((t) => t.id == tour.id);
     if (isExisting) {
       _savedTours.removeWhere((t) => t.id == tour.id);
-      await OfflineStorageService.instance.deletePack('tour_${tour.id}');
+      await OfflineStorageService.instance.deletePack(
+        '${tour.governorate}::tour_${tour.id}',
+      );
       await _saveToursToStorage();
       notifyListeners();
       return null;
     }
-    _downloadingTourIds.add(tour.id);
+    _downloadingTourIds.add(downloadKey);
     notifyListeners();
     try {
       final result = await downloadTourAssets(tour);
@@ -544,7 +566,7 @@ class TourProvider extends ChangeNotifier {
       await _saveToursToStorage();
       return result;
     } finally {
-      _downloadingTourIds.remove(tour.id);
+      _downloadingTourIds.remove(downloadKey);
       notifyListeners();
     }
   }
@@ -598,7 +620,7 @@ class TourProvider extends ChangeNotifier {
       };
       if (coverUrls.isNotEmpty) {
         final cover = await storage.prefetchExtraImages(
-          'tour_${tour.id}',
+          '${tour.governorate}::tour_${tour.id}',
           coverUrls,
         );
         ok += cover.ok;
@@ -607,8 +629,9 @@ class TourProvider extends ChangeNotifier {
         imageCount += cover.ok;
       }
       final packId = 'tour_${tour.id}';
+      final packStorageKey = '${tour.governorate}::$packId';
       final jsonBytes = await storage.cachePackPayload(
-        packId,
+        packStorageKey,
         places: stops,
         tours: [tour],
       );
@@ -617,6 +640,7 @@ class TourProvider extends ChangeNotifier {
           id: packId,
           name: tour.title,
           description: tour.description,
+          governorateId: tour.governorate,
           placeIds: stops.map((place) => place.id).toList(growable: false),
           sizeMb: (jsonBytes + imageBytes) / (1024 * 1024),
           downloadedCount: stops.length,

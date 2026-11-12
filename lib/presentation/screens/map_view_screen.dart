@@ -9,8 +9,9 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/atm_service.dart';
 import '../../core/services/carplay_service.dart';
+import '../../data/cairo_seed.dart' show cairoSeedPlaces;
+import '../../data/models/egypt_governorate.dart';
 import '../../data/models/map_poi.dart';
-import '../../data/models/map_seed.dart';
 import '../../data/models/place_model.dart';
 import '../../core/services/offline_tile_provider.dart';
 import '../../l10n/app_strings.dart';
@@ -19,6 +20,7 @@ import '../../logic/governorate_provider.dart';
 import '../../logic/trip_provider.dart';
 import '../widgets/governorate_explorer_sheet.dart';
 import '../widgets/governorate_fog_layer.dart';
+import '../widgets/governorate_selector.dart';
 import '_atm_sheet.dart';
 import 'place_details_screen.dart';
 
@@ -56,9 +58,18 @@ class MapViewScreen extends StatefulWidget {
   State<MapViewScreen> createState() => _MapViewScreenState();
 }
 
-class _MapViewScreenState extends State<MapViewScreen> {
+class _MapViewScreenState extends State<MapViewScreen>
+    with TickerProviderStateMixin {
   final MapController _mapController = MapController();
 
+  late final AnimationController _cameraAnimation;
+  GovernorateProvider? _governorates;
+  String? _lastGovernorateId;
+  LatLng _cameraStart = _alexCenter;
+  LatLng _cameraTarget = _alexCenter;
+  double _cameraStartZoom = 12;
+  double _cameraTargetZoom = 12;
+  bool _mapReady = false;
   String? _selectedCategory;
   PlaceModel? _selectedPlace;
   LatLng? _userLocation;
@@ -79,9 +90,71 @@ class _MapViewScreenState extends State<MapViewScreen> {
   @override
   void initState() {
     super.initState();
+    _cameraAnimation = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    )..addListener(_applyCameraAnimation);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _startAutoCheckInLocationUpdates();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final provider = context.read<GovernorateProvider>();
+    if (identical(_governorates, provider)) return;
+    _governorates?.removeListener(_onGovernorateChanged);
+    _governorates = provider;
+    _lastGovernorateId = provider.activeGovernorate;
+    provider.addListener(_onGovernorateChanged);
+  }
+
+  void _onGovernorateChanged() {
+    final id = _governorates?.activeGovernorate;
+    if (id == null || id == _lastGovernorateId) return;
+    final governorate = EgyptGovernorate.byId[id];
+    if (governorate == null) return;
+    _lastGovernorateId = id;
+    setState(() {
+      _selectedPlace = null;
+      _selectedCategory = null;
+      _extraLayers.clear();
+      _atms = _showAtms ? _curatedAtmsFor(id) : const [];
+    });
+    if (_showAtms && id == 'alexandria') {
+      unawaited(_loadNearbyAtms(_userLocation ?? _alexCenter));
+    }
+    _animateCameraTo(governorate);
+  }
+
+  void _onMapReady() {
+    _mapReady = true;
+    _locateUser();
+  }
+
+  void _animateCameraTo(EgyptGovernorate governorate) {
+    if (!_mapReady) return;
+    final camera = _mapController.camera;
+    _cameraStart = camera.center;
+    _cameraTarget = LatLng(governorate.centerLat, governorate.centerLng);
+    _cameraStartZoom = camera.zoom;
+    _cameraTargetZoom = governorate.defaultZoom;
+    _cameraAnimation.forward(from: 0);
+  }
+
+  void _applyCameraAnimation() {
+    if (!_mapReady || !mounted) return;
+    final progress = Curves.easeInOutCubic.transform(_cameraAnimation.value);
+    _mapController.move(
+      LatLng(
+        _cameraStart.latitude +
+            (_cameraTarget.latitude - _cameraStart.latitude) * progress,
+        _cameraStart.longitude +
+            (_cameraTarget.longitude - _cameraStart.longitude) * progress,
+      ),
+      _cameraStartZoom + (_cameraTargetZoom - _cameraStartZoom) * progress,
+    );
   }
 
   bool get _allOff => _selectedCategory == _allOffSentinel;
@@ -242,22 +315,62 @@ class _MapViewScreenState extends State<MapViewScreen> {
 
   void _toggleAtms() {
     final show = !_showAtms;
+    final governorateId =
+        context.read<GovernorateProvider>().activeGovernorate;
     setState(() {
       _showAtms = show;
-      _atms = show ? AtmService.curatedAlexandriaAtms : const [];
+      _atms = show ? _curatedAtmsFor(governorateId) : const [];
     });
-    if (!show) return;
+    if (!show || governorateId != 'alexandria') return;
     final center = _userLocation ?? _alexCenter;
     unawaited(_loadNearbyAtms(center));
   }
 
+  List<MapPoi> _curatedAtmsFor(String governorateId) {
+    if (governorateId == 'alexandria') {
+      return AtmService.curatedAlexandriaAtms;
+    }
+    if (governorateId != 'cairo') return const [];
+    return cairoSeedPlaces
+        .where((place) => place.category == 'ATM')
+        .map(
+          (place) => MapPoi(
+            id: place.id,
+            name: place.nameEn,
+            address: place.address,
+            lat: place.lat,
+            lng: place.lng,
+            category: 'atm',
+            brand: place.nameEn.split(' ').first,
+            icon: Icons.atm_rounded,
+            color: place.id.contains('_cib_')
+                ? const Color(0xFFED1C24)
+                : place.id.contains('_nbe_')
+                ? const Color(0xFF0033A0)
+                : place.id.contains('_qnb_')
+                ? const Color(0xFF8B1A1A)
+                : const Color(0xFF1F4E79),
+          ),
+        )
+        .toList(growable: false);
+  }
+
   Future<void> _loadNearbyAtms(LatLng center) async {
+    if (context.read<GovernorateProvider>().activeGovernorate !=
+        'alexandria') {
+      return;
+    }
     try {
       final nearbyAtms = await AtmService.fetchNearby(
         latitude: center.latitude,
         longitude: center.longitude,
       );
-      if (!mounted || !_showAtms) return;
+      if (!mounted ||
+          !_showAtms ||
+          context.read<GovernorateProvider>().activeGovernorate !=
+              'alexandria') {
+        return;
+      }
       final mergedAtms = [..._atms];
       for (final candidate in nearbyAtms) {
         final duplicate = mergedAtms.any(
@@ -346,8 +459,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
 
   @override
   void dispose() {
+    _governorates?.removeListener(_onGovernorateChanged);
     unawaited(_positionSubscription?.cancel());
     unawaited(_autoCheckInSubscription?.cancel());
+    _cameraAnimation.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -355,6 +470,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
   @override
   Widget build(BuildContext context) {
     final placeProvider = context.watch<PlaceProvider>();
+    final governorateProvider = context.watch<GovernorateProvider>();
+    final activeGovernorate =
+        EgyptGovernorate.byId[governorateProvider.activeGovernorate] ??
+        EgyptGovernorate.byId['alexandria']!;
     final places = placeProvider.places;
     final allPlaces = placeProvider.allPlaces;
     final visitedPlaceIds = context.watch<TripProvider>().visitedPlaceIds;
@@ -366,11 +485,14 @@ class _MapViewScreenState extends State<MapViewScreen> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: _alexCenter,
-              initialZoom: 12,
+              initialCenter: LatLng(
+                activeGovernorate.centerLat,
+                activeGovernorate.centerLng,
+              ),
+              initialZoom: activeGovernorate.defaultZoom,
               minZoom: 5,
               maxZoom: 18,
-              onMapReady: () => _locateUser(),
+              onMapReady: _onMapReady,
               onTap: (_, __) => setState(() => _selectedPlace = null),
             ),
             children: [
@@ -396,6 +518,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       point.longitude <= bounds.east + padding;
                   final markerPlaces = <PlaceModel>[...visible];
                   if (_selectedPlace != null &&
+                      _selectedPlace!.governorate ==
+                          activeGovernorate.id &&
                       !markerPlaces.any(
                         (place) => place.id == _selectedPlace!.id,
                       )) {
@@ -567,67 +691,6 @@ class _MapViewScreenState extends State<MapViewScreen> {
                               ),
                             ),
                           ),
-                      if (_showHotels)
-                        for (final hotel in getSeedHotels().where(
-                          (hotel) => inViewport(LatLng(hotel.lat, hotel.lng)),
-                        ))
-                          Marker(
-                            point: LatLng(hotel.lat, hotel.lng),
-                            width: 44,
-                            height: 44,
-                            child: RepaintBoundary(
-                              child: GestureDetector(
-                                onTap: () {
-                                  final match = places.firstWhere(
-                                    (p) => p.id == hotel.id,
-                                    orElse: () => PlaceModel(
-                                      id: hotel.id,
-                                      nameEn: hotel.name,
-                                      descriptionEn: hotel.address,
-                                      imageUrl: '',
-                                      rating: 5.0,
-                                      category: 'Hotels',
-                                      lat: hotel.lat,
-                                      lng: hotel.lng,
-                                      address: hotel.address,
-                                      openHours: '',
-                                    ),
-                                  );
-                                  setState(() {
-                                    _selectedPlace = match;
-                                  });
-                                  _mapController.move(
-                                    LatLng(hotel.lat, hotel.lng),
-                                    14,
-                                  );
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: hotel.color,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      if (showMarkerGlow)
-                                        BoxShadow(
-                                          color: hotel.color.withValues(
-                                            alpha: 0.5,
-                                          ),
-                                          blurRadius: 8,
-                                        ),
-                                    ],
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 3,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    hotel.icon,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                     ],
                   );
                 },
@@ -686,14 +749,17 @@ class _MapViewScreenState extends State<MapViewScreen> {
                           ),
                           const SizedBox(width: 8),
                           Flexible(
-                            child: GovernoratePill(
-                              key: const ValueKey('map-view-governorate-pill'),
-                              compact: true,
-                              onTap: () => showGovernorateExplorerSheet(
-                                context,
-                                places: allPlaces,
-                                visitedPlaceIds: visitedPlaceIds,
+                            child: GovernorateSelector(
+                              buttonKey: const ValueKey(
+                                'map-view-governorate-pill',
                               ),
+                              compact: true,
+                              onExploreAll: () =>
+                                  showGovernorateExplorerSheet(
+                                    context,
+                                    places: allPlaces,
+                                    visitedPlaceIds: visitedPlaceIds,
+                                  ),
                             ),
                           ),
                         ],

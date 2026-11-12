@@ -1,12 +1,78 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../config/app_config.dart';
+import '../../data/models/egypt_governorate.dart';
+import '../../data/models/itinerary_model.dart';
 import '../../data/models/place_model.dart';
 import 'gemini_rest_client.dart';
 
 const aiDailyLimitMessage =
     'You have reached your daily limit, please come back tomorrow.';
+
+String buildGovernorateGuideContext({
+  required String governorateId,
+  Iterable<PlaceModel> places = const [],
+  Iterable<ItineraryModel> itineraries = const [],
+  String locale = 'en',
+  PlaceModel? referencePlace,
+}) {
+  final governorate =
+      EgyptGovernorate.byId[governorateId] ??
+      EgyptGovernorate.byId['alexandria']!;
+  final isArabic = locale == 'ar';
+  final nearbyPlaces = places
+      .where(
+        (place) =>
+            place.governorate == governorateId &&
+            place.id != referencePlace?.id,
+      )
+      .toList()
+    ..sort((a, b) {
+      final anchorLat = referencePlace?.lat ?? governorate.centerLat;
+      final anchorLng = referencePlace?.lng ?? governorate.centerLng;
+      return _guideDistanceMeters(anchorLat, anchorLng, a.lat, a.lng).compareTo(
+        _guideDistanceMeters(anchorLat, anchorLng, b.lat, b.lng),
+      );
+    });
+  final nearbyNames = nearbyPlaces
+      .take(8)
+      .map((place) => place.localizedName(locale))
+      .toList(growable: false);
+  final cityItineraries = itineraries
+      .where((itinerary) => itinerary.governorate == governorateId)
+      .take(4)
+      .map((itinerary) => itinerary.localizedTitle(locale))
+      .toList(growable: false);
+  final cityLabel = isArabic
+      ? '${governorate.nameAr} / ${governorate.nameEn}'
+      : '${governorate.nameEn} / ${governorate.nameAr}';
+  return '''ACTIVE GOVERNORATE: $cityLabel.
+Nearby landmarks in this governorate: ${nearbyNames.isEmpty ? 'none available in local data' : nearbyNames.join(', ')}.
+Curated itineraries in this governorate: ${cityItineraries.isEmpty ? 'none available in local data' : cityItineraries.join(', ')}.
+Use only landmarks and routes from this active governorate when making local recommendations.''';
+}
+
+double _guideDistanceMeters(
+  double latA,
+  double lngA,
+  double latB,
+  double lngB,
+) {
+  const earthRadius = 6371000.0;
+  final lat1 = latA * math.pi / 180;
+  final lat2 = latB * math.pi / 180;
+  final dLat = (latB - latA) * math.pi / 180;
+  final dLng = (lngB - lngA) * math.pi / 180;
+  final h =
+      math.sin(dLat / 2) * math.sin(dLat / 2) +
+      math.cos(lat1) *
+          math.cos(lat2) *
+          math.sin(dLng / 2) *
+          math.sin(dLng / 2);
+  return 2 * earthRadius * math.atan2(math.sqrt(h), math.sqrt(1 - h));
+}
 
 class ChatMessage {
   final String id;
@@ -37,7 +103,12 @@ class AITourGuideService {
   bool _busy = false;
   bool get isBusy => _busy;
 
-  String _buildSystemPrompt(PlaceModel place) {
+  String _buildSystemPrompt(
+    PlaceModel place, {
+    required String locale,
+    required Iterable<PlaceModel> places,
+    required Iterable<ItineraryModel> itineraries,
+  }) {
     final now = DateTime.now();
     final hour = now.hour;
     final isRushHour = (hour >= 8 && hour <= 10) || (hour >= 16 && hour <= 19);
@@ -46,10 +117,20 @@ class AITourGuideService {
     final todayWeekday = now.weekday;
     final isWeekend =
         todayWeekday == DateTime.friday || todayWeekday == DateTime.saturday;
+    final governorate =
+        EgyptGovernorate.byId[place.governorate] ??
+        EgyptGovernorate.byId['alexandria']!;
+    final governorateContext = buildGovernorateGuideContext(
+      governorateId: place.governorate,
+      places: places,
+      itineraries: itineraries,
+      locale: locale,
+      referencePlace: place,
+    );
 
-    return '''You are an enthusiastic LOCAL tour guide for Alexandria, Egypt — you have actually walked these streets for years. You are currently helping a visitor who just opened the detail page for "${place.nameEn}" (category: ${place.category}).
+    return '''You are an enthusiastic LOCAL tour guide for ${governorate.nameEn}, Egypt. You are currently helping a visitor who just opened the detail page for "${place.nameEn}" (category: ${place.category}).
 
-LOCAL GUIDE — GENERAL ANCHOR FACTS (use as truth anchors and adapt to whichever city or area the user is in):
+LOCAL GUIDE — GENERAL ANCHOR FACTS:
 - Read the place details (name, address, description, category, hours, rating,
   price, coordinates) for the specific place the visitor opened before answering.
 - Honour the visitor's chosen language — reply in the same language they use.
@@ -59,11 +140,11 @@ LOCAL GUIDE — GENERAL ANCHOR FACTS (use as truth anchors and adapt to whicheve
 - Famous landmarks / signature foods / day-trip options: cite them by the
   place's description field whenever it mentions one — never invent
   landmarks or venues.
+- The active governorate and its verified local landmarks/itineraries are:
+  $governorateContext
 - Rush hours: 8-10 AM and 4-7 PM are typical for most cities; mention
   specific rush-hour / prayer / Friday-weekend behaviour only when you are
   confident about the city.
-- Never assume the visitor is in Alexandria or any specific city — let the
-  place's address, category and description guide the answer.
 
 CURRENT CONTEXT (use this to tailor every answer):
 - Local time: ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} on weekday #$todayWeekday (weekend: ${isWeekend ? 'yes' : 'no'})
@@ -108,6 +189,8 @@ family-friendliness, safety, and accessibility.''';
     PlaceModel place, {
     required String sessionId,
     String locale = 'en',
+    Iterable<PlaceModel> places = const [],
+    Iterable<ItineraryModel> itineraries = const [],
   }) async {
     _currentPlace = place;
     _messages.clear();
@@ -131,7 +214,12 @@ family-friendliness, safety, and accessibility.''';
 
     _session = _LiveSession(
       model: AppConfig.geminiModel,
-      systemPrompt: _buildSystemPrompt(place),
+      systemPrompt: _buildSystemPrompt(
+        place,
+        locale: locale,
+        places: places,
+        itineraries: itineraries,
+      ),
       sessionId: sessionId,
     );
     _messages.add(
@@ -276,6 +364,9 @@ $userText''';
   }
 
   String _offlineAnswer(String q, PlaceModel place) {
+    final governorate =
+        EgyptGovernorate.byId[place.governorate] ??
+        EgyptGovernorate.byId['alexandria']!;
     final lower = q.toLowerCase();
     final isArabic = q.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
 
@@ -368,8 +459,8 @@ $userText''';
         lower.contains('الأفضل') ||
         lower.contains('أحسن')) {
       return isArabic
-          ? '💡 نصايح لزيارة ${place.nameEn}:\n• زور قبل الـ9 الصبح — البحر هادي والشوارع فاضية\n• خد معك مية واقي شمس (إسكندرية حارة الشتا قصاد)\n• أحسن وقت للتصوير: قبل الغروب بساعة من الجهة الشمالية\n• المواعيد: ${place.openHours}'
-          : '💡 Tips for ${place.nameEn}:\n• Arrive before 9 AM — calm sea and quiet streets\n• Bring water + sunblock (Alex sun is stronger than it feels)\n• Best photos: 1 hour before sunset, north-facing angle\n• Hours: ${place.openHours}';
+          ? '💡 نصايح لزيارة ${place.nameEn} في ${governorate.nameAr}:\n• اختار وقتاً مبكراً لتجنب الزحام\n• خذ معك ماءً وملابس مناسبة للطقس\n• الإضاءة قبل الغروب بساعة مناسبة للتصوير\n• المواعيد: ${place.openHours}'
+          : '💡 Tips for ${place.nameEn} in ${governorate.nameEn}:\n• Arrive early to avoid crowds\n• Bring water and dress for the weather\n• The hour before sunset is often good for photos\n• Hours: ${place.openHours}';
     }
     if (lower.contains('rating') ||
         lower.contains('review') ||
@@ -378,8 +469,8 @@ $userText''';
         lower.contains('رأي') ||
         lower.contains('نجوم')) {
       return isArabic
-          ? '⭐ تقييم ${place.nameEn}: ${place.rating}/5 من ${place.reviewCount} زيارة.\nالمكان من أفضل أماكن ${place.category} في الإسكندرية.'
-          : '⭐ ${place.nameEn} rating: ${place.rating}/5 from ${place.reviewCount} reviews.\nIt\'s one of the top ${place.category} spots in Alexandria.';
+          ? '⭐ تقييم ${place.nameEn}: ${place.rating}/5 من ${place.reviewCount} زيارة.\nالمكان من أماكن ${place.category} في ${governorate.nameAr}.'
+          : '⭐ ${place.nameEn} rating: ${place.rating}/5 from ${place.reviewCount} reviews.\nIt is a ${place.category} spot in ${governorate.nameEn}.';
     }
     if (lower.contains('family') ||
         lower.contains('kids') ||
@@ -449,17 +540,29 @@ $userText''';
   static Future<String> askLocalGuide(
     String userText, {
     required String sessionId,
+    String governorateId = 'alexandria',
+    Iterable<PlaceModel> places = const [],
+    Iterable<ItineraryModel> itineraries = const [],
+    String locale = 'en',
     List<GeminiChatTurn> conversationHistory = const [],
     void Function(String response)? onResponseChunk,
   }) async {
+    final governorateContext = buildGovernorateGuideContext(
+      governorateId: governorateId,
+      places: places,
+      itineraries: itineraries,
+      locale: locale,
+    );
     final system =
         '''You are the street-level local tourism expert inside the "EgyptLore" app. You answer questions about travel, places, food, history, and culture for the city or area the user is currently exploring.
+
+$governorateContext
 
 STRICT RULES:
 1. Answer greetings, how-are-you messages, questions about your identity or availability, and casual emotional check-ins warmly in the user's language. Then guide the user toward local places, history, food, and tours. ONLY decline genuinely unrelated questions.
 2. If the user asks about coding, mathematics, general chat, politics, news, medical advice, or any non-tourism topic, politely decline and state your specific role (e.g. "I'm your local EgyptLore guide — I can only help with travel, places, history, and culture here.").
 3. Be concise but COMPLETE. Never cut a sentence mid-thought. If you would run out of tokens, wrap the answer cleanly with a final full sentence.
-4. Use specific local details when possible (well-known landmarks, neighbourhoods, signature foods, transit options) for the city or area the user is in. Do NOT hard-code any single city — adapt to whichever city or area the user is asking about.
+4. Use specific local details when possible (well-known landmarks, neighbourhoods, signature foods, transit options) for the active governorate and prefer the verified local landmarks and itineraries in the context above.
 5. Never invent places that don't exist. If unsure, say so and suggest the user open the app map.
 6. Speak directly to the user ("you") — friendly, opinionated, like a local friend showing them around.''';
     if (!AppConfig.geminiEnabled) {

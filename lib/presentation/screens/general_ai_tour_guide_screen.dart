@@ -7,6 +7,9 @@ import '../../core/services/gemini_rest_client.dart';
 import '../../core/widgets/ai_quota_banner.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/connectivity_provider.dart';
+import '../../logic/governorate_provider.dart';
+import '../../logic/place_provider.dart';
+import '../../logic/tour_provider.dart';
 import 'package:provider/provider.dart';
 import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
@@ -80,6 +83,12 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
       final reply = await AITourGuideService.askLocalGuide(
         text,
         sessionId: _sessionId,
+        governorateId: context
+            .read<GovernorateProvider>()
+            .activeGovernorate,
+        places: context.read<PlaceProvider>().places,
+        itineraries: context.read<TourProvider>().tours,
+        locale: Localizations.localeOf(context).languageCode,
         conversationHistory: history,
         onResponseChunk: (response) {
           if (!mounted) return;

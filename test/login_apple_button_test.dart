@@ -20,6 +20,25 @@ class _AppleSignInAuthProvider extends AuthProvider {
 }
 
 void main() {
+  group('Google web OAuth redirects', () {
+    test('redirects to the active web origin and path', () {
+      expect(
+        AppConfig.webOAuthRedirectFor(Uri.parse('http://localhost:5100/')),
+        'http://localhost:5100/',
+      );
+      expect(
+        AppConfig.webOAuthRedirectFor(Uri.parse('http://127.0.0.1:5100/')),
+        'http://127.0.0.1:5100/',
+      );
+      expect(
+        AppConfig.webOAuthRedirectFor(
+          Uri.parse('https://mohamedsabae50-prog.github.io/streetlore/'),
+        ),
+        'https://mohamedsabae50-prog.github.io/streetlore/',
+      );
+    });
+  });
+
   test(
     'Apple auth routing selects native Apple platforms and OAuth redirects',
     () {
@@ -115,6 +134,32 @@ void main() {
 
     expect(find.text('Sign in with Apple is coming soon!'), findsOneWidget);
     expect(auth.appleSignInCalls, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('web login displays the governorate preview button', (
+    tester,
+  ) async {
+    final auth = _AppleSignInAuthProvider();
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => LocaleProvider()),
+          ChangeNotifierProvider<AuthProvider>.value(value: auth),
+        ],
+        child: const MaterialApp(home: LoginScreen()),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(
+      find.byKey(const ValueKey('login-local-preview-button')),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Explore Preview · تصفح المعاينة (الإسكندرية والقاهرة)'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
