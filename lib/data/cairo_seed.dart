@@ -1,8 +1,9 @@
 import 'models/itinerary_model.dart';
 import 'models/place_model.dart';
+import 'cairo_image_urls.dart';
+import 'cairo_seed_additional.dart';
 
-String _image(String photoId) =>
-    'https://images.unsplash.com/$photoId?auto=format&fit=crop&w=1200&q=85';
+String _image(String placeId) => cairoImageUrls[placeId] ?? '';
 
 final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
   PlaceModel(
@@ -13,7 +14,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'An Ayyubid hilltop fortress later expanded in the Ottoman era, home to the Mosque of Muhammad Ali and sweeping panoramic views across Cairo.',
     descriptionAr:
         'قلعة حصينة على التل شُيّدت في العصر الأيوبي وطُوّرت في العصر العثماني، وتضم مسجد محمد علي وتطل بإطلالات بانورامية على القاهرة.',
-    imageUrl: _image('photo-1568322445389-f64ac2515020'),
+    imageUrl: _image('cairo_citadel'),
+    imageUrls: [_image('cairo_citadel')],
     rating: 4.8,
     category: 'Historical',
     categoryAr: 'تاريخي',
@@ -39,7 +41,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A historic Mamluk-era bazaar in Al-Gamaliya, known for brassware, lanterns, spices, traditional crafts, and heritage cafes in the heart of Islamic Cairo.',
     descriptionAr:
         'بازار تاريخي يعود إلى العصر المملوكي في الجمالية، يشتهر بالمشغولات النحاسية والفوانيس والتوابل والحرف التقليدية والمقاهي التراثية.',
-    imageUrl: _image('photo-1531058020387-3be344556be6'),
+    imageUrl: _image('khan_el_khalili'),
+    imageUrls: [_image('khan_el_khalili')],
     rating: 4.7,
     category: 'Shopping',
     categoryAr: 'تسوّق',
@@ -64,7 +67,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'An open-air museum of medieval Fatimid and Mamluk architecture, connecting Bab al-Futuh in the north with Bab Zuweila in the south.',
     descriptionAr:
         'متحف مفتوح للعمارة الفاطمية والمملوكية، يمتد من باب الفتوح شمالاً إلى باب زويلة جنوباً ويضم آثاراً إسلامية فريدة.',
-    imageUrl: _image('photo-1603565816030-6b389eeb23cb'),
+    imageUrl: _image('al_muizz_street'),
+    imageUrls: [_image('al_muizz_street')],
     rating: 4.8,
     category: 'Historical',
     categoryAr: 'تاريخي',
@@ -89,7 +93,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'An iconic neoclassical museum on Tahrir Square with a major collection of Pharaonic antiquities spanning Egypt’s ancient dynasties.',
     descriptionAr:
         'متحف كلاسيكي الطراز في ميدان التحرير يضم مجموعة بارزة من الآثار الفرعونية التي تمتد عبر عصور مصر القديمة.',
-    imageUrl: _image('photo-1568322445389-f64ac2515020'),
+    imageUrl: _image('egyptian_museum_tahrir'),
+    imageUrls: [_image('egyptian_museum_tahrir')],
     rating: 4.7,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -115,7 +120,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A Fustat museum presenting Egyptian civilization across eras, including the Royal Mummies Hall and collections from prehistoric times to the present.',
     descriptionAr:
         'متحف في الفسطاط يعرض حضارة مصر عبر العصور، ويضم قاعة المومياوات الملكية ومجموعات تمتد من عصور ما قبل التاريخ حتى العصر الحديث.',
-    imageUrl: _image('photo-1568322445389-f64ac2515020'),
+    imageUrl: _image('nmec_fustat'),
+    imageUrls: [_image('nmec_fustat')],
     rating: 4.8,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -141,7 +147,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A 187-metre lotus-inspired tower on Gezira Island, completed in 1961, with 360-degree views over the Nile and the city.',
     descriptionAr:
         'برج بارتفاع ١٨٧ متراً مستوحى من زهرة اللوتس في جزيرة الجزيرة، افتُتح عام ١٩٦١ ويوفر إطلالة بانورامية على النيل والقاهرة.',
-    imageUrl: _image('photo-1519501025264-65ba15a82390'),
+    imageUrl: _image('cairo_tower'),
+    imageUrls: [_image('cairo_tower')],
     rating: 4.5,
     category: 'Historical',
     categoryAr: 'معلم',
@@ -167,7 +174,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A monumental 14th-century Mamluk mosque and madrasa, celebrated for its scale and stonework opposite Citadel Square.',
     descriptionAr:
         'مسجد ومدرسة مملوكية ضخمة من القرن الرابع عشر، تشتهر بعظمتها ونقوشها الحجرية وتقع قبالة ميدان القلعة.',
-    imageUrl: _image('photo-1603565816030-6b389eeb23cb'),
+    imageUrl: _image('sultan_hassan_mosque'),
+    imageUrls: [_image('sultan_hassan_mosque')],
     rating: 4.8,
     category: 'Mosques',
     categoryAr: 'مساجد',
@@ -193,7 +201,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'Founded in 879 AD, this is Cairo’s oldest intact mosque, known for its expansive courtyard and distinctive external spiral minaret.',
     descriptionAr:
         'تأسس المسجد عام ٨٧٩م، ويُعد أقدم مسجد قائم في القاهرة، ويشتهر بصحنه الواسع ومئذنته الحلزونية الخارجية.',
-    imageUrl: _image('photo-1603565816030-6b389eeb23cb'),
+    imageUrl: _image('ibn_tulun_mosque'),
+    imageUrls: [_image('ibn_tulun_mosque')],
     rating: 4.7,
     category: 'Mosques',
     categoryAr: 'مساجد',
@@ -219,7 +228,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'Founded in 970 AD as the centre of Fatimid Cairo, Al-Azhar became a world-renowned institution of Islamic learning and worship.',
     descriptionAr:
         'تأسس الجامع الأزهر عام ٩٧٠م في قلب القاهرة الفاطمية، وأصبح منارة عالمية للعلم الإسلامي ومكاناً للعبادة.',
-    imageUrl: _image('photo-1603565816030-6b389eeb23cb'),
+    imageUrl: _image('al_azhar_mosque'),
+    imageUrls: [_image('al_azhar_mosque')],
     rating: 4.8,
     category: 'Mosques',
     categoryAr: 'مساجد',
@@ -245,7 +255,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A landmark Coptic church built above the gatehouse towers of the Roman Babylon Fortress, with a history reaching back to early Christian Cairo.',
     descriptionAr:
         'كنيسة قبطية بارزة أُقيمت فوق برجي بوابة حصن بابليون الروماني، ويرتبط تاريخها ببدايات المسيحية في القاهرة.',
-    imageUrl: _image('photo-1603565816030-6b389eeb23cb'),
+    imageUrl: _image('hanging_church'),
+    imageUrls: [_image('hanging_church')],
     rating: 4.8,
     category: 'Churches',
     categoryAr: 'كنائس',
@@ -271,7 +282,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A museum with one of the world’s largest collections of Coptic Christian art, including woodwork, textiles, icons, and manuscripts.',
     descriptionAr:
         'متحف يضم واحدة من أكبر مجموعات الفن القبطي المسيحي في العالم، بما فيها المشغولات الخشبية والمنسوجات والأيقونات والمخطوطات.',
-    imageUrl: _image('photo-1568322445389-f64ac2515020'),
+    imageUrl: _image('coptic_museum'),
+    imageUrls: [_image('coptic_museum')],
     rating: 4.7,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -297,7 +309,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'Originally founded in 641 AD in Fustat, this historic mosque is regarded as the first mosque in Egypt and Africa.',
     descriptionAr:
         'تأسس المسجد في الفسطاط عام ٦٤١م، ويُعرف بأنه أول مسجد في مصر وأفريقيا.',
-    imageUrl: _image('photo-1603565816030-6b389eeb23cb'),
+    imageUrl: _image('amr_ibn_alas_mosque'),
+    imageUrls: [_image('amr_ibn_alas_mosque')],
     rating: 4.7,
     category: 'Mosques',
     categoryAr: 'مساجد',
@@ -322,7 +335,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A distinctive Hindu-temple-inspired palace built for Édouard Empain, founder of Heliopolis, and an architectural landmark of early 20th-century Cairo.',
     descriptionAr:
         'قصر فريد مستوحى من المعابد الهندية شُيّد لإدوار إمبان مؤسس هليوبوليس، ويُعد معلماً معمارياً من أوائل القرن العشرين.',
-    imageUrl: _image('photo-1568322445389-f64ac2515020'),
+    imageUrl: _image('baron_empain_palace'),
+    imageUrls: [_image('baron_empain_palace')],
     rating: 4.6,
     category: 'Historical',
     categoryAr: 'تاريخي',
@@ -348,7 +362,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A 19th-century Khedivial royal palace in Downtown Cairo, now housing specialized museums of royal collections, arms, and historical gifts.',
     descriptionAr:
         'قصر ملكي خديوي من القرن التاسع عشر في وسط القاهرة، ويضم اليوم متاحف متخصصة للمقتنيات الملكية والأسلحة والهدايا التاريخية.',
-    imageUrl: _image('photo-1568322445389-f64ac2515020'),
+    imageUrl: _image('abdeen_palace'),
+    imageUrls: [_image('abdeen_palace')],
     rating: 4.5,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -374,7 +389,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A landscaped hilltop green space with views of the Ayyubid wall and Salah El-Din Citadel, created on the historic edge of Fatimid Cairo.',
     descriptionAr:
         'مساحة خضراء منسقة على تلة تطل على سور القاهرة الأيوبي وقلعة صلاح الدين، وتقع عند الحافة التاريخية للقاهرة الفاطمية.',
-    imageUrl: _image('photo-1441974231531-c6227db76b6e'),
+    imageUrl: _image('al_azhar_park'),
+    imageUrls: [_image('al_azhar_park')],
     rating: 4.6,
     category: 'Nature',
     categoryAr: 'طبيعة',
@@ -400,7 +416,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A leading museum in Bab Al-Khalq presenting Islamic art and craftsmanship, with notable ceramics, glass lamps, metalwork, and manuscripts.',
     descriptionAr:
         'متحف رائد في باب الخلق يعرض الفن والحرف الإسلامية، ويضم قطعاً مميزة من الخزف والمصابيح الزجاجية والمعادن والمخطوطات.',
-    imageUrl: _image('photo-1568322445389-f64ac2515020'),
+    imageUrl: _image('islamic_art_museum'),
+    imageUrls: [_image('islamic_art_museum')],
     rating: 4.7,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -426,7 +443,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'Two adjoining historic houses from the 16th and 17th centuries beside Ibn Tulun Mosque, noted for Ottoman interiors and intricate mashrabiya screens.',
     descriptionAr:
         'بيتان تاريخيان متجاوران من القرنين السادس عشر والسابع عشر بجوار مسجد ابن طولون، يشتهران بديكورات عثمانية ومشربيات دقيقة الصنع.',
-    imageUrl: _image('photo-1568322445389-f64ac2515020'),
+    imageUrl: _image('gayer_anderson_museum'),
+    imageUrls: [_image('gayer_anderson_museum')],
     rating: 4.6,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -452,7 +470,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A royal complex on Rhoda Island built by Prince Mohamed Ali, blending Ottoman, Moorish, and Andalusian styles with gardens and a museum.',
     descriptionAr:
         'مجمع ملكي في جزيرة الروضة أنشأه الأمير محمد علي، يمزج الطرز العثمانية والمغربية والأندلسية ويضم حدائق ومتحفاً.',
-    imageUrl: _image('photo-1568322445389-f64ac2515020'),
+    imageUrl: _image('manial_palace'),
+    imageUrls: [_image('manial_palace')],
     rating: 4.7,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -478,7 +497,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A luxury Nile-side hotel between Tahrir Square and the river, close to the Egyptian Museum and central Cairo attractions.',
     descriptionAr:
         'فندق فاخر على ضفاف النيل بين ميدان التحرير والنهر، بالقرب من المتحف المصري ومعالم وسط القاهرة.',
-    imageUrl: _image('photo-1566073771259-6a8506099945'),
+    imageUrl: _image('nile_ritz_carlton_cairo'),
+    imageUrls: [_image('nile_ritz_carlton_cairo')],
     rating: 4.7,
     category: 'Hotels',
     categoryAr: 'فنادق',
@@ -504,7 +524,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A historic palace hotel on Gezira Island, surrounded by gardens and within easy reach of Zamalek and central Cairo.',
     descriptionAr:
         'فندق تاريخي في قصر بجزيرة الجزيرة، تحيط به الحدائق ويقع بالقرب من الزمالك ووسط القاهرة.',
-    imageUrl: _image('photo-1566073771259-6a8506099945'),
+    imageUrl: _image('marriott_zamalek_cairo'),
+    imageUrls: [_image('marriott_zamalek_cairo')],
     rating: 4.6,
     category: 'Hotels',
     categoryAr: 'فنادق',
@@ -530,7 +551,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A contemporary hotel on Tahrir Square, steps from the Egyptian Museum and central Downtown Cairo.',
     descriptionAr:
         'فندق عصري في ميدان التحرير، على بُعد خطوات من المتحف المصري ووسط القاهرة.',
-    imageUrl: _image('photo-1566073771259-6a8506099945'),
+    imageUrl: _image('steigenberger_tahrir_cairo'),
+    imageUrls: [_image('steigenberger_tahrir_cairo')],
     rating: 4.5,
     category: 'Hotels',
     categoryAr: 'فنادق',
@@ -556,7 +578,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A luxury boutique hotel on the Nile in Garden City, with easy access to Downtown Cairo and the riverfront.',
     descriptionAr:
         'فندق بوتيكي فاخر على النيل في جاردن سيتي، يتيح الوصول بسهولة إلى وسط القاهرة والكورنيش.',
-    imageUrl: _image('photo-1566073771259-6a8506099945'),
+    imageUrl: _image('kempinski_nile_garden_city'),
+    imageUrls: [_image('kempinski_nile_garden_city')],
     rating: 4.6,
     category: 'Hotels',
     categoryAr: 'فنادق',
@@ -582,7 +605,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A luxury Nile-front hotel in Garden City overlooking the river and close to Cairo’s central cultural district.',
     descriptionAr:
         'فندق فاخر على واجهة النيل في جاردن سيتي، يطل على النهر ويقع بالقرب من المنطقة الثقافية المركزية بالقاهرة.',
-    imageUrl: _image('photo-1566073771259-6a8506099945'),
+    imageUrl: _image('four_seasons_nile_plaza'),
+    imageUrls: [_image('four_seasons_nile_plaza')],
     rating: 4.8,
     category: 'Hotels',
     categoryAr: 'فنادق',
@@ -608,7 +632,8 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A luxury hotel in Heliopolis near Cairo International Airport, offering a convenient base for the eastern side of the city.',
     descriptionAr:
         'فندق فاخر في مصر الجديدة بالقرب من مطار القاهرة الدولي، ويوفر موقعاً مناسباً لاستكشاف شرق المدينة.',
-    imageUrl: _image('photo-1566073771259-6a8506099945'),
+    imageUrl: _image('waldorf_astoria_heliopolis'),
+    imageUrls: [_image('waldorf_astoria_heliopolis')],
     rating: 4.7,
     category: 'Hotels',
     categoryAr: 'فنادق',
@@ -634,9 +659,10 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A National Bank of Egypt cash machine serving visitors around Tahrir Square and the Egyptian Museum.',
     descriptionAr:
         'ماكينة صراف آلي تابعة للبنك الأهلي المصري لخدمة زوار ميدان التحرير والمتحف المصري.',
-    imageUrl: _image('photo-1556742049-0cfed4f6a45d'),
+    imageUrl: _image('atm_nbe_tahrir'),
+    imageUrls: [_image('atm_nbe_tahrir')],
     rating: 4.0,
-    category: 'ATM',
+    category: 'ATMs',
     categoryAr: 'صراف آلي',
     lat: 30.0446,
     lng: 31.2355,
@@ -656,9 +682,10 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A Commercial International Bank ATM on 26th of July Street in Zamalek, convenient for visitors on Gezira Island.',
     descriptionAr:
         'ماكينة صراف للبنك التجاري الدولي في شارع ٢٦ يوليو بالزمالك، مناسبة لزوار جزيرة الجزيرة.',
-    imageUrl: _image('photo-1556742049-0cfed4f6a45d'),
+    imageUrl: _image('atm_cib_zamalek'),
+    imageUrls: [_image('atm_cib_zamalek')],
     rating: 4.0,
-    category: 'ATM',
+    category: 'ATMs',
     categoryAr: 'صراف آلي',
     lat: 30.0578,
     lng: 31.2212,
@@ -678,9 +705,10 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A Banque Misr cash machine serving the Al-Hussein district and Khan El-Khalili heritage market.',
     descriptionAr:
         'ماكينة صراف آلي لبنك مصر تخدم منطقة الحسين وسوق خان الخليلي التراثي.',
-    imageUrl: _image('photo-1556742049-0cfed4f6a45d'),
+    imageUrl: _image('atm_bm_hussein_khan'),
+    imageUrls: [_image('atm_bm_hussein_khan')],
     rating: 4.0,
-    category: 'ATM',
+    category: 'ATMs',
     categoryAr: 'صراف آلي',
     lat: 30.0479,
     lng: 31.2634,
@@ -700,9 +728,10 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A National Bank of Egypt ATM in Al-Korba, serving the Heliopolis shopping and heritage district.',
     descriptionAr:
         'ماكينة صراف آلي تابعة للبنك الأهلي المصري في الكوربة لخدمة منطقة التسوق والتراث بمصر الجديدة.',
-    imageUrl: _image('photo-1556742049-0cfed4f6a45d'),
+    imageUrl: _image('atm_nbe_korba'),
+    imageUrls: [_image('atm_nbe_korba')],
     rating: 4.0,
-    category: 'ATM',
+    category: 'ATMs',
     categoryAr: 'صراف آلي',
     lat: 30.0906,
     lng: 31.3251,
@@ -722,9 +751,10 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A Commercial International Bank ATM in Downtown Cairo near Talaat Harb Street and Tahrir Square.',
     descriptionAr:
         'ماكينة صراف للبنك التجاري الدولي في وسط القاهرة بالقرب من شارع طلعت حرب وميدان التحرير.',
-    imageUrl: _image('photo-1556742049-0cfed4f6a45d'),
+    imageUrl: _image('atm_cib_talaat_harb'),
+    imageUrls: [_image('atm_cib_talaat_harb')],
     rating: 4.0,
-    category: 'ATM',
+    category: 'ATMs',
     categoryAr: 'صراف آلي',
     lat: 30.0474,
     lng: 31.2393,
@@ -744,9 +774,10 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A National Bank of Egypt ATM near Citadel Square, serving visitors to the Citadel and Sultan Hassan Mosque.',
     descriptionAr:
         'ماكينة صراف آلي تابعة للبنك الأهلي المصري بالقرب من ميدان القلعة لخدمة زوار القلعة ومسجد السلطان حسن.',
-    imageUrl: _image('photo-1556742049-0cfed4f6a45d'),
+    imageUrl: _image('atm_nbe_citadel'),
+    imageUrls: [_image('atm_nbe_citadel')],
     rating: 4.0,
-    category: 'ATM',
+    category: 'ATMs',
     categoryAr: 'صراف آلي',
     lat: 30.0310,
     lng: 31.2552,
@@ -766,9 +797,10 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A Banque Misr ATM near Mar Girgis metro station and the Coptic Cairo religious heritage district.',
     descriptionAr:
         'ماكينة صراف لبنك مصر بالقرب من محطة مترو مار جرجس ومنطقة مجمع الأديان في القاهرة القبطية.',
-    imageUrl: _image('photo-1556742049-0cfed4f6a45d'),
+    imageUrl: _image('atm_bm_mar_girgis'),
+    imageUrls: [_image('atm_bm_mar_girgis')],
     rating: 4.0,
-    category: 'ATM',
+    category: 'ATMs',
     categoryAr: 'صراف آلي',
     lat: 30.0065,
     lng: 31.2295,
@@ -788,9 +820,10 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A Commercial International Bank ATM on Road 9, a central visitor and shopping street in Maadi.',
     descriptionAr:
         'ماكينة صراف للبنك التجاري الدولي في شارع ٩، أحد الشوارع الرئيسية للتسوق وزيارة المعادي.',
-    imageUrl: _image('photo-1556742049-0cfed4f6a45d'),
+    imageUrl: _image('atm_cib_maadi_road9'),
+    imageUrls: [_image('atm_cib_maadi_road9')],
     rating: 4.0,
-    category: 'ATM',
+    category: 'ATMs',
     categoryAr: 'صراف آلي',
     lat: 29.9598,
     lng: 31.2582,
@@ -810,9 +843,10 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A QNB cash machine in Garden City, close to the Nile Corniche and central Cairo hotels.',
     descriptionAr:
         'ماكينة صراف آلي تابعة لبنك QNB في جاردن سيتي بالقرب من كورنيش النيل وفنادق وسط القاهرة.',
-    imageUrl: _image('photo-1556742049-0cfed4f6a45d'),
+    imageUrl: _image('atm_qnb_garden_city'),
+    imageUrls: [_image('atm_qnb_garden_city')],
     rating: 4.0,
-    category: 'ATM',
+    category: 'ATMs',
     categoryAr: 'صراف آلي',
     lat: 30.0378,
     lng: 31.2338,
@@ -832,9 +866,10 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
         'A National Bank of Egypt cash machine near Abdeen Square and the Abdeen Palace Museum in Downtown Cairo.',
     descriptionAr:
         'ماكينة صراف آلي تابعة للبنك الأهلي المصري بالقرب من ميدان عابدين ومتحف قصر عابدين في وسط القاهرة.',
-    imageUrl: _image('photo-1556742049-0cfed4f6a45d'),
+    imageUrl: _image('atm_nbe_abdeen'),
+    imageUrls: [_image('atm_nbe_abdeen')],
     rating: 4.0,
-    category: 'ATM',
+    category: 'ATMs',
     categoryAr: 'صراف آلي',
     lat: 30.0434,
     lng: 31.2464,
@@ -846,6 +881,7 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
     priceNote: 'Bank fees and limits may apply',
     priceNoteAr: 'قد تُطبق رسوم وحدود السحب البنكية',
   ),
+  ...buildAdditionalCairoPlaces(),
 ]);
 
 PlaceModel _cairoStop(String id) =>
@@ -863,7 +899,7 @@ cairoSeedItineraries = List<ItineraryModel>.unmodifiable([
         'جولة سير في أزقة القاهرة الإسلامية بين معالم العصرين الفاطمي والمملوكي، من شارع المعز إلى خان الخليلي والجامع الأزهر وحديقة الأزهر.',
     duration: '4 hours',
     durationAr: '٤ ساعات',
-    imageUrl: _image('photo-1603565816030-6b389eeb23cb'),
+    imageUrl: _image('cairo_citadel'),
     governorate: 'cairo',
     places: [
       _cairoStop('al_muizz_street'),
@@ -882,7 +918,7 @@ cairoSeedItineraries = List<ItineraryModel>.unmodifiable([
         'مسار يربط قلعة صلاح الدين ومسجد السلطان حسن بالقاهرة القبطية ومتحف الحضارة في الفسطاط، في رحلة عبر تراث القاهرة الوسيط والقديم.',
     duration: 'Full day',
     durationAr: 'يوم كامل',
-    imageUrl: _image('photo-1568322445389-f64ac2515020'),
+    imageUrl: _image('nmec_fustat'),
     governorate: 'cairo',
     places: [
       _cairoStop('cairo_citadel'),
@@ -890,6 +926,65 @@ cairoSeedItineraries = List<ItineraryModel>.unmodifiable([
       _cairoStop('hanging_church'),
       _cairoStop('coptic_museum'),
       _cairoStop('nmec_fustat'),
+    ],
+  ),
+  ItineraryModel(
+    id: 'cairo_khedivial_zamalek_nile_tour',
+    title: 'Khedivial Cairo, Zamalek & the Nile',
+    titleAr: 'القاهرة الخديوية والزمالك والنيل',
+    description:
+        'Discover the Opera House and Zamalek’s gardens before following the Nile through Cairo’s island and riverfront landmarks.',
+    descriptionAr:
+        'اكتشف دار الأوبرا وحدائق الزمالك، ثم اتبع النيل بين معالم الجزيرة وضفاف القاهرة.',
+    duration: 'Full day',
+    durationAr: 'يوم كامل',
+    imageUrl: _image('cairo_opera_house'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('cairo_opera_house'),
+      _cairoStop('aquarium_grotto_garden'),
+      _cairoStop('aisha_fahmy_palace'),
+      _cairoStop('cairo_tower'),
+    ],
+  ),
+  ItineraryModel(
+    id: 'cairo_heliopolis_nasr_new_cairo_tour',
+    title: 'Heliopolis, Nasr City & New Cairo',
+    titleAr: 'مصر الجديدة ومدينة نصر والقاهرة الجديدة',
+    description:
+        'Explore Heliopolis heritage, eastern Cairo parks and landmarks, then continue to New Cairo’s contemporary districts.',
+    descriptionAr:
+        'استكشف تراث مصر الجديدة وحدائق ومعالم شرق القاهرة، ثم تابع إلى أحياء القاهرة الجديدة.',
+    duration: 'Full day',
+    durationAr: 'يوم كامل',
+    imageUrl: _image('baron_empain_palace'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('baron_empain_palace'),
+      _cairoStop('merryland_park_heliopolis'),
+      _cairoStop('international_park_nasr_city'),
+      _cairoStop('citystars_mall_nasr_city'),
+      _cairoStop('cairo_festival_city_mall'),
+    ],
+  ),
+  ItineraryModel(
+    id: 'cairo_new_capital_mokattam_wadi_degla',
+    title: 'New Capital, Mokattam & Wadi Degla',
+    titleAr: 'العاصمة الإدارية والمقطم ومحمية وادي دجلة',
+    description:
+        'Connect the New Administrative Capital’s major landmarks with the Cave Church at Mokattam and Wadi Degla’s protected landscape.',
+    descriptionAr:
+        'اربط معالم العاصمة الإدارية الكبرى بكنيسة الكهف في المقطم والمشهد الطبيعي المحمي في وادي دجلة.',
+    duration: 'Full day',
+    durationAr: 'يوم كامل',
+    imageUrl: _image('iconic_tower_new_capital'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('iconic_tower_new_capital'),
+      _cairoStop('al_fattah_al_aleem_mosque'),
+      _cairoStop('nativity_cathedral_new_capital'),
+      _cairoStop('cave_church_st_simon_mokattam'),
+      _cairoStop('wadi_degla_protectorate'),
     ],
   ),
 ]);

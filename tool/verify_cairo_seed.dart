@@ -15,7 +15,9 @@ const _validCategories = {
   'Churches',
   'Nature',
   'Hotels',
-  'ATM',
+  'ATMs',
+  'Food',
+  'Cafes',
 };
 
 const _negativeControls = [
@@ -24,8 +26,12 @@ const _negativeControls = [
   (name: 'Qaitbay Citadel', lat: 31.2140, lng: 29.8856),
 ];
 
-void main() {
+Future<void> main() async {
   final cairo = EgyptGovernorate.byId['cairo']!;
+  final client = HttpClient()
+    ..userAgent =
+        'StreetLore/2.1 (Cairo seed verifier; https://github.com/mohamedsabae50-prog/streetlore)';
+  final checkedImageUrls = <String, ({int statusCode, String? contentType})>{};
   final alexandriaPlaces = MockData.places
       .where((place) => place.governorate == 'alexandria')
       .toList(growable: false);
@@ -58,12 +64,44 @@ void main() {
       );
     }
   }
-  if (cairoSeedPlaces.length != 34) {
-    throw StateError('Expected 34 Cairo places, got ${cairoSeedPlaces.length}');
-  }
-  if (cairoSeedItineraries.length != 2) {
+  if (cairoSeedPlaces.length != 120) {
     throw StateError(
-      'Expected 2 Cairo itineraries, got ${cairoSeedItineraries.length}',
+      'Expected 120 Cairo places, got ${cairoSeedPlaces.length}',
+    );
+  }
+  if (cairoSeedItineraries.length != 5) {
+    throw StateError(
+      'Expected 5 Cairo itineraries, got ${cairoSeedItineraries.length}',
+    );
+  }
+  final primaryImageUrls = cairoSeedPlaces
+      .map((place) => place.imageUrl)
+      .toSet();
+  if (primaryImageUrls.length != cairoSeedPlaces.length) {
+    throw StateError(
+      'Cairo primary image URLs are not unique: '
+      '${primaryImageUrls.length}/${cairoSeedPlaces.length}.',
+    );
+  }
+  const requiredCategories = {
+    'Food',
+    'Cafes',
+    'Shopping',
+    'Mosques',
+    'Churches',
+    'Hotels',
+    'ATMs',
+    'Historical',
+    'Culture',
+    'Nature',
+  };
+  final seededCategories = cairoSeedPlaces
+      .map((place) => place.category)
+      .toSet();
+  if (!seededCategories.containsAll(requiredCategories)) {
+    throw StateError(
+      'Missing Cairo map filter categories: '
+      '${requiredCategories.difference(seededCategories)}',
     );
   }
 
@@ -80,7 +118,7 @@ void main() {
 
   for (var index = 0; index < cairoSeedPlaces.length; index++) {
     final place = cairoSeedPlaces[index];
-    _verifyCairoPlace(place, cairo);
+    await _verifyCairoPlace(place, cairo, client, checkedImageUrls);
     for (var previousIndex = 0; previousIndex < index; previousIndex++) {
       final previous = cairoSeedPlaces[previousIndex];
       final distance = _haversineMeters(
@@ -128,9 +166,18 @@ void main() {
     '${alexandriaTours.length} Alexandria itineraries retain Alexandria IDs '
     'and governorate values.',
   );
+  stdout.writeln(
+    '[PASS] ${checkedImageUrls.length} unique Wikimedia image URLs returned HTTP 200.',
+  );
+  client.close(force: true);
 }
 
-void _verifyCairoPlace(PlaceModel place, EgyptGovernorate cairo) {
+Future<void> _verifyCairoPlace(
+  PlaceModel place,
+  EgyptGovernorate cairo,
+  HttpClient client,
+  Map<String, ({int statusCode, String? contentType})> checkedImageUrls,
+) async {
   if (place.governorate != 'cairo') {
     throw StateError('${place.id} must have governorate cairo');
   }
@@ -145,6 +192,13 @@ void _verifyCairoPlace(PlaceModel place, EgyptGovernorate cairo) {
     place.lng,
   )) {
     throw StateError('${place.id} is inside Alexandria');
+  }
+  if (GovernorateService.containsCoordinates(
+    EgyptGovernorate.byId['giza']!,
+    place.lat,
+    place.lng,
+  )) {
+    throw StateError('${place.id} is inside Giza');
   }
   if (place.nameAr?.trim().isNotEmpty != true ||
       place.nameEn.trim().isEmpty ||
@@ -162,8 +216,23 @@ void _verifyCairoPlace(PlaceModel place, EgyptGovernorate cairo) {
       place.priceNote.trim().isEmpty) {
     throw StateError('${place.id} has incomplete hours, rating, or price data');
   }
-  if (!_isHttpsImage(place.primaryImage) || place.officialImages.isEmpty) {
+  if (!_isHttpsImage(place.imageUrl) ||
+      place.imageUrls.isEmpty ||
+      !place.imageUrls.every(_isHttpsImage) ||
+      place.officialImages.isEmpty) {
     throw StateError('${place.id} has invalid image/fallback configuration');
+  }
+  for (final url in [place.imageUrl, ...place.imageUrls]) {
+    if (checkedImageUrls.containsKey(url)) continue;
+    final status = await _imageStatus(url, client);
+    checkedImageUrls[url] = status;
+    if (status.statusCode != HttpStatus.ok ||
+        !(status.contentType?.startsWith('image/') ?? false)) {
+      throw StateError(
+        '${place.id} image is not an HTTP 200 image '
+        '(HTTP ${status.statusCode}, ${status.contentType}): $url',
+      );
+    }
   }
   if (!place.lat.isFinite || !place.lng.isFinite) {
     throw StateError('${place.id} has invalid coordinates');
@@ -174,7 +243,47 @@ bool _isHttpsImage(String value) {
   final uri = Uri.tryParse(value);
   return uri != null &&
       uri.scheme == 'https' &&
-      uri.host == 'images.unsplash.com';
+      uri.host == 'upload.wikimedia.org';
+}
+
+Future<({int statusCode, String? contentType})> _imageStatus(
+  String value,
+  HttpClient client,
+) async {
+  final uri = Uri.parse(value);
+  for (var attempt = 0; attempt < 4; attempt++) {
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    final request = await client.headUrl(uri);
+    var response = await request.close();
+    if (response.statusCode == HttpStatus.methodNotAllowed ||
+        response.statusCode == HttpStatus.notImplemented) {
+      await response.drain<void>();
+      response = await (await client.getUrl(uri)).close();
+    }
+    if (response.statusCode != HttpStatus.tooManyRequests &&
+        response.statusCode != HttpStatus.serviceUnavailable) {
+      final result = (
+        statusCode: response.statusCode,
+        contentType: response.headers.contentType?.mimeType,
+      );
+      await response.drain<void>();
+      return result;
+    }
+    final retryAfter = int.tryParse(
+      response.headers.value(HttpHeaders.retryAfterHeader) ?? '',
+    );
+    await response.drain<void>();
+    if (attempt == 3) {
+      return (
+        statusCode: response.statusCode,
+        contentType: response.headers.contentType?.mimeType,
+      );
+    }
+    await Future<void>.delayed(
+      Duration(seconds: retryAfter ?? (1 << attempt)),
+    );
+  }
+  throw StateError('Image retry loop ended unexpectedly for $uri');
 }
 
 double _haversineMeters(double lat1, double lng1, double lat2, double lng2) {

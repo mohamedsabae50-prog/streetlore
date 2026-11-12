@@ -62,6 +62,26 @@ const _expectedCairoItineraryStops = {
     'coptic_museum',
     'nmec_fustat',
   ],
+  'cairo_khedivial_zamalek_nile_tour': [
+    'cairo_opera_house',
+    'aquarium_grotto_garden',
+    'aisha_fahmy_palace',
+    'cairo_tower',
+  ],
+  'cairo_heliopolis_nasr_new_cairo_tour': [
+    'baron_empain_palace',
+    'merryland_park_heliopolis',
+    'international_park_nasr_city',
+    'citystars_mall_nasr_city',
+    'cairo_festival_city_mall',
+  ],
+  'cairo_new_capital_mokattam_wadi_degla': [
+    'iconic_tower_new_capital',
+    'al_fattah_al_aleem_mosque',
+    'nativity_cathedral_new_capital',
+    'cave_church_st_simon_mokattam',
+    'wadi_degla_protectorate',
+  ],
 };
 
 const _validCategories = {
@@ -72,26 +92,54 @@ const _validCategories = {
   'Churches',
   'Nature',
   'Hotels',
-  'ATM',
+  'ATMs',
+  'Food',
+  'Cafes',
 };
 
 void main() {
   final cairo = EgyptGovernorate.byId['cairo']!;
 
   test('Cairo seed has exactly the requested places and stable order', () {
-    expect(cairoSeedPlaces, hasLength(34));
+    expect(cairoSeedPlaces, hasLength(120));
     expect(
-      cairoSeedPlaces.map((place) => place.id).toList(),
+      cairoSeedPlaces
+          .take(_expectedCairoPlaceIds.length)
+          .map((place) => place.id)
+          .toList(),
       _expectedCairoPlaceIds,
     );
-    expect(cairoSeedItineraries, hasLength(2));
+    expect(cairoSeedItineraries, hasLength(5));
     expect(
       MockData.places.where((place) => place.governorate == 'cairo'),
-      hasLength(34),
+      hasLength(120),
     );
     expect(
       MockData.tours.where((tour) => tour.governorate == 'cairo'),
-      hasLength(2),
+      hasLength(5),
+    );
+  });
+
+  test('all Cairo map filter categories are populated with unique images', () {
+    const filterCategories = {
+      'Food',
+      'Cafes',
+      'Shopping',
+      'Mosques',
+      'Churches',
+      'Hotels',
+      'ATMs',
+      'Historical',
+      'Culture',
+      'Nature',
+    };
+    final cairoCategories = cairoSeedPlaces
+        .map((place) => place.category)
+        .toSet();
+    expect(cairoCategories, containsAll(filterCategories));
+    expect(
+      cairoSeedPlaces.map((place) => place.imageUrl).toSet(),
+      hasLength(cairoSeedPlaces.length),
     );
   });
 
@@ -195,7 +243,7 @@ void main() {
       final image = Uri.tryParse(itinerary.imageUrl);
       expect(image, isNotNull);
       expect(image!.scheme, 'https');
-      expect(image.host, 'images.unsplash.com');
+      expect(image.host, 'upload.wikimedia.org');
       expect(itinerary.places, isNotEmpty);
       expect(
         itinerary.places.map((place) => place.id).toList(),
@@ -228,6 +276,15 @@ void _verifyCairoPlace(PlaceModel place, EgyptGovernorate cairo) {
     isFalse,
     reason: '${place.id} must be outside Alexandria',
   );
+  expect(
+    GovernorateService.containsCoordinates(
+      EgyptGovernorate.byId['giza']!,
+      place.lat,
+      place.lng,
+    ),
+    isFalse,
+    reason: '${place.id} must be outside Giza',
+  );
   expect(place.nameAr?.trim(), isNotEmpty, reason: place.id);
   expect(place.nameEn.trim(), isNotEmpty, reason: place.id);
   expect(place.descriptionAr?.trim(), isNotEmpty, reason: place.id);
@@ -240,7 +297,17 @@ void _verifyCairoPlace(PlaceModel place, EgyptGovernorate cairo) {
   final image = Uri.tryParse(place.primaryImage);
   expect(image, isNotNull, reason: place.id);
   expect(image!.scheme, 'https', reason: place.id);
-  expect(image.host, 'images.unsplash.com', reason: place.id);
+  expect(image.host, 'upload.wikimedia.org', reason: place.id);
+  expect(
+    place.imageUrls.every((url) {
+      final parsed = Uri.tryParse(url);
+      return parsed != null &&
+          parsed.scheme == 'https' &&
+          parsed.host == 'upload.wikimedia.org';
+    }),
+    isTrue,
+    reason: place.id,
+  );
   expect(place.officialImages, isNotEmpty, reason: place.id);
   expect(place.lat.isFinite && place.lng.isFinite, isTrue, reason: place.id);
 }

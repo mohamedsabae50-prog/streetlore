@@ -60,20 +60,20 @@ void main() {
       );
 
       expect(governorates.unlockAndSelectGovernorate('cairo'), isTrue);
-      expect(places.places, hasLength(34));
+      expect(places.places, hasLength(120));
       expect(
         places.places.every((place) => place.governorate == 'cairo'),
         isTrue,
       );
       expect(
         places.places.where((place) => place.category == 'Hotels'),
-        hasLength(6),
+        hasLength(12),
       );
       expect(
-        places.places.where((place) => place.category == 'ATM'),
-        hasLength(10),
+        places.places.where((place) => place.category == 'ATMs'),
+        hasLength(17),
       );
-      expect(tours.tours, hasLength(2));
+      expect(tours.tours, hasLength(5));
       expect(tours.tours.every((tour) => tour.governorate == 'cairo'), isTrue);
 
       expect(governorates.unlockAndSelectGovernorate('alexandria'), isTrue);

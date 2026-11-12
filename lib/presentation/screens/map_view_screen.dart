@@ -37,6 +37,7 @@ String _catLabel(BuildContext context, String cat) {
     case 'Food':
       return context.tr('cat_food');
     case 'Cafe':
+    case 'Cafes':
       return context.tr('cat_cafes');
     case 'Shopping':
       return context.tr('cat_shopping');
@@ -315,8 +316,7 @@ class _MapViewScreenState extends State<MapViewScreen>
 
   void _toggleAtms() {
     final show = !_showAtms;
-    final governorateId =
-        context.read<GovernorateProvider>().activeGovernorate;
+    final governorateId = context.read<GovernorateProvider>().activeGovernorate;
     setState(() {
       _showAtms = show;
       _atms = show ? _curatedAtmsFor(governorateId) : const [];
@@ -332,7 +332,7 @@ class _MapViewScreenState extends State<MapViewScreen>
     }
     if (governorateId != 'cairo') return const [];
     return cairoSeedPlaces
-        .where((place) => place.category == 'ATM')
+        .where((place) => place.category == 'ATMs')
         .map(
           (place) => MapPoi(
             id: place.id,
@@ -356,8 +356,7 @@ class _MapViewScreenState extends State<MapViewScreen>
   }
 
   Future<void> _loadNearbyAtms(LatLng center) async {
-    if (context.read<GovernorateProvider>().activeGovernorate !=
-        'alexandria') {
+    if (context.read<GovernorateProvider>().activeGovernorate != 'alexandria') {
       return;
     }
     try {
@@ -400,6 +399,7 @@ class _MapViewScreenState extends State<MapViewScreen>
       case 'Food':
         return Icons.restaurant_rounded;
       case 'Cafe':
+      case 'Cafes':
         return Icons.local_cafe_rounded;
       case 'Shopping':
         return Icons.shopping_bag_rounded;
@@ -425,6 +425,7 @@ class _MapViewScreenState extends State<MapViewScreen>
       case 'Food':
         return const Color(0xFFF59E0B);
       case 'Cafe':
+      case 'Cafes':
         return const Color(0xFF8B5E3C);
       case 'Shopping':
         return const Color(0xFF3B82F6);
@@ -450,7 +451,8 @@ class _MapViewScreenState extends State<MapViewScreen>
         .where(
           (place) =>
               place.category == _selectedCategory ||
-              (_selectedCategory == 'Cafe' && place.category == 'Food'),
+              ((_selectedCategory == 'Cafe' || _selectedCategory == 'Cafes') &&
+                  place.category == 'Food'),
         )
         .toList();
   }
@@ -518,8 +520,7 @@ class _MapViewScreenState extends State<MapViewScreen>
                       point.longitude <= bounds.east + padding;
                   final markerPlaces = <PlaceModel>[...visible];
                   if (_selectedPlace != null &&
-                      _selectedPlace!.governorate ==
-                          activeGovernorate.id &&
+                      _selectedPlace!.governorate == activeGovernorate.id &&
                       !markerPlaces.any(
                         (place) => place.id == _selectedPlace!.id,
                       )) {
@@ -754,12 +755,11 @@ class _MapViewScreenState extends State<MapViewScreen>
                                 'map-view-governorate-pill',
                               ),
                               compact: true,
-                              onExploreAll: () =>
-                                  showGovernorateExplorerSheet(
-                                    context,
-                                    places: allPlaces,
-                                    visitedPlaceIds: visitedPlaceIds,
-                                  ),
+                              onExploreAll: () => showGovernorateExplorerSheet(
+                                context,
+                                places: allPlaces,
+                                visitedPlaceIds: visitedPlaceIds,
+                              ),
                             ),
                           ),
                         ],
@@ -981,7 +981,7 @@ class _CategoryFilter extends StatelessWidget {
       'Culture',
       'Nature',
       'Food',
-      'Cafe',
+      'Cafes',
       'Shopping',
       'Mosques',
       'Churches',
