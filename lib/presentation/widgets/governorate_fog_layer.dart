@@ -326,8 +326,7 @@ class _BumpCloudFogPainter extends CustomPainter {
           for (var index = 0; index < 10; index++)
             () {
               final angle = index * math.pi * 2 / 10;
-              final variation =
-                  0.76 + ((seed * (index + 17) * 37) % 101) / 220;
+              final variation = 0.76 + ((seed * (index + 17) * 37) % 101) / 220;
               return center +
                   Offset(
                     math.cos(angle) * radiusX * variation,

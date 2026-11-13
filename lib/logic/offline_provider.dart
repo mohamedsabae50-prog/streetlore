@@ -167,7 +167,8 @@ class OfflineProvider extends ChangeNotifier {
       name: 'All Cairo',
       description: 'Cairo landmarks, hotels, ATMs, and curated heritage walks.',
       nameAr: 'حزمة القاهرة الكاملة',
-      descriptionAr: 'معالم القاهرة وفنادقها وماكيناتها للصرافة وجولاتها التراثية.',
+      descriptionAr:
+          'معالم القاهرة وفنادقها وماكيناتها للصرافة وجولاتها التراثية.',
       governorateId: 'cairo',
       placeIds: const ['__all__'],
       categories: const [],
@@ -233,13 +234,10 @@ class OfflineProvider extends ChangeNotifier {
     return null;
   }
 
-  bool isCached(
-    String placeId, {
-    String governorateId = 'alexandria',
-  }) => _cachedPlaces.any(
-    (place) =>
-        place.id == placeId && place.governorate == governorateId,
-  );
+  bool isCached(String placeId, {String governorateId = 'alexandria'}) =>
+      _cachedPlaces.any(
+        (place) => place.id == placeId && place.governorate == governorateId,
+      );
 
   Future<DownloadResult> downloadSinglePlace(
     PlaceModel place, {
@@ -314,10 +312,7 @@ class OfflineProvider extends ChangeNotifier {
     final i = _instance;
     if (i == null) return;
 
-    await i._storage.removeCachedPlace(
-      placeId,
-      governorateId: governorateId,
-    );
+    await i._storage.removeCachedPlace(placeId, governorateId: governorateId);
     _cachedPlaces = _storage.getCachedPlaces();
     notifyListeners();
   }
@@ -376,8 +371,7 @@ class OfflineProvider extends ChangeNotifier {
       };
       for (final tour in tours) {
         for (final stop in tour.places) {
-          if (stop.id.isNotEmpty &&
-              stop.governorate == pack.governorateId) {
+          if (stop.id.isNotEmpty && stop.governorate == pack.governorateId) {
             placesById.putIfAbsent(stop.id, () => stop);
           }
         }
@@ -530,13 +524,10 @@ class OfflineProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool isDownloaded(
-    String packId, {
-    String governorateId = 'alexandria',
-  }) => _packs.any(
-    (pack) =>
-        pack.id == packId && pack.governorateId == governorateId,
-  );
+  bool isDownloaded(String packId, {String governorateId = 'alexandria'}) =>
+      _packs.any(
+        (pack) => pack.id == packId && pack.governorateId == governorateId,
+      );
 
   double get totalDownloadedMb => _packs.fold(0, (s, p) => s + p.sizeMb);
 }

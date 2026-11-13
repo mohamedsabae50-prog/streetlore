@@ -4,13 +4,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-
-
-
-
-
-
-
 class CurrencyService {
   CurrencyService._();
   static final CurrencyService instance = CurrencyService._();
@@ -18,8 +11,6 @@ class CurrencyService {
   static const _endpoint = 'https://open.er-api.com/v6/latest/EGP';
   static const _maxAge = Duration(hours: 6);
 
-  
-  
   Map<String, double>? _ratesPerEgp;
   DateTime? _fetchedAt;
   bool _fetching = false;
@@ -60,13 +51,7 @@ class CurrencyService {
     _ratesPerEgp ??= _fallback;
   }
 
-  
-  
-  Future<double?> convert(
-    double amount,
-    String from,
-    String to,
-  ) async {
+  Future<double?> convert(double amount, String from, String to) async {
     if (from == to) return amount;
     await _ensureFresh();
     final table = _ratesPerEgp ?? _fallback;

@@ -51,22 +51,23 @@ class _GeofencingSettingsScreenState extends State<GeofencingSettingsScreen> {
       );
       if (!mounted) return;
       setState(() => _currentPosition = position);
-      _positionSubscription = Geolocator.getPositionStream(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.low,
-          distanceFilter: 50,
-        ),
-      ).listen(
-        (position) {
-          if (mounted) setState(() => _currentPosition = position);
-        },
-        onError: (Object error, StackTrace stackTrace) {
-          debugPrint(
-            'GeofencingSettingsScreen: location stream failed: '
-            '$error\n$stackTrace',
+      _positionSubscription =
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.low,
+              distanceFilter: 50,
+            ),
+          ).listen(
+            (position) {
+              if (mounted) setState(() => _currentPosition = position);
+            },
+            onError: (Object error, StackTrace stackTrace) {
+              debugPrint(
+                'GeofencingSettingsScreen: location stream failed: '
+                '$error\n$stackTrace',
+              );
+            },
           );
-        },
-      );
     } catch (error, stackTrace) {
       debugPrint(
         'GeofencingSettingsScreen: current location unavailable: '
@@ -94,9 +95,8 @@ class _GeofencingSettingsScreenState extends State<GeofencingSettingsScreen> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(
-                builder: (_) => const LegalDocumentScreen(
-                  document: LegalDocument.privacy,
-                ),
+                builder: (_) =>
+                    const LegalDocumentScreen(document: LegalDocument.privacy),
               ),
             ),
           ),
@@ -183,13 +183,9 @@ class _GeofencingSettingsScreenState extends State<GeofencingSettingsScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              context.tr('geo_background_explanation'),
-                            ),
+                            Text(context.tr('geo_background_explanation')),
                             TextButton.icon(
-                              onPressed: () => Navigator.of(
-                                dialogContext,
-                              ).push(
+                              onPressed: () => Navigator.of(dialogContext).push(
                                 MaterialPageRoute<void>(
                                   builder: (_) => const LegalDocumentScreen(
                                     document: LegalDocument.privacy,
@@ -347,17 +343,17 @@ class _PlaceToggle extends StatelessWidget {
     final position = currentPosition;
     final distanceText = position == null
         ? null
-        : context.tr(
-            'geo_distance',
-            {
-              'd': (Geolocator.distanceBetween(
-                position.latitude,
-                position.longitude,
-                place.lat,
-                place.lng,
-              ) / 1000).toStringAsFixed(1),
-            },
-          );
+        : context.tr('geo_distance', {
+            'd':
+                (Geolocator.distanceBetween(
+                          position.latitude,
+                          position.longitude,
+                          place.lat,
+                          place.lng,
+                        ) /
+                        1000)
+                    .toStringAsFixed(1),
+          });
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -389,12 +385,11 @@ class _PlaceToggle extends StatelessWidget {
                   httpHeaders: streetloreImageHeaders,
                   placeholder: (_, __) =>
                       Container(width: 50, height: 50, color: context.bgAlt),
-                  errorWidget: (context, url, error) =>
-                      CategoryImageFallback(
-                        category: place.category,
-                        width: 50,
-                        height: 50,
-                      ),
+                  errorWidget: (context, url, error) => CategoryImageFallback(
+                    category: place.category,
+                    width: 50,
+                    height: 50,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),

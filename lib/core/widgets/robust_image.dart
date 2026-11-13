@@ -54,12 +54,6 @@ class _RobustImageState extends State<RobustImage> {
     }
   }
 
-  
-  
-  
-  
-  
-  
   Future<Uint8List?> _load() async {
     try {
       final cached = await OfflineImageCache.instance.read(widget.imageUrl);
@@ -68,7 +62,10 @@ class _RobustImageState extends State<RobustImage> {
     try {
       final response = await _client.get(Uri.parse(widget.imageUrl));
       if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
-        await OfflineImageCache.instance.write(widget.imageUrl, response.bodyBytes);
+        await OfflineImageCache.instance.write(
+          widget.imageUrl,
+          response.bodyBytes,
+        );
         return response.bodyBytes;
       }
     } catch (_) {
@@ -127,11 +124,6 @@ class _RobustImageState extends State<RobustImage> {
   }
 }
 
-
-
-
-
-
 class OfflineImageCache {
   OfflineImageCache._();
   static final OfflineImageCache instance = OfflineImageCache._();
@@ -153,8 +145,6 @@ class OfflineImageCache {
     }
   }
 
-  
-  
   Future<void> write(String url, Uint8List bytes) async {
     try {
       await _manager.putFile(
@@ -162,9 +152,7 @@ class OfflineImageCache {
         bytes,
         fileExtension: url.toLowerCase().contains('.png') ? 'png' : 'jpg',
       );
-    } catch (_) {
-      
-    }
+    } catch (_) {}
   }
 }
 

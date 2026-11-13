@@ -17,10 +17,7 @@ void main() {
     List<bool> results,
   ) {
     var i = 0;
-    return (
-      probe: () async => results[i++],
-      calls: () => i,
-    );
+    return (probe: () async => results[i++], calls: () => i);
   }
 
   setUp(() {
@@ -94,35 +91,38 @@ void main() {
       expect(delays, isEmpty);
     });
 
-    test('one timeout then success: never offline, retried after a delay',
-        () async {
-      final s = scripted([false, true]);
-      expect(await tracker.check(s.probe), isTrue);
-      expect(s.calls(), 2);
-      expect(delays, [const Duration(seconds: 2)]);
-      expect(tracker.consecutiveFailures, 0);
-    });
+    test(
+      'one timeout then success: never offline, retried after a delay',
+      () async {
+        final s = scripted([false, true]);
+        expect(await tracker.check(s.probe), isTrue);
+        expect(s.calls(), 2);
+        expect(delays, [const Duration(seconds: 2)]);
+        expect(tracker.consecutiveFailures, 0);
+      },
+    );
 
-    test('two failures in a row go offline after exactly two probes',
-        () async {
+    test('two failures in a row go offline after exactly two probes', () async {
       final s = scripted([false, false]);
       expect(await tracker.check(s.probe), isFalse);
       expect(s.calls(), 2);
       expect(delays, [const Duration(seconds: 2)]);
     });
 
-    test('status is still unknown while the confirming probe is pending',
-        () async {
-      bool? seenDuringSecondProbe = true;
-      var call = 0;
-      final result = await tracker.check(() async {
-        call++;
-        if (call == 2) seenDuringSecondProbe = tracker.status;
-        return false;
-      });
-      expect(seenDuringSecondProbe, isNull);
-      expect(result, isFalse);
-    });
+    test(
+      'status is still unknown while the confirming probe is pending',
+      () async {
+        bool? seenDuringSecondProbe = true;
+        var call = 0;
+        final result = await tracker.check(() async {
+          call++;
+          if (call == 2) seenDuringSecondProbe = tracker.status;
+          return false;
+        });
+        expect(seenDuringSecondProbe, isNull);
+        expect(result, isFalse);
+      },
+    );
 
     test('when already offline a failed re-check does not loop', () async {
       tracker.recordNoNetwork();
@@ -132,11 +132,13 @@ void main() {
       expect(delays, isEmpty);
     });
 
-    test('an online app survives one failed refresh and one good one',
-        () async {
-      await tracker.check(scripted([true]).probe);
-      expect(await tracker.check(scripted([false, true]).probe), isTrue);
-      expect(tracker.status, isTrue);
-    });
+    test(
+      'an online app survives one failed refresh and one good one',
+      () async {
+        await tracker.check(scripted([true]).probe);
+        expect(await tracker.check(scripted([false, true]).probe), isTrue);
+        expect(tracker.status, isTrue);
+      },
+    );
   });
 }

@@ -228,7 +228,9 @@ class AuthProvider extends ChangeNotifier {
         )
         .subscribe((status, error) {
           if (error != null) {
-            debugPrint('AuthProvider: profile realtime subscription failed: $error');
+            debugPrint(
+              'AuthProvider: profile realtime subscription failed: $error',
+            );
           }
         });
   }
@@ -239,14 +241,15 @@ class AuthProvider extends ChangeNotifier {
     _profileRealtimeUserId = null;
     if (channel == null) return;
     unawaited(
-      Supabase.instance.client.removeChannel(channel).then<void>((_) {}).catchError(
-        (Object error, StackTrace stack) {
-          debugPrint(
-            'AuthProvider: profile realtime channel removal failed: '
-            '$error\n$stack',
-          );
-        },
-      ),
+      Supabase.instance.client
+          .removeChannel(channel)
+          .then<void>((_) {})
+          .catchError((Object error, StackTrace stack) {
+            debugPrint(
+              'AuthProvider: profile realtime channel removal failed: '
+              '$error\n$stack',
+            );
+          }),
     );
   }
 

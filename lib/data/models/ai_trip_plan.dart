@@ -1,6 +1,3 @@
-
-
-
 enum AiSource { live, local }
 
 class AiTripPlan {

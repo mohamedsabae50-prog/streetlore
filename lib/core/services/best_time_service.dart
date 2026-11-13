@@ -31,8 +31,8 @@ class BestTimeService {
 
   BestTimeRecommendation recommend(PlaceModel place, {DateTime? now}) {
     final t = now ?? DateTime.now();
-    final categoryForRestrictions = '${place.category} ${place.categoryAr ?? ''}'
-        .toLowerCase();
+    final categoryForRestrictions =
+        '${place.category} ${place.categoryAr ?? ''}'.toLowerCase();
     final isOutdoor =
         categoryForRestrictions.contains('beach') ||
         categoryForRestrictions.contains('nature') ||

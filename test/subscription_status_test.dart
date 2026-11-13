@@ -16,8 +16,10 @@ void main() {
         }, now: now),
         isFalse,
       );
-      expect(profileGrantsPro({'subscription_tier': 'monthly'}, now: now),
-          isFalse);
+      expect(
+        profileGrantsPro({'subscription_tier': 'monthly'}, now: now),
+        isFalse,
+      );
     });
 
     test('lifetime / legacy rows have no end date and stay Pro', () {
@@ -57,8 +59,10 @@ void main() {
 
     test('an unparseable end date is not treated as Pro', () {
       expect(
-        profileGrantsPro({'is_pro': true, 'subscription_end_date': 'soon'},
-            now: now),
+        profileGrantsPro({
+          'is_pro': true,
+          'subscription_end_date': 'soon',
+        }, now: now),
         isFalse,
       );
     });

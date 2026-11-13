@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 
-
-
-
 class MapPoi {
   final String id;
   final String name;
   final String address;
   final double lat;
   final double lng;
-  final String category; 
-  
-  
+  final String category;
+
   final String? brand;
   final int? stars;
   final IconData icon;

@@ -55,8 +55,7 @@ class WeatherData {
     feelsLikeC: (json['feelsLikeC'] as num).toDouble(),
     humidity: (json['humidity'] as num).toInt(),
     precipitation: (json['precipitation'] as num).toDouble(),
-    precipitationProbability: (json['precipitationProbability'] as num)
-        .toInt(),
+    precipitationProbability: (json['precipitationProbability'] as num).toInt(),
     cloudCover: (json['cloudCover'] as num).toInt(),
     weatherCode: (json['weatherCode'] as num).toInt(),
     isDay: json['isDay'] as bool,
@@ -112,9 +111,7 @@ class WeatherService {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(WeatherData._cacheKey);
       if (raw == null) return null;
-      return WeatherData.fromJson(
-        jsonDecode(raw) as Map<String, dynamic>,
-      );
+      return WeatherData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (error, stackTrace) {
       debugPrint('WeatherService.loadCached failed: $error\n$stackTrace');
       return null;
@@ -122,8 +119,7 @@ class WeatherService {
   }
 
   bool isCacheFresh(WeatherData data, {DateTime? now}) =>
-      (now ?? DateTime.now()).difference(data.fetchedAt) <
-      WeatherData.cacheTtl;
+      (now ?? DateTime.now()).difference(data.fetchedAt) < WeatherData.cacheTtl;
 
   Future<WeatherData?> fetchForDeviceLocation() async {
     Position? position;

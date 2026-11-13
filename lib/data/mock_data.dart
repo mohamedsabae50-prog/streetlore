@@ -81,12 +81,11 @@ class MockData {
     return result;
   }
 
-  static List<PlaceModel> getFeatured({
-    String governorateId = 'alexandria',
-  }) => places
-      .where((place) => place.governorate == governorateId)
-      .take(5)
-      .toList(growable: false);
+  static List<PlaceModel> getFeatured({String governorateId = 'alexandria'}) =>
+      places
+          .where((place) => place.governorate == governorateId)
+          .take(5)
+          .toList(growable: false);
 
   static List<PlaceModel> getNearby(PlaceModel current) {
     return places
@@ -103,9 +102,9 @@ class MockData {
 
   static List<PlaceModel> getByCategory(
     String category,
-    List<PlaceModel> source,
-    {String? governorateId}
-  ) {
+    List<PlaceModel> source, {
+    String? governorateId,
+  }) {
     final citySource = governorateId == null
         ? source
         : source.where((p) => p.governorate == governorateId);
@@ -236,8 +235,11 @@ const PlaceModel _fallbackRomanAmphitheatre = PlaceModel(
       'A Roman theatre with thirteen tiers of marble seating, discovered during excavations in central Alexandria.',
   descriptionAr:
       'مسرح روماني يضم ثلاثة عشر صفاً من المدرجات الرخامية، اكتُشف خلال أعمال التنقيب في وسط الإسكندرية.',
-  imageUrl: "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/9.jpg",
-  imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/9.jpg"],
+  imageUrl:
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/9.jpg",
+  imageUrls: [
+    "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/9.jpg",
+  ],
   rating: 4.5,
   category: 'Historical',
   categoryAr: 'تاريخي',
@@ -262,7 +264,8 @@ const PlaceModel _fallbackStanleyBridge = PlaceModel(
       'Alexandria’s landmark bridge, with its white arches spanning Stanley Bay along the Mediterranean Corniche.',
   descriptionAr:
       'جسر الإسكندرية الشهير بأقواسه البيضاء الممتدة فوق خليج ستانلي على كورنيش البحر المتوسط.',
-  imageUrl: "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/8.jpg",
+  imageUrl:
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/8.jpg",
   rating: 4.6,
   category: 'Nature',
   categoryAr: 'طبيعة',
@@ -290,7 +293,9 @@ const List<PlaceModel> fallbackPlaces = [
         'قلعة قايتباي هي حصن دفاعي يعود للقرن الخامس عشر الميلادي، مبني على أنقاض منارة الإسكندرية القديمة، إحدى عجائب الدنيا السبع. تقع على شاطئ البحر المتوسط وتتميز بمعمارها الأيوبي الرائع.',
     imageUrl:
         "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/p_1784811618524.jpg",
-    imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/p_1784811618524.jpg"],
+    imageUrls: [
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/p_1784811618524.jpg",
+    ],
     rating: 4.7,
     category: 'Historical',
     categoryAr: 'تاريخي',
@@ -317,7 +322,9 @@ const List<PlaceModel> fallbackPlaces = [
         'مكتبة الإسكندرية الجديدة صرح ثقافي ضخم على شاطئ البحر المتوسط، تجسيد معاصر للمكتبة الأسطورية التي كانت مركزاً للعلوم والمعرفة في العالم القديم. تضم مليوني كتاب ومتاحف وقاعات عروض.',
     imageUrl:
         "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/2.jpg",
-    imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/2.jpg"],
+    imageUrls: [
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/2.jpg",
+    ],
     rating: 4.8,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -396,7 +403,9 @@ const List<PlaceModel> fallbackPlaces = [
         'حدائق المنتزه الملكية خضراء غناء تحيط بقصر المنتزه التاريخي الذي بناه الخديوي عباس. واحة طبيعية خلابة تطل على البحر المتوسط وتجمع بين الجمال والتاريخ.',
     imageUrl:
         "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/3.jpg",
-    imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/3.jpg"],
+    imageUrls: [
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/3.jpg",
+    ],
     rating: 4.5,
     category: 'Nature',
     categoryAr: 'طبيعة',
@@ -501,7 +510,9 @@ const List<PlaceModel> fallbackPlaces = [
         'شقة الشاعر اليوناني قسطنطين كفافيس المحفوظة في الإسكندرية، وتضم مقتنيات ووثائق تستعرض حياته وأعماله الأدبية وصلته بالمدينة.',
     imageUrl:
         "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_cavafy_museum.jpg",
-    imageUrls: ["https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_cavafy_museum.jpg"],
+    imageUrls: [
+      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_cavafy_museum.jpg",
+    ],
     rating: 4.5,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -1392,7 +1403,8 @@ const List<ItineraryModel> fallbackTours = [
         'اكتشف تاريخ الإسكندرية الروماني من خلال مقتنيات المتاحف والمسرح الروماني والعمود الأثري والمقابر القديمة.',
     duration: '4 Hours',
     durationAr: '4 ساعات',
-    imageUrl: "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/tours/tour_roman_alexandria.jpg",
+    imageUrl:
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/tours/tour_roman_alexandria.jpg",
     places: [
       _fallbackGraecoRomanMuseum,
       _fallbackRomanAmphitheatre,
@@ -1427,13 +1439,12 @@ const List<ItineraryModel> fallbackTours = [
     id: 'tour_city_highlights',
     title: 'Alexandria City Highlights',
     titleAr: 'أبرز معالم الإسكندرية',
-    description:
-        'Visit Alexandria’s museums, library and cultural landmarks.',
-    descriptionAr:
-        'زر متاحف الإسكندرية ومكتبتها ومعالمها الثقافية.',
+    description: 'Visit Alexandria’s museums, library and cultural landmarks.',
+    descriptionAr: 'زر متاحف الإسكندرية ومكتبتها ومعالمها الثقافية.',
     duration: '5 Hours',
     durationAr: '5 ساعات',
-    imageUrl: "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/tours/tour_city_highlights.jpg",
+    imageUrl:
+        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/tours/tour_city_highlights.jpg",
     places: [
       _fallbackNationalMuseum,
       _fallbackStanleyBridge,

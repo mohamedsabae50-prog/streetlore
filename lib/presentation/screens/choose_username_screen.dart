@@ -131,9 +131,7 @@ class _ChooseUsernameScreenState extends State<ChooseUsernameScreen> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Text(context.tr('username_continue')),
                     ),

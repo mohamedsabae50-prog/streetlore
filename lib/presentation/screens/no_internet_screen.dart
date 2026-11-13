@@ -50,9 +50,7 @@ class NoInternetScreen extends StatelessWidget {
                   context.tr('no_internet_message'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: isDark
-                        ? Colors.white70
-                        : const Color(0xFF64748B),
+                    color: isDark ? Colors.white70 : const Color(0xFF64748B),
                     fontSize: 15,
                     height: 1.6,
                   ),

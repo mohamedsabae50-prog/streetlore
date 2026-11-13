@@ -27,16 +27,14 @@ class QiblaService {
   /// Compute the initial bearing (forward azimuth) from [userLatDeg]/
   /// [userLngDeg] to Mecca using the standard great-circle formula.
   /// Result is normalised to [0, 360).
-  double bearingFrom({
-    required double userLatDeg,
-    required double userLngDeg,
-  }) {
+  double bearingFrom({required double userLatDeg, required double userLngDeg}) {
     final lat1 = _deg2rad(userLatDeg);
     final lat2 = _deg2rad(_kaabaLatDeg);
     final dLng = _deg2rad(_kaabaLngDeg - userLngDeg);
 
     final y = math.sin(dLng) * math.cos(lat2);
-    final x = math.cos(lat1) * math.sin(lat2) -
+    final x =
+        math.cos(lat1) * math.sin(lat2) -
         math.sin(lat1) * math.cos(lat2) * math.cos(dLng);
     final bearingRad = math.atan2(y, x);
     final bearingDeg = _rad2deg(bearingRad);
@@ -65,10 +63,7 @@ class QiblaService {
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.medium,
       ).timeout(const Duration(seconds: 8));
-      return bearingFrom(
-        userLatDeg: pos.latitude,
-        userLngDeg: pos.longitude,
-      );
+      return bearingFrom(userLatDeg: pos.latitude, userLngDeg: pos.longitude);
     } catch (e) {
       debugPrint('QiblaService.refreshFromCurrentLocation failed: $e');
       return _lastBearingDeg;
@@ -82,7 +77,8 @@ class QiblaService {
   }) {
     final dLat = _deg2rad(_kaabaLatDeg - userLatDeg);
     final dLng = _deg2rad(_kaabaLngDeg - userLngDeg);
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
         math.cos(_deg2rad(userLatDeg)) *
             math.cos(_deg2rad(_kaabaLatDeg)) *
             math.sin(dLng / 2) *

@@ -82,6 +82,5 @@ class CompassService {
     return _normalizeHeading(from + diff * _headingSmoothingFactor);
   }
 
-  double _normalizeHeading(double heading) =>
-      ((heading % 360) + 360) % 360;
+  double _normalizeHeading(double heading) => ((heading % 360) + 360) % 360;
 }

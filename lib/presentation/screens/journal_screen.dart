@@ -323,8 +323,7 @@ class _PlacePickerSheetState extends State<_PlacePickerSheet> {
   @override
   Widget build(BuildContext context) {
     final term = _search.text.toLowerCase().trim();
-    bool matches(String? s) =>
-        s != null && s.toLowerCase().contains(term);
+    bool matches(String? s) => s != null && s.toLowerCase().contains(term);
     final filtered = term.isEmpty
         ? widget.places
         : widget.places

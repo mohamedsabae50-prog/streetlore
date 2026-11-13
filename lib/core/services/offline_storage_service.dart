@@ -787,8 +787,7 @@ class OfflineStorageService implements OfflinePackStorage {
       final box = Hive.box(_packPayloadsBox);
       final legacyKey = _legacyAlexandriaKey(packId);
       final encoded =
-          box.get(packId) ??
-          (legacyKey == null ? null : box.get(legacyKey));
+          box.get(packId) ?? (legacyKey == null ? null : box.get(legacyKey));
       if (encoded is! String) return null;
       final decoded = jsonDecode(encoded);
       if (decoded is! Map) {
@@ -934,7 +933,7 @@ class OfflineStorageService implements OfflinePackStorage {
           } else if (docs != null) {
             final dir = Directory(
               '${docs.path}/offline_images/'
-                  '${_safeSegment('${p.governorate}::${p.id}') }',
+              '${_safeSegment('${p.governorate}::${p.id}')}',
             );
             if (!await dir.exists()) {
               await dir.create(recursive: true);
@@ -1023,9 +1022,7 @@ class OfflineStorageService implements OfflinePackStorage {
       ];
       for (final directory in directories) {
         if (!await directory.exists()) continue;
-        final file = File(
-          '${directory.path}/${_imageFileName(imageUrl)}',
-        );
+        final file = File('${directory.path}/${_imageFileName(imageUrl)}');
         if (await file.exists()) return file;
         final legacyFile = File(
           '${directory.path}/image${_extForUrl(imageUrl)}',

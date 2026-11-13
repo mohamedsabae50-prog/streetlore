@@ -148,14 +148,17 @@ class GeofencingService {
     }
     try {
       await _loadCooldowns();
-      _positionSub = Geolocator.getPositionStream(
-        locationSettings: _backgroundLocationSettings,
-      ).listen(
-        _onPosition,
-        onError: (Object error, StackTrace stackTrace) {
-          debugPrint('GeofencingService: position error: $error\n$stackTrace');
-        },
-      );
+      _positionSub =
+          Geolocator.getPositionStream(
+            locationSettings: _backgroundLocationSettings,
+          ).listen(
+            _onPosition,
+            onError: (Object error, StackTrace stackTrace) {
+              debugPrint(
+                'GeofencingService: position error: $error\n$stackTrace',
+              );
+            },
+          );
       return GeofencingStartResult.started;
     } catch (error, stackTrace) {
       debugPrint(

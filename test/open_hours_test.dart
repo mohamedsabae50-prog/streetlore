@@ -8,7 +8,10 @@ void main() {
 
     test('uses the place hours instead of a fixed 9-18 window', () {
       expect(MockData.isOpenNow('8:00 AM - 10:00 PM', now: at(19)), isTrue);
-      expect(MockData.isOpenNow('8:00 AM - 10:00 PM', now: at(22, 30)), isFalse);
+      expect(
+        MockData.isOpenNow('8:00 AM - 10:00 PM', now: at(22, 30)),
+        isFalse,
+      );
       expect(MockData.isOpenNow('8:00 AM - 10:00 PM', now: at(7, 59)), isFalse);
     });
 

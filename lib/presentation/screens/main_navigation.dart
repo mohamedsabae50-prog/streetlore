@@ -241,9 +241,8 @@ class _NavBarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final notificationStream = item.label == 'feed_title' &&
-            auth.isLoggedIn &&
-            !auth.isGuest
+    final notificationStream =
+        item.label == 'feed_title' && auth.isLoggedIn && !auth.isGuest
         ? SupabaseService.instance.watchNotifications(auth.userId)
         : null;
     return GestureDetector(
@@ -278,7 +277,8 @@ class _NavBarItem extends StatelessWidget {
                         child: StreamBuilder<List<Map<String, dynamic>>>(
                           stream: notificationStream,
                           builder: (context, snapshot) {
-                            final hasUnread = snapshot.data?.any(
+                            final hasUnread =
+                                snapshot.data?.any(
                                   (notification) =>
                                       notification['read_at'] == null,
                                 ) ??

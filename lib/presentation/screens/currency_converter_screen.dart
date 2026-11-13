@@ -56,9 +56,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     if (!mounted) return;
     setState(() {
       _convertedAmount = res;
-      _currentRate = amount == 0
-          ? null
-          : (res == null ? null : res / amount);
+      _currentRate = amount == 0 ? null : (res == null ? null : res / amount);
       _liveBadge = res != null ? 'live' : 'fallback';
     });
   }

@@ -3,8 +3,6 @@ import 'package:shimmer/shimmer.dart';
 
 import 'robust_image.dart';
 
-
-
 class ShimmerImage extends StatelessWidget {
   final String imageUrl;
   final BoxFit fit;

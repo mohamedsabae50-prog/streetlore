@@ -274,7 +274,8 @@ class _TourDetailsScreenState extends State<TourDetailsScreen>
                       ? context.quickActionSuccess
                       : Colors.white,
                   isLoading: downloading,
-                  loadingLabel: offline.downloadingPackId ==
+                  loadingLabel:
+                      offline.downloadingPackId ==
                           '${tour.governorate}::tour_${tour.id}'
                       ? context.tr('offline_pack_progress', {
                           'done': '${progress.itemsDone}',

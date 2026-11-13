@@ -35,6 +35,7 @@ class StreakProvider extends ChangeNotifier {
     }
     return _currentStreak;
   }
+
   int get longestStreak => _longestStreak;
   DateTime? get lastVisitDate => _lastVisitDate;
   int get totalVisitDays => _totalVisitDays;

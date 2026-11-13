@@ -196,12 +196,13 @@ class _ReportContentSheetState extends State<ReportContentSheet> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final reasonKey in widget.targetType == 'user'
-                    ? _userReasonKeys
-                    : widget.targetType == 'chat' ||
-                          widget.targetType == 'review'
-                    ? _contentReasonKeys
-                    : _generalReasonKeys)
+                for (final reasonKey
+                    in widget.targetType == 'user'
+                        ? _userReasonKeys
+                        : widget.targetType == 'chat' ||
+                              widget.targetType == 'review'
+                        ? _contentReasonKeys
+                        : _generalReasonKeys)
                   ChoiceChip(
                     label: Text(context.tr(reasonKey)),
                     selected: _selectedReasonKey == reasonKey,
@@ -237,9 +238,6 @@ class _TargetAvatar extends StatelessWidget {
   final String displayName;
 
   @override
-  Widget build(BuildContext context) => ExplorerAvatar(
-    avatarUrl: url,
-    displayName: displayName,
-    radius: 22,
-  );
+  Widget build(BuildContext context) =>
+      ExplorerAvatar(avatarUrl: url, displayName: displayName, radius: 22);
 }

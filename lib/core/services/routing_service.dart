@@ -4,29 +4,15 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
-
-
-
-
-
-
-
-
-
 class RoutingService {
   RoutingService._();
   static final RoutingService instance = RoutingService._();
 
-  static const _endpoint =
-      'https://router.project-osrm.org/route/v1/driving';
+  static const _endpoint = 'https://router.project-osrm.org/route/v1/driving';
 
-  
-  
   Future<List<LatLng>?> getRoute(List<LatLng> points) async {
     if (points.length < 2) return null;
-    final coords = points
-        .map((p) => '${p.longitude},${p.latitude}')
-        .join(';');
+    final coords = points.map((p) => '${p.longitude},${p.latitude}').join(';');
     final uri = Uri.parse(
       '$_endpoint/$coords?overview=full&geometries=geojson&steps=false',
     );
@@ -44,9 +30,11 @@ class RoutingService {
       return coordinates
           .map((c) {
             final pair = c as List;
-            
-            return LatLng((pair[1] as num).toDouble(),
-                (pair[0] as num).toDouble());
+
+            return LatLng(
+              (pair[1] as num).toDouble(),
+              (pair[0] as num).toDouble(),
+            );
           })
           .toList(growable: false);
     } on TimeoutException {
@@ -56,13 +44,9 @@ class RoutingService {
     }
   }
 
-  
-  
   Future<RouteMetrics?> getMetrics(List<LatLng> points) async {
     if (points.length < 2) return null;
-    final coords = points
-        .map((p) => '${p.longitude},${p.latitude}')
-        .join(';');
+    final coords = points.map((p) => '${p.longitude},${p.latitude}').join(';');
     final uri = Uri.parse(
       '$_endpoint/$coords?overview=false&alternatives=false&steps=false',
     );
@@ -91,10 +75,9 @@ class RouteMetrics {
     required this.durationSeconds,
   });
 
-  String get distanceKm =>
-      distanceMeters >= 1000
-          ? '${(distanceMeters / 1000).toStringAsFixed(1)} km'
-          : '${distanceMeters.round()} m';
+  String get distanceKm => distanceMeters >= 1000
+      ? '${(distanceMeters / 1000).toStringAsFixed(1)} km'
+      : '${distanceMeters.round()} m';
 
   String get durationText {
     final totalMin = (durationSeconds / 60).round();
