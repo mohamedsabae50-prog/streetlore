@@ -413,6 +413,7 @@ class _MapViewScreenState extends State<MapViewScreen>
   Future<void> _startRoute(MapRouteDestination destination) async {
     setState(() {
       _routeDestination = destination;
+      _selectedPlace = null;
       _routeLoading = true;
       _routeArrived = false;
       _arrivalAnnounced = false;
@@ -457,7 +458,10 @@ class _MapViewScreenState extends State<MapViewScreen>
     } catch (error, stackTrace) {
       debugPrint('MapViewScreen: route could not start: $error\n$stackTrace');
       if (!mounted) return;
-      setState(() => _routeLoading = false);
+      setState(() {
+        _routeDestination = null;
+        _routeLoading = false;
+      });
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(context.tr('route_start_failed'))));
@@ -479,6 +483,7 @@ class _MapViewScreenState extends State<MapViewScreen>
       minimumSegmentIndex: _routeProgressIndex,
     );
     final arrived =
+        _routeArrived ||
         MapRouteService.distanceMeters(location, destination.point) <= 25;
     setState(() {
       _remainingRoute = progress.points;
@@ -513,14 +518,25 @@ class _MapViewScreenState extends State<MapViewScreen>
   }
 
   void _fitToActiveRoute() {
-    if (!_mapReady || _remainingRoute.length < 2) return;
+    final destination = _routeDestination;
+    if (!_mapReady || _remainingRoute.length < 2 || destination == null) {
+      return;
+    }
     try {
-      _mapController.fitCamera(
-        CameraFit.bounds(
-          bounds: LatLngBounds.fromPoints(_remainingRoute),
-          padding: const EdgeInsets.fromLTRB(32, 130, 32, 170),
-        ),
-      );
+      final camera = _mapController.camera;
+      final targetCamera = CameraFit.bounds(
+        bounds: LatLngBounds.fromPoints([
+          ..._remainingRoute,
+          if (_userLocation != null) _userLocation!,
+          destination.point,
+        ]),
+        padding: const EdgeInsets.fromLTRB(32, 120, 32, 150),
+      ).fit(camera);
+      _cameraStart = camera.center;
+      _cameraTarget = targetCamera.center;
+      _cameraStartZoom = camera.zoom;
+      _cameraTargetZoom = targetCamera.zoom;
+      _cameraAnimation.forward(from: 0);
     } catch (error) {
       debugPrint('MapViewScreen: could not fit walking route: $error');
     }
@@ -701,6 +717,8 @@ class _MapViewScreenState extends State<MapViewScreen>
   }
 
   bool get _showHotels => _extraLayers.contains(_hotelsCategory);
+  bool get _navigationFocusMode =>
+      _routeDestination != null && !_routeArrived;
 
   @override
   void dispose() {
@@ -749,17 +767,21 @@ class _MapViewScreenState extends State<MapViewScreen>
                 maxNativeZoom: 17,
                 tileProvider: OfflineTileProvider(),
               ),
-              GovernorateFogLayer(
-                places: allPlaces,
-                visitedPlaceIds: visitedPlaceIds,
-              ),
+              if (!_navigationFocusMode)
+                GovernorateFogLayer(
+                  places: allPlaces,
+                  visitedPlaceIds: visitedPlaceIds,
+                ),
               if (_remainingRoute.length > 1)
                 PolylineLayer(
+                  key: const ValueKey('map-route-polyline-layer'),
                   polylines: [
                     Polyline(
                       points: _remainingRoute,
-                      color: AppColors.primary,
+                      color: const Color(0xFF00D9FF),
                       strokeWidth: 7,
+                      borderColor: const Color(0xFF10243A),
+                      borderStrokeWidth: 5,
                     ),
                   ],
                 ),
@@ -773,7 +795,9 @@ class _MapViewScreenState extends State<MapViewScreen>
                       point.latitude <= bounds.north + padding &&
                       point.longitude >= bounds.west - padding &&
                       point.longitude <= bounds.east + padding;
-                  final markerPlaces = <PlaceModel>[...visible];
+                  final markerPlaces = _navigationFocusMode
+                      ? <PlaceModel>[]
+                      : <PlaceModel>[...visible];
                   if (_selectedPlace != null &&
                       _selectedPlace!.governorate == activeGovernorate.id &&
                       !markerPlaces.any(
@@ -811,6 +835,39 @@ class _MapViewScreenState extends State<MapViewScreen>
                             ),
                           ),
                         ),
+                        if (_navigationFocusMode)
+                          Marker(
+                            point: _routeDestination!.point,
+                            width: 44,
+                            height: 44,
+                            child: Container(
+                              key: const ValueKey(
+                                'map-route-destination-marker',
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF5A36),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 3,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFFFF5A36,
+                                    ).withValues(alpha: 0.5),
+                                    blurRadius: 10,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.flag_rounded,
+                                color: Colors.white,
+                                size: 21,
+                              ),
+                            ),
+                          ),
                       for (final p in visiblePlaces)
                         Marker(
                           point: LatLng(p.lat, p.lng),
@@ -915,7 +972,7 @@ class _MapViewScreenState extends State<MapViewScreen>
                             ),
                           ),
                         ),
-                      if (_showAtms)
+                      if (!_navigationFocusMode && _showAtms)
                         for (final atm in _atms.where(
                           (atm) => inViewport(LatLng(atm.lat, atm.lng)),
                         ))
@@ -925,6 +982,7 @@ class _MapViewScreenState extends State<MapViewScreen>
                             height: 40,
                             child: RepaintBoundary(
                               child: GestureDetector(
+                                key: ValueKey('map-atm-marker-${atm.id}'),
                                 onTap: () {
                                   setState(() => _selectedPlace = null);
                                   _showAtmSheet(context, atm);
@@ -962,7 +1020,8 @@ class _MapViewScreenState extends State<MapViewScreen>
               ),
             ],
           ),
-          SafeArea(
+          if (!_navigationFocusMode)
+            SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Row(
@@ -1036,7 +1095,9 @@ class _MapViewScreenState extends State<MapViewScreen>
           ),
           if (_routeDestination != null)
             Positioned(
-              top: 82,
+              top: _navigationFocusMode
+                  ? MediaQuery.paddingOf(context).top + 8
+                  : 82,
               left: 16,
               right: 16,
               child: MapRouteHud(
@@ -1054,12 +1115,13 @@ class _MapViewScreenState extends State<MapViewScreen>
                 onEndRoute: _endRoute,
               ),
             ),
-          if (_selectedPlace != null)
+          if (_selectedPlace != null && !_navigationFocusMode)
             Positioned(
               left: 16,
               right: 16,
               bottom: 16,
               child: _SelectedPlaceCard(
+                key: const ValueKey('map-selected-place-card'),
                 place: _selectedPlace!,
                 color: _colorForCategory(_selectedPlace!.category),
                 icon: _iconForCategory(_selectedPlace!.category),
@@ -1093,11 +1155,14 @@ class _MapViewScreenState extends State<MapViewScreen>
               ),
             ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: _selectedPlace != null ? 150 : 16,
-            child: _CategoryFilter(
+          if (!_navigationFocusMode)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: _selectedPlace != null ? 150 : 16,
+              child: KeyedSubtree(
+                key: const ValueKey('map-category-filter-bar'),
+                child: _CategoryFilter(
               selected: _selectedCategory,
               onSelect: (cat) => setState(() => _selectedCategory = cat),
               colorOf: _colorForCategory,
@@ -1120,8 +1185,9 @@ class _MapViewScreenState extends State<MapViewScreen>
               },
               showAtms: _showAtms,
               onToggleAtms: _toggleAtms,
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -1137,6 +1203,7 @@ class _SelectedPlaceCard extends StatelessWidget {
   final VoidCallback onRoute;
 
   const _SelectedPlaceCard({
+    super.key,
     required this.place,
     required this.color,
     required this.icon,

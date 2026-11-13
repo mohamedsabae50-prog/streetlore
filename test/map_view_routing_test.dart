@@ -53,11 +53,22 @@ void main() {
       lat: 31.2001,
       lng: 29.925,
     );
+    const nearbyPlace = PlaceModel(
+      id: 'nearby-place',
+      nameEn: 'Nearby Place',
+      nameAr: 'مكان قريب',
+      descriptionEn: 'A non-destination marker for route testing.',
+      imageUrl: '',
+      rating: 4.0,
+      category: 'Food',
+      lat: 31.201,
+      lng: 29.926,
+    );
     final places = PlaceProvider(
       watchRemoteUpdates: false,
       governorates: governorates,
       isOnline: () => false,
-      initialPlaces: const [place],
+      initialPlaces: const [place, nearbyPlace],
     );
     final trips = TripProvider();
     final locale = LocaleProvider();
@@ -97,19 +108,57 @@ void main() {
     );
     await tester.pump();
 
+    expect(
+      find.byKey(const ValueKey('map-place-marker-nearby-place')),
+      findsOneWidget,
+    );
     await tester.tap(
       find.byKey(const ValueKey('map-place-marker-route-destination')),
     );
     await tester.pump();
     expect(find.byKey(const ValueKey('route-on-map-button')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('map-selected-place-card')),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const ValueKey('route-on-map-button')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('map-route-hud')), findsOneWidget);
-    expect(find.byType(PolylineLayer), findsOneWidget);
+    expect(find.byKey(const ValueKey('map-view-header-bar')), findsNothing);
+    expect(find.byKey(const ValueKey('map-category-filter-bar')), findsNothing);
+    expect(find.byKey(const ValueKey('map-selected-place-card')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('map-place-marker-nearby-place')),
+      findsNothing,
+    );
     expect(
       find.byKey(const ValueKey('map-route-user-location')),
       findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('map-route-destination-marker')),
+      findsOneWidget,
+    );
+    final activeMarkerLayers = tester.widgetList<MarkerLayer>(
+      find.byType(MarkerLayer),
+    );
+    expect(activeMarkerLayers, hasLength(1));
+    expect(activeMarkerLayers.single.markers, hasLength(2));
+    final routeLayer = tester.widget<PolylineLayer>(
+      find.byKey(const ValueKey('map-route-polyline-layer')),
+    );
+    expect(routeLayer.polylines, hasLength(1));
+    expect(routeLayer.polylines.single.color, const Color(0xFF00D9FF));
+    expect(routeLayer.polylines.single.borderColor, const Color(0xFF10243A));
+    expect(routeLayer.polylines.single.borderStrokeWidth, greaterThan(0));
+    final routeCamera = MapCamera.of(
+      tester.element(find.byKey(const ValueKey('map-route-polyline-layer'))),
+    );
+    expect(routeCamera.visibleBounds.contains(routeOrigin!), isTrue);
+    expect(
+      routeCamera.visibleBounds.contains(LatLng(place.lat, place.lng)),
+      isTrue,
     );
     final initialDistance = tester
         .widget<MapRouteHud>(find.byType(MapRouteHud))
@@ -139,6 +188,42 @@ void main() {
       lessThan(
         MapRouteService.distanceMeters(origin, LatLng(place.lat, place.lng)),
       ),
+    );
+
+    locationController.add(LatLng(place.lat, place.lng));
+    await tester.pump();
+    expect(
+      tester.widget<MapRouteHud>(find.byType(MapRouteHud)).isArrived,
+      isTrue,
+    );
+    expect(find.byKey(const ValueKey('map-view-header-bar')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('map-category-filter-bar')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('map-place-marker-nearby-place')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('end-route-button')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('map-route-hud')), findsNothing);
+    expect(find.byKey(const ValueKey('map-view-header-bar')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('map-category-filter-bar')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('map-place-marker-route-destination')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('map-place-marker-nearby-place')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('map-route-destination-marker')),
+      findsNothing,
     );
     await tester.pumpWidget(const SizedBox.shrink());
   });

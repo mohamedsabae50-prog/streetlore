@@ -66,6 +66,7 @@ class MapRouteHud extends StatelessWidget {
                   ),
                 ),
                 TextButton.icon(
+                  key: const ValueKey('end-route-button'),
                   onPressed: onEndRoute,
                   icon: const Icon(Icons.close_rounded, size: 16),
                   label: Text(context.tr('end_route')),
