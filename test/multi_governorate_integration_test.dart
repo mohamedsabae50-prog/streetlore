@@ -60,20 +60,20 @@ void main() {
       );
 
       expect(governorates.unlockAndSelectGovernorate('cairo'), isTrue);
-      expect(places.places, hasLength(140));
+      expect(places.places, hasLength(190));
       expect(
         places.places.every((place) => place.governorate == 'cairo'),
         isTrue,
       );
       expect(
         places.places.where((place) => place.category == 'Hotels'),
-        hasLength(12),
+        hasLength(16),
       );
       expect(
         places.places.where((place) => place.category == 'ATMs'),
-        hasLength(17),
+        hasLength(20),
       );
-      expect(tours.tours, hasLength(10));
+      expect(tours.tours, hasLength(15));
       expect(tours.tours.every((tour) => tour.governorate == 'cairo'), isTrue);
 
       expect(governorates.unlockAndSelectGovernorate('alexandria'), isTrue);
@@ -96,7 +96,7 @@ void main() {
       locale: 'en',
       referencePlace: cairoSeedPlaces.first,
     );
-    expect(cairoContext, contains('Cairo / القاهرة'));
+    expect(cairoContext, contains('Cairo & Giza / القاهرة والجيزة'));
     expect(cairoContext, contains('Fatimid Cairo & Al-Muizz Heritage Walk'));
     expect(cairoContext, isNot(contains(fallbackPlaces.first.nameEn)));
 
@@ -191,7 +191,7 @@ void main() {
     );
     await tester.tap(selector);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Cairo'));
+    await tester.tap(find.text('Cairo & Giza'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
 

@@ -1,5 +1,8 @@
 import 'models/place_model.dart';
 import 'models/itinerary_model.dart';
+import 'models/egypt_governorate.dart';
+import 'alexandria_image_urls.dart';
+import 'alexandria_seed_additional.dart';
 import 'cairo_seed.dart';
 
 class MockData {
@@ -83,7 +86,11 @@ class MockData {
 
   static List<PlaceModel> getFeatured({String governorateId = 'alexandria'}) =>
       places
-          .where((place) => place.governorate == governorateId)
+          .where(
+            (place) =>
+                place.governorate ==
+                EgyptGovernorate.normalizeId(governorateId),
+          )
           .take(5)
           .toList(growable: false);
 
@@ -105,9 +112,12 @@ class MockData {
     List<PlaceModel> source, {
     String? governorateId,
   }) {
-    final citySource = governorateId == null
+    final normalizedGovernorateId = governorateId == null
+        ? null
+        : EgyptGovernorate.normalizeId(governorateId);
+    final citySource = normalizedGovernorateId == null
         ? source
-        : source.where((p) => p.governorate == governorateId);
+        : source.where((p) => p.governorate == normalizedGovernorateId);
     if (category == 'All') return citySource.toList(growable: false);
     return citySource
         .where((p) => p.category == category)
@@ -153,8 +163,13 @@ class MockData {
     return (hour % 12 + (period == 'PM' ? 12 : 0)) * 60 + minute;
   }
 
-  static List<PlaceModel> get places =>
-      List.unmodifiable([...fallbackPlaces, ...cairoSeedPlaces]);
+  static List<PlaceModel> get places {
+    final placesById = <String, PlaceModel>{};
+    for (final place in [...fallbackPlaces, ...cairoSeedPlaces]) {
+      placesById.putIfAbsent(place.id, () => place);
+    }
+    return List.unmodifiable(placesById.values);
+  }
 
   static List<ItineraryModel> get tours =>
       List.unmodifiable([..._seedTours, ...cairoSeedItineraries]);
@@ -282,7 +297,7 @@ const PlaceModel _fallbackStanleyBridge = PlaceModel(
   priceForeignerEgp: 0,
 );
 
-const List<PlaceModel> fallbackPlaces = [
+final List<PlaceModel> fallbackPlaces = [
   PlaceModel(
     id: 'fallback_qaitbay',
     nameEn: 'Citadel of Qaitbay',
@@ -456,13 +471,13 @@ const List<PlaceModel> fallbackPlaces = [
         'The historic seat of the Coptic Pope in Alexandria — the oldest Coptic Orthodox church in Africa and the second papal residence in Egypt after Cairo.',
     descriptionAr:
         'كاتدرائية القديس مرقس الأرثوذكسية مقر البابا الكوبي التاريخي في الإسكندرية. تجمع بين الإرث الكنسي الأصيل والعمارة الحديثة في قلب مدينة الإسكندرية.',
-    imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/40.jpg",
+    imageUrl: alexandriaImageUrls['fallback_stmark']!,
+    imageUrls: [alexandriaImageUrls['fallback_stmark']!],
     rating: 4.6,
     category: 'Churches',
     categoryAr: 'كنائس',
-    lat: 31.2056,
-    lng: 29.9110,
+    lat: 31.1982,
+    lng: 29.9005,
     address: 'Raml Station, Alexandria',
     addressAr: 'محطة الرمل، الإسكندرية',
     openHours: '8:00 AM - 8:00 PM',
@@ -508,16 +523,13 @@ const List<PlaceModel> fallbackPlaces = [
         'The preserved Alexandria apartment of Greek poet Constantine P. Cavafy, presented with archival material and objects tracing his life and literary work in the city.',
     descriptionAr:
         'شقة الشاعر اليوناني قسطنطين كفافيس المحفوظة في الإسكندرية، وتضم مقتنيات ووثائق تستعرض حياته وأعماله الأدبية وصلته بالمدينة.',
-    imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_cavafy_museum.jpg",
-    imageUrls: [
-      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_cavafy_museum.jpg",
-    ],
+    imageUrl: alexandriaImageUrls['alex_cavafy_museum']!,
+    imageUrls: [alexandriaImageUrls['alex_cavafy_museum']!],
     rating: 4.5,
     category: 'Culture',
     categoryAr: 'ثقافة',
-    lat: 31.1984,
-    lng: 29.9018,
+    lat: 31.1992,
+    lng: 29.9032,
     address: '4 Sharm El Sheikh Street, Alexandria',
     addressAr: '٤ شارع شرم الشيخ، الإسكندرية',
     openHours: 'Check current visiting hours before visiting',
@@ -570,9 +582,10 @@ const List<PlaceModel> fallbackPlaces = [
     priceNoteAr: 'العروض بتذاكر؛ تختلف الأسعار والمواعيد',
   ),
   ...curatedAlexandriaPlaces,
+  ...buildAdditionalAlexandriaPlaces(),
 ];
 
-const List<PlaceModel> curatedAlexandriaPlaces = [
+final List<PlaceModel> curatedAlexandriaPlaces = [
   PlaceModel(
     id: 'alex_balbaa_village',
     nameEn: 'Balbaa Village',
@@ -1065,13 +1078,13 @@ const List<PlaceModel> curatedAlexandriaPlaces = [
         'A lively waterfront promenade with cafes, restaurants, and coastal views in the Gleem neighborhood.',
     descriptionAr:
         'ممشى ساحلي حيوي يضم المقاهي والمطاعم وإطلالات البحر في حي جليم.',
-    imageUrl:
-        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    imageUrl: alexandriaImageUrls['alex_gleem_bay_promenade']!,
+    imageUrls: [alexandriaImageUrls['alex_gleem_bay_promenade']!],
     rating: 4.6,
     category: 'Shopping',
     categoryAr: 'تسوق',
-    lat: 31.2388,
-    lng: 29.9595,
+    lat: 31.2405,
+    lng: 29.9585,
     address: 'Gleem, Alexandria',
     addressAr: 'جليم، الإسكندرية',
     openHours: 'Open 24 hours',

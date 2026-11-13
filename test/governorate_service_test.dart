@@ -14,13 +14,13 @@ import 'package:streetlore/logic/governorate_provider.dart';
 
 void main() {
   test(
-    'defines all 27 governorates with unique IDs and valid bilingual data',
+    'defines all 26 displayed governorates with unique IDs and bilingual data',
     () {
       final governorates = GovernorateService.governorates;
-      expect(governorates, hasLength(27));
+      expect(governorates, hasLength(26));
       expect(
         governorates.map((governorate) => governorate.id).toSet(),
-        hasLength(27),
+        hasLength(26),
       );
 
       for (final governorate in governorates) {
@@ -139,8 +139,8 @@ void main() {
         (lat: 30.0287, lng: 31.2599, expected: true),
         (lat: 30.0459, lng: 31.2243, expected: true),
         (lat: 30.1030, lng: 31.3650, expected: true),
-        (lat: 29.9792, lng: 31.1342, expected: false),
-        (lat: 30.0385, lng: 31.2118, expected: false),
+        (lat: 29.9792, lng: 31.1342, expected: true),
+        (lat: 30.4660, lng: 31.1840, expected: false),
         (lat: 31.2140, lng: 29.8856, expected: false),
       ];
 
@@ -232,8 +232,11 @@ void main() {
         expect(place.rating, inInclusiveRange(4.4, 4.9));
         expect(
           place.imageUrl,
-          startsWith('https://images.unsplash.com/'),
-          reason: '${place.id} must have an HTTPS Unsplash photo',
+          anyOf(
+            startsWith('https://images.unsplash.com/'),
+            startsWith('https://upload.wikimedia.org/'),
+          ),
+          reason: '${place.id} must have an HTTPS Wikimedia or Unsplash photo',
         );
         expect(place.governorate, 'alexandria');
       }
@@ -279,7 +282,6 @@ void main() {
 
       const cases = {
         'cairo': (30.0444, 31.2357),
-        'giza': (30.0131, 31.2089),
         'matrouh': (31.3543, 27.2373),
         'luxor': (25.6872, 32.6396),
         'aswan': (24.0889, 32.8998),
@@ -304,6 +306,34 @@ void main() {
           contains(EgyptGovernorate.byId[entry.key]!.nameEn),
         );
       }
+    },
+  );
+
+  test(
+    'legacy Giza identifiers normalize to the unified Cairo region',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final provider = GovernorateProvider();
+      addTearDown(provider.dispose);
+
+      expect(EgyptGovernorate.normalizeId(' GIZA '), 'cairo');
+      expect(EgyptGovernorate.byId['giza']!.id, 'cairo');
+      expect(
+        PlaceModel.fromJson({
+          'id': 'legacy-giza-place',
+          'governorate': 'giza',
+        }).governorate,
+        'cairo',
+      );
+      expect(
+        ItineraryModel.fromJson({
+          'id': 'legacy-giza-tour',
+          'governorate': 'giza',
+        }).governorate,
+        'cairo',
+      );
+      expect(provider.unlockAndSelectGovernorate('giza'), isTrue);
+      expect(provider.activeGovernorate, 'cairo');
     },
   );
 }

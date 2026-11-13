@@ -176,8 +176,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(OfflinePackagesScreen), findsOneWidget);
       expect(find.text('All Alexandria'), findsOneWidget);
-      expect(find.text('All Cairo'), findsOneWidget);
-      expect(find.text('140 places · 10 tours'), findsOneWidget);
+      expect(find.text('All Cairo & Giza'), findsOneWidget);
+      expect(find.text('190 places · 15 tours'), findsOneWidget);
 
       final downloadButton = find.byKey(
         const ValueKey('download-pack-all_cairo'),

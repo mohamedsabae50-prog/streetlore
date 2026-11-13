@@ -16,7 +16,7 @@ String buildGeneralGuideWelcome({
   required String locale,
 }) {
   final governorate =
-      EgyptGovernorate.byId[governorateId] ??
+      EgyptGovernorate.byId[EgyptGovernorate.normalizeId(governorateId)] ??
       EgyptGovernorate.byId['alexandria']!;
   if (locale == 'ar') {
     return 'أهلاً! أنا مساعد إيجيبت لور الذكي، دليلك المحلي في '
@@ -31,11 +31,15 @@ String buildGeneralGuideFallback({
   required String locale,
   Iterable<PlaceModel> places = const [],
 }) {
+  final normalizedGovernorateId = EgyptGovernorate.normalizeId(governorateId);
   final governorate =
-      EgyptGovernorate.byId[governorateId] ??
+      EgyptGovernorate.byId[normalizedGovernorateId] ??
       EgyptGovernorate.byId['alexandria']!;
   final localPlaces = places
-      .where((place) => place.governorate == governorate.id)
+      .where(
+        (place) =>
+            EgyptGovernorate.normalizeId(place.governorate) == governorate.id,
+      )
       .take(3)
       .map((place) => place.localizedName(locale))
       .toList(growable: false);
@@ -59,15 +63,17 @@ String buildGovernorateGuideContext({
   String locale = 'en',
   PlaceModel? referencePlace,
 }) {
+  final normalizedGovernorateId = EgyptGovernorate.normalizeId(governorateId);
   final governorate =
-      EgyptGovernorate.byId[governorateId] ??
+      EgyptGovernorate.byId[normalizedGovernorateId] ??
       EgyptGovernorate.byId['alexandria']!;
   final isArabic = locale == 'ar';
   final nearbyPlaces =
       places
           .where(
             (place) =>
-                place.governorate == governorateId &&
+                EgyptGovernorate.normalizeId(place.governorate) ==
+                    normalizedGovernorateId &&
                 place.id != referencePlace?.id,
           )
           .toList()
@@ -86,7 +92,11 @@ String buildGovernorateGuideContext({
       .map((place) => place.localizedName(locale))
       .toList(growable: false);
   final cityItineraries = itineraries
-      .where((itinerary) => itinerary.governorate == governorateId)
+      .where(
+        (itinerary) =>
+            EgyptGovernorate.normalizeId(itinerary.governorate) ==
+            normalizedGovernorateId,
+      )
       .take(4)
       .map((itinerary) => itinerary.localizedTitle(locale))
       .toList(growable: false);

@@ -164,11 +164,12 @@ class OfflineProvider extends ChangeNotifier {
     ),
     OfflinePack(
       id: 'all_cairo',
-      name: 'All Cairo',
-      description: 'Cairo landmarks, hotels, ATMs, and curated heritage walks.',
-      nameAr: 'حزمة القاهرة الكاملة',
+      name: 'All Cairo & Giza',
+      description:
+          'Cairo and Giza landmarks, hotels, ATMs, and curated heritage walks.',
+      nameAr: 'كل القاهرة والجيزة',
       descriptionAr:
-          'معالم القاهرة وفنادقها وماكيناتها للصرافة وجولاتها التراثية.',
+          'معالم القاهرة والجيزة وفنادقهما وماكينات الصرافة والجولات التراثية.',
       governorateId: 'cairo',
       placeIds: const ['__all__'],
       categories: const [],

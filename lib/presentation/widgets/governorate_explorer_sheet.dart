@@ -163,8 +163,8 @@ class GovernorateExplorerSheet extends StatelessWidget {
                 Expanded(
                   child: Text(
                     isArabic
-                        ? '${unlocked.length} / 27 محافظات مفتوحة'
-                        : '${unlocked.length} / 27 Governorates Unlocked',
+                        ? '${unlocked.length} / ${EgyptGovernorate.all.length} محافظات مفتوحة'
+                        : '${unlocked.length} / ${EgyptGovernorate.all.length} Governorates Unlocked',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: const Color(0xFF078B78),
                       fontWeight: FontWeight.w800,

@@ -4,8 +4,10 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:streetlore/core/services/governorate_service.dart';
+import 'package:streetlore/data/mock_data.dart';
 import 'package:streetlore/data/cairo_image_urls.dart';
 import 'package:streetlore/data/cairo_seed.dart';
+import 'package:streetlore/data/alexandria_image_urls.dart';
 import 'package:streetlore/data/models/egypt_governorate.dart';
 import 'package:streetlore/data/models/place_model.dart';
 
@@ -23,6 +25,10 @@ const _categoryFallbackCategories = {
   'Hotels',
   'ATMs',
   'Nature',
+  'Historical',
+  'Culture',
+  'Mosques',
+  'Churches',
 };
 const _exactArticleImagePlaceIds = {
   'misr_grand_mosque_capital',
@@ -47,6 +53,68 @@ const _exactArticleImagePlaceIds = {
   'mahmoud_mukhtar_museum',
   'modern_egyptian_art_museum',
   'al_gawhara_palace_citadel',
+  'great_pyramid_of_giza',
+  'pyramid_of_khafre',
+  'pyramid_of_menkaure',
+  'great_sphinx_of_giza',
+  'grand_egyptian_museum_gem',
+  'saqqara_step_pyramid',
+  'serapeum_of_saqqara',
+  'pyramid_of_unas_saqqara',
+  'imhotep_museum_saqqara',
+  'bent_pyramid_dahshur',
+  'red_pyramid_dahshur',
+  'memphis_museum_mit_rahina',
+  'pharaonic_village_giza',
+  'cairo_university_dome_giza',
+  'orman_botanical_garden_giza',
+  'giza_zoo_garden',
+  'taha_hussein_museum_giza',
+  'ahmed_shawki_museum_giza',
+  'mahmoud_khalil_museum_giza',
+  'egyptian_textile_museum',
+  'sabil_umm_abbas',
+  'wakala_of_qaytbay_cairo',
+  'hammam_inal_muizz',
+  'cairo_opera_house_museum',
+};
+const _exactArticleImageTitles = {
+  'great_pyramid_of_giza': 'Great Pyramid of Giza',
+  'pyramid_of_khafre': 'Pyramid of Khafre',
+  'pyramid_of_menkaure': 'Pyramid of Menkaure',
+  'great_sphinx_of_giza': 'Great Sphinx of Giza',
+  'grand_egyptian_museum_gem': 'Grand Egyptian Museum',
+  'saqqara_step_pyramid': 'Step Pyramid of Djoser',
+  'serapeum_of_saqqara': 'Serapeum of Saqqara',
+  'pyramid_of_unas_saqqara': 'Pyramid of Unas',
+  'imhotep_museum_saqqara': 'Imhotep Museum',
+  'bent_pyramid_dahshur': 'Bent Pyramid',
+  'red_pyramid_dahshur': 'Red Pyramid',
+  'memphis_museum_mit_rahina': 'Memphis Open-Air Museum',
+  'pharaonic_village_giza': 'Pharaonic Village',
+  'cairo_university_dome_giza': 'Cairo University',
+  'orman_botanical_garden_giza': 'Orman Garden',
+  'giza_zoo_garden': 'Giza Zoo',
+  'taha_hussein_museum_giza': 'Taha Hussein Museum',
+  'ahmed_shawki_museum_giza': 'Ahmed Shawki Museum',
+  'mahmoud_khalil_museum_giza': 'Mahmoud Khalil Museum',
+  'egyptian_textile_museum': 'Egyptian Textile Museum',
+  'sabil_umm_abbas': 'Sabil Umm Abbas',
+  'wakala_of_qaytbay_cairo': 'Wikala of Qaytbay',
+  'hammam_inal_muizz': 'Hammam of Sultan Inal',
+  'cairo_opera_house_museum': 'Cairo Opera House',
+};
+const _alexandriaImagePlaceIds = {
+  'alex_cavafy_museum',
+  'fallback_stmark',
+  'alex_gleem_bay_promenade',
+  'alex_sadat_museum_bibliotheca',
+  'alex_ras_el_tin_palace',
+  'alex_antoniadis_gardens',
+  'alex_mahmoud_said_museum',
+  'alex_eliyahu_hanavi_synagogue',
+  'alex_shatby_ancient_tombs',
+  'alex_nelson_island_abou_qir',
 };
 const _ignoredNameTokens = {
   'the',
@@ -56,6 +124,8 @@ const _ignoredNameTokens = {
   'into',
   'with',
   'cairo',
+  'giza',
+  'alexandria',
   'egypt',
   'new',
   'city',
@@ -122,16 +192,16 @@ Future<void> _apiQueue = Future<void>.value();
 DateTime _nextApiRequestAt = DateTime.fromMillisecondsSinceEpoch(0);
 
 Future<void> main(List<String> args) async {
-  if (cairoSeedPlaces.length != 140) {
+  if (cairoSeedPlaces.length != 190) {
     throw StateError(
-      'Expected 140 Cairo places before resolving images, '
+      'Expected 190 Cairo & Giza places before resolving images, '
       'found ${cairoSeedPlaces.length}.',
     );
   }
   _verifySeedGeography();
   if (args.contains('--check-geography-only')) {
     stdout.writeln(
-      '[PASS] All 140 places are in Cairo, outside Giza/Alexandria, '
+      '[PASS] All 190 places are in Cairo & Giza, outside Alexandria, '
       'and at least 25m apart.',
     );
     return;
@@ -145,6 +215,16 @@ Future<void> main(List<String> args) async {
   final usedUrls = <String>{};
   final usedImageFiles = <String>{};
   final unresolvedPlaces = <String>[];
+  final alexandriaPlaces = MockData.places
+      .where((place) => _alexandriaImagePlaceIds.contains(place.id))
+      .toList(growable: false);
+  if (alexandriaPlaces.length != _alexandriaImagePlaceIds.length) {
+    throw StateError(
+      'Expected ${_alexandriaImagePlaceIds.length} new Alexandria image places, '
+      'found ${alexandriaPlaces.length}.',
+    );
+  }
+  _verifyAlexandriaGeography(alexandriaPlaces);
   if (await partialFile.exists() || cairoImageUrls.isNotEmpty) {
     final decoded = await partialFile.exists()
         ? jsonDecode(await partialFile.readAsString())
@@ -167,6 +247,8 @@ Future<void> main(List<String> args) async {
       if (uri == null ||
           uri.scheme != 'https' ||
           uri.host != 'upload.wikimedia.org' ||
+          (_exactArticleImageTitles.containsKey(place.id) &&
+              !isExactArticleImage) ||
           !_isPhotographTitle(place.nameEn, cachedUrl) ||
           (!isExactArticleImage &&
               !_isRelevantTitle(
@@ -187,7 +269,7 @@ Future<void> main(List<String> args) async {
       usedUrls.add(cachedUrl);
       usedImageFiles.add(imageFile);
     }
-    stdout.writeln('[CACHE] Restored ${resolved.length}/140 verified images.');
+    stdout.writeln('[CACHE] Restored ${resolved.length}/190 verified images.');
   }
   var persistQueue = Future<void>.value();
   Future<void> persistPartialResults() {
@@ -214,7 +296,7 @@ Future<void> main(List<String> args) async {
         if (url != null) {
           resolved[place.id] = url;
           stdout.writeln(
-            '[RESOLVED ${resolved.length}/140] ${place.id} -> $url',
+            '[RESOLVED ${resolved.length}/190] ${place.id} -> $url',
           );
           await persistPartialResults();
         } else {
@@ -240,8 +322,7 @@ Future<void> main(List<String> args) async {
         .where(
           (place) =>
               unresolvedPlaces.contains(place.id) &&
-              _categoryFallbackCategories.contains(place.category) &&
-              !_exactArticleImagePlaceIds.contains(place.id),
+              _categoryFallbackCategories.contains(place.category),
         )
         .toList(growable: false);
     for (final place in fallbackPlaces) {
@@ -264,21 +345,27 @@ Future<void> main(List<String> args) async {
       resolved[place.id] = url;
       unresolvedPlaces.remove(place.id);
       stdout.writeln(
-        '[CATEGORY IMAGE ${resolved.length}/140] ${place.id} -> $url',
+        '[CATEGORY IMAGE ${resolved.length}/190] ${place.id} -> $url',
       );
       await persistPartialResults();
     }
-    if (resolved.length != 140 ||
-        usedUrls.length != 140 ||
-        usedImageFiles.length != 140 ||
+    if (resolved.length != 190 ||
+        usedUrls.length != 190 ||
+        usedImageFiles.length != 190 ||
         unresolvedPlaces.isNotEmpty) {
       await persistQueue;
       throw StateError(
-        'Could not produce 140 verified unique images. Resolved '
-        '${resolved.length}/140; unresolved: ${unresolvedPlaces.join(', ')}.',
+        'Could not produce 190 verified unique images. Resolved '
+        '${resolved.length}/190; unresolved: ${unresolvedPlaces.join(', ')}.',
       );
     }
 
+    final alexandriaResolved = await _resolveAlexandriaImages(
+      alexandriaPlaces,
+      client,
+      usedUrls,
+      usedImageFiles,
+    );
     final source = StringBuffer(
       '// Generated by tool/resolve_and_verify_cairo_images.dart.\n'
       'const Map<String, String> cairoImageUrls = {\n',
@@ -292,9 +379,26 @@ Future<void> main(List<String> args) async {
     await File(
       'lib/data/cairo_image_urls.dart',
     ).writeAsString(source.toString(), flush: true);
+    final alexandriaSource = StringBuffer(
+      '// Generated by tool/resolve_and_verify_cairo_images.dart.\n'
+      'const Map<String, String> alexandriaImageUrls = {\n',
+    );
+    for (final id in _alexandriaImagePlaceIds) {
+      alexandriaSource.writeln(
+        '  ${jsonEncode(id)}: ${jsonEncode(alexandriaResolved[id])},',
+      );
+    }
+    alexandriaSource.write('};\n');
+    await File(
+      'lib/data/alexandria_image_urls.dart',
+    ).writeAsString(alexandriaSource.toString(), flush: true);
     if (await partialFile.exists()) await partialFile.delete();
     stdout.writeln(
-      '[PASS] Resolved and HTTP-verified 140 unique Wikimedia image URLs.',
+      '[PASS] Resolved and HTTP-verified 190 unique Wikimedia image URLs.',
+    );
+    stdout.writeln(
+      '[PASS] Resolved ${alexandriaResolved.length} unique Alexandria '
+      'Wikimedia image URLs.',
     );
     stdout.writeln(
       '[PASS] Updated lib/data/cairo_image_urls.dart; rerun '
@@ -305,10 +409,122 @@ Future<void> main(List<String> args) async {
   }
 }
 
+void _verifyAlexandriaGeography(Iterable<PlaceModel> places) {
+  final alexandria = EgyptGovernorate.byId['alexandria']!;
+  final cairo = EgyptGovernorate.byId['cairo']!;
+  for (final place in places) {
+    if (place.governorate != 'alexandria' ||
+        !GovernorateService.containsCoordinates(
+          alexandria,
+          place.lat,
+          place.lng,
+        ) ||
+        GovernorateService.containsCoordinates(cairo, place.lat, place.lng)) {
+      throw StateError(
+        '${place.id} must be inside Alexandria and outside Cairo & Giza.',
+      );
+    }
+  }
+}
+
+Future<Map<String, String>> _resolveAlexandriaImages(
+  List<PlaceModel> places,
+  HttpClient client,
+  Set<String> usedUrls,
+  Set<String> usedImageFiles,
+) async {
+  final partialFile = File('.dart_tool/alexandria_image_urls.partial.json');
+  final resolved = <String, String>{};
+  final unresolvedPlaces = <String>[];
+  if (await partialFile.exists() || alexandriaImageUrls.isNotEmpty) {
+    final decoded = await partialFile.exists()
+        ? jsonDecode(await partialFile.readAsString())
+        : alexandriaImageUrls;
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException(
+        'Alexandria image cache must be a JSON object.',
+      );
+    }
+    for (final place in places) {
+      final cachedUrl = decoded[place.id];
+      final uri = cachedUrl is String ? Uri.tryParse(cachedUrl) : null;
+      if (uri == null ||
+          uri.scheme != 'https' ||
+          uri.host != 'upload.wikimedia.org' ||
+          !_isPhotographTitle(place.nameEn, cachedUrl!) ||
+          !_isRelevantTitle(
+            place,
+            cachedUrl,
+            cachedUrl,
+            allowCategoryFallback: true,
+          )) {
+        continue;
+      }
+      final imageFile = _imageFileKey(uri);
+      if (usedUrls.contains(cachedUrl) || usedImageFiles.contains(imageFile)) {
+        continue;
+      }
+      resolved[place.id] = cachedUrl;
+      usedUrls.add(cachedUrl);
+      usedImageFiles.add(imageFile);
+    }
+  }
+  for (final place in places) {
+    if (resolved.containsKey(place.id)) continue;
+    try {
+      var url = await _resolvePlaceImage(
+        place,
+        client,
+        usedUrls,
+        usedImageFiles,
+      );
+      url ??= await _resolveCategoryFallback(
+        place,
+        client,
+        usedUrls,
+        usedImageFiles,
+      );
+      if (url == null) {
+        unresolvedPlaces.add(place.id);
+        stderr.writeln('[UNRESOLVED ALEXANDRIA] ${place.id}');
+        continue;
+      }
+      resolved[place.id] = url;
+      await partialFile.writeAsString(jsonEncode(resolved), flush: true);
+      stdout.writeln('[ALEXANDRIA IMAGE ${resolved.length}/10] ${place.id}');
+    } on SocketException catch (error) {
+      unresolvedPlaces.add(place.id);
+      stderr.writeln('[ALEXANDRIA SEARCH FAILED] ${place.id}: $error');
+    } on HttpException catch (error) {
+      unresolvedPlaces.add(place.id);
+      stderr.writeln('[ALEXANDRIA SEARCH FAILED] ${place.id}: $error');
+    } on TimeoutException catch (error) {
+      unresolvedPlaces.add(place.id);
+      stderr.writeln('[ALEXANDRIA SEARCH FAILED] ${place.id}: $error');
+    }
+  }
+  if (resolved.length != places.length || unresolvedPlaces.isNotEmpty) {
+    throw StateError(
+      'Could not produce 10 unique Alexandria images. Resolved '
+      '${resolved.length}/10; unresolved: ${unresolvedPlaces.join(', ')}.',
+    );
+  }
+  if (await partialFile.exists()) await partialFile.delete();
+  return resolved;
+}
+
 void _verifySeedGeography() {
   final cairo = EgyptGovernorate.byId['cairo']!;
   final alexandria = EgyptGovernorate.byId['alexandria']!;
-  final giza = EgyptGovernorate.byId['giza']!;
+  for (final (name, lat, lng) in [
+    ('Banha', 30.4660, 31.1840),
+    ('Fayoum', 29.3084, 30.8428),
+  ]) {
+    if (GovernorateService.containsCoordinates(cairo, lat, lng) ||
+        GovernorateService.containsCoordinates(alexandria, lat, lng)) {
+      throw StateError('$name must be outside both available regions.');
+    }
+  }
   for (var index = 0; index < cairoSeedPlaces.length; index++) {
     final place = cairoSeedPlaces[index];
     if (!GovernorateService.containsCoordinates(cairo, place.lat, place.lng)) {
@@ -322,9 +538,6 @@ void _verifySeedGeography() {
       place.lng,
     )) {
       throw StateError('${place.id} is inside Alexandria.');
-    }
-    if (GovernorateService.containsCoordinates(giza, place.lat, place.lng)) {
-      throw StateError('${place.id} is inside Giza.');
     }
     for (var previousIndex = 0; previousIndex < index; previousIndex++) {
       final previous = cairoSeedPlaces[previousIndex];
@@ -367,6 +580,24 @@ Future<String?> _resolvePlaceImage(
   Set<String> usedUrls,
   Set<String> usedImageFiles,
 ) async {
+  final exactArticleTitle = _exactArticleImageTitles[place.id];
+  if (exactArticleTitle != null) {
+    for (final endpoint in _wikipediaEndpoints) {
+      final candidates = await _wikipediaPageImages(
+        endpoint,
+        exactArticleTitle,
+        client,
+      );
+      final resolved = await _firstReachableUnique(
+        place,
+        candidates,
+        client,
+        usedUrls,
+        usedImageFiles,
+      );
+      if (resolved != null) return resolved;
+    }
+  }
   final searchTerms = _searchTerms(place);
   for (final endpoint in _wikipediaEndpoints) {
     for (final term in searchTerms) {
@@ -460,7 +691,7 @@ Future<String?> _resolveCategoryFallback(
 
 List<String> _searchTerms(PlaceModel place) => [
   place.nameEn,
-  '${place.nameEn} Cairo Egypt',
+  '${place.nameEn} ${place.governorate == 'alexandria' ? 'Alexandria' : 'Cairo'} Egypt',
   if (place.nameAr != null) place.nameAr!,
   if (place.id == 'nmec_fustat') ...[
     'NMEC building Cairo Egypt',
@@ -519,166 +750,299 @@ List<String> _searchTerms(PlaceModel place) => [
     'Merryland Park Heliopolis Cairo',
   ],
   if (place.id == 'family_park_rehab') ...['Family Park Rehab Cairo Egypt'],
+  if (place.id == 'imhotep_museum_saqqara') ...[
+    'Imhotep Museum Saqqara Egypt',
+    'Imhotep Museum Saqqara exterior',
+    'Imhotep Museum near Step Pyramid',
+  ],
+  if (place.id == 'memphis_museum_mit_rahina') ...[
+    'Memphis Open Air Museum Mit Rahina Egypt',
+    'Ramses II statue Memphis Egypt',
+    'Mit Rahina museum Egypt',
+  ],
+  if (place.id == 'pharaonic_village_giza') ...[
+    'Pharaonic Village Giza Cairo Egypt',
+    'Pharaonic Village Jacob Island Egypt',
+    'Pharaonic Village Cairo museum village',
+    'Pharaonic village Egypt Nile',
+  ],
+  if (place.id == 'cairo_university_dome_giza') ...[
+    'Cairo University main building dome Giza',
+    'Cairo University Giza Egypt',
+  ],
+  if (place.id == 'al_hosary_mosque_october') ...[
+    'Al Hosary Mosque 6th of October City',
+    'Al Hosary Mosque October City Egypt',
+    'مسجد الحصري مدينة السادس من أكتوبر',
+  ],
+  if (place.id == 'archangel_michael_cathedral_giza') ...[
+    'Archangel Michael Cathedral Giza Egypt',
+    'Saint Michael Cathedral Giza',
+    'كنيسة الملاك ميخائيل الجيزة',
+  ],
+  if (place.id == 'atm_nbe_dokki_giza') ...[
+    'National Bank of Egypt Dokki Giza branch',
+    'National Bank of Egypt Giza Cairo',
+    'NBE bank branch Dokki Egypt',
+    'National Bank of Egypt Cairo branch building',
+  ],
+  if (place.id == 'atm_cib_rehab_mall') ...[
+    'CIB Bank Rehab Mall Cairo Egypt',
+    'Commercial International Bank Cairo branch building',
+    'CIB Egypt bank branch',
+  ],
+  if (place.id == 'atm_bm_shorouk_city_center') ...[
+    'Banque Misr Shorouk City Egypt branch',
+    'Banque Misr Cairo branch building',
+    'Banque Misr Egypt bank',
+  ],
+  if (place.id == 'atm_cib_mall_of_egypt') ...[
+    'Commercial International Bank Mall of Egypt',
+    'CIB Egypt bank branch',
+    'CIB October City Egypt',
+    'Commercial International Bank Cairo branch building',
+  ],
+  if (place.id == 'atm_nbe_arkan_zayed') ...[
+    'National Bank of Egypt Sheikh Zayed branch',
+    'NBE Sheikh Zayed City Egypt',
+  ],
+  if (place.id == 'wakala_of_qaytbay_cairo') ...[
+    'Wikala of Qaitbay Cairo',
+    'Wikala Sultan Qaitbay Cairo',
+    'وكالة السلطان قايتباي القاهرة',
+  ],
+  if (place.id == 'hammam_inal_muizz') ...[
+    'Hammam of Sultan Inal Cairo',
+    'Hammam Inal Muizz Street',
+    'حمام إينال شارع المعز القاهرة',
+  ],
+  if (place.id == 'cairo_opera_house_museum') ...[
+    'Cairo Opera House Cairo Egypt exterior',
+    'Egyptian Opera House Zamalek',
+  ],
+  if (place.id == 'korba_heritage_walk_heliopolis') ...[
+    'Korba Heliopolis Cairo Egypt architecture',
+    'Korba Cairo Heliopolis street',
+    'Korba Heliopolis مصر الجديدة',
+  ],
+  if (place.id == 'new_capital_arts_culture_city') ...[
+    'Arts and Culture City New Administrative Capital Egypt',
+    'Culture and Arts City New Capital Egypt',
+    'New Administrative Capital arts culture buildings Egypt',
+    'New Capital Opera House Egypt',
+    'New Administrative Capital cultural center Egypt',
+    'New Capital Egypt opera house architecture',
+    'مدينة الفنون والثقافة العاصمة الإدارية',
+  ],
+  if (place.id == 'maadi_nile_felucca_pier') ...[
+    'Maadi Nile felucca Cairo Egypt',
+    'Felucca on the Nile Maadi Cairo',
+    'Nile felucca boat Cairo Egypt',
+    'Felucca boats Nile Cairo',
+    'Maadi Corniche Nile boats Cairo',
+  ],
 ];
 
 List<String> _categoryFallbackTerms(PlaceModel place) {
+  if (place.governorate == 'alexandria') {
+    return [
+      '${place.nameEn} Alexandria Egypt ${place.category.toLowerCase()}',
+      place.nameEn,
+      if (place.nameAr != null) place.nameAr!,
+      '${place.category.toLowerCase()} Alexandria Egypt',
+      'Alexandria Egypt historic landmark',
+    ];
+  }
   final placeText = '${place.nameEn} Cairo Egypt';
-  return switch (place.category) {
-    'Food' => [
-      '$placeText Egyptian food',
-      'Egyptian food Cairo',
-      'Egyptian koshari Cairo',
-      'Egyptian cuisine Cairo food',
-      'Egyptian street food Cairo',
-      'Egyptian grilled food Cairo',
-      'Egyptian dishes Cairo restaurant',
-      'Cairo restaurant food Egypt',
-      'Egyptian restaurant Cairo meal',
-      'Cairo street food Egypt',
-      'Cairo Egyptian restaurant dishes',
-      'Egyptian rice vegetables meat Cairo',
-      'Japanese food Cairo Egypt restaurant',
-      'Japanese cuisine Cairo Egypt',
-      'grilled meat restaurant Cairo Egypt',
-      'Middle Eastern food Egypt restaurant',
-      'Cairo Egyptian meal dish',
-      'Cairo Egypt cooked food plate',
-      'Cairo Egyptian street food dish',
-      'fruit Cairo Egypt food',
-      'vegetables Cairo Egypt food',
+  final specificTerms = switch (place.id) {
+    'pharaonic_village_giza' => [
+      'Pharaonic Village Egypt',
+      'Egyptian village museum Cairo',
+      'Pharaonic Village Nile',
     ],
-    'Cafes' => [
-      '$placeText cafe',
-      'Cairo cafe Egypt',
-      'Egyptian cafe Cairo',
-      'Cairo coffee shop Egypt',
-      'Cairo coffeehouse Egypt',
-      'Egyptian tea cafe Cairo',
-      'Cairo cafe street Egypt',
-      'coffee in Cairo Egypt',
-      'Cairo espresso cafe Egypt',
-      'Egyptian coffee shop Cairo interior',
-      'Cairo coffee Egypt cafe table',
-      'Cairo coffeehouse interior Egypt',
-      'Egyptian tea coffee Cairo cafe',
-      'Cairo cafe espresso machine',
-      'coffee shop Egypt Cairo coffee beans',
-      'Egyptian cafe Cairo coffee',
-      'Cairo cafe table coffee',
-      'coffee in Cairo Egypt cafe',
-      'Egypt coffeehouse Cairo',
+    'new_capital_arts_culture_city' => [
+      'New Administrative Capital Egypt buildings',
+      'New Capital Egypt cultural center',
+      'New Capital opera house Egypt',
     ],
-    'ATMs' => [
-      '$placeText Egyptian bank ATM',
-      if (place.id.contains('_cib_')) 'Commercial International Bank Cairo',
-      if (place.id.contains('_nbe_')) ...[
-        'National Bank of Egypt-2020 Cairo',
-        'National Bank of Egypt Cairo photo',
-        'National Bank of Egypt Cairo',
-      ],
-      if (place.id.contains('_bm_')) 'Banque Misr Cairo',
-      'Cairo ATM machine',
-      'Egyptian bank ATM',
-      'Cairo bank ATM Egypt',
-      'Egypt ATM machine bank',
-      'Egyptian bank building',
-      'Cairo bank branch Egypt',
-      'Egyptian bank branch Cairo',
-      'Egypt bank building Cairo',
-      'Egyptian cash machine Cairo',
-      'National Bank of Egypt ATM Cairo',
-      'Banque Misr ATM Egypt',
-      'CIB ATM Egypt bank',
-      'Egyptian cash machine',
-      'ATM machine Egypt',
-      'bank ATM Cairo Egypt',
-      'bank branch Egypt Cairo',
-      'Egyptian bank cash machine',
-      'Cairo cash point bank machine',
-      'Egypt bank cash dispenser',
-      'Egyptian bank office Cairo',
-      'Banque Misr Cairo branch',
-      'National Bank of Egypt Cairo headquarters',
-      'Commercial International Bank Cairo building',
-      'Egypt bank branch Cairo building',
-      'Banque du Caire bank Cairo branch',
-      'Egyptian ATM cash machine Cairo photo',
-      'Egyptian bank ATM machine Cairo photo',
-      'bank building Egypt Cairo exterior',
-      'Cairo bank headquarters Egypt',
-      'Egyptian bank branch exterior Cairo',
-      'cash dispenser bank Cairo Egypt',
-      'NBE Cairo branch Egypt',
-      'National Bank of Egypt branch Cairo photo',
-      'National Bank of Egypt Cairo building photo',
-      'NBE bank building Cairo Egypt',
-      'Cairo bank headquarters building Egypt',
-      'Egypt bank branch facade Cairo',
+    'maadi_nile_felucca_pier' => [
+      'Felucca on Nile Cairo Egypt',
+      'Nile river boats Cairo Egypt',
+      'Maadi Nile boat landing Egypt',
     ],
-    'Shopping' => [
-      '$placeText Cairo mall',
-      'Cairo shopping mall Egypt',
-      'New Cairo mall Egypt',
-      'Cairo shopping center Egypt',
-      'Cairo market bazaar Egypt',
-      'Egyptian shopping center Cairo',
-      'Cairo mall interior Egypt',
-      'modern mall Cairo Egypt exterior',
-      'Cairo retail shopping center',
-      'Cairo supermarket Egypt',
-      if (place.id == 'genena_mall_nasr_city') ...[
-        'Genena Mall Nasr City Cairo Egypt',
-        'Genena Mall Cairo shopping',
-        'modern shopping mall Cairo Egypt',
-        'shopping centre Nasr City Cairo',
-      ],
-      if (place.id == 'talaat_harb_shopping_corridor') ...[
-        'Talaat Harb Street Cairo shops',
-        'Talaat Harb Square Cairo street shops',
-        'Downtown Cairo shopping street Egypt',
-      ],
-    ],
-    'Hotels' => [
-      '$placeText Cairo hotel',
-      'Cairo hotel exterior Egypt',
-      'Egyptian hotel Cairo',
-      'Cairo hotel building Egypt',
-      'Cairo hotel Nile Egypt',
-    ],
-    'Nature' => [
-      '$placeText Cairo park Egypt',
-      'Cairo park Egypt',
-      'Cairo garden Egypt',
-      'Egypt park Cairo',
-      'Cairo public garden Egypt',
-    ],
-    'Mosques' => [
-      '$placeText Cairo mosque',
-      'historic Cairo mosque',
-      'Cairo mosque Egypt',
-      'Egyptian mosque Cairo',
-      'Cairo Islamic architecture mosque',
-    ],
-    'Churches' => [
-      '$placeText Cairo church',
-      'Coptic church Cairo Egypt',
-      'Cairo church Egypt',
-      'Coptic Cairo church Egypt',
-    ],
-    'Culture' => [
-      '$placeText Cairo museum',
-      'Cairo museum Egypt',
-      'Egypt museum Cairo',
-      'Egyptian museum Cairo exterior',
-    ],
-    _ => [
-      '$placeText Cairo historic',
-      'Islamic Cairo historic building',
-      'historic Cairo building Egypt',
-      'Egyptian historic monument Cairo',
-      'Cairo historic architecture Egypt',
-    ],
+    _ => const <String>[],
   };
+  return [
+    ...specificTerms,
+    place.nameEn,
+    placeText,
+    if (place.nameAr != null) place.nameAr!,
+    ...switch (place.category) {
+      'Food' => [
+        '$placeText Egyptian food',
+        'Egyptian food Cairo',
+        'Egyptian koshari Cairo',
+        'Egyptian cuisine Cairo food',
+        'Egyptian street food Cairo',
+        'Egyptian grilled food Cairo',
+        'Egyptian dishes Cairo restaurant',
+        'Cairo restaurant food Egypt',
+        'Egyptian restaurant Cairo meal',
+        'Cairo street food Egypt',
+        'Cairo Egyptian restaurant dishes',
+        'Egyptian rice vegetables meat Cairo',
+        'Japanese food Cairo Egypt restaurant',
+        'Japanese cuisine Cairo Egypt',
+        'grilled meat restaurant Cairo Egypt',
+        'Middle Eastern food Egypt restaurant',
+        'Cairo Egyptian meal dish',
+        'Cairo Egypt cooked food plate',
+        'Cairo Egyptian street food dish',
+      ],
+      'Cafes' => [
+        '$placeText cafe',
+        'Cairo cafe Egypt',
+        'Egyptian cafe Cairo',
+        'Cairo coffee shop Egypt',
+        'Cairo coffeehouse Egypt',
+        'Egyptian tea cafe Cairo',
+        'Cairo cafe street Egypt',
+        'coffee in Cairo Egypt',
+        'Cairo espresso cafe Egypt',
+        'Egyptian coffee shop Cairo interior',
+        'Cairo coffee Egypt cafe table',
+        'Cairo coffeehouse interior Egypt',
+        'Egyptian tea coffee Cairo cafe',
+        'Cairo cafe espresso machine',
+        'coffee shop Egypt Cairo coffee beans',
+        'Egyptian cafe Cairo coffee',
+        'Cairo cafe table coffee',
+        'coffee in Cairo Egypt cafe',
+        'Egypt coffeehouse Cairo',
+      ],
+      'ATMs' => [
+        '$placeText Egyptian bank ATM',
+        if (place.id.contains('_cib_')) ...[
+          'Commercial International Bank Cairo',
+          'Commercial International Bank Egypt',
+          'CIB Bank Egypt',
+          'CIB Bank Sadat City',
+        ],
+        if (place.id.contains('_nbe_')) ...[
+          'National Bank of Egypt-2020 Cairo',
+          'National Bank of Egypt Cairo photo',
+          'National Bank of Egypt Cairo',
+          'Main Bank of Egypt Cairo',
+        ],
+        if (place.id.contains('_bm_')) ...[
+          'Banque Misr Cairo',
+          'Banque Misr building Cairo',
+          'Banque Misr Sadat City Egypt',
+        ],
+        'Cairo ATM machine',
+        'Egyptian bank ATM',
+        'Cairo bank ATM Egypt',
+        'Egypt ATM machine bank',
+        'Egyptian bank building',
+        'Cairo bank branch Egypt',
+        'Egyptian bank branch Cairo',
+        'Egypt bank building Cairo',
+        'Egyptian cash machine Cairo',
+        'National Bank of Egypt ATM Cairo',
+        'Banque Misr ATM Egypt',
+        'CIB ATM Egypt bank',
+        'Egyptian cash machine',
+        'ATM machine Egypt',
+        'bank ATM Cairo Egypt',
+        'bank branch Egypt Cairo',
+        'Egyptian bank cash machine',
+        'Cairo cash point bank machine',
+        'Egypt bank cash dispenser',
+        'Egyptian bank office Cairo',
+        'Banque Misr Cairo branch',
+        'National Bank of Egypt Cairo headquarters',
+        'Commercial International Bank Cairo building',
+        'Egypt bank branch Cairo building',
+        'Banque du Caire bank Cairo branch',
+        'Egyptian ATM cash machine Cairo photo',
+        'Egyptian bank ATM machine Cairo photo',
+        'bank building Egypt Cairo exterior',
+        'Cairo bank headquarters Egypt',
+        'Egyptian bank branch exterior Cairo',
+        'cash dispenser bank Cairo Egypt',
+        'NBE Cairo branch Egypt',
+        'National Bank of Egypt branch Cairo photo',
+        'National Bank of Egypt Cairo building photo',
+        'NBE bank building Cairo Egypt',
+        'Cairo bank headquarters building Egypt',
+        'Egypt bank branch facade Cairo',
+      ],
+      'Shopping' => [
+        '$placeText Cairo mall',
+        'Cairo shopping mall Egypt',
+        'New Cairo mall Egypt',
+        'Cairo shopping center Egypt',
+        'Cairo market bazaar Egypt',
+        'Egyptian shopping center Cairo',
+        'Cairo mall interior Egypt',
+        'modern mall Cairo Egypt exterior',
+        'Cairo retail shopping center',
+        'Cairo supermarket Egypt',
+        if (place.id == 'genena_mall_nasr_city') ...[
+          'Genena Mall Nasr City Cairo Egypt',
+          'Genena Mall Cairo shopping',
+          'modern shopping mall Cairo Egypt',
+          'shopping centre Nasr City Cairo',
+        ],
+        if (place.id == 'talaat_harb_shopping_corridor') ...[
+          'Talaat Harb Street Cairo shops',
+          'Talaat Harb Square Cairo street shops',
+          'Downtown Cairo shopping street Egypt',
+        ],
+      ],
+      'Hotels' => [
+        '$placeText Cairo hotel',
+        'Cairo hotel exterior Egypt',
+        'Egyptian hotel Cairo',
+        'Cairo hotel building Egypt',
+        'Cairo hotel Nile Egypt',
+      ],
+      'Nature' => [
+        '$placeText Cairo park Egypt',
+        'Cairo park Egypt',
+        'Cairo garden Egypt',
+        'Egypt park Cairo',
+        'Cairo public garden Egypt',
+      ],
+      'Historical' || 'Culture' => [
+        '$placeText historic landmark',
+        '$placeText museum',
+        'historic Cairo landmark Egypt',
+        'historic Cairo architecture Egypt',
+        'Egyptian heritage site Cairo',
+        'Islamic Cairo historic landmark',
+      ],
+      'Mosques' => [
+        '$placeText mosque',
+        'historic mosque Giza Egypt',
+        'Cairo mosque architecture',
+        'Egyptian mosque exterior',
+      ],
+      'Churches' => [
+        '$placeText church',
+        'Coptic church Giza Egypt',
+        'Coptic church Cairo exterior',
+        'Egyptian cathedral architecture',
+      ],
+      _ => [
+        '$placeText Cairo historic',
+        'Islamic Cairo historic building',
+        'historic Cairo building Egypt',
+        'Egyptian historic monument Cairo',
+        'Cairo historic architecture Egypt',
+      ],
+    },
+  ];
 }
 
 typedef _ImageCandidate = ({String title, String url});
@@ -957,6 +1321,46 @@ bool _isRelevantTitle(
     '${place.id.replaceAll('_', ' ')} ${place.nameEn} ${place.nameAr ?? ''}',
   )..removeAll({..._ignoredNameTokens, ..._genericPlaceTokens});
   final matchingIdentityTokens = identityTokens.intersection(fileTokens);
+  if (place.category == 'ATMs' &&
+      matchingIdentityTokens.length >= 2 &&
+      !fileTokens.any(
+        {'atm', 'bank', 'cash', 'machine', 'nbe', 'cib'}.contains,
+      )) {
+    return false;
+  }
+  if (const {
+        'bent_pyramid_dahshur',
+        'red_pyramid_dahshur',
+      }.contains(place.id) &&
+      candidateTokens.any({'pyramidion', 'amenemhet'}.contains)) {
+    return false;
+  }
+  if (const {
+        'pyramid_of_unas_saqqara',
+        'saqqara_step_pyramid',
+      }.contains(place.id) &&
+      candidateTokens.contains('sekhemkhet')) {
+    return false;
+  }
+  if (place.id == 'great_pyramid_of_giza' &&
+      candidateTokens.any({'cutaway', 'chevron', 'diagram'}.contains)) {
+    return false;
+  }
+  if (place.id == 'maadi_nile_felucca_pier' &&
+      !fileTokens.any({'maadi', 'nile', 'felucca', 'boat', 'river'}.contains)) {
+    return false;
+  }
+  if (place.id == 'cairo_university_dome_giza' &&
+      fileTokens.contains('azhar')) {
+    return false;
+  }
+  if (place.id == 'zed_park_sheikh_zayed' && fileTokens.contains('azhar')) {
+    return false;
+  }
+  if (place.category == 'Food' &&
+      fileTokens.any({'fruit', 'vegetable', 'veg'}.contains)) {
+    return false;
+  }
   if (place.id == 'amr_ibn_alas_mosque' &&
       !(fileTokens.contains('amr') &&
           fileTokens.contains('ibn') &&
@@ -976,7 +1380,9 @@ bool _isRelevantTitle(
   }
   final geographicTokens = {
     'cairo',
+    'giza',
     'egypt',
+    'alexandria',
     'egyptian',
     'nile',
     'zamalek',
@@ -1013,8 +1419,6 @@ bool _isRelevantTitle(
       'cuisine',
       'bread',
       'dish',
-      'fruit',
-      'vegetable',
       'koshari',
       'ful',
       'falafel',
@@ -1154,59 +1558,69 @@ bool _isRelevantTitle(
       )) {
     return false;
   }
-  final hasForeignContext = candidateTokens.any(
-    {
-      'alexandria',
-      'giza',
-      'paris',
-      'france',
-      'italy',
-      'rome',
-      'spain',
-      'madrid',
-      'germany',
-      'berlin',
-      'netherlands',
-      'amsterdam',
-      'japan',
-      'tokyo',
-      'china',
-      'beijing',
-      'india',
-      'delhi',
-      'singapore',
-      'sydney',
-      'australia',
-      'newyork',
-      'york',
-      'canada',
-      'toronto',
-      'switzerland',
-      'geneva',
-      'austria',
-      'vienna',
-      'lisbon',
-      'portugal',
-      'doha',
-      'qatar',
-      'dubai',
-      'istanbul',
-      'kuwait',
-      'bahrain',
-      'somalia',
-      'mogadishu',
-      'palm',
-      'florida',
-      'america',
-      'american',
-      'london',
-      'waterloo',
-      'england',
-      'britain',
-      'united',
-      'kingdom',
-    }.contains,
-  );
+  final hasForeignContext =
+      candidateTokens.any(
+        {
+          'paris',
+          'france',
+          'italy',
+          'rome',
+          'spain',
+          'madrid',
+          'germany',
+          'berlin',
+          'netherlands',
+          'amsterdam',
+          'japan',
+          'tokyo',
+          'china',
+          'beijing',
+          'india',
+          'delhi',
+          'singapore',
+          'sydney',
+          'australia',
+          'newyork',
+          'york',
+          'canada',
+          'toronto',
+          'switzerland',
+          'geneva',
+          'austria',
+          'vienna',
+          'lisbon',
+          'portugal',
+          'doha',
+          'qatar',
+          'dubai',
+          'istanbul',
+          'kuwait',
+          'bahrain',
+          'somalia',
+          'mogadishu',
+          'palm',
+          'florida',
+          'america',
+          'american',
+          'london',
+          'waterloo',
+          'england',
+          'britain',
+          'united',
+          'kingdom',
+        }.contains,
+      ) ||
+      candidateTokens.any(
+        place.governorate == 'alexandria'
+            ? {'cairo', 'giza'}.contains
+            : {'alexandria'}.contains,
+      );
+  if (!hasForeignContext &&
+      place.category == 'ATMs' &&
+      fileTokens.contains('bank') &&
+      matchingIdentityTokens.any({'cib', 'nbe', 'banque', 'misr'}.contains)) {
+    return true;
+  }
   if (!hasForeignContext &&
       (matchingIdentityTokens.length >= 2 ||
           (isGeographic &&
@@ -1220,7 +1634,7 @@ bool _isRelevantTitle(
   if (!allowCategoryFallback) return false;
   if (hasForeignContext) return false;
 
-  bool hasAny(Set<String> values) => fileTokens.any(values.contains);
+  bool hasAny(Set<String> values) => candidateTokens.any(values.contains);
   final egyptianDishTokens = {
     'koshari',
     'ful',
@@ -1249,8 +1663,6 @@ bool _isRelevantTitle(
             'cuisine',
             'bread',
             'dish',
-            'fruit',
-            'vegetable',
             'koshari',
             'ful',
             'falafel',
@@ -1283,6 +1695,9 @@ bool _isRelevantTitle(
           }),
     'ATMs' =>
       hasEgypt &&
+          fileTokens.any(
+            {'atm', 'bank', 'cash', 'machine', 'nbe', 'cib', 'branch'}.contains,
+          ) &&
           hasAny({
             'atm',
             'cash',

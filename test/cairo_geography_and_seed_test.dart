@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:streetlore/core/services/governorate_service.dart';
 import 'package:streetlore/core/services/atm_service.dart';
 import 'package:streetlore/core/widgets/image_defaults.dart';
+import 'package:streetlore/data/alexandria_image_urls.dart';
 import 'package:streetlore/data/cairo_seed.dart';
 import 'package:streetlore/data/mock_data.dart';
 import 'package:streetlore/data/models/egypt_governorate.dart';
@@ -69,6 +70,56 @@ const _newCairoArticleImageIds = [
   'mahmoud_mukhtar_museum',
   'modern_egyptian_art_museum',
   'al_gawhara_palace_citadel',
+  'great_pyramid_of_giza',
+  'pyramid_of_khafre',
+  'pyramid_of_menkaure',
+  'great_sphinx_of_giza',
+  'grand_egyptian_museum_gem',
+  'saqqara_step_pyramid',
+  'serapeum_of_saqqara',
+  'pyramid_of_unas_saqqara',
+  'imhotep_museum_saqqara',
+  'bent_pyramid_dahshur',
+  'red_pyramid_dahshur',
+  'memphis_museum_mit_rahina',
+  'pharaonic_village_giza',
+  'cairo_university_dome_giza',
+  'orman_botanical_garden_giza',
+  'giza_zoo_garden',
+  'taha_hussein_museum_giza',
+  'ahmed_shawki_museum_giza',
+  'mahmoud_khalil_museum_giza',
+  'zed_park_sheikh_zayed',
+  'al_hosary_mosque_october',
+  'mustafa_mahmoud_mosque_giza',
+  'al_shorta_mosque_zayed',
+  'archangel_michael_cathedral_giza',
+  'nine_pyramid_lounge_giza',
+  'andrea_el_mariouteya_giza',
+  'kebdet_el_prince_imbaba',
+  'abou_shakra_mohandessin',
+  'arkan_plaza_cafe_zayed',
+  'mall_of_egypt_october',
+  'mall_of_arabia_october',
+  'arkan_plaza_sheikh_zayed',
+  'first_mall_giza',
+  'marriott_mena_house_giza',
+  'four_seasons_first_residence_giza',
+  'sheraton_cairo_hotel_dokki',
+  'hyatt_regency_west_cairo',
+  'atm_nbe_dokki_giza',
+  'atm_cib_mall_of_egypt',
+  'atm_nbe_arkan_zayed',
+  'egyptian_textile_museum',
+  'sabil_umm_abbas',
+  'wakala_of_qaytbay_cairo',
+  'hammam_inal_muizz',
+  'cairo_opera_house_museum',
+  'al_horreya_garden_zamalek',
+  'azbakeya_book_market_cairo',
+  'korba_heritage_walk_heliopolis',
+  'new_capital_arts_culture_city',
+  'maadi_nile_felucca_pier',
 ];
 
 const _expectedCairoItineraryStops = {
@@ -141,6 +192,43 @@ const _expectedCairoItineraryStops = {
     'groppi_talaat_harb',
     'el_fishawy_cafe_khan',
   ],
+  'giza_pyramids_sphinx_gem_trail': [
+    'great_pyramid_of_giza',
+    'pyramid_of_khafre',
+    'great_sphinx_of_giza',
+    'grand_egyptian_museum_gem',
+  ],
+  'saqqara_memphis_dahshur_necropolis': [
+    'saqqara_step_pyramid',
+    'serapeum_of_saqqara',
+    'memphis_museum_mit_rahina',
+    'bent_pyramid_dahshur',
+    'red_pyramid_dahshur',
+  ],
+  'giza_dokki_nile_museums_gardens': [
+    'cairo_university_dome_giza',
+    'taha_hussein_museum_giza',
+    'orman_botanical_garden_giza',
+    'giza_zoo_garden',
+    'ahmed_shawki_museum_giza',
+    'mahmoud_khalil_museum_giza',
+  ],
+  'sheikh_zayed_october_modern_walk': [
+    'zed_park_sheikh_zayed',
+    'arkan_plaza_sheikh_zayed',
+    'mall_of_arabia_october',
+    'mall_of_egypt_october',
+    'al_hosary_mosque_october',
+  ],
+  'greater_cairo_east_to_west_grand_tour': [
+    'cairo_citadel',
+    'al_muizz_street',
+    'egyptian_museum_tahrir',
+    'nmec_fustat',
+    'great_pyramid_of_giza',
+    'great_sphinx_of_giza',
+    'grand_egyptian_museum_gem',
+  ],
 };
 
 const _validCategories = {
@@ -159,8 +247,8 @@ const _validCategories = {
 void main() {
   final cairo = EgyptGovernorate.byId['cairo']!;
 
-  test('Cairo seed has exactly the requested places and stable order', () {
-    expect(cairoSeedPlaces, hasLength(140));
+  test('Cairo & Giza seed has 190 places and stable core order', () {
+    expect(cairoSeedPlaces, hasLength(190));
     expect(
       cairoSeedPlaces
           .take(_expectedCairoPlaceIds.length)
@@ -172,14 +260,14 @@ void main() {
       cairoSeedPlaces.map((place) => place.id),
       containsAll(_newCairoArticleImageIds),
     );
-    expect(cairoSeedItineraries, hasLength(10));
+    expect(cairoSeedItineraries, hasLength(15));
     expect(
       MockData.places.where((place) => place.governorate == 'cairo'),
-      hasLength(140),
+      hasLength(190),
     );
     expect(
       MockData.tours.where((tour) => tour.governorate == 'cairo'),
-      hasLength(10),
+      hasLength(15),
     );
   });
 
@@ -204,19 +292,20 @@ void main() {
       cairoSeedPlaces.map((place) => place.imageUrl).toSet(),
       hasLength(cairoSeedPlaces.length),
     );
+    expect(
+      cairoSeedPlaces
+          .where((place) => place.category == 'ATMs')
+          .every((place) => !place.isVisitable),
+      isTrue,
+    );
   });
 
-  test('new Cairo landmarks use article pageimage API URLs', () {
+  test('new Cairo landmarks use HTTPS Wikimedia image URLs', () {
     final placesById = {for (final place in cairoSeedPlaces) place.id: place};
     for (final id in _newCairoArticleImageIds) {
       final url = Uri.parse(placesById[id]!.imageUrl);
+      expect(url.scheme, 'https', reason: id);
       expect(url.host, 'upload.wikimedia.org', reason: id);
-      expect(url.queryParameters['utm_campaign'], 'api', reason: id);
-      expect(
-        url.queryParameters['utm_source'],
-        anyOf('en.wikipedia.org', 'ar.wikipedia.org'),
-        reason: id,
-      );
     }
   });
 
@@ -256,33 +345,98 @@ void main() {
     );
   });
 
-  test('Cairo negative boundary controls remain outside Cairo', () {
+  test('negative boundary controls remain outside Greater Cairo', () {
     for (final point in const [
-      (name: 'Giza Pyramids', lat: 29.9792, lng: 31.1342),
-      (name: 'Dokki West Bank', lat: 30.0385, lng: 31.2118),
-      (name: 'Qaitbay Citadel', lat: 31.2140, lng: 29.8856),
+      (name: 'Banha', lat: 30.4660, lng: 31.1840),
+      (name: 'Fayoum', lat: 29.3084, lng: 30.8428),
     ]) {
       expect(
         GovernorateService.containsCoordinates(cairo, point.lat, point.lng),
         isFalse,
-        reason: '${point.name} must be outside Cairo',
+        reason: '${point.name} must be outside Cairo & Giza',
+      );
+      expect(
+        GovernorateService.containsCoordinates(
+          EgyptGovernorate.byId['alexandria']!,
+          point.lat,
+          point.lng,
+        ),
+        isFalse,
+        reason: '${point.name} must be outside Alexandria',
       );
     }
   });
 
-  test('Cairo places have at least 25 metres between every marker pair', () {
-    for (var first = 0; first < cairoSeedPlaces.length; first++) {
-      for (var second = first + 1; second < cairoSeedPlaces.length; second++) {
-        final a = cairoSeedPlaces[first];
-        final b = cairoSeedPlaces[second];
-        expect(
-          _haversineMeters(a.lat, a.lng, b.lat, b.lng),
-          greaterThanOrEqualTo(25),
-          reason: '${a.id} and ${b.id} must not overlap',
-        );
-      }
+  test('Giza landmarks resolve to Cairo & Giza, not a separate region', () {
+    expect(EgyptGovernorate.byId['giza']!.id, 'cairo');
+    expect(
+      EgyptGovernorate.all.where((region) => region.id == 'giza'),
+      isEmpty,
+    );
+    for (final place in cairoSeedPlaces.where(
+      (place) => place.id.startsWith('great_') || place.id.contains('pyramid'),
+    )) {
+      expect(
+        GovernorateService.containsCoordinates(cairo, place.lat, place.lng),
+        isTrue,
+        reason: place.id,
+      );
     }
   });
+
+  test('the ten requested Alexandria image places stay in Alexandria', () {
+    final alexandriaPlaces = MockData.places
+        .where((place) => alexandriaImageUrls.containsKey(place.id))
+        .toList(growable: false);
+    expect(alexandriaPlaces, hasLength(10));
+    expect(
+      alexandriaPlaces.map((place) => place.imageUrl).toSet(),
+      hasLength(10),
+    );
+    for (final place in alexandriaPlaces) {
+      expect(
+        place.imageUrl,
+        startsWith('https://upload.wikimedia.org/'),
+        reason: place.id,
+      );
+      expect(place.governorate, 'alexandria', reason: place.id);
+      expect(
+        GovernorateService.containsCoordinates(
+          EgyptGovernorate.byId['alexandria']!,
+          place.lat,
+          place.lng,
+        ),
+        isTrue,
+        reason: place.id,
+      );
+      expect(
+        GovernorateService.containsCoordinates(cairo, place.lat, place.lng),
+        isFalse,
+        reason: place.id,
+      );
+    }
+  });
+
+  test(
+    'Cairo & Giza places have at least 25 metres between every marker pair',
+    () {
+      for (var first = 0; first < cairoSeedPlaces.length; first++) {
+        for (
+          var second = first + 1;
+          second < cairoSeedPlaces.length;
+          second++
+        ) {
+          final a = cairoSeedPlaces[first];
+          final b = cairoSeedPlaces[second];
+          expect(
+            _haversineMeters(a.lat, a.lng, b.lat, b.lng),
+            greaterThanOrEqualTo(25),
+            reason: '${a.id} and ${b.id} must not overlap',
+          );
+        }
+      }
+    },
+  );
 
   test('legacy places and itineraries still default to Alexandria', () {
     final place = PlaceModel.fromJson({'id': 'legacy'});
@@ -352,15 +506,6 @@ void _verifyCairoPlace(PlaceModel place, EgyptGovernorate cairo) {
     ),
     isFalse,
     reason: '${place.id} must be outside Alexandria',
-  );
-  expect(
-    GovernorateService.containsCoordinates(
-      EgyptGovernorate.byId['giza']!,
-      place.lat,
-      place.lng,
-    ),
-    isFalse,
-    reason: '${place.id} must be outside Giza',
   );
   expect(place.nameAr?.trim(), isNotEmpty, reason: place.id);
   expect(place.nameEn.trim(), isNotEmpty, reason: place.id);

@@ -1088,4 +1088,106 @@ cairoSeedItineraries = List<ItineraryModel>.unmodifiable([
       _cairoStop('el_fishawy_cafe_khan'),
     ],
   ),
+  ItineraryModel(
+    id: 'giza_pyramids_sphinx_gem_trail',
+    title: 'Giza Pyramids, Sphinx & Grand Egyptian Museum Trail',
+    titleAr: 'مسار الأهرامات وأبو الهول والمتحف الكبير',
+    description:
+        'Explore the Great Pyramid plateau, meet the Sphinx, and continue to the Grand Egyptian Museum for a day among Giza’s defining landmarks.',
+    descriptionAr:
+        'استكشف هضبة الأهرامات وأبو الهول، ثم تابع إلى المتحف المصري الكبير في جولة بين أبرز معالم الجيزة.',
+    duration: 'Full day',
+    durationAr: 'يوم كامل',
+    imageUrl: _image('great_pyramid_of_giza'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('great_pyramid_of_giza'),
+      _cairoStop('pyramid_of_khafre'),
+      _cairoStop('great_sphinx_of_giza'),
+      _cairoStop('grand_egyptian_museum_gem'),
+    ],
+  ),
+  ItineraryModel(
+    id: 'saqqara_memphis_dahshur_necropolis',
+    title: 'Saqqara, Memphis & Dahshur Necropolis',
+    titleAr: 'مسار سقارة وممفيس وأهرامات دهشور',
+    description:
+        'Follow the history of pyramid building from the Step Pyramid at Saqqara through ancient Memphis to the Bent and Red Pyramids at Dahshur.',
+    descriptionAr:
+        'تتبّع تاريخ بناء الأهرامات من هرم زوسر المدرج بسقارة إلى ممفيس ثم الهرمين المنحني والأحمر بدهشور.',
+    duration: 'Full day',
+    durationAr: 'يوم كامل',
+    imageUrl: _image('saqqara_step_pyramid'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('saqqara_step_pyramid'),
+      _cairoStop('serapeum_of_saqqara'),
+      _cairoStop('memphis_museum_mit_rahina'),
+      _cairoStop('bent_pyramid_dahshur'),
+      _cairoStop('red_pyramid_dahshur'),
+    ],
+  ),
+  ItineraryModel(
+    id: 'giza_dokki_nile_museums_gardens',
+    title: 'Giza, Dokki & Nile Museums and Gardens',
+    titleAr: 'جولة متاحف وحدائق الجيزة والدقي',
+    description:
+        'Discover Giza’s university and literary heritage alongside its leafy gardens, zoo, and art collections near the Nile.',
+    descriptionAr:
+        'اكتشف تراث جامعة القاهرة والأدب والفنون، واستمتع بحدائق الجيزة وحديقة الحيوان بالقرب من النيل.',
+    duration: 'Full day',
+    durationAr: 'يوم كامل',
+    imageUrl: _image('orman_botanical_garden_giza'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('cairo_university_dome_giza'),
+      _cairoStop('taha_hussein_museum_giza'),
+      _cairoStop('orman_botanical_garden_giza'),
+      _cairoStop('giza_zoo_garden'),
+      _cairoStop('ahmed_shawki_museum_giza'),
+      _cairoStop('mahmoud_khalil_museum_giza'),
+    ],
+  ),
+  ItineraryModel(
+    id: 'sheikh_zayed_october_modern_walk',
+    title: 'Modern Sheikh Zayed & 6th of October Walk',
+    titleAr: 'جولة الشيخ زايد و6 أكتوبر العصرية',
+    description:
+        'Spend a modern west-Cairo day among ZED Park, Sheikh Zayed’s Arkan district, and the major malls and mosque of 6th of October.',
+    descriptionAr:
+        'اقضِ يوماً عصرياً في غرب القاهرة بين زد بارك وأركان بلازا ومراكز التسوق ومسجد الحصري بمدينة ٦ أكتوبر.',
+    duration: 'Full day',
+    durationAr: 'يوم كامل',
+    imageUrl: _image('zed_park_sheikh_zayed'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('zed_park_sheikh_zayed'),
+      _cairoStop('arkan_plaza_sheikh_zayed'),
+      _cairoStop('mall_of_arabia_october'),
+      _cairoStop('mall_of_egypt_october'),
+      _cairoStop('al_hosary_mosque_october'),
+    ],
+  ),
+  ItineraryModel(
+    id: 'greater_cairo_east_to_west_grand_tour',
+    title: 'Greater Cairo East-to-West Grand Tour',
+    titleAr: 'الجولة الكبرى من القاهرة التاريخية إلى أهرامات الجيزة',
+    description:
+        'Connect historic Cairo and its museums with the Nile and the Giza pyramid plateau on a cross-city journey through Greater Cairo.',
+    descriptionAr:
+        'اربط القاهرة التاريخية ومتاحفها بالنيل وهضبة أهرامات الجيزة في رحلة تعبر القاهرة الكبرى من الشرق إلى الغرب.',
+    duration: 'Full day',
+    durationAr: 'يوم كامل',
+    imageUrl: _image('great_pyramid_of_giza'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('cairo_citadel'),
+      _cairoStop('al_muizz_street'),
+      _cairoStop('egyptian_museum_tahrir'),
+      _cairoStop('nmec_fustat'),
+      _cairoStop('great_pyramid_of_giza'),
+      _cairoStop('great_sphinx_of_giza'),
+      _cairoStop('grand_egyptian_museum_gem'),
+    ],
+  ),
 ]);

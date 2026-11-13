@@ -38,14 +38,20 @@ class GovernorateProvider extends ChangeNotifier {
     final unlocked = preferences.getStringList(_unlockedKey);
     final fogEnabled = preferences.getBool(_fogEnabledKey);
     var changed = false;
-    if (active != null && EgyptGovernorate.byId.containsKey(active)) {
-      _activeGovernorate = active;
+    final normalizedActive = active == null
+        ? null
+        : EgyptGovernorate.normalizeId(active);
+    if (normalizedActive != null &&
+        EgyptGovernorate.byId.containsKey(normalizedActive)) {
+      _activeGovernorate = normalizedActive;
       changed = true;
     }
     if (unlocked != null) {
       _unlockedGovernorateIds = {
         'alexandria',
-        ...unlocked.where(EgyptGovernorate.byId.containsKey),
+        ...unlocked
+            .map(EgyptGovernorate.normalizeId)
+            .where(EgyptGovernorate.byId.containsKey),
       };
       changed = true;
     }
@@ -63,7 +69,12 @@ class GovernorateProvider extends ChangeNotifier {
     required Set<String> availableGovernorateIds,
   }) async {
     await _preferencesReady;
-    final detected = GovernorateService.detectFromCoordinates(lat, lng).id;
+    final detected = EgyptGovernorate.normalizeId(
+      GovernorateService.detectFromCoordinates(lat, lng).id,
+    );
+    availableGovernorateIds = availableGovernorateIds
+        .map(EgyptGovernorate.normalizeId)
+        .toSet();
     final previousActive = _activeGovernorate;
     final previousDetected = _detectedGovernorate;
     final previousUnlockedCount = _unlockedGovernorateIds.length;
@@ -93,21 +104,25 @@ class GovernorateProvider extends ChangeNotifier {
   }
 
   bool setActiveGovernorate(String id) {
-    if (!EgyptGovernorate.byId.containsKey(id) ||
-        !_unlockedGovernorateIds.contains(id)) {
+    final normalizedId = EgyptGovernorate.normalizeId(id);
+    if (!EgyptGovernorate.byId.containsKey(normalizedId) ||
+        !_unlockedGovernorateIds.contains(normalizedId)) {
       return false;
     }
-    if (_activeGovernorate == id) return true;
-    _activeGovernorate = id;
+    if (_activeGovernorate == normalizedId) return true;
+    _activeGovernorate = normalizedId;
     _persistSafely();
     notifyListeners();
     return true;
   }
 
   bool unlockAndSelectGovernorate(String id) {
-    if (!EgyptGovernorate.byId.containsKey(id)) return false;
-    final changed = _unlockedGovernorateIds.add(id) || _activeGovernorate != id;
-    _activeGovernorate = id;
+    final normalizedId = EgyptGovernorate.normalizeId(id);
+    if (!EgyptGovernorate.byId.containsKey(normalizedId)) return false;
+    final changed =
+        _unlockedGovernorateIds.add(normalizedId) ||
+        _activeGovernorate != normalizedId;
+    _activeGovernorate = normalizedId;
     if (changed) {
       _persistSafely();
       notifyListeners();

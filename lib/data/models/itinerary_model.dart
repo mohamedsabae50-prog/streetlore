@@ -1,3 +1,4 @@
+import 'egypt_governorate.dart';
 import 'place_model.dart';
 
 class ItineraryModel {
@@ -119,9 +120,11 @@ class ItineraryModel {
       imageUrl:
           (json['imageUrl'] as String?) ?? (json['image_url'] as String?) ?? '',
       status: (json['status'] as String?) ?? 'published',
-      governorate: governorateValue == null || governorateValue.isEmpty
-          ? 'alexandria'
-          : governorateValue.toLowerCase(),
+      governorate: EgyptGovernorate.normalizeId(
+        governorateValue == null || governorateValue.isEmpty
+            ? 'alexandria'
+            : governorateValue,
+      ),
       isPremium:
           (json['is_premium'] as bool?) ??
           (json['isPremium'] as bool?) ??
@@ -150,7 +153,7 @@ class ItineraryModel {
       'durationAr': durationAr,
       'imageUrl': imageUrl,
       'status': status,
-      'governorate': governorate,
+      'governorate': EgyptGovernorate.normalizeId(governorate),
       'isPremium': isPremium,
       'isHiddenGem': isHiddenGem,
       'places': places.map((e) => e.toJson()).toList(),

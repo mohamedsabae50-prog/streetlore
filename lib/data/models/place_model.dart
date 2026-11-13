@@ -1,3 +1,5 @@
+import 'egypt_governorate.dart';
+
 enum PriceLevel {
   free,
   cheap,
@@ -257,9 +259,9 @@ class PlaceModel {
       lng: _doubleValue(json, ['lng'], fallback: 0.0),
       address: _stringValue(json, ['address'], fallback: 'Alexandria, Egypt'),
       addressAr: _stringValue(json, ['address_ar', 'addressAr']),
-      governorate: governorate.isEmpty
-          ? 'alexandria'
-          : governorate.toLowerCase(),
+      governorate: EgyptGovernorate.normalizeId(
+        governorate.isEmpty ? 'alexandria' : governorate,
+      ),
       openHours: _stringValue(json, [
         'openHours',
         'open_hours',
@@ -311,7 +313,7 @@ class PlaceModel {
       'lng': lng,
       'address': address,
       'address_ar': addressAr,
-      'governorate': governorate,
+      'governorate': EgyptGovernorate.normalizeId(governorate),
       'openHours': openHours,
       'reviewCount': reviewCount,
       'priceLevel': priceLevel.name,
@@ -373,7 +375,9 @@ class PlaceModel {
       lng: lng ?? this.lng,
       address: address ?? this.address,
       addressAr: addressAr ?? this.addressAr,
-      governorate: governorate ?? this.governorate,
+      governorate: EgyptGovernorate.normalizeId(
+        governorate ?? this.governorate,
+      ),
       openHours: openHours ?? this.openHours,
       reviewCount: reviewCount ?? this.reviewCount,
       priceLevel: priceLevel ?? this.priceLevel,

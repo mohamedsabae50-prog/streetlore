@@ -118,6 +118,10 @@ class AppStrings {
       'en': 'Download Packages',
       'ar': 'باقات التحميل دون إنترنت',
     },
+    'offline_package_all_cairo': {
+      'en': 'All Cairo & Giza',
+      'ar': 'كل القاهرة والجيزة',
+    },
     'offline_packages_intro': {
       'en': 'Keep complete city guides available when you are offline.',
       'ar': 'احتفظ بدليل المدينة كاملاً متاحاً عند عدم الاتصال بالإنترنت.',

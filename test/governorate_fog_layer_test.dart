@@ -226,29 +226,32 @@ void main() {
     }
   });
 
-  testWidgets('governorate explorer lists all 27 governorates', (tester) async {
-    tester.view.physicalSize = const Size(1000, 3000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final provider = GovernorateProvider();
-    addTearDown(provider.dispose);
+  testWidgets(
+    'governorate explorer lists 26 regions with Cairo & Giza merged',
+    (tester) async {
+      tester.view.physicalSize = const Size(1000, 3000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final provider = GovernorateProvider();
+      addTearDown(provider.dispose);
 
-    await tester.pumpWidget(
-      ChangeNotifierProvider.value(
-        value: provider,
-        child: const MaterialApp(
-          home: Scaffold(body: GovernorateExplorerSheet(places: [])),
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: provider,
+          child: const MaterialApp(
+            home: Scaffold(body: GovernorateExplorerSheet(places: [])),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    for (final governorate in EgyptGovernorate.all) {
-      expect(find.text(governorate.nameEn), findsOneWidget);
-    }
-    expect(find.text('1 / 27 Governorates Unlocked'), findsOneWidget);
-  });
+      for (final governorate in EgyptGovernorate.all) {
+        expect(find.text(governorate.nameEn), findsOneWidget);
+      }
+      expect(find.text('1 / 26 Governorates Unlocked'), findsOneWidget);
+    },
+  );
 }
 
 Rect _boundsOf(Iterable<Offset> points) {

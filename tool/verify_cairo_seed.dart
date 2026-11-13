@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:streetlore/core/services/governorate_service.dart';
+import 'package:streetlore/data/alexandria_image_urls.dart';
 import 'package:streetlore/data/cairo_seed.dart';
 import 'package:streetlore/data/mock_data.dart';
 import 'package:streetlore/data/models/egypt_governorate.dart';
@@ -21,8 +22,8 @@ const _validCategories = {
 };
 
 const _negativeControls = [
-  (name: 'Giza Pyramids', lat: 29.9792, lng: 31.1342),
-  (name: 'Dokki West Bank', lat: 30.0385, lng: 31.2118),
+  (name: 'Banha', lat: 30.4660, lng: 31.1840),
+  (name: 'Fayoum', lat: 29.3084, lng: 30.8428),
   (name: 'Qaitbay Citadel', lat: 31.2140, lng: 29.8856),
 ];
 
@@ -37,6 +38,9 @@ Future<void> main() async {
       .toList(growable: false);
   final alexandriaTours = MockData.tours
       .where((tour) => tour.governorate == 'alexandria')
+      .toList(growable: false);
+  final alexandriaImagePlaces = MockData.places
+      .where((place) => alexandriaImageUrls.containsKey(place.id))
       .toList(growable: false);
   final allIds = <String>{};
 
@@ -64,14 +68,20 @@ Future<void> main() async {
       );
     }
   }
-  if (cairoSeedPlaces.length != 140) {
+  if (cairoSeedPlaces.length != 190) {
     throw StateError(
-      'Expected 140 Cairo places, got ${cairoSeedPlaces.length}',
+      'Expected 190 Cairo & Giza places, got ${cairoSeedPlaces.length}',
     );
   }
-  if (cairoSeedItineraries.length != 10) {
+  if (cairoSeedItineraries.length != 15) {
     throw StateError(
-      'Expected 10 Cairo itineraries, got ${cairoSeedItineraries.length}',
+      'Expected 15 Cairo & Giza itineraries, got ${cairoSeedItineraries.length}',
+    );
+  }
+  if (alexandriaImagePlaces.length != alexandriaImageUrls.length) {
+    throw StateError(
+      'Expected ${alexandriaImageUrls.length} Alexandria image places, '
+      'got ${alexandriaImagePlaces.length}.',
     );
   }
   final primaryImageUrls = cairoSeedPlaces
@@ -79,7 +89,7 @@ Future<void> main() async {
       .toSet();
   if (primaryImageUrls.length != cairoSeedPlaces.length) {
     throw StateError(
-      'Cairo primary image URLs are not unique: '
+      'Cairo & Giza primary image URLs are not unique: '
       '${primaryImageUrls.length}/${cairoSeedPlaces.length}.',
     );
   }
@@ -100,20 +110,35 @@ Future<void> main() async {
       .toSet();
   if (!seededCategories.containsAll(requiredCategories)) {
     throw StateError(
-      'Missing Cairo map filter categories: '
+      'Missing Cairo & Giza map filter categories: '
       '${requiredCategories.difference(seededCategories)}',
     );
   }
 
   for (final control in _negativeControls) {
     if (GovernorateService.containsCoordinates(
-      cairo,
-      control.lat,
-      control.lng,
-    )) {
-      throw StateError('${control.name} must be outside Cairo');
+          cairo,
+          control.lat,
+          control.lng,
+        ) ||
+        GovernorateService.containsCoordinates(
+          EgyptGovernorate.byId['alexandria']!,
+          control.lat,
+          control.lng,
+        )) {
+      throw StateError(
+        '${control.name} must be outside both available regions',
+      );
     }
-    stdout.writeln('[PASS] Negative boundary control: ${control.name}');
+    stdout.writeln('[PASS] Greater Cairo negative control: ${control.name}');
+  }
+  final allPrimaryImages = <String>{
+    ...cairoSeedPlaces.map((place) => place.imageUrl),
+    ...alexandriaImagePlaces.map((place) => place.imageUrl),
+  };
+  if (allPrimaryImages.length !=
+      cairoSeedPlaces.length + alexandriaImagePlaces.length) {
+    throw StateError('Primary image URLs are duplicated across seed regions.');
   }
 
   for (var index = 0; index < cairoSeedPlaces.length; index++) {
@@ -139,6 +164,9 @@ Future<void> main() async {
       '${place.nameAr} | ${place.nameEn}',
     );
   }
+  for (final place in alexandriaImagePlaces) {
+    await _verifyAlexandriaPlace(place, client, checkedImageUrls);
+  }
 
   final cairoIds = cairoSeedPlaces.map((place) => place.id).toSet();
   for (var index = 0; index < cairoSeedItineraries.length; index++) {
@@ -156,6 +184,18 @@ Future<void> main() async {
         )) {
       throw StateError('Invalid Cairo itinerary: ${itinerary.id}');
     }
+    for (final stop in itinerary.places) {
+      if (!GovernorateService.containsCoordinates(cairo, stop.lat, stop.lng) ||
+          GovernorateService.containsCoordinates(
+            EgyptGovernorate.byId['alexandria']!,
+            stop.lat,
+            stop.lng,
+          )) {
+        throw StateError(
+          '${itinerary.id} has a stop outside Cairo & Giza: ${stop.id}',
+        );
+      }
+    }
     stdout.writeln(
       '[PASS] (itinerary ${index + 1}/${cairoSeedItineraries.length}) '
       '${itinerary.titleAr} | ${itinerary.title}',
@@ -170,6 +210,50 @@ Future<void> main() async {
     '[PASS] ${checkedImageUrls.length} unique Wikimedia image URLs returned HTTP 200.',
   );
   client.close(force: true);
+}
+
+Future<void> _verifyAlexandriaPlace(
+  PlaceModel place,
+  HttpClient client,
+  Map<String, ({int statusCode, String? contentType})> checkedImageUrls,
+) async {
+  final alexandria = EgyptGovernorate.byId['alexandria']!;
+  if (place.governorate != 'alexandria' ||
+      !GovernorateService.containsCoordinates(
+        alexandria,
+        place.lat,
+        place.lng,
+      ) ||
+      GovernorateService.containsCoordinates(
+        EgyptGovernorate.byId['cairo']!,
+        place.lat,
+        place.lng,
+      )) {
+    throw StateError('${place.id} is outside Alexandria.');
+  }
+  if (place.nameAr?.trim().isNotEmpty != true ||
+      place.nameEn.trim().isEmpty ||
+      place.descriptionAr?.trim().isNotEmpty != true ||
+      place.descriptionEn.trim().isEmpty) {
+    throw StateError('${place.id} needs Arabic and English content');
+  }
+  if (!_isHttpsImage(place.imageUrl) ||
+      place.imageUrls.isEmpty ||
+      !place.imageUrls.every(_isHttpsImage)) {
+    throw StateError('${place.id} has invalid Wikimedia image URLs.');
+  }
+  for (final url in [place.imageUrl, ...place.imageUrls]) {
+    if (checkedImageUrls.containsKey(url)) continue;
+    final status = await _imageStatus(url, client);
+    checkedImageUrls[url] = status;
+    if (status.statusCode != HttpStatus.ok ||
+        !(status.contentType?.startsWith('image/') ?? false)) {
+      throw StateError(
+        '${place.id} image is not an HTTP 200 image '
+        '(HTTP ${status.statusCode}, ${status.contentType}): $url',
+      );
+    }
+  }
 }
 
 Future<void> _verifyCairoPlace(
@@ -193,13 +277,6 @@ Future<void> _verifyCairoPlace(
   )) {
     throw StateError('${place.id} is inside Alexandria');
   }
-  if (GovernorateService.containsCoordinates(
-    EgyptGovernorate.byId['giza']!,
-    place.lat,
-    place.lng,
-  )) {
-    throw StateError('${place.id} is inside Giza');
-  }
   if (place.nameAr?.trim().isNotEmpty != true ||
       place.nameEn.trim().isEmpty ||
       place.descriptionAr?.trim().isNotEmpty != true ||
@@ -208,6 +285,10 @@ Future<void> _verifyCairoPlace(
   }
   if (!_validCategories.contains(place.category)) {
     throw StateError('${place.id} has unsupported category ${place.category}');
+  }
+  if ((place.category == 'ATMs' || place.id.startsWith('atm_')) &&
+      place.isVisitable) {
+    throw StateError('${place.id} must not be visitable as an ATM');
   }
   if (place.openHours.trim().isEmpty ||
       !place.rating.isFinite ||

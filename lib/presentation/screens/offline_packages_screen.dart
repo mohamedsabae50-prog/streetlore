@@ -212,7 +212,9 @@ class _OfflinePackageCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    pack.localizedName(locale),
+                    pack.id == 'all_cairo'
+                        ? context.tr('offline_package_all_cairo')
+                        : pack.localizedName(locale),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),

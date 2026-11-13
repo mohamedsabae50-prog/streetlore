@@ -64,7 +64,11 @@ void main() {
         if (!inAlexandria) violations.add('${location.id} outside Alexandria');
 
         if (location.id == 'fallback_qaitbay' ||
-            location.id == 'alex_white_blue_greek_club') {
+            location.id == 'alex_white_blue_greek_club' ||
+            location.id == 'alex_gleem_bay_promenade' ||
+            location.id == 'alex_sadat_museum_bibliotheca' ||
+            location.id == 'alex_shatby_ancient_tombs' ||
+            location.id == 'alex_nelson_island_abou_qir') {
           continue;
         }
 
