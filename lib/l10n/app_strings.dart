@@ -110,6 +110,72 @@ class AppStrings {
     },
     'offline_pack_update': {'en': 'Update Pack', 'ar': 'تحديث الحزمة'},
     'offline_pack_remove': {'en': 'Remove Download', 'ar': 'إزالة التنزيل'},
+    'offline_download': {
+      'en': 'Download for Offline',
+      'ar': 'تنزيل للاستخدام دون إنترنت',
+    },
+    'offline_packages_title': {
+      'en': 'Download Packages',
+      'ar': 'باقات التحميل دون إنترنت',
+    },
+    'offline_packages_intro': {
+      'en': 'Keep complete city guides available when you are offline.',
+      'ar': 'احتفظ بدليل المدينة كاملاً متاحاً عند عدم الاتصال بالإنترنت.',
+    },
+    'offline_packages_profile_subtitle': {
+      'en': '{count} city packs downloaded',
+      'ar': 'تم تنزيل {count} من باقات المدن',
+    },
+    'offline_package_counts': {
+      'en': '{places} places · {tours} tours',
+      'ar': '{places} مكاناً · {tours} جولات',
+    },
+    'offline_packages_load_failed': {
+      'en': 'Could not load the city package catalog.',
+      'ar': 'تعذر تحميل قائمة باقات المدن.',
+    },
+    'offline_packages_download_complete': {
+      'en': 'Offline package downloaded successfully.',
+      'ar': 'تم تنزيل الباقة للاستخدام دون إنترنت.',
+    },
+    'offline_packages_download_empty': {
+      'en': 'No offline content was available to download.',
+      'ar': 'لا يوجد محتوى متاح للتنزيل دون إنترنت.',
+    },
+    'offline_packages_download_failed': {
+      'en': 'Could not download this offline package. Please try again.',
+      'ar': 'تعذر تنزيل الباقة. يرجى المحاولة مرة أخرى.',
+    },
+    'offline_packages_removed': {
+      'en': 'Offline package removed.',
+      'ar': 'تمت إزالة الباقة دون إنترنت.',
+    },
+    'offline_packages_remove_failed': {
+      'en': 'Could not remove this offline package.',
+      'ar': 'تعذرت إزالة الباقة دون إنترنت.',
+    },
+    'route_on_map': {'en': 'Route on Map', 'ar': 'المسار على الخريطة'},
+    'end_route': {'en': 'End Route', 'ar': 'إنهاء المسار'},
+    'route_arrived': {
+      'en': 'You have arrived at your destination.',
+      'ar': 'لقد وصلت إلى وجهتك.',
+    },
+    'route_arrived_at': {
+      'en': 'You have arrived at {place}.',
+      'ar': 'لقد وصلت إلى {place}.',
+    },
+    'route_calculating': {
+      'en': 'Calculating walking route…',
+      'ar': 'جارٍ حساب مسار المشي…',
+    },
+    'route_start_failed': {
+      'en': 'Could not start the route. Please try again.',
+      'ar': 'تعذر بدء المسار. يرجى المحاولة مرة أخرى.',
+    },
+    'route_distance_eta': {
+      'en': '{distance} remaining · about {minutes} min walk',
+      'ar': 'المتبقي {distance} · نحو {minutes} دقيقة مشياً',
+    },
     'ai_offline_notice': {
       'en':
           'Live AI answers need an internet connection. Your chat history is still available.',
@@ -204,6 +270,10 @@ class AppStrings {
     'ai_quota_remaining': {
       'en': '{remaining} of {limit} AI calls remaining',
       'ar': 'متبقي {remaining} من {limit} طلبات للذكاء الاصطناعي',
+    },
+    'ai_quota_pro_unlimited': {
+      'en': 'PRO · Unlimited AI messages',
+      'ar': 'برو · رسائل ذكاء اصطناعي غير محدودة',
     },
     'ai_quota_reset_utc': {
       'en': 'Resets at midnight UTC',

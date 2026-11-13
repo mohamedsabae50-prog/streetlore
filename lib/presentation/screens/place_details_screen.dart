@@ -12,7 +12,6 @@ import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/social_share_service.dart';
 import '../../core/services/checkin_location_service.dart';
-import '../../core/services/offline_storage_service.dart';
 import '../../core/services/app_review_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/services/google_maps_search.dart';
@@ -44,7 +43,7 @@ import '../widgets/report_content_sheet.dart';
 import '../widgets/social_user_widgets.dart';
 import 'ai_tour_guide_screen.dart';
 import 'live_chat_screen.dart';
-import 'map_screen.dart';
+import 'map_view_screen.dart';
 import 'paywall_screen.dart';
 import 'user_profile_screen.dart';
 
@@ -281,17 +280,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
   void _openMaps() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => MapScreen(
-          destinationLat: widget.place.lat,
-          destinationLng: widget.place.lng,
-          cachedRouteKey: OfflineStorageService.instance.entityRouteCacheKey(
-            'place',
-            widget.place.id,
-          ),
-          placeName: widget.place.localizedName(
-            context.read<LocaleProvider>().locale.languageCode,
-          ),
+      MaterialPageRoute<void>(
+        builder: (_) => MapViewScreen(
+          initialDestination:
+              context.read<PlaceProvider>().findById(widget.place.id) ??
+              widget.place,
         ),
       ),
     );
@@ -1068,8 +1061,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: _QuickAction(
-                                    icon: Icons.directions_rounded,
-                                    label: context.tr('go'),
+                                    icon: Icons.route_rounded,
+                                    label: context.tr('route_on_map'),
 
                                     color: context.quickActionPrimary,
                                     backgroundColor:

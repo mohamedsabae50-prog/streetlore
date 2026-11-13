@@ -33,6 +33,7 @@ import 'prayer_times_screen.dart';
 import 'achievements_screen.dart';
 import 'admin_panel_screen.dart';
 import 'legal_document_screen.dart';
+import 'offline_packages_screen.dart';
 import 'paywall_screen.dart';
 import 'suggest_place_screen.dart';
 import 'search_users_screen.dart';
@@ -797,6 +798,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     isPro: auth.isPro,
                     subscriptionTier: auth.subscriptionTier,
                   ),
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: const OfflinePackagesEntryTile(),
                 ),
               ),
 

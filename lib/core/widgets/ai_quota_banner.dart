@@ -25,17 +25,20 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
   @override
   void initState() {
     super.initState();
+    final auth = context.read<AuthProvider>();
+    if (auth.isPro || auth.isAdmin) {
+      _loading = false;
+      return;
+    }
+    _status = const {'used_today': 0, 'daily_limit': 3, 'remaining': 3};
+    _loading = false;
     if (widget.fetchQuotaStatus != null || SupabaseService.instance.isLive) {
-      final auth = context.read<AuthProvider>();
-      if (!auth.isPro && !auth.isAdmin) {
-        _status = const {'used_today': 0, 'daily_limit': 3, 'remaining': 3};
-        _loading = false;
-      }
       refresh();
     }
   }
 
   Future<void> refresh() async {
+    if (!mounted) return;
     _resetTimer?.cancel();
     setState(() {
       _loading = _status == null;
@@ -75,14 +78,17 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.fetchQuotaStatus == null && !SupabaseService.instance.isLive) {
+    final auth = context.select<AuthProvider, (bool, bool)>(
+      (provider) => (provider.isAdmin, provider.isPro),
+    );
+    if (auth.$1) {
       return const SizedBox.shrink();
     }
-    if (context.select<AuthProvider, bool>((auth) => auth.isAdmin)) {
-      return const SizedBox.shrink();
-    }
-
-    final message = _loading
+    final unlimited =
+        _status?['unlimited'] == true || _status?['is_unlimited'] == true;
+    final message = auth.$2 || unlimited
+        ? context.tr('ai_quota_pro_unlimited')
+        : _loading
         ? context.tr('ai_quota_loading')
         : _error != null
         ? context.tr('ai_quota_unavailable')

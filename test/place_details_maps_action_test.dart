@@ -59,6 +59,7 @@ void main() {
 
     expect(find.byTooltip('Google Maps'), findsOneWidget);
     expect(find.byIcon(Icons.map_outlined), findsOneWidget);
+    expect(find.text('Route on Map'), findsOneWidget);
     expect(find.text('Save'), findsOneWidget);
     expect(find.byIcon(Icons.bookmark_border_rounded), findsOneWidget);
   });

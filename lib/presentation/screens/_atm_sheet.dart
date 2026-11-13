@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/app_strings.dart';
 import '../../data/models/map_poi.dart';
-
-
-
 
 class AtmSheet extends StatelessWidget {
   final MapPoi atm;
-  const AtmSheet({super.key, required this.atm});
+  final ValueChanged<MapPoi>? onRoute;
+  const AtmSheet({super.key, required this.atm, this.onRoute});
 
   Future<void> _openDirections(BuildContext context) async {
     final dest = '${atm.lat},${atm.lng}';
@@ -22,9 +21,9 @@ class AtmSheet extends StatelessWidget {
       }
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open maps: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not open maps: $e')));
     }
   }
 
@@ -48,6 +47,26 @@ class AtmSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
+            if (onRoute != null) ...[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  key: const ValueKey('atm-route-on-map-button'),
+                  onPressed: () => onRoute!(atm),
+                  icon: const Icon(Icons.route_rounded, size: 19),
+                  label: Text(context.tr('route_on_map')),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: atm.color,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
             Row(
               children: [
                 Container(
@@ -74,8 +93,9 @@ class AtmSheet extends StatelessWidget {
                       Text(
                         (atm.brand ?? 'ATM').toUpperCase(),
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodySmall?.color
-                              ?.withValues(alpha: 0.6),
+                          color: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 1.2,

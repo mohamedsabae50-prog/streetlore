@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -9,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/atm_service.dart';
 import '../../core/services/carplay_service.dart';
+import '../../core/services/map_route_service.dart';
 import '../../data/cairo_seed.dart' show cairoSeedPlaces;
 import '../../data/models/egypt_governorate.dart';
 import '../../data/models/map_poi.dart';
@@ -21,6 +23,7 @@ import '../../logic/trip_provider.dart';
 import '../widgets/governorate_explorer_sheet.dart';
 import '../widgets/governorate_fog_layer.dart';
 import '../widgets/governorate_selector.dart';
+import '../widgets/map_route_hud.dart';
 import '_atm_sheet.dart';
 import 'place_details_screen.dart';
 
@@ -53,7 +56,18 @@ String _catLabel(BuildContext context, String cat) {
 }
 
 class MapViewScreen extends StatefulWidget {
-  const MapViewScreen({super.key});
+  const MapViewScreen({
+    super.key,
+    this.initialDestination,
+    this.routeLocationUpdates,
+    this.routeService,
+    this.autoLocate = true,
+  });
+
+  final PlaceModel? initialDestination;
+  final Stream<LatLng>? routeLocationUpdates;
+  final MapRouteService? routeService;
+  final bool autoLocate;
 
   @override
   State<MapViewScreen> createState() => _MapViewScreenState();
@@ -78,6 +92,17 @@ class _MapViewScreenState extends State<MapViewScreen>
 
   bool _showAtms = false;
   List<MapPoi> _atms = const [];
+  late final MapRouteService _routeService;
+  late final bool _ownsRouteService;
+  MapRouteDestination? _routeDestination;
+  List<LatLng> _fullRoute = const [];
+  List<LatLng> _remainingRoute = const [];
+  double _remainingDistanceMeters = 0;
+  int _routeProgressIndex = 0;
+  bool _routeLoading = false;
+  bool _routeArrived = false;
+  bool _arrivalAnnounced = false;
+  StreamSubscription<LatLng>? _routePositionSubscription;
 
   final Set<String> _extraLayers = <String>{};
   StreamSubscription<Position>? _positionSubscription;
@@ -91,6 +116,8 @@ class _MapViewScreenState extends State<MapViewScreen>
   @override
   void initState() {
     super.initState();
+    _routeService = widget.routeService ?? MapRouteService();
+    _ownsRouteService = widget.routeService == null;
     _cameraAnimation = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 650),
@@ -131,7 +158,19 @@ class _MapViewScreenState extends State<MapViewScreen>
 
   void _onMapReady() {
     _mapReady = true;
-    _locateUser();
+    final initialDestination = widget.initialDestination;
+    if (initialDestination != null) {
+      final governorates = context.read<GovernorateProvider>();
+      if (governorates.unlockedGovernorateIds.contains(
+        initialDestination.governorate,
+      )) {
+        governorates.unlockAndSelectGovernorate(initialDestination.governorate);
+      }
+      setState(() => _selectedPlace = initialDestination);
+      unawaited(_startRoute(MapRouteDestination.fromPlace(initialDestination)));
+    } else if (widget.autoLocate) {
+      _locateUser();
+    }
   }
 
   void _animateCameraTo(EgyptGovernorate governorate) {
@@ -170,8 +209,13 @@ class _MapViewScreenState extends State<MapViewScreen>
     );
   }
 
-  Future<void> _subscribeToPositionUpdates(PlaceProvider places) async {
-    if (kIsWeb || _positionSubscription != null || _startingPositionUpdates) {
+  Future<void> _subscribeToPositionUpdates(
+    PlaceProvider places, {
+    bool forRoute = false,
+  }) async {
+    if ((!forRoute && kIsWeb) ||
+        _positionSubscription != null ||
+        _startingPositionUpdates) {
       return;
     }
     _startingPositionUpdates = true;
@@ -216,7 +260,7 @@ class _MapViewScreenState extends State<MapViewScreen>
     if (!mounted) return;
     final governorates = context.read<GovernorateProvider>();
     final location = LatLng(position.latitude, position.longitude);
-    setState(() => _userLocation = location);
+    _updateUserLocation(location);
     CarPlayService.instance.updateLocation(
       location.latitude,
       location.longitude,
@@ -227,7 +271,7 @@ class _MapViewScreenState extends State<MapViewScreen>
         location.longitude,
         availableGovernorateIds: places.availableGovernorateIds,
       );
-      await _evaluateAutoCheckIn(places, position);
+      if (!kIsWeb) await _evaluateAutoCheckIn(places, position);
     } catch (error, stackTrace) {
       debugPrint('MapViewScreen position update failed: $error\n$stackTrace');
     }
@@ -281,10 +325,10 @@ class _MapViewScreenState extends State<MapViewScreen>
         desiredAccuracy: LocationAccuracy.medium,
       );
       if (!mounted) return;
-      unawaited(_subscribeToPositionUpdates(places));
       final here = LatLng(pos.latitude, pos.longitude);
       CarPlayService.instance.updateLocation(here.latitude, here.longitude);
-      setState(() => _userLocation = here);
+      _updateUserLocation(here);
+      unawaited(_subscribeToPositionUpdates(places));
       await governorates.syncWithCoordinates(
         here.latitude,
         here.longitude,
@@ -302,6 +346,199 @@ class _MapViewScreenState extends State<MapViewScreen>
     }
   }
 
+  Future<LatLng> _resolveRouteOrigin() async {
+    if (_userLocation != null) return _userLocation!;
+    if (widget.routeLocationUpdates != null) {
+      return _routeReferencePoint();
+    }
+    try {
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) {
+        final location = LatLng(lastKnown.latitude, lastKnown.longitude);
+        _updateUserLocation(location);
+        return location;
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        'MapViewScreen: last-known route location unavailable: '
+        '$error\n$stackTrace',
+      );
+    }
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission != LocationPermission.denied &&
+          permission != LocationPermission.deniedForever &&
+          await Geolocator.isLocationServiceEnabled()) {
+        final current = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium,
+          timeLimit: const Duration(seconds: 8),
+        );
+        final location = LatLng(current.latitude, current.longitude);
+        if (mounted) _updateUserLocation(location);
+        return location;
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        'MapViewScreen: current route location unavailable: '
+        '$error\n$stackTrace',
+      );
+    }
+    return _routeReferencePoint();
+  }
+
+  LatLng _routeReferencePoint() {
+    final reference = _mapReady
+        ? _mapController.camera.center
+        : _governorateReferencePoint();
+    final destination = _routeDestination;
+    if (destination != null &&
+        MapRouteService.distanceMeters(reference, destination.point) <= 25) {
+      return _governorateReferencePoint();
+    }
+    return reference;
+  }
+
+  LatLng _governorateReferencePoint() {
+    final governorate =
+        EgyptGovernorate.byId[context
+            .read<GovernorateProvider>()
+            .activeGovernorate] ??
+        EgyptGovernorate.byId['alexandria']!;
+    return LatLng(governorate.centerLat, governorate.centerLng);
+  }
+
+  Future<void> _startRoute(MapRouteDestination destination) async {
+    setState(() {
+      _routeDestination = destination;
+      _routeLoading = true;
+      _routeArrived = false;
+      _arrivalAnnounced = false;
+      _fullRoute = const [];
+      _remainingRoute = const [];
+      _remainingDistanceMeters = 0;
+      _routeProgressIndex = 0;
+    });
+    try {
+      final origin = await _resolveRouteOrigin();
+      if (!mounted || _routeDestination?.id != destination.id) return;
+      final route = await _routeService.getWalkingRoute(
+        origin,
+        destination.point,
+      );
+      if (!mounted || _routeDestination?.id != destination.id) return;
+      setState(() {
+        _fullRoute = route;
+        _routeLoading = false;
+        _userLocation ??= origin;
+      });
+      _applyRouteProgress(origin);
+      _fitToActiveRoute();
+      if (widget.routeLocationUpdates != null) {
+        _routePositionSubscription ??= widget.routeLocationUpdates!.listen(
+          _updateUserLocation,
+          onError: (Object error, StackTrace stackTrace) {
+            debugPrint(
+              'MapViewScreen injected route location stream failed: '
+              '$error\n$stackTrace',
+            );
+          },
+        );
+      } else {
+        unawaited(
+          _subscribeToPositionUpdates(
+            context.read<PlaceProvider>(),
+            forRoute: true,
+          ),
+        );
+      }
+    } catch (error, stackTrace) {
+      debugPrint('MapViewScreen: route could not start: $error\n$stackTrace');
+      if (!mounted) return;
+      setState(() => _routeLoading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('route_start_failed'))));
+    }
+  }
+
+  void _updateUserLocation(LatLng location) {
+    if (!mounted) return;
+    setState(() => _userLocation = location);
+    _applyRouteProgress(location);
+  }
+
+  void _applyRouteProgress(LatLng location) {
+    final destination = _routeDestination;
+    if (destination == null || _fullRoute.length < 2 || !mounted) return;
+    final progress = MapRouteService.progressAlongRoute(
+      route: _fullRoute,
+      currentLocation: location,
+      minimumSegmentIndex: _routeProgressIndex,
+    );
+    final arrived =
+        MapRouteService.distanceMeters(location, destination.point) <= 25;
+    setState(() {
+      _remainingRoute = progress.points;
+      _remainingDistanceMeters = progress.remainingDistanceMeters;
+      _routeProgressIndex = progress.nextSegmentIndex;
+      _routeArrived = arrived;
+    });
+    if (arrived && !_arrivalAnnounced) _announceArrival(destination);
+    if (_mapReady && _routeDestination != null) {
+      try {
+        _mapController.move(location, _mapController.camera.zoom);
+      } catch (error) {
+        debugPrint('MapViewScreen: could not follow route location: $error');
+      }
+    }
+  }
+
+  void _announceArrival(MapRouteDestination destination) {
+    _arrivalAnnounced = true;
+    final locale = Localizations.localeOf(context).languageCode;
+    final message = context.tr('route_arrived_at', {
+      'place': destination.localizedName(locale),
+    });
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      message,
+      Directionality.of(context),
+    );
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  void _fitToActiveRoute() {
+    if (!_mapReady || _remainingRoute.length < 2) return;
+    try {
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: LatLngBounds.fromPoints(_remainingRoute),
+          padding: const EdgeInsets.fromLTRB(32, 130, 32, 170),
+        ),
+      );
+    } catch (error) {
+      debugPrint('MapViewScreen: could not fit walking route: $error');
+    }
+  }
+
+  void _endRoute() {
+    setState(() {
+      _routeDestination = null;
+      _fullRoute = const [];
+      _remainingRoute = const [];
+      _remainingDistanceMeters = 0;
+      _routeLoading = false;
+      _routeArrived = false;
+      _arrivalAnnounced = false;
+      _routeProgressIndex = 0;
+    });
+  }
+
   void _showAtmSheet(BuildContext context, MapPoi atm) {
     showModalBottomSheet<void>(
       context: context,
@@ -310,7 +547,13 @@ class _MapViewScreenState extends State<MapViewScreen>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      builder: (ctx) => AtmSheet(atm: atm),
+      builder: (ctx) => AtmSheet(
+        atm: atm,
+        onRoute: (poi) {
+          Navigator.pop(ctx);
+          unawaited(_startRoute(MapRouteDestination.fromAtm(poi)));
+        },
+      ),
     );
   }
 
@@ -464,6 +707,8 @@ class _MapViewScreenState extends State<MapViewScreen>
     _governorates?.removeListener(_onGovernorateChanged);
     unawaited(_positionSubscription?.cancel());
     unawaited(_autoCheckInSubscription?.cancel());
+    unawaited(_routePositionSubscription?.cancel());
+    if (_ownsRouteService) _routeService.close();
     _cameraAnimation.dispose();
     _mapController.dispose();
     super.dispose();
@@ -508,6 +753,16 @@ class _MapViewScreenState extends State<MapViewScreen>
                 places: allPlaces,
                 visitedPlaceIds: visitedPlaceIds,
               ),
+              if (_remainingRoute.length > 1)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _remainingRoute,
+                      color: AppColors.primary,
+                      strokeWidth: 7,
+                    ),
+                  ],
+                ),
               Builder(
                 builder: (mapContext) {
                   final camera = MapCamera.of(mapContext);
@@ -539,6 +794,7 @@ class _MapViewScreenState extends State<MapViewScreen>
                           width: 26,
                           height: 26,
                           child: Container(
+                            key: const ValueKey('map-route-user-location'),
                             decoration: BoxDecoration(
                               color: const Color(0xFF3B82F6),
                               shape: BoxShape.circle,
@@ -567,6 +823,7 @@ class _MapViewScreenState extends State<MapViewScreen>
                               : 44,
                           child: RepaintBoundary(
                             child: GestureDetector(
+                              key: ValueKey('map-place-marker-${p.id}'),
                               onTap: () {
                                 setState(() => _selectedPlace = p);
                                 _mapController.move(LatLng(p.lat, p.lng), 14);
@@ -777,6 +1034,26 @@ class _MapViewScreenState extends State<MapViewScreen>
               ),
             ),
           ),
+          if (_routeDestination != null)
+            Positioned(
+              top: 82,
+              left: 16,
+              right: 16,
+              child: MapRouteHud(
+                destinationName: _routeDestination!.localizedName(
+                  Localizations.localeOf(context).languageCode,
+                ),
+                distance: MapRouteService.formatDistance(
+                  _remainingDistanceMeters,
+                ),
+                estimatedMinutes: MapRouteService.walkingMinutes(
+                  _remainingDistanceMeters,
+                ),
+                isLoading: _routeLoading,
+                isArrived: _routeArrived,
+                onEndRoute: _endRoute,
+              ),
+            ),
           if (_selectedPlace != null)
             Positioned(
               left: 16,
@@ -787,6 +1064,9 @@ class _MapViewScreenState extends State<MapViewScreen>
                 color: _colorForCategory(_selectedPlace!.category),
                 icon: _iconForCategory(_selectedPlace!.category),
                 onClose: () => setState(() => _selectedPlace = null),
+                onRoute: () => unawaited(
+                  _startRoute(MapRouteDestination.fromPlace(_selectedPlace!)),
+                ),
                 onOpen: () {
                   Navigator.push(
                     context,
@@ -800,7 +1080,7 @@ class _MapViewScreenState extends State<MapViewScreen>
             ),
           Positioned(
             right: 16,
-            bottom: _selectedPlace != null ? 170 : 72,
+            bottom: _selectedPlace != null ? 220 : 72,
             child: FloatingActionButton.small(
               heroTag: 'locate-fab',
               tooltip: context.tr('map_my_location'),
@@ -816,7 +1096,7 @@ class _MapViewScreenState extends State<MapViewScreen>
           Positioned(
             left: 0,
             right: 0,
-            bottom: _selectedPlace != null ? 110 : 16,
+            bottom: _selectedPlace != null ? 150 : 16,
             child: _CategoryFilter(
               selected: _selectedCategory,
               onSelect: (cat) => setState(() => _selectedCategory = cat),
@@ -854,6 +1134,7 @@ class _SelectedPlaceCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onClose;
   final VoidCallback onOpen;
+  final VoidCallback onRoute;
 
   const _SelectedPlaceCard({
     required this.place,
@@ -861,6 +1142,7 @@ class _SelectedPlaceCard extends StatelessWidget {
     required this.icon,
     required this.onClose,
     required this.onOpen,
+    required this.onRoute,
   });
 
   @override
@@ -878,77 +1160,93 @@ class _SelectedPlaceCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: Colors.white, size: 24),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  place.localizedName(
-                    Localizations.localeOf(context).languageCode,
-                  ),
-                  style: TextStyle(
-                    color: context.textPri,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 2),
-                Row(
+                child: Icon(icon, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      _catLabel(context, place.category),
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
+                      place.localizedName(
+                        Localizations.localeOf(context).languageCode,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(
-                      Icons.star_rounded,
-                      size: 12,
-                      color: Color(0xFFFBBF24),
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      place.rating.toString(),
                       style: TextStyle(
                         color: context.textPri,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Text(
+                          _catLabel(context, place.category),
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 12,
+                          color: Color(0xFFFBBF24),
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          place.rating.toString(),
+                          style: TextStyle(
+                            color: context.textPri,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              IconButton(
+                onPressed: onClose,
+                icon: const Icon(Icons.close_rounded, size: 18),
+                color: context.hintColor,
+                tooltip: context.tr('map_close'),
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: onOpen,
-            icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-            color: color,
-            tooltip: context.tr('map_open_details'),
-          ),
-          IconButton(
-            onPressed: onClose,
-            icon: const Icon(Icons.close_rounded, size: 18),
-            color: context.hintColor,
-            tooltip: context.tr('map_close'),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: RouteOnMapButton(onPressed: onRoute),
+                ),
+              ),
+              IconButton(
+                onPressed: onOpen,
+                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                color: color,
+                tooltip: context.tr('map_open_details'),
+              ),
+            ],
           ),
         ],
       ),

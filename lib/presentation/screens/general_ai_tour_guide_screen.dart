@@ -15,8 +15,19 @@ import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
 import '../widgets/chat_text_direction.dart';
 
+typedef GeneralAiMessageSender = Future<String> Function(String text);
+
 class GeneralAITourGuideScreen extends StatefulWidget {
-  const GeneralAITourGuideScreen({super.key});
+  const GeneralAITourGuideScreen({
+    super.key,
+    this.fetchQuotaStatus,
+    this.onSendMessage,
+    this.isOfflineOverride,
+  });
+
+  final Future<Map<String, dynamic>> Function()? fetchQuotaStatus;
+  final GeneralAiMessageSender? onSendMessage;
+  final bool? isOfflineOverride;
 
   @override
   State<GeneralAITourGuideScreen> createState() =>
@@ -31,14 +42,59 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
       GlobalKey<AiQuotaBannerState>();
   final String _sessionId = const Uuid().v4();
 
-  late final String _welcomeText = context.tr('ai_guide_welcome_en');
-
   final List<_Msg> _messages = [];
 
   @override
-  void initState() {
-    super.initState();
-    _messages.add(_Msg(id: '', role: _Role.bot, text: _welcomeText));
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncWelcomeMessage();
+  }
+
+  void _syncWelcomeMessage([String? activeGovernorateId]) {
+    final governorateId =
+        activeGovernorateId ??
+        context.read<GovernorateProvider>().activeGovernorate;
+    final locale = Localizations.localeOf(context).languageCode;
+    final welcome = buildGeneralGuideWelcome(
+      governorateId: governorateId,
+      locale: locale,
+    );
+    if (_messages.isEmpty) {
+      _messages.add(_Msg(id: '', role: _Role.bot, text: welcome));
+    } else if (_messages.length == 1 &&
+        _messages.first.id.isEmpty &&
+        _messages.first.role == _Role.bot) {
+      _messages[0] = _Msg(id: '', role: _Role.bot, text: welcome);
+    }
+  }
+
+  String _cityFallback() => buildGeneralGuideFallback(
+    governorateId: context.read<GovernorateProvider>().activeGovernorate,
+    locale: Localizations.localeOf(context).languageCode,
+    places: context.read<PlaceProvider>().allPlaces,
+  );
+
+  bool _isOffline() =>
+      widget.isOfflineOverride ??
+      context.read<ConnectivityProvider>().hasInternet == false;
+
+  Future<String> _sendPrompt(
+    String text, {
+    required List<GeminiChatTurn> history,
+    required void Function(String) onResponseChunk,
+  }) {
+    final sender = widget.onSendMessage;
+    if (sender != null) return sender(text);
+    return AITourGuideService.askLocalGuide(
+      text,
+      sessionId: _sessionId,
+      governorateId: context.read<GovernorateProvider>().activeGovernorate,
+      places: context.read<PlaceProvider>().allPlaces,
+      itineraries: context.read<TourProvider>().allTours,
+      locale: Localizations.localeOf(context).languageCode,
+      conversationHistory: history,
+      onResponseChunk: onResponseChunk,
+    );
   }
 
   bool _busy = false;
@@ -59,7 +115,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   }
 
   Future<void> _send() async {
-    if (context.read<ConnectivityProvider>().hasInternet == false) return;
+    if (_isOffline()) return;
     final text = _input.text.trim();
     if (text.isEmpty || _busy) return;
     final history = _messages
@@ -80,16 +136,9 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
     _input.clear();
     _scrollToBottom();
     try {
-      final reply = await AITourGuideService.askLocalGuide(
+      final reply = await _sendPrompt(
         text,
-        sessionId: _sessionId,
-        governorateId: context
-            .read<GovernorateProvider>()
-            .activeGovernorate,
-        places: context.read<PlaceProvider>().places,
-        itineraries: context.read<TourProvider>().tours,
-        locale: Localizations.localeOf(context).languageCode,
-        conversationHistory: history,
+        history: history,
         onResponseChunk: (response) {
           if (!mounted) return;
           setState(() {
@@ -121,8 +170,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
           role: _Role.bot,
           text: e.statusCode == 429
               ? context.tr('ai_daily_limit_body')
-              : 'Could not reach the AI right now (${e.message}). Try again '
-                    'in a moment.',
+              : _cityFallback(),
           isDailyLimitExceeded: e.statusCode == 429,
         );
         _busy = false;
@@ -135,7 +183,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
         _messages[_messages.length - 1] = _Msg(
           id: '',
           role: _Role.bot,
-          text: 'Something went wrong: $e',
+          text: _cityFallback(),
         );
         _busy = false;
       });
@@ -158,8 +206,13 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isOffline =
-        context.watch<ConnectivityProvider>().hasInternet == false;
+    final governorateId = context
+        .watch<GovernorateProvider>()
+        .activeGovernorate;
+    _syncWelcomeMessage(governorateId);
+    final isOffline = widget.isOfflineOverride == null
+        ? context.watch<ConnectivityProvider>().hasInternet == false
+        : widget.isOfflineOverride!;
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
@@ -182,6 +235,10 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
       ),
       body: Column(
         children: [
+          AiQuotaBanner(
+            key: _quotaKey,
+            fetchQuotaStatus: widget.fetchQuotaStatus,
+          ),
           Expanded(
             child: ListView.builder(
               controller: _scroll,
@@ -218,7 +275,6 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
                 style: TextStyle(color: context.textSec, fontSize: 12),
               ),
             ),
-          AiQuotaBanner(key: _quotaKey),
           _Composer(
             controller: _input,
             focusNode: _focus,

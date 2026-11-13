@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
@@ -14,9 +16,21 @@ import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
 import '../widgets/chat_text_direction.dart';
 
+typedef PlaceAiMessageSender = Future<String> Function(String text);
+
 class AITourGuideScreen extends StatefulWidget {
   final PlaceModel place;
-  const AITourGuideScreen({super.key, required this.place});
+  final Future<Map<String, dynamic>> Function()? fetchQuotaStatus;
+  final PlaceAiMessageSender? onSendMessage;
+  final bool? isOfflineOverride;
+
+  const AITourGuideScreen({
+    super.key,
+    required this.place,
+    this.fetchQuotaStatus,
+    this.onSendMessage,
+    this.isOfflineOverride,
+  });
 
   @override
   State<AITourGuideScreen> createState() => _AITourGuideScreenState();
@@ -29,25 +43,26 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
       GlobalKey<AiQuotaBannerState>();
   final String _sessionId = const Uuid().v4();
   bool _started = false;
+  bool _bootstrapStarted = false;
   bool _sending = false;
   String? _streamingReply;
 
   @override
-  void initState() {
-    super.initState();
-    _bootstrap();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_bootstrapStarted) return;
+    _bootstrapStarted = true;
+    unawaited(_bootstrap());
   }
 
   Future<void> _bootstrap() async {
     final locale = Localizations.localeOf(context).languageCode;
-    final places = context
-        .read<PlaceProvider>()
-        .allPlaces
-        .where((place) => place.governorate == widget.place.governorate);
-    final itineraries = context
-        .read<TourProvider>()
-        .allTours
-        .where((tour) => tour.governorate == widget.place.governorate);
+    final places = context.read<PlaceProvider>().allPlaces.where(
+      (place) => place.governorate == widget.place.governorate,
+    );
+    final itineraries = context.read<TourProvider>().allTours.where(
+      (tour) => tour.governorate == widget.place.governorate,
+    );
     await AITourGuideService.instance.start(
       widget.place,
       sessionId: _sessionId,
@@ -67,7 +82,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
   }
 
   Future<void> _send() async {
-    if (context.read<ConnectivityProvider>().hasInternet == false) return;
+    if (_isOffline()) return;
     final text = _inputCtrl.text.trim();
     if (text.isEmpty || _sending) return;
     HapticFeedback.lightImpact();
@@ -77,14 +92,20 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
       _streamingReply = '';
     });
     try {
-      await AITourGuideService.instance.send(
-        text,
-        onResponseChunk: (response) {
-          if (!mounted) return;
-          setState(() => _streamingReply = response);
-          _scrollToBottom();
-        },
-      );
+      final sender = widget.onSendMessage;
+      if (sender != null) {
+        final response = await sender(text);
+        if (mounted) setState(() => _streamingReply = response);
+      } else {
+        await AITourGuideService.instance.send(
+          text,
+          onResponseChunk: (response) {
+            if (!mounted) return;
+            setState(() => _streamingReply = response);
+            _scrollToBottom();
+          },
+        );
+      }
     } finally {
       await _quotaKey.currentState?.refresh();
       if (mounted) {
@@ -96,6 +117,10 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
       }
     }
   }
+
+  bool _isOffline() =>
+      widget.isOfflineOverride ??
+      context.read<ConnectivityProvider>().hasInternet == false;
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -118,8 +143,9 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isOffline =
-        context.watch<ConnectivityProvider>().hasInternet == false;
+    final isOffline = widget.isOfflineOverride == null
+        ? context.watch<ConnectivityProvider>().hasInternet == false
+        : widget.isOfflineOverride!;
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
@@ -155,6 +181,10 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
       ),
       body: Column(
         children: [
+          AiQuotaBanner(
+            key: _quotaKey,
+            fetchQuotaStatus: widget.fetchQuotaStatus,
+          ),
           Expanded(
             child: !_started
                 ? const Center(child: CircularProgressIndicator())
@@ -169,7 +199,6 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
                 style: TextStyle(color: context.textSec, fontSize: 12),
               ),
             ),
-          AiQuotaBanner(key: _quotaKey),
           _buildInputBar(enabled: !isOffline),
         ],
       ),

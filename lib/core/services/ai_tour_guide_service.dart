@@ -11,6 +11,47 @@ import 'gemini_rest_client.dart';
 const aiDailyLimitMessage =
     'You have reached your daily limit, please come back tomorrow.';
 
+String buildGeneralGuideWelcome({
+  required String governorateId,
+  required String locale,
+}) {
+  final governorate =
+      EgyptGovernorate.byId[governorateId] ??
+      EgyptGovernorate.byId['alexandria']!;
+  if (locale == 'ar') {
+    return 'أهلاً! أنا مساعد إيجيبت لور الذكي، دليلك المحلي في '
+        '${governorate.nameAr}. اسألني عن الأماكن والطعام والتاريخ والجولات.';
+  }
+  return "Hi! I'm EgyptLore AI, your local guide for ${governorate.nameEn}. "
+      'Ask me about places to visit, food, history, tours, or local tips.';
+}
+
+String buildGeneralGuideFallback({
+  required String governorateId,
+  required String locale,
+  Iterable<PlaceModel> places = const [],
+}) {
+  final governorate =
+      EgyptGovernorate.byId[governorateId] ??
+      EgyptGovernorate.byId['alexandria']!;
+  final localPlaces = places
+      .where((place) => place.governorate == governorate.id)
+      .take(3)
+      .map((place) => place.localizedName(locale))
+      .toList(growable: false);
+  final examples = localPlaces.isEmpty
+      ? (locale == 'ar'
+            ? 'أماكن الزيارة والطعام والتاريخ'
+            : 'places, food, and history')
+      : localPlaces.join(locale == 'ar' ? '، ' : ', ');
+  if (locale == 'ar') {
+    return 'أواجه مشكلة مؤقتة في الوصول إلى المساعد، لكن يمكنني مساعدتك '
+        'في استكشاف ${governorate.nameAr}. اسألني عن $examples.';
+  }
+  return "I'm having trouble reaching the AI right now, but I can still help "
+      'you explore ${governorate.nameEn}. Try asking about $examples.';
+}
+
 String buildGovernorateGuideContext({
   required String governorateId,
   Iterable<PlaceModel> places = const [],
@@ -22,20 +63,24 @@ String buildGovernorateGuideContext({
       EgyptGovernorate.byId[governorateId] ??
       EgyptGovernorate.byId['alexandria']!;
   final isArabic = locale == 'ar';
-  final nearbyPlaces = places
-      .where(
-        (place) =>
-            place.governorate == governorateId &&
-            place.id != referencePlace?.id,
-      )
-      .toList()
-    ..sort((a, b) {
-      final anchorLat = referencePlace?.lat ?? governorate.centerLat;
-      final anchorLng = referencePlace?.lng ?? governorate.centerLng;
-      return _guideDistanceMeters(anchorLat, anchorLng, a.lat, a.lng).compareTo(
-        _guideDistanceMeters(anchorLat, anchorLng, b.lat, b.lng),
-      );
-    });
+  final nearbyPlaces =
+      places
+          .where(
+            (place) =>
+                place.governorate == governorateId &&
+                place.id != referencePlace?.id,
+          )
+          .toList()
+        ..sort((a, b) {
+          final anchorLat = referencePlace?.lat ?? governorate.centerLat;
+          final anchorLng = referencePlace?.lng ?? governorate.centerLng;
+          return _guideDistanceMeters(
+            anchorLat,
+            anchorLng,
+            a.lat,
+            a.lng,
+          ).compareTo(_guideDistanceMeters(anchorLat, anchorLng, b.lat, b.lng));
+        });
   final nearbyNames = nearbyPlaces
       .take(8)
       .map((place) => place.localizedName(locale))
@@ -67,10 +112,7 @@ double _guideDistanceMeters(
   final dLng = (lngB - lngA) * math.pi / 180;
   final h =
       math.sin(dLat / 2) * math.sin(dLat / 2) +
-      math.cos(lat1) *
-          math.cos(lat2) *
-          math.sin(dLng / 2) *
-          math.sin(dLng / 2);
+      math.cos(lat1) * math.cos(lat2) * math.sin(dLng / 2) * math.sin(dLng / 2);
   return 2 * earthRadius * math.atan2(math.sqrt(h), math.sqrt(1 - h));
 }
 
