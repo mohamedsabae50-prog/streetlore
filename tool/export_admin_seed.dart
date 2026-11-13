@@ -175,9 +175,9 @@ void _verifyCairoSeed(
   List<Map<String, dynamic>> places,
   List<Map<String, dynamic>> tours,
 ) {
-  if (places.length != 120 || tours.length != 5) {
+  if (places.length != 140 || tours.length != 10) {
     throw StateError(
-      'Expected 120 Cairo places and 5 Cairo itineraries; '
+      'Expected 140 Cairo places and 10 Cairo itineraries; '
       'found ${places.length} and ${tours.length}.',
     );
   }

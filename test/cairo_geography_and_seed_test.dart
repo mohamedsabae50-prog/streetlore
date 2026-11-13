@@ -48,6 +48,29 @@ const _expectedCairoPlaceIds = [
   'atm_nbe_abdeen',
 ];
 
+const _newCairoArticleImageIds = [
+  'mosque_of_muhammad_ali',
+  'al_ghuri_complex',
+  'sabil_kuttab_katkhuda',
+  'mosque_of_suleiman_pasha',
+  'qasr_el_nil_bridge',
+  'tahrir_square_obelisk',
+  'amir_beshtak_palace',
+  'mosque_of_al_maridani',
+  'mosque_of_sultan_qaytbay',
+  'khanqah_faraj_ibn_barquq',
+  'saint_barbara_church_cairo',
+  'ben_ezra_synagogue_cairo',
+  'babylon_fortress_cairo',
+  'egyptian_geological_museum',
+  'egyptian_postal_museum',
+  'egyptian_railways_museum',
+  'beit_el_umma_museum',
+  'mahmoud_mukhtar_museum',
+  'modern_egyptian_art_museum',
+  'al_gawhara_palace_citadel',
+];
+
 const _expectedCairoItineraryStops = {
   'cairo_islamic_fatimid_walk': [
     'al_muizz_street',
@@ -82,6 +105,42 @@ const _expectedCairoItineraryStops = {
     'cave_church_st_simon_mokattam',
     'wadi_degla_protectorate',
   ],
+  'cairo_citadel_royal_mosques_tour': [
+    'mosque_of_muhammad_ali',
+    'mosque_of_suleiman_pasha',
+    'al_gawhara_palace_citadel',
+    'cairo_citadel',
+    'sultan_hassan_mosque',
+  ],
+  'cairo_zamalek_art_museums_walk': [
+    'mahmoud_mukhtar_museum',
+    'aisha_fahmy_palace',
+    'cairo_opera_house',
+    'modern_egyptian_art_museum',
+    'qasr_el_nil_bridge',
+  ],
+  'cairo_mamluk_gems_architecture_tour': [
+    'al_ghuri_complex',
+    'sabil_kuttab_katkhuda',
+    'amir_beshtak_palace',
+    'mosque_of_al_maridani',
+    'mosque_of_sultan_qaytbay',
+    'khanqah_faraj_ibn_barquq',
+  ],
+  'cairo_museums_palaces_heritage_trail': [
+    'abdeen_palace',
+    'beit_el_umma_museum',
+    'egyptian_geological_museum',
+    'egyptian_postal_museum',
+    'egyptian_railways_museum',
+  ],
+  'cairo_culinary_historic_cafes_walk': [
+    'koshary_abou_tarek',
+    'felfela_downtown',
+    'cafe_riche_downtown',
+    'groppi_talaat_harb',
+    'el_fishawy_cafe_khan',
+  ],
 };
 
 const _validCategories = {
@@ -101,7 +160,7 @@ void main() {
   final cairo = EgyptGovernorate.byId['cairo']!;
 
   test('Cairo seed has exactly the requested places and stable order', () {
-    expect(cairoSeedPlaces, hasLength(120));
+    expect(cairoSeedPlaces, hasLength(140));
     expect(
       cairoSeedPlaces
           .take(_expectedCairoPlaceIds.length)
@@ -109,14 +168,18 @@ void main() {
           .toList(),
       _expectedCairoPlaceIds,
     );
-    expect(cairoSeedItineraries, hasLength(5));
+    expect(
+      cairoSeedPlaces.map((place) => place.id),
+      containsAll(_newCairoArticleImageIds),
+    );
+    expect(cairoSeedItineraries, hasLength(10));
     expect(
       MockData.places.where((place) => place.governorate == 'cairo'),
-      hasLength(120),
+      hasLength(140),
     );
     expect(
       MockData.tours.where((tour) => tour.governorate == 'cairo'),
-      hasLength(5),
+      hasLength(10),
     );
   });
 
@@ -141,6 +204,20 @@ void main() {
       cairoSeedPlaces.map((place) => place.imageUrl).toSet(),
       hasLength(cairoSeedPlaces.length),
     );
+  });
+
+  test('new Cairo landmarks use article pageimage API URLs', () {
+    final placesById = {for (final place in cairoSeedPlaces) place.id: place};
+    for (final id in _newCairoArticleImageIds) {
+      final url = Uri.parse(placesById[id]!.imageUrl);
+      expect(url.host, 'upload.wikimedia.org', reason: id);
+      expect(url.queryParameters['utm_campaign'], 'api', reason: id);
+      expect(
+        url.queryParameters['utm_source'],
+        anyOf('en.wikipedia.org', 'ar.wikipedia.org'),
+        reason: id,
+      );
+    }
   });
 
   for (final place in cairoSeedPlaces) {

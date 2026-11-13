@@ -17,8 +17,11 @@ class AlexandriaMasteryBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalPlaces = places.length;
-    final visitedCount = places
+    final visitablePlaces = places
+        .where((place) => place.isVisitable)
+        .toList(growable: false);
+    final totalPlaces = visitablePlaces.length;
+    final visitedCount = visitablePlaces
         .where((place) => visitedPlaceIds.contains(place.id))
         .length;
     final percentage = totalPlaces > 0
@@ -148,8 +151,11 @@ class CompactAlexandriaMasteryPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = places.length;
-    final visited = places
+    final visitablePlaces = places
+        .where((place) => place.isVisitable)
+        .toList(growable: false);
+    final total = visitablePlaces.length;
+    final visited = visitablePlaces
         .where((place) => visitedPlaceIds.contains(place.id))
         .length;
     final progress = total == 0 ? 0.0 : visited / total;

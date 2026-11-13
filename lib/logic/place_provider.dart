@@ -120,13 +120,7 @@ class PlaceProvider extends ChangeNotifier {
   String? get error => _error;
 
   List<PlaceModel> _savedPlaces = [];
-  List<PlaceModel> get savedPlaces => _savedPlaces
-      .where(
-        (place) =>
-            place.governorate ==
-            (governorates?.activeGovernorate ?? 'alexandria'),
-      )
-      .toList(growable: false);
+  List<PlaceModel> get savedPlaces => List.unmodifiable(_savedPlaces);
 
   int _remoteSavedCount = 0;
   int _remoteCheckinCount = 0;
@@ -171,7 +165,9 @@ class PlaceProvider extends ChangeNotifier {
         : 0.0;
     final newlyCheckedIn = <PlaceModel>[];
     for (final place in places) {
-      if (isVisited(place.id) || _autoCheckInAttemptedIds.contains(place.id)) {
+      if (!place.isVisitable ||
+          isVisited(place.id) ||
+          _autoCheckInAttemptedIds.contains(place.id)) {
         continue;
       }
 
@@ -424,12 +420,15 @@ class PlaceProvider extends ChangeNotifier {
   Future<void> refresh() => loadPlaces(force: true);
 
   PlaceModel? findById(String id) {
-    for (final p in _places) {
+    for (final p in allPlaces) {
       if (p.id == id) return p;
     }
 
     final cached = OfflineProvider.cachedFallback;
     for (final p in cached) {
+      if (p.id == id) return p;
+    }
+    for (final p in [...cairoSeedPlaces, ...MockData.places]) {
       if (p.id == id) return p;
     }
     return null;
@@ -439,10 +438,7 @@ class PlaceProvider extends ChangeNotifier {
 
   void mergeSeedHotels() {
     if (_places.isEmpty) return;
-    final seedPlaces = [
-      ...getSeedAlexandriaPlaces(),
-      ...cairoSeedPlaces,
-    ];
+    final seedPlaces = [...getSeedAlexandriaPlaces(), ...cairoSeedPlaces];
     final merged = deduplicatePlaces([..._places, ...seedPlaces]).toList()
       ..sort((a, b) {
         final byOrder = a.displayOrder.compareTo(b.displayOrder);
@@ -635,7 +631,7 @@ class PlaceProvider extends ChangeNotifier {
     };
     _savedPlaces = savedData
         .map((jsonStr) => PlaceModel.fromJson(jsonDecode(jsonStr)))
-        .map((place) => seedPlacesById[place.id] ?? place)
+        .map((place) => findById(place.id) ?? seedPlacesById[place.id] ?? place)
         .toList();
     final correctedData = _savedPlaces
         .map((place) => jsonEncode(place.toJson()))

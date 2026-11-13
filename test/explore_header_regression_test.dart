@@ -84,6 +84,16 @@ void main() {
     CompassService.instance.stop();
 
     expect(find.text('EgyptLore'), findsOneWidget);
+    final selectorBox = tester.renderObject<RenderBox>(
+      find.byKey(const ValueKey('home-governorate-selector')),
+    );
+    final titleBox = tester.renderObject<RenderBox>(
+      find.byKey(const ValueKey('explore-title')),
+    );
+    final selectorTop = selectorBox.localToGlobal(Offset.zero).dy;
+    final titleTop = titleBox.localToGlobal(Offset.zero).dy;
+    expect((selectorTop - titleTop).abs(), lessThan(10));
+
     final titleGradient = tester.widget<ShaderMask>(
       find.byKey(const ValueKey('explore-title-gradient')),
     );
@@ -117,6 +127,8 @@ void main() {
     );
     final searchBottom =
         searchBox.localToGlobal(Offset.zero).dy + searchBox.size.height;
+    final selectorBottom = selectorTop + selectorBox.size.height;
+    expect(selectorBottom, lessThan(searchBox.localToGlobal(Offset.zero).dy));
     final circleTop = quickCircleBox.localToGlobal(Offset.zero).dy;
     expect(circleTop, greaterThanOrEqualTo(searchBottom));
   });

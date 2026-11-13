@@ -20,9 +20,10 @@ int visitedStopsCountForTour(
   List<PlaceModel> allPlaces,
 ) {
   final visitedPlaces = allPlaces
-      .where((place) => visitedPlaceIds.contains(place.id))
+      .where((place) => place.isVisitable && visitedPlaceIds.contains(place.id))
       .toList(growable: false);
   return tour.places.where((stop) {
+    if (!stop.isVisitable) return false;
     if (visitedPlaceIds.contains(stop.id)) return true;
     return visitedPlaces.any((visited) => _placesMatch(stop, visited));
   }).length;
@@ -139,6 +140,11 @@ class TourProvider extends ChangeNotifier {
       visitedStopsCountForTour(tour, _checkedInPlaceIds, _allPlaces);
 
   void markPlaceCheckedIn(String placeId) {
+    final place = _allPlaces.where((item) => item.id == placeId).firstOrNull;
+    if (placeId.trim().toLowerCase().startsWith('atm_') ||
+        (place != null && !place.isVisitable)) {
+      return;
+    }
     _checkInsLoaded = true;
     if (placeId.isNotEmpty && _checkedInPlaceIds.add(placeId)) {
       _updateAutomaticallyVisitedTours();
@@ -164,7 +170,13 @@ class TourProvider extends ChangeNotifier {
         !listEquals(_allPlaces, allPlaces);
     _checkedInPlaceIds
       ..clear()
-      ..addAll(visitedPlaceIds);
+      ..addAll(
+        visitedPlaceIds.where((id) {
+          final place = allPlaces.where((item) => item.id == id).firstOrNull;
+          return !id.trim().toLowerCase().startsWith('atm_') &&
+              (place == null || place.isVisitable);
+        }),
+      );
     _allPlaces = List.unmodifiable(allPlaces);
     _checkInsLoaded = true;
     final completionChanged = _updateAutomaticallyVisitedTours();

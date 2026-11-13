@@ -558,15 +558,22 @@ class _MapViewScreenState extends State<MapViewScreen>
                       for (final p in visiblePlaces)
                         Marker(
                           point: LatLng(p.lat, p.lng),
-                          width: visitedPlaceIds.contains(p.id) ? 50 : 44,
-                          height: visitedPlaceIds.contains(p.id) ? 50 : 44,
+                          width: p.isVisitable && visitedPlaceIds.contains(p.id)
+                              ? 50
+                              : 44,
+                          height:
+                              p.isVisitable && visitedPlaceIds.contains(p.id)
+                              ? 50
+                              : 44,
                           child: RepaintBoundary(
                             child: GestureDetector(
                               onTap: () {
                                 setState(() => _selectedPlace = p);
                                 _mapController.move(LatLng(p.lat, p.lng), 14);
                               },
-                              child: visitedPlaceIds.contains(p.id)
+                              child:
+                                  p.isVisitable &&
+                                      visitedPlaceIds.contains(p.id)
                                   ? Stack(
                                       clipBehavior: Clip.none,
                                       alignment: Alignment.center,

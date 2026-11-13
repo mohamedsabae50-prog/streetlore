@@ -987,4 +987,105 @@ cairoSeedItineraries = List<ItineraryModel>.unmodifiable([
       _cairoStop('wadi_degla_protectorate'),
     ],
   ),
+  ItineraryModel(
+    id: 'cairo_citadel_royal_mosques_tour',
+    title: 'Citadel & Royal Mosques Trail',
+    titleAr: 'جولة القلعة والمساجد السلطانية',
+    description:
+        'Explore the Citadel’s royal mosques and palace museums, then continue to the nearby monumental Sultan Hassan Mosque.',
+    descriptionAr:
+        'استكشف مساجد القلعة السلطانية ومتاحفها، ثم تابع إلى مسجد السلطان حسن الأثري القريب.',
+    duration: 'Half day',
+    durationAr: 'نصف يوم',
+    imageUrl: _image('mosque_of_muhammad_ali'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('mosque_of_muhammad_ali'),
+      _cairoStop('mosque_of_suleiman_pasha'),
+      _cairoStop('al_gawhara_palace_citadel'),
+      _cairoStop('cairo_citadel'),
+      _cairoStop('sultan_hassan_mosque'),
+    ],
+  ),
+  ItineraryModel(
+    id: 'cairo_zamalek_art_museums_walk',
+    title: 'Zamalek Art, Opera & Nile Walk',
+    titleAr: 'جولة متاحف وفنون جزيرة الزمالك',
+    description:
+        'Visit Zamalek’s art museums and gardens before crossing the Nile toward Cairo’s Opera House and cultural district.',
+    descriptionAr:
+        'زر متاحف الزمالك الفنية وحدائقها قبل عبور النيل إلى دار الأوبرا والمنطقة الثقافية بالقاهرة.',
+    duration: '3 hours',
+    durationAr: '٣ ساعات',
+    imageUrl: _image('mahmoud_mukhtar_museum'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('mahmoud_mukhtar_museum'),
+      _cairoStop('aisha_fahmy_palace'),
+      _cairoStop('cairo_opera_house'),
+      _cairoStop('modern_egyptian_art_museum'),
+      _cairoStop('qasr_el_nil_bridge'),
+    ],
+  ),
+  ItineraryModel(
+    id: 'cairo_mamluk_gems_architecture_tour',
+    title: 'Mamluk Architectural Masterpieces',
+    titleAr: 'جولة روائع العمارة المملوكية',
+    description:
+        'Trace Cairo’s Mamluk architecture through historic complexes, a richly decorated sabil-kuttab, and royal mausoleums.',
+    descriptionAr:
+        'تتبّع العمارة المملوكية في القاهرة بين المجمعات التاريخية والسبيل والكتاب المزخرف ومقابر السلاطين.',
+    duration: '4 hours',
+    durationAr: '٤ ساعات',
+    imageUrl: _image('al_ghuri_complex'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('al_ghuri_complex'),
+      _cairoStop('sabil_kuttab_katkhuda'),
+      _cairoStop('amir_beshtak_palace'),
+      _cairoStop('mosque_of_al_maridani'),
+      _cairoStop('mosque_of_sultan_qaytbay'),
+      _cairoStop('khanqah_faraj_ibn_barquq'),
+    ],
+  ),
+  ItineraryModel(
+    id: 'cairo_museums_palaces_heritage_trail',
+    title: 'Royal Palaces & Specialized Museums',
+    titleAr: 'مسار القصور والمتاحف الملكية',
+    description:
+        'Connect Cairo’s palace heritage with specialized museums dedicated to geology, postal history, railways, and national memory.',
+    descriptionAr:
+        'اربط تراث قصور القاهرة بمتاحف متخصصة في الجيولوجيا وتاريخ البريد والسكك الحديدية والذاكرة الوطنية.',
+    duration: 'Full day',
+    durationAr: 'يوم كامل',
+    imageUrl: _image('abdeen_palace'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('abdeen_palace'),
+      _cairoStop('beit_el_umma_museum'),
+      _cairoStop('egyptian_geological_museum'),
+      _cairoStop('egyptian_postal_museum'),
+      _cairoStop('egyptian_railways_museum'),
+    ],
+  ),
+  ItineraryModel(
+    id: 'cairo_culinary_historic_cafes_walk',
+    title: 'Cairo Culinary & Historic Cafes Trail',
+    titleAr: 'جولة مذاق القاهرة ومقاهيها التاريخية',
+    description:
+        'Taste Cairo’s iconic koshary and local dishes, then pause at historic downtown and Khan el-Khalili cafes.',
+    descriptionAr:
+        'تذوّق الكشري وأطباق القاهرة الشهيرة، ثم استرح في مقاهي وسط البلد وخان الخليلي التاريخية.',
+    duration: '4 hours',
+    durationAr: '٤ ساعات',
+    imageUrl: _image('cafe_riche_downtown'),
+    governorate: 'cairo',
+    places: [
+      _cairoStop('koshary_abou_tarek'),
+      _cairoStop('felfela_downtown'),
+      _cairoStop('cafe_riche_downtown'),
+      _cairoStop('groppi_talaat_harb'),
+      _cairoStop('el_fishawy_cafe_khan'),
+    ],
+  ),
 ]);

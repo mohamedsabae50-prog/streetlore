@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetlore/data/models/itinerary_model.dart';
 import 'package:streetlore/data/models/place_model.dart';
+import 'package:streetlore/logic/trip_provider.dart';
 import 'package:streetlore/logic/tour_provider.dart';
 
 PlaceModel _place(
@@ -30,6 +32,8 @@ ItineraryModel _tour(List<PlaceModel> places, {String status = 'published'}) =>
     );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('tour completes when every stop ID is visited', () {
     final tour = _tour([
       _place('one', 'One'),
@@ -78,4 +82,62 @@ void main() {
       expect(isTourAutomaticallyVisited(tour, const {}, tour.places), isTrue);
     },
   );
+
+  test('ATM places cannot count toward visits or tour completion', () {
+    final atm = PlaceModel(
+      id: 'atm_inside_cafe',
+      nameEn: 'ATM inside a cafe',
+      descriptionEn: '',
+      imageUrl: '',
+      rating: 4,
+      category: 'Cafe',
+      lat: 31.2,
+      lng: 29.9,
+    );
+    final tour = _tour([_place('visit', 'Visit'), atm]);
+
+    expect(atm.isVisitable, isFalse);
+    expect(visitedStopsCountForTour(tour, {'visit', atm.id}, tour.places), 1);
+    expect(
+      isTourAutomaticallyVisited(tour, {'visit', atm.id}, tour.places),
+      isFalse,
+    );
+  });
+
+  test('ATM category aliases are not visitable', () {
+    for (final category in ['ATM', 'ATMs']) {
+      final atm = PlaceModel(
+        id: 'cashpoint-${category.toLowerCase()}',
+        nameEn: 'Cash point',
+        descriptionEn: '',
+        imageUrl: '',
+        rating: 4,
+        category: category,
+        lat: 31.2,
+        lng: 29.9,
+      );
+      expect(atm.isVisitable, isFalse);
+    }
+  });
+
+  test('trip visit state discards current and legacy ATM check-ins', () {
+    SharedPreferences.setMockInitialValues({});
+    final provider = TripProvider();
+    final atm = PlaceModel(
+      id: 'legacy-cashpoint',
+      nameEn: 'ATM',
+      descriptionEn: '',
+      imageUrl: '',
+      rating: 0,
+      category: 'ATM',
+      lat: 31.2,
+      lng: 29.9,
+    );
+
+    provider.markVisited(atm.id);
+    provider.syncPlaceCatalog([atm]);
+    provider.markVisited('atm_cairo_station');
+
+    expect(provider.visitedPlaceIds, isEmpty);
+  });
 }

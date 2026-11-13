@@ -8,6 +8,7 @@ import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/trip_provider.dart';
+import 'place_details_screen.dart';
 
 /// v1.0.75 — single-hub Trip Planner with two tabs:
 ///   • Saved  — places the user tapped the bookmark on (PlaceProvider.savedPlaces)
@@ -41,7 +42,9 @@ class TripPlannerScreen extends StatelessWidget {
                 ? AppColors.accentLight
                 : AppColors.accent,
             indicatorWeight: 3,
-            labelColor: context.isDark ? AppColors.accentLight : context.navSelected,
+            labelColor: context.isDark
+                ? AppColors.accentLight
+                : context.navSelected,
             unselectedLabelColor: context.textSec,
             labelStyle: const TextStyle(
               fontWeight: FontWeight.w800,
@@ -59,12 +62,7 @@ class TripPlannerScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [
-            _SavedTab(),
-            _VisitedTab(),
-          ],
-        ),
+        body: const TabBarView(children: [_SavedTab(), _VisitedTab()]),
       ),
     );
   }
@@ -154,8 +152,8 @@ class _VisitedTabState extends State<_VisitedTab> {
         // if there are duplicate rows in place_checkins.
         final visitedPlaces = <PlaceModel>[];
         final seen = <String>{};
-        for (final p in places.places) {
-          if (ids.contains(p.id) && !seen.contains(p.id)) {
+        for (final p in places.allPlaces) {
+          if (p.isVisitable && ids.contains(p.id) && !seen.contains(p.id)) {
             visitedPlaces.add(p);
             seen.add(p.id);
           }
@@ -171,10 +169,8 @@ class _VisitedTabState extends State<_VisitedTab> {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           itemCount: visitedPlaces.length,
           separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (context, i) => _PlaceCard(
-            place: visitedPlaces[i],
-            isVisited: true,
-          ),
+          itemBuilder: (context, i) =>
+              _PlaceCard(place: visitedPlaces[i], isVisited: true),
         );
       },
     );
@@ -201,7 +197,10 @@ class _PlaceCard extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: isVisited
-                ? BorderSide(color: AppColors.success.withValues(alpha: 0.6), width: 1.5)
+                ? BorderSide(
+                    color: AppColors.success.withValues(alpha: 0.6),
+                    width: 1.5,
+                  )
                 : BorderSide.none,
           ),
           child: ListTile(
@@ -262,15 +261,16 @@ class _PlaceCard extends StatelessWidget {
               place.category,
               style: TextStyle(color: context.textSec, fontSize: 12),
             ),
-            trailing: Icon(
-              Icons.chevron_right_rounded,
-              color: context.textSec,
-            ),
+            trailing: Icon(Icons.chevron_right_rounded, color: context.textSec),
             onTap: () {
-              // Push the standard Place Details screen — the user can
-              // then un-save / un-visit from there.
-              Navigator.pushNamed(context, '/placeDetails',
-                  arguments: place);
+              final fullPlace =
+                  context.read<PlaceProvider>().findById(place.id) ?? place;
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => PlaceDetailsScreen(place: fullPlace),
+                ),
+              );
             },
           ),
         ),
@@ -279,10 +279,7 @@ class _PlaceCard extends StatelessWidget {
             top: -8,
             right: 12,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: AppColors.success,
                 borderRadius: BorderRadius.circular(10),
@@ -306,11 +303,7 @@ class _Empty extends StatelessWidget {
   final IconData icon;
   final String title;
   final String body;
-  const _Empty({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
+  const _Empty({required this.icon, required this.title, required this.body});
 
   @override
   Widget build(BuildContext context) {

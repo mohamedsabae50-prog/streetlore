@@ -64,14 +64,14 @@ Future<void> main() async {
       );
     }
   }
-  if (cairoSeedPlaces.length != 120) {
+  if (cairoSeedPlaces.length != 140) {
     throw StateError(
-      'Expected 120 Cairo places, got ${cairoSeedPlaces.length}',
+      'Expected 140 Cairo places, got ${cairoSeedPlaces.length}',
     );
   }
-  if (cairoSeedItineraries.length != 5) {
+  if (cairoSeedItineraries.length != 10) {
     throw StateError(
-      'Expected 5 Cairo itineraries, got ${cairoSeedItineraries.length}',
+      'Expected 10 Cairo itineraries, got ${cairoSeedItineraries.length}',
     );
   }
   final primaryImageUrls = cairoSeedPlaces
@@ -279,9 +279,7 @@ Future<({int statusCode, String? contentType})> _imageStatus(
         contentType: response.headers.contentType?.mimeType,
       );
     }
-    await Future<void>.delayed(
-      Duration(seconds: retryAfter ?? (1 << attempt)),
-    );
+    await Future<void>.delayed(Duration(seconds: retryAfter ?? (1 << attempt)));
   }
   throw StateError('Image retry loop ended unexpectedly for $uri');
 }

@@ -80,5 +80,7 @@ void main() {
 
     expect(find.byType(MonthlyProRewardBanner), findsNothing);
     expect(find.textContaining('Finish #1 Top Visitor'), findsNothing);
+    expect(find.byType(TabBar), findsNothing);
+    expect(find.byType(TabBarView), findsNothing);
   });
 }

@@ -318,21 +318,52 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          ShaderMask(
-                            key: const ValueKey('explore-title-gradient'),
-                            shaderCallback: (bounds) => LinearGradient(
-                              colors: kExploreTitleGradientColors,
-                            ).createShader(bounds),
-                            child: const Text(
-                              'EgyptLore',
-                              key: ValueKey('explore-title'),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.5,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: ShaderMask(
+                                    key: const ValueKey(
+                                      'explore-title-gradient',
+                                    ),
+                                    shaderCallback: (bounds) => LinearGradient(
+                                      colors: kExploreTitleGradientColors,
+                                    ).createShader(bounds),
+                                    child: const Text(
+                                      'EgyptLore',
+                                      key: ValueKey('explore-title'),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 6),
+                              SizedBox(
+                                width: 96,
+                                child: GovernorateSelector(
+                                  buttonKey: const ValueKey(
+                                    'home-governorate-selector',
+                                  ),
+                                  compact: true,
+                                  onChanged: (_) {
+                                    setState(() {
+                                      _selectedCategory = 'All';
+                                      _searchQuery = '';
+                                      _searchController.clear();
+                                      _freeOnly = false;
+                                      _hiddenGemsOnly = false;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -396,21 +427,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ],
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(20, 10, 20, 0),
-              child: GovernorateSelector(
-                buttonKey: const ValueKey('home-governorate-selector'),
-                onChanged: (_) {
-                  setState(() {
-                    _selectedCategory = 'All';
-                    _searchQuery = '';
-                    _searchController.clear();
-                    _freeOnly = false;
-                    _hiddenGemsOnly = false;
-                  });
-                },
               ),
             ),
             Padding(

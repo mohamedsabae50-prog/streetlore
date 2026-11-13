@@ -13,6 +13,7 @@ class TripProvider extends ChangeNotifier {
   /// Refreshed on login + every check-in via [markVisited].
   final Set<String> _visitedPlaceIds = <String>{};
   Set<String> get visitedPlaceIds => Set.unmodifiable(_visitedPlaceIds);
+  final Set<String> _nonVisitablePlaceIds = <String>{};
   String? _visitedUserId;
   int _visitedRefreshGeneration = 0;
   Future<void> _visitCacheWrites = Future<void>.value();
@@ -77,8 +78,9 @@ class TripProvider extends ChangeNotifier {
           .map((row) => (row['place_id'] ?? '').toString())
           .where((id) => id.isNotEmpty)
           .toSet();
-      _replaceVisitedPlaces(userId, remoteIds);
-      await _persistVisitedPlaces(userId, remoteIds);
+      final visitableIds = remoteIds.where(_isVisitableId).toSet();
+      _replaceVisitedPlaces(userId, visitableIds);
+      await _persistVisitedPlaces(userId, visitableIds);
     } catch (e) {
       debugPrint('TripProvider._loadVisitedFromSupabase: $e');
     }
@@ -110,24 +112,51 @@ class TripProvider extends ChangeNotifier {
       SupabaseService.instance.clientOrNull?.auth.currentUser?.id ?? '';
 
   void _replaceVisitedPlaces(String userId, Set<String> placeIds) {
+    final visitableIds = placeIds.where(_isVisitableId).toSet();
     final changed =
         _visitedUserId != userId ||
-        _visitedPlaceIds.length != placeIds.length ||
-        !_visitedPlaceIds.containsAll(placeIds);
+        _visitedPlaceIds.length != visitableIds.length ||
+        !_visitedPlaceIds.containsAll(visitableIds);
     _visitedUserId = userId;
     _visitedPlaceIds
       ..clear()
-      ..addAll(placeIds);
+      ..addAll(visitableIds);
     if (changed) notifyListeners();
   }
+
+  void syncPlaceCatalog(Iterable<PlaceModel> places) {
+    final nonVisitableIds = places
+        .where((place) => !place.isVisitable)
+        .map((place) => place.id)
+        .toSet();
+    final changed =
+        _nonVisitablePlaceIds.length != nonVisitableIds.length ||
+        !_nonVisitablePlaceIds.containsAll(nonVisitableIds);
+    if (!changed) return;
+    _nonVisitablePlaceIds
+      ..clear()
+      ..addAll(nonVisitableIds);
+    final previousLength = _visitedPlaceIds.length;
+    _visitedPlaceIds.removeWhere((id) => !_isVisitableId(id));
+    if (_visitedPlaceIds.length != previousLength) notifyListeners();
+  }
+
+  bool _isVisitableId(String id) =>
+      !id.trim().toLowerCase().startsWith('atm_') &&
+      !_nonVisitablePlaceIds.contains(id);
 
   /// Public refresh — call after sign-in / sign-out or when syncing visits.
   Future<void> refreshVisited() => _loadVisitedFromSupabase();
 
   /// Add a freshly-checked-in place id so the trip planner can show the badge
   /// immediately (don't wait for the next refresh).
-  void markVisited(String placeId) {
-    if (placeId.isEmpty) return;
+  void markVisited(String placeId, {PlaceModel? place}) {
+    if (placeId.isEmpty ||
+        placeId.trim().toLowerCase().startsWith('atm_') ||
+        (place != null && !place.isVisitable) ||
+        !_isVisitableId(placeId)) {
+      return;
+    }
     final userId = _currentUserId();
     if (userId.isNotEmpty && _visitedUserId != userId) {
       _replaceVisitedPlaces(userId, const <String>{});

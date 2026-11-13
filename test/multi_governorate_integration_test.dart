@@ -60,7 +60,7 @@ void main() {
       );
 
       expect(governorates.unlockAndSelectGovernorate('cairo'), isTrue);
-      expect(places.places, hasLength(120));
+      expect(places.places, hasLength(140));
       expect(
         places.places.every((place) => place.governorate == 'cairo'),
         isTrue,
@@ -73,7 +73,7 @@ void main() {
         places.places.where((place) => place.category == 'ATMs'),
         hasLength(17),
       );
-      expect(tours.tours, hasLength(5));
+      expect(tours.tours, hasLength(10));
       expect(tours.tours.every((tour) => tour.governorate == 'cairo'), isTrue);
 
       expect(governorates.unlockAndSelectGovernorate('alexandria'), isTrue);
@@ -182,6 +182,13 @@ void main() {
     await tester.pump();
 
     final selector = find.byKey(const ValueKey('map-view-governorate-pill'));
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('map-view-header-bar')),
+        matching: selector,
+      ),
+      findsOneWidget,
+    );
     await tester.tap(selector);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cairo'));

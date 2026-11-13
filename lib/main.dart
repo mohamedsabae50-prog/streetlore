@@ -164,10 +164,9 @@ Future<void> _runApplication() async {
   unawaited(CarPlayService.instance.initialize());
   final tripProvider = TripProvider();
   void syncTourVisitStatus() {
-    tourProvider.syncVisitedPlaces(
-      tripProvider.visitedPlaceIds,
-      placeProvider.places,
-    );
+    final allPlaces = placeProvider.allPlaces;
+    tripProvider.syncPlaceCatalog(allPlaces);
+    tourProvider.syncVisitedPlaces(tripProvider.visitedPlaceIds, allPlaces);
   }
 
   tripProvider.addListener(syncTourVisitStatus);

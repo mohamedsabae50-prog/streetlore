@@ -23,10 +23,30 @@ const _categoryFallbackCategories = {
   'Hotels',
   'ATMs',
   'Nature',
-  'Mosques',
-  'Churches',
-  'Culture',
-  'Historical',
+};
+const _exactArticleImagePlaceIds = {
+  'misr_grand_mosque_capital',
+  'nativity_cathedral_new_capital',
+  'mosque_of_muhammad_ali',
+  'al_ghuri_complex',
+  'sabil_kuttab_katkhuda',
+  'mosque_of_suleiman_pasha',
+  'qasr_el_nil_bridge',
+  'tahrir_square_obelisk',
+  'amir_beshtak_palace',
+  'mosque_of_al_maridani',
+  'mosque_of_sultan_qaytbay',
+  'khanqah_faraj_ibn_barquq',
+  'saint_barbara_church_cairo',
+  'ben_ezra_synagogue_cairo',
+  'babylon_fortress_cairo',
+  'egyptian_geological_museum',
+  'egyptian_postal_museum',
+  'egyptian_railways_museum',
+  'beit_el_umma_museum',
+  'mahmoud_mukhtar_museum',
+  'modern_egyptian_art_museum',
+  'al_gawhara_palace_citadel',
 };
 const _ignoredNameTokens = {
   'the',
@@ -102,16 +122,16 @@ Future<void> _apiQueue = Future<void>.value();
 DateTime _nextApiRequestAt = DateTime.fromMillisecondsSinceEpoch(0);
 
 Future<void> main(List<String> args) async {
-  if (cairoSeedPlaces.length != 120) {
+  if (cairoSeedPlaces.length != 140) {
     throw StateError(
-      'Expected 120 Cairo places before resolving images, '
+      'Expected 140 Cairo places before resolving images, '
       'found ${cairoSeedPlaces.length}.',
     );
   }
   _verifySeedGeography();
   if (args.contains('--check-geography-only')) {
     stdout.writeln(
-      '[PASS] All 120 places are in Cairo, outside Giza/Alexandria, '
+      '[PASS] All 140 places are in Cairo, outside Giza/Alexandria, '
       'and at least 25m apart.',
     );
     return;
@@ -136,18 +156,27 @@ Future<void> main(List<String> args) async {
       final cachedUrl = decoded[place.id];
       if (cachedUrl is! String) continue;
       final uri = Uri.tryParse(cachedUrl);
+      final isExactArticleImage =
+          _exactArticleImagePlaceIds.contains(place.id) &&
+          cachedUrl == cairoImageUrls[place.id] &&
+          const {
+            'en.wikipedia.org',
+            'ar.wikipedia.org',
+          }.contains(uri?.queryParameters['utm_source']) &&
+          uri?.queryParameters['utm_campaign'] == 'api';
       if (uri == null ||
           uri.scheme != 'https' ||
           uri.host != 'upload.wikimedia.org' ||
           !_isPhotographTitle(place.nameEn, cachedUrl) ||
-          !_isRelevantTitle(
-            place,
-            cachedUrl,
-            cachedUrl,
-            allowCategoryFallback: _categoryFallbackCategories.contains(
-              place.category,
-            ),
-          )) {
+          (!isExactArticleImage &&
+              !_isRelevantTitle(
+                place,
+                cachedUrl,
+                cachedUrl,
+                allowCategoryFallback: _categoryFallbackCategories.contains(
+                  place.category,
+                ),
+              ))) {
         continue;
       }
       final imageFile = _imageFileKey(uri);
@@ -158,7 +187,7 @@ Future<void> main(List<String> args) async {
       usedUrls.add(cachedUrl);
       usedImageFiles.add(imageFile);
     }
-    stdout.writeln('[CACHE] Restored ${resolved.length}/120 verified images.');
+    stdout.writeln('[CACHE] Restored ${resolved.length}/140 verified images.');
   }
   var persistQueue = Future<void>.value();
   Future<void> persistPartialResults() {
@@ -185,7 +214,7 @@ Future<void> main(List<String> args) async {
         if (url != null) {
           resolved[place.id] = url;
           stdout.writeln(
-            '[RESOLVED ${resolved.length}/120] ${place.id} -> $url',
+            '[RESOLVED ${resolved.length}/140] ${place.id} -> $url',
           );
           await persistPartialResults();
         } else {
@@ -211,7 +240,8 @@ Future<void> main(List<String> args) async {
         .where(
           (place) =>
               unresolvedPlaces.contains(place.id) &&
-              _categoryFallbackCategories.contains(place.category),
+              _categoryFallbackCategories.contains(place.category) &&
+              !_exactArticleImagePlaceIds.contains(place.id),
         )
         .toList(growable: false);
     for (final place in fallbackPlaces) {
@@ -234,18 +264,18 @@ Future<void> main(List<String> args) async {
       resolved[place.id] = url;
       unresolvedPlaces.remove(place.id);
       stdout.writeln(
-        '[CATEGORY IMAGE ${resolved.length}/120] ${place.id} -> $url',
+        '[CATEGORY IMAGE ${resolved.length}/140] ${place.id} -> $url',
       );
       await persistPartialResults();
     }
-    if (resolved.length != 120 ||
-        usedUrls.length != 120 ||
-        usedImageFiles.length != 120 ||
+    if (resolved.length != 140 ||
+        usedUrls.length != 140 ||
+        usedImageFiles.length != 140 ||
         unresolvedPlaces.isNotEmpty) {
       await persistQueue;
       throw StateError(
-        'Could not produce 120 verified unique images. Resolved '
-        '${resolved.length}/120; unresolved: ${unresolvedPlaces.join(', ')}.',
+        'Could not produce 140 verified unique images. Resolved '
+        '${resolved.length}/140; unresolved: ${unresolvedPlaces.join(', ')}.',
       );
     }
 
@@ -264,7 +294,7 @@ Future<void> main(List<String> args) async {
     ).writeAsString(source.toString(), flush: true);
     if (await partialFile.exists()) await partialFile.delete();
     stdout.writeln(
-      '[PASS] Resolved and HTTP-verified 120 unique Wikimedia image URLs.',
+      '[PASS] Resolved and HTTP-verified 140 unique Wikimedia image URLs.',
     );
     stdout.writeln(
       '[PASS] Updated lib/data/cairo_image_urls.dart; rerun '

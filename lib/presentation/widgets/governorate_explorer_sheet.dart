@@ -192,7 +192,10 @@ class GovernorateExplorerSheet extends StatelessWidget {
                 final count = placeCounts[item.id] ?? 0;
                 final isOpen = unlocked.contains(item.id) || count > 0;
                 final governoratePlaces = places
-                    .where((place) => place.governorate == item.id)
+                    .where(
+                      (place) =>
+                          place.governorate == item.id && place.isVisitable,
+                    )
                     .toList(growable: false);
                 final visited = governoratePlaces
                     .where((place) => visitedPlaceIds.contains(place.id))

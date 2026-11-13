@@ -313,6 +313,7 @@ class _SavedPlacesTab extends StatelessWidget {
             SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final place = places[index];
+                final fullPlace = placeProvider.findById(place.id) ?? place;
                 return Dismissible(
                   key: Key('saved_place_${place.id}'),
                   direction: DismissDirection.endToStart,
@@ -342,7 +343,7 @@ class _SavedPlacesTab extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PlaceDetailsScreen(place: place),
+                          builder: (_) => PlaceDetailsScreen(place: fullPlace),
                         ),
                       );
                     },

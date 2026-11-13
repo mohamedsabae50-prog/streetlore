@@ -19,8 +19,6 @@ import '../../logic/achievement_provider.dart';
 import '../../logic/blocked_users_provider.dart';
 import '../../logic/gamification_provider.dart';
 import '../../logic/connectivity_provider.dart';
-import 'achievements_screen.dart';
-import 'leaderboard_screen.dart';
 import 'login_screen.dart';
 import 'place_details_screen.dart';
 import 'suggest_place_screen.dart';
@@ -35,9 +33,7 @@ class ActivityFeedScreen extends StatefulWidget {
   State<ActivityFeedScreen> createState() => _ActivityFeedScreenState();
 }
 
-class _ActivityFeedScreenState extends State<ActivityFeedScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
   List<Map<String, dynamic>> _activities = const [];
   List<Map<String, dynamic>> _notifications = const [];
   StreamSubscription<List<Map<String, dynamic>>>? _notificationSubscription;
@@ -47,12 +43,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen>
   String _filter = 'all';
   bool _requestsExpanded = false;
   Map<String, SocialUser> _actorProfiles = const {};
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
 
   List<Map<String, dynamic>> _deduplicateNotifications(
     List<Map<String, dynamic>> notifications,
@@ -374,7 +364,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen>
   @override
   void dispose() {
     _notificationSubscription?.cancel();
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -428,43 +417,6 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(context.tr('feed_title')),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
-            child: Container(
-              height: 46,
-              decoration: BoxDecoration(
-                color: context.cardColor,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: context.borderColor),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                dividerColor: Colors.transparent,
-                indicatorSize: TabBarIndicatorSize.tab,
-                indicator: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                labelStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                tabs: [
-                  Tab(text: context.tr('hub_community')),
-                  Tab(text: context.tr('hub_leaderboard')),
-                  Tab(text: context.tr('hub_badges')),
-                ],
-              ),
-            ),
-          ),
-        ),
         actions: [
           IconButton(
             onPressed: _loading ? null : _load,
@@ -473,139 +425,116 @@ class _ActivityFeedScreenState extends State<ActivityFeedScreen>
           ),
         ],
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          needsSignIn
-              ? _FeedMessage(
-                  text: context.tr('users_sign_in_required'),
-                  action: FilledButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const LoginScreen(),
+      body: needsSignIn
+          ? _FeedMessage(
+              text: context.tr('users_sign_in_required'),
+              action: FilledButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+                ),
+                child: Text(context.tr('login_sign_in')),
+              ),
+            )
+          : _loading &&
+                otherUsersActivities.isEmpty &&
+                otherUsersNotifications.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? _FeedMessage(
+              text: _error!,
+              action: FilledButton.tonal(
+                onPressed: _load,
+                child: Text(context.tr('no_internet_retry')),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  if (otherUsersNotifications.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: _requestsBanner(context, otherUsersNotifications),
+                    ),
+                  if (_requestsExpanded && otherUsersNotifications.isNotEmpty)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                      sliver: SliverList.separated(
+                        itemCount: otherUsersNotifications.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final notification = otherUsersNotifications[index];
+                          final actorId =
+                              notification['actor_id']?.toString() ?? '';
+                          return _NotificationCard(
+                            notification: notification,
+                            actor: _actorProfiles[actorId],
+                            onAccept: () => _respondToNotification(
+                              notification,
+                              accept: true,
+                            ),
+                            onDecline: () => _respondToNotification(
+                              notification,
+                              accept: false,
+                            ),
+                            onTap: notification['type'] == 'friend_request'
+                                ? () {}
+                                : () => _markNotificationRead(notification),
+                          );
+                        },
                       ),
                     ),
-                    child: Text(context.tr('login_sign_in')),
-                  ),
-                )
-              : _loading &&
-                    otherUsersActivities.isEmpty &&
-                    otherUsersNotifications.isEmpty
-              ? const Center(child: CircularProgressIndicator())
-              : _error != null
-              ? _FeedMessage(
-                  text: _error!,
-                  action: FilledButton.tonal(
-                    onPressed: _load,
-                    child: Text(context.tr('no_internet_retry')),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: CustomScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      if (otherUsersNotifications.isNotEmpty)
-                        SliverToBoxAdapter(
-                          child: _requestsBanner(
-                            context,
-                            otherUsersNotifications,
-                          ),
-                        ),
-                      if (_requestsExpanded &&
-                          otherUsersNotifications.isNotEmpty)
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                          sliver: SliverList.separated(
-                            itemCount: otherUsersNotifications.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final notification =
-                                  otherUsersNotifications[index];
-                              final actorId =
-                                  notification['actor_id']?.toString() ?? '';
-                              return _NotificationCard(
-                                notification: notification,
-                                actor: _actorProfiles[actorId],
-                                onAccept: () => _respondToNotification(
-                                  notification,
-                                  accept: true,
-                                ),
-                                onDecline: () => _respondToNotification(
-                                  notification,
-                                  accept: false,
-                                ),
-                                onTap: notification['type'] == 'friend_request'
-                                    ? () {}
-                                    : () => _markNotificationRead(notification),
-                              );
-                            },
-                          ),
-                        ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                          child: Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: OutlinedButton.icon(
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const SuggestPlaceScreen(),
-                                ),
-                              ),
-                              icon: const Icon(Icons.lightbulb_outline),
-                              label: Text(
-                                context.tr('feed_suggest_hidden_gem'),
-                              ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const SuggestPlaceScreen(),
                             ),
                           ),
+                          icon: const Icon(Icons.lightbulb_outline),
+                          label: Text(context.tr('feed_suggest_hidden_gem')),
                         ),
                       ),
-                      SliverToBoxAdapter(
-                        child: _feedHeader(context, filteredActivities.length),
-                      ),
-                      SliverToBoxAdapter(child: _feedFilters(context)),
-                      if (filteredActivities.isEmpty &&
-                          otherUsersNotifications.isEmpty)
-                        SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: _FeedMessage(
-                            text: context.tr(
-                              _filter == 'all'
-                                  ? 'feed_empty'
-                                  : 'feed_filter_empty',
-                            ),
-                          ),
-                        )
-                      else
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                          sliver: SliverList.separated(
-                            itemCount: filteredActivities.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(height: 10),
-                            itemBuilder: (context, index) {
-                              final activity = filteredActivities[index];
-                              return _ActivityCard(
-                                activity: activity,
-                                actor:
-                                    _actorProfiles[activity['actor_id']
-                                        ?.toString()],
-                              );
-                            },
-                          ),
-                        ),
-                    ],
+                    ),
                   ),
-                ),
-          LeaderboardScreen(
-            embedded: true,
-            onShowBadges: () => _tabController.animateTo(2),
-          ),
-          const AchievementsScreen(embedded: true),
-        ],
-      ),
+                  SliverToBoxAdapter(
+                    child: _feedHeader(context, filteredActivities.length),
+                  ),
+                  SliverToBoxAdapter(child: _feedFilters(context)),
+                  if (filteredActivities.isEmpty &&
+                      otherUsersNotifications.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _FeedMessage(
+                        text: context.tr(
+                          _filter == 'all' ? 'feed_empty' : 'feed_filter_empty',
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      sliver: SliverList.separated(
+                        itemCount: filteredActivities.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final activity = filteredActivities[index];
+                          return _ActivityCard(
+                            activity: activity,
+                            actor:
+                                _actorProfiles[activity['actor_id']
+                                    ?.toString()],
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
     );
   }
 

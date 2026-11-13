@@ -241,7 +241,9 @@ class AchievementProvider extends ChangeNotifier {
     final checkedInPlaceIds = tours.checkedInPlaceIds;
     final visitedCount = checkedInPlaceIds.length;
     final checkedInPlaces = all
-        .where((place) => checkedInPlaceIds.contains(place.id))
+        .where(
+          (place) => place.isVisitable && checkedInPlaceIds.contains(place.id),
+        )
         .toList(growable: false);
     final visitedTourCount = tours.visitedTourIds.length;
     gam.syncPlaceVisitCount(visitedCount);
@@ -356,7 +358,9 @@ class AchievementProvider extends ChangeNotifier {
     final count = places.places
         .where(
           (place) =>
-              visitedIds.contains(place.id) && place.category == category,
+              place.isVisitable &&
+              visitedIds.contains(place.id) &&
+              place.category == category,
         )
         .length;
     return (count / target).clamp(0.0, 1.0);

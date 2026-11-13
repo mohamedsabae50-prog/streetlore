@@ -120,6 +120,13 @@ class PlaceModel {
 
   bool get isFree => priceLevel == PriceLevel.free;
 
+  bool get isVisitable {
+    final normalizedCategory = category.trim().toLowerCase();
+    return !id.trim().toLowerCase().startsWith('atm_') &&
+        normalizedCategory != 'atm' &&
+        normalizedCategory != 'atms';
+  }
+
   bool get hasDualPrice => priceLocalEgp != null && priceForeignerEgp != null;
 
   /// All official images for this place, in display order.
