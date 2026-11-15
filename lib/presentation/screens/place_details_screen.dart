@@ -783,7 +783,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                             return;
                                           }
 
-                                          final locationResult =
+                                          final locationVerification =
                                               await CheckInLocationService
                                                   .instance
                                                   .verify(
@@ -794,6 +794,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                                           place,
                                                         ),
                                                   );
+                                          final locationResult =
+                                              locationVerification.result;
                                           if (!context.mounted) return;
                                           if (locationResult !=
                                               CheckInLocationResult.verified) {
@@ -825,6 +827,25 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                             return;
                                           }
 
+                                          final verifiedPosition =
+                                              locationVerification.position;
+                                          if (verifiedPosition == null) {
+                                            debugPrint(
+                                              'PlaceDetailsScreen: location '
+                                              'verification returned no position.',
+                                            );
+                                            messenger.showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  context.tr(
+                                                    'checkin_location_unavailable',
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                            return;
+                                          }
+
                                           final tripProvider = context
                                               .read<TripProvider>();
                                           tripProvider.markVisited(
@@ -837,6 +858,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                           await gamification.applyAction(
                                             'check_in',
                                             placeId: place.id,
+                                            lat: verifiedPosition.latitude,
+                                            lng: verifiedPosition.longitude,
                                           );
                                           final checkinError =
                                               gamification.lastCheckinError;

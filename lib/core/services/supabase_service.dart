@@ -1089,8 +1089,10 @@ class SupabaseService {
 
   Future<({bool ok, bool queued, PostgrestException? error})> registerCheckin(
     String userId,
-    String placeId,
-  ) async {
+    String placeId, {
+    double? lat,
+    double? lng,
+  }) async {
     final client = _client;
     final resolvedUserId = resolveUuidUserId(userId);
     if (client == null || resolvedUserId == null) {
@@ -1103,6 +1105,8 @@ class SupabaseService {
       userId: resolvedUserId,
       placeId: placeId,
       checkedInAt: checkedInAt,
+      lat: lat,
+      lng: lng,
     );
 
     if (!SyncQueueService.instance.isOnline) {
@@ -1121,15 +1125,30 @@ class SupabaseService {
       );
     }
     try {
-      await client.from('place_checkins').insert({
-        'user_id': resolvedUserId,
-        'place_id': placeId,
-        'checked_in_at': timestamp,
-      }).select();
+      await client.rpc(
+        'record_verified_place_checkin',
+        params: {'p_place_id': placeId, 'p_lat': lat, 'p_lng': lng},
+      );
       return (ok: true, queued: false, error: null);
     } on PostgrestException catch (e) {
-      _logError('registerCheckin($resolvedUserId, $placeId)', e);
-      return (ok: false, queued: false, error: e);
+      if (e.code != 'PGRST202') {
+        _logError('registerCheckin($resolvedUserId, $placeId)', e);
+        return (ok: false, queued: false, error: e);
+      }
+      try {
+        await client.from('place_checkins').insert({
+          'user_id': resolvedUserId,
+          'place_id': placeId,
+          'checked_in_at': timestamp,
+        }).select();
+        return (ok: true, queued: false, error: null);
+      } on PostgrestException catch (fallbackError) {
+        _logError(
+          'registerCheckin fallback($resolvedUserId, $placeId)',
+          fallbackError,
+        );
+        return (ok: false, queued: false, error: fallbackError);
+      }
     } catch (e) {
       _logError('registerCheckin($resolvedUserId, $placeId)', e);
       final queued = await queueCheckin();

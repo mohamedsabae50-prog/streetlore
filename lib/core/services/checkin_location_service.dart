@@ -11,18 +11,23 @@ enum CheckInLocationResult {
   unavailable,
 }
 
+typedef CheckInLocationVerification = ({
+  CheckInLocationResult result,
+  Position? position,
+});
+
 class CheckInLocationService {
   CheckInLocationService._();
   static final CheckInLocationService instance = CheckInLocationService._();
 
-  Future<CheckInLocationResult> verify({
+  Future<CheckInLocationVerification> verify({
     required double latitude,
     required double longitude,
     required double allowedDistanceMeters,
   }) async {
     try {
       if (!await Geolocator.isLocationServiceEnabled()) {
-        return CheckInLocationResult.serviceDisabled;
+        return (result: CheckInLocationResult.serviceDisabled, position: null);
       }
 
       var permission = await Geolocator.checkPermission();
@@ -32,7 +37,7 @@ class CheckInLocationService {
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever ||
           permission == LocationPermission.unableToDetermine) {
-        return CheckInLocationResult.permissionDenied;
+        return (result: CheckInLocationResult.permissionDenied, position: null);
       }
 
       final cachedPosition = await Geolocator.getLastKnownPosition();
@@ -43,24 +48,27 @@ class CheckInLocationService {
             longitude,
             allowedDistanceMeters,
           )) {
-        return CheckInLocationResult.verified;
+        return (
+          result: CheckInLocationResult.verified,
+          position: cachedPosition,
+        );
       }
 
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 7),
       );
-      return _isWithinRadius(
-            position,
-            latitude,
-            longitude,
-            allowedDistanceMeters,
-          )
+      final verified =
+          _isWithinRadius(position, latitude, longitude, allowedDistanceMeters)
           ? CheckInLocationResult.verified
           : CheckInLocationResult.tooFar;
+      return (
+        result: verified,
+        position: verified == CheckInLocationResult.verified ? position : null,
+      );
     } catch (error, stackTrace) {
       debugPrint('CheckInLocationService.verify failed: $error\n$stackTrace');
-      return CheckInLocationResult.unavailable;
+      return (result: CheckInLocationResult.unavailable, position: null);
     }
   }
 

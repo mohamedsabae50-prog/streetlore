@@ -215,7 +215,12 @@ class GamificationProvider extends ChangeNotifier {
   ///
   /// Returns the badge the user just earned (if any), preferring the
   /// highest-tier catalog badge unlocked by this action.
-  Future<Badge?> applyAction(String action, {String? placeId}) async {
+  Future<Badge?> applyAction(
+    String action, {
+    String? placeId,
+    double? lat,
+    double? lng,
+  }) async {
     if (action == 'check_in') {
       _lastCheckinError = null;
     }
@@ -229,6 +234,8 @@ class GamificationProvider extends ChangeNotifier {
         final result = await SupabaseService.instance.registerCheckin(
           userId,
           placeId,
+          lat: lat,
+          lng: lng,
         );
         if (!result.ok) {
           final errMsg = result.error?.message ?? 'unknown error';

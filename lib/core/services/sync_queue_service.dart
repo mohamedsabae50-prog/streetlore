@@ -51,6 +51,8 @@ class SyncQueueService {
     required String userId,
     required String placeId,
     required DateTime checkedInAt,
+    double? lat,
+    double? lng,
   }) async {
     if (!Hive.isBoxOpen(OfflineStorageService.syncQueueBox)) {
       debugPrint(
@@ -67,6 +69,8 @@ class SyncQueueService {
           'user_id': userId,
           'place_id': placeId,
           'checked_in_at': checkedInAt.toUtc().toIso8601String(),
+          'lat': lat,
+          'lng': lng,
         }),
       );
       return true;
@@ -123,17 +127,40 @@ class SyncQueueService {
               .select('id')
               .eq('user_id', currentUserId)
               .eq('place_id', item['place_id'] as String)
-              .eq('checked_in_at', item['checked_in_at'] as String)
+              .gt(
+                'checked_in_at',
+                DateTime.now()
+                    .toUtc()
+                    .subtract(const Duration(hours: 1))
+                    .toIso8601String(),
+              )
+              .limit(1)
               .maybeSingle();
           if (existing == null) {
-            await client.from('place_checkins').insert({
-              'user_id': currentUserId,
-              'place_id': item['place_id'],
-              'checked_in_at': item['checked_in_at'],
-            });
+            try {
+              await client.rpc(
+                'record_verified_place_checkin',
+                params: {
+                  'p_place_id': item['place_id'],
+                  'p_lat': item['lat'],
+                  'p_lng': item['lng'],
+                },
+              );
+            } on PostgrestException catch (error) {
+              if (error.code != 'PGRST202') rethrow;
+              await client.from('place_checkins').insert({
+                'user_id': currentUserId,
+                'place_id': item['place_id'],
+                'checked_in_at': item['checked_in_at'],
+              });
+            }
           }
           await box.delete(key);
         } on PostgrestException catch (error) {
+          if (error.code == '23505') {
+            await box.delete(key);
+            continue;
+          }
           debugPrint('SyncQueueService could not sync item $key: $error');
           break;
         } catch (error) {
