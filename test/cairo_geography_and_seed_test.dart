@@ -309,6 +309,108 @@ void main() {
     }
   });
 
+  test('the complete catalog contains no boilerplate descriptions', () {
+    const boilerplate = [
+      'Confirm current visitor information',
+      'is a culture destination in',
+      'a place to explore in',
+      'a landmark of the history and culture of',
+    ];
+    for (final place in MockData.places) {
+      final descriptions =
+          '${place.descriptionEn}\n${place.descriptionAr ?? ''}'.toLowerCase();
+      for (final phrase in boilerplate) {
+        expect(
+          descriptions,
+          isNot(contains(phrase.toLowerCase())),
+          reason: place.id,
+        );
+      }
+    }
+  });
+
+  test('catalog descriptions are long, contextual, and sentence-complete', () {
+    for (final place in MockData.places) {
+      final english = place.descriptionEn.trim();
+      final arabic = place.descriptionAr?.trim() ?? '';
+      expect(english.length, greaterThanOrEqualTo(95), reason: place.id);
+      expect(arabic.length, greaterThanOrEqualTo(65), reason: place.id);
+      expect(
+        english.toLowerCase(),
+        contains(place.nameEn.toLowerCase()),
+        reason: place.id,
+      );
+      expect(arabic, contains(place.nameAr ?? place.nameEn), reason: place.id);
+      expect(_sentenceCount(english), inInclusiveRange(2, 3), reason: place.id);
+      expect(_sentenceCount(arabic), inInclusiveRange(2, 3), reason: place.id);
+    }
+  });
+
+  test('ticketed attractions in every city have positive dual prices', () {
+    for (final place in MockData.places.where(_requiresPaidAdmission)) {
+      expect(place.priceLocalEgp, greaterThan(0), reason: place.id);
+      expect(place.priceForeignerEgp, greaterThan(0), reason: place.id);
+      expect(place.isFree, isFalse, reason: place.id);
+    }
+  });
+
+  test('dining and hotels are never marked as free entry', () {
+    for (final place in MockData.places) {
+      final category = place.category.toLowerCase();
+      if (category == 'food' ||
+          category == 'cafe' ||
+          category == 'cafes' ||
+          category == 'hotels') {
+        expect(place.isFree, isFalse, reason: place.id);
+      }
+      if (category == 'atms' || category == 'atm') {
+        expect(place.isVisitable, isFalse, reason: place.id);
+      }
+    }
+  });
+
+  test('catalog image URLs have no known bad placeholders or duplicates', () {
+    const forbiddenImageTerms = [
+      'Construction',
+      'BritishMuseum',
+      'Turin_Album',
+      'LOC_matpc',
+      'Sheikh_Zayed_Road',
+      'City_stars',
+      'Omar_Afandi',
+    ];
+    final imageOwners = <String, String>{};
+    for (final place in MockData.places) {
+      for (final imageUrl in place.officialImages) {
+        for (final term in forbiddenImageTerms) {
+          expect(
+            imageUrl.toLowerCase(),
+            isNot(contains(term.toLowerCase())),
+            reason: '${place.id}: $imageUrl',
+          );
+        }
+        final previousOwner = imageOwners.putIfAbsent(imageUrl, () => place.id);
+        expect(
+          previousOwner,
+          place.id,
+          reason: '$imageUrl is shared by $previousOwner and ${place.id}',
+        );
+        final uri = Uri.tryParse(imageUrl);
+        expect(uri?.scheme, 'https', reason: '${place.id}: $imageUrl');
+        expect(
+          uri?.host == 'upload.wikimedia.org' ||
+              (place.governorate == 'alexandria' &&
+                  const {
+                    'images.unsplash.com',
+                    'tbivoxyxclwjjspwsgvc.supabase.co',
+                  }.contains(uri?.host)),
+          isTrue,
+          reason: '${place.id}: $imageUrl',
+        );
+      }
+    }
+  });
+
   for (final place in cairoSeedPlaces) {
     test('validates Cairo place ${place.id} individually', () {
       _verifyCairoPlace(place, cairo);
@@ -459,6 +561,7 @@ void main() {
       final restored = PlaceModel.fromJson(place.toJson());
       expect(restored.governorate, 'cairo', reason: place.id);
       expect(restored.primaryImage, place.primaryImage, reason: place.id);
+      expect(restored.imageUrls, place.imageUrls, reason: place.id);
     }
   });
 
@@ -489,6 +592,73 @@ void main() {
       );
     });
   }
+}
+
+bool _requiresPaidAdmission(PlaceModel place) {
+  final category = place.category.trim().toLowerCase();
+  if (category == 'atms' ||
+      category == 'atm' ||
+      category == 'food' ||
+      category == 'cafe' ||
+      category == 'cafes' ||
+      category == 'hotels' ||
+      category == 'shopping' ||
+      category == 'mosques' ||
+      category == 'churches') {
+    return false;
+  }
+  final searchable = '${place.id} ${place.nameEn}'.toLowerCase();
+  if (searchable.contains('street') ||
+      searchable.contains('square') ||
+      searchable.contains('bridge') ||
+      searchable.contains('corniche') ||
+      searchable.contains('promenade') ||
+      searchable.contains('mall') ||
+      searchable.contains('synagogue')) {
+    return false;
+  }
+  const paidTerms = [
+    'museum',
+    'pyramid',
+    'citadel',
+    'palace',
+    'archaeological',
+    'tomb',
+    'necropolis',
+    'serapeum',
+    'protectorate',
+    'zoo',
+    'tower',
+    'grotto',
+    'aquarium',
+    'sabil',
+    'wakala',
+    'wikala',
+    'hammam',
+    'bayt ',
+    'beit ',
+  ];
+  const paidIds = {
+    'fallback_qaitbay',
+    'fallback_biblio',
+    'fallback_catacombs',
+    'fallback_pompey',
+    'fallback_graeco_roman_museum',
+    'fallback_roman_amphitheatre',
+    'fallback_national_museum',
+    'pharaonic_village_giza',
+  };
+  const ticketedParks = {
+    'al_azhar_park',
+    'orman_botanical_garden_giza',
+    'giza_zoo_garden',
+    'zed_park_sheikh_zayed',
+    'wadi_degla_protectorate',
+    'aquarium_grotto_garden',
+  };
+  return paidIds.contains(place.id) ||
+      ticketedParks.contains(place.id) ||
+      paidTerms.any(searchable.contains);
 }
 
 void _verifyCairoPlace(PlaceModel place, EgyptGovernorate cairo) {
@@ -550,3 +720,7 @@ double _haversineMeters(double lat1, double lng1, double lat2, double lng2) {
       2 *
       math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine));
 }
+
+int _sentenceCount(String value) => RegExp(
+  r'[.!?؟](?:\s|$)',
+).allMatches(value.replaceAll('St. ', 'St ').trim()).length;

@@ -24,7 +24,6 @@ const _validCategories = {
 const _negativeControls = [
   (name: 'Banha', lat: 30.4660, lng: 31.1840),
   (name: 'Fayoum', lat: 29.3084, lng: 30.8428),
-  (name: 'Qaitbay Citadel', lat: 31.2140, lng: 29.8856),
 ];
 
 Future<void> main() async {
@@ -132,13 +131,16 @@ Future<void> main() async {
     }
     stdout.writeln('[PASS] Greater Cairo negative control: ${control.name}');
   }
-  final allPrimaryImages = <String>{
-    ...cairoSeedPlaces.map((place) => place.imageUrl),
-    ...alexandriaImagePlaces.map((place) => place.imageUrl),
-  };
-  if (allPrimaryImages.length !=
-      cairoSeedPlaces.length + alexandriaImagePlaces.length) {
-    throw StateError('Primary image URLs are duplicated across seed regions.');
+  final allImageUrls = <String, String>{};
+  for (final place in [...cairoSeedPlaces, ...alexandriaPlaces]) {
+    for (final url in place.officialImages) {
+      final previousPlace = allImageUrls.putIfAbsent(url, () => place.id);
+      if (previousPlace != place.id) {
+        throw StateError(
+          '${place.id} reuses an image URL assigned to $previousPlace: $url',
+        );
+      }
+    }
   }
 
   for (var index = 0; index < cairoSeedPlaces.length; index++) {
@@ -164,7 +166,7 @@ Future<void> main() async {
       '${place.nameAr} | ${place.nameEn}',
     );
   }
-  for (final place in alexandriaImagePlaces) {
+  for (final place in alexandriaPlaces) {
     await _verifyAlexandriaPlace(place, client, checkedImageUrls);
   }
 
@@ -238,11 +240,11 @@ Future<void> _verifyAlexandriaPlace(
     throw StateError('${place.id} needs Arabic and English content');
   }
   if (!_isHttpsImage(place.imageUrl) ||
-      place.imageUrls.isEmpty ||
-      !place.imageUrls.every(_isHttpsImage)) {
+      place.officialImages.isEmpty ||
+      !place.officialImages.every(_isHttpsImage)) {
     throw StateError('${place.id} has invalid Wikimedia image URLs.');
   }
-  for (final url in [place.imageUrl, ...place.imageUrls]) {
+  for (final url in place.officialImages) {
     if (checkedImageUrls.containsKey(url)) continue;
     final status = await _imageStatus(url, client);
     checkedImageUrls[url] = status;

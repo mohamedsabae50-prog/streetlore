@@ -4,6 +4,7 @@ import 'models/egypt_governorate.dart';
 import 'alexandria_image_urls.dart';
 import 'alexandria_seed_additional.dart';
 import 'cairo_seed.dart';
+import 'place_catalog_rules.dart';
 
 class MockData {
   MockData._();
@@ -166,7 +167,7 @@ class MockData {
   static List<PlaceModel> get places {
     final placesById = <String, PlaceModel>{};
     for (final place in [...fallbackPlaces, ...cairoSeedPlaces]) {
-      placesById.putIfAbsent(place.id, () => place);
+      placesById.putIfAbsent(place.id, () => applyPlaceCatalogRules(place));
     }
     return List.unmodifiable(placesById.values);
   }

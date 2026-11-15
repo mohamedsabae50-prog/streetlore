@@ -1351,6 +1351,7 @@ class AppStrings {
     'message': {'en': 'Message', 'ar': 'رسالة'},
     'email': {'en': 'Email', 'ar': 'بريد'},
     'free_entry': {'en': 'Free entry', 'ar': 'دخول مجاني'},
+    'average_cost': {'en': 'Average cost', 'ar': 'متوسط التكلفة'},
     'budget_friendly': {'en': 'Budget-friendly', 'ar': 'مناسب للميزانية'},
     'standard_ticket': {'en': 'Standard ticket', 'ar': 'تذكرة عادية'},
     'premium_experience': {'en': 'Premium experience', 'ar': 'تجربة مميزة'},

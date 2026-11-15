@@ -1319,8 +1319,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _PriceBanner(place: place),
-                                const SizedBox(height: 22),
+                                if (place.isVisitable) ...[
+                                  _PriceBanner(place: place),
+                                  const SizedBox(height: 22),
+                                ],
                                 Row(
                                   children: [
                                     Text(
@@ -1966,8 +1968,21 @@ class _PriceBanner extends StatelessWidget {
   final PlaceModel place;
   const _PriceBanner({required this.place});
 
+  bool get _isCommercial {
+    final category = place.category.trim().toLowerCase();
+    return category == 'food' ||
+        category == 'cafe' ||
+        category == 'cafes' ||
+        category == 'hotels';
+  }
+
+  PriceLevel get _displayLevel =>
+      _isCommercial && place.priceLevel == PriceLevel.free
+      ? PriceLevel.moderate
+      : place.priceLevel;
+
   Color get _accent {
-    switch (place.priceLevel) {
+    switch (_displayLevel) {
       case PriceLevel.free:
         return const Color(0xFF10B981);
       case PriceLevel.cheap:
@@ -1980,7 +1995,7 @@ class _PriceBanner extends StatelessWidget {
   }
 
   IconData get _icon {
-    switch (place.priceLevel) {
+    switch (_displayLevel) {
       case PriceLevel.free:
         return Icons.celebration_rounded;
       case PriceLevel.cheap:
@@ -1993,7 +2008,8 @@ class _PriceBanner extends StatelessWidget {
   }
 
   String _titleFor(BuildContext context) {
-    switch (place.priceLevel) {
+    if (_isCommercial) return context.tr('average_cost');
+    switch (_displayLevel) {
       case PriceLevel.free:
         return context.tr('free_entry');
       case PriceLevel.cheap:
@@ -2011,6 +2027,12 @@ class _PriceBanner extends StatelessWidget {
     final bg = isDark
         ? _accent.withValues(alpha: 0.12)
         : _accent.withValues(alpha: 0.07);
+    final priceTier = switch (_displayLevel) {
+      PriceLevel.cheap => r'$',
+      PriceLevel.moderate => r'$$',
+      PriceLevel.expensive => r'$$$',
+      PriceLevel.free => '',
+    };
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
@@ -2043,7 +2065,18 @@ class _PriceBanner extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                if (place.hasDualPrice) ...[
+                if (_isCommercial)
+                  Text(
+                    priceTier,
+                    style: TextStyle(
+                      color: isDark
+                          ? const Color(0xFFCBD5E1)
+                          : const Color(0xFF475569),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  )
+                else if (place.hasDualPrice) ...[
                   Row(
                     children: [
                       _PricePill(

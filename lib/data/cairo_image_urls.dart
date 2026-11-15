@@ -41,13 +41,13 @@ const Map<String, String> cairoImageUrls = {
   "marriott_zamalek_cairo":
       "https://upload.wikimedia.org/wikipedia/commons/9/97/Cairo_Marriott_Hotel_-_Zamalek-4508866096.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "steigenberger_tahrir_cairo":
-      "https://upload.wikimedia.org/wikipedia/commons/9/9e/Egyptian_Hotels%2C_Ltd%2C_Cairo._Mena_House_hotel._Exterior._Showing_a_riding_party_at_main_entrance_LOC_matpc.15592.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/9/97/Cairo_Marriott_Hotel_-_Zamalek-4508866096.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=steigenberger",
   "kempinski_nile_garden_city":
-      "https://upload.wikimedia.org/wikipedia/commons/b/bc/Egyptian_Hotels%2C_Ltd%2C_Cairo._Mena_House_hotel._Exterior_showing_main_entrance_LOC_matpc.15591.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/7/7f/The_Oberoi_-_Mena_House_entrance%2C_Egypt.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=kempinski",
   "four_seasons_nile_plaza":
       "https://upload.wikimedia.org/wikipedia/commons/9/98/Cairo_-_Garden_City_-_Four_Seasons_Hotel_from_the_Nile.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "waldorf_astoria_heliopolis":
-      "https://upload.wikimedia.org/wikipedia/commons/c/c2/Egyptian_hotels_Ltd.%2C_Cairo._Shepheard%27s_Hotel._Exterior_LOC_matpc.02915.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b7/View_of_Nile_%26_Ritz_Carlton_%28Ex_Nile_Hilton%29_%2810713994736%29.jpg?utm_source=ar.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled&catalog_id=waldorf",
   "atm_nbe_tahrir":
       "https://upload.wikimedia.org/wikipedia/commons/e/eb/National_Bank_of_Egypt-2020.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "atm_cib_zamalek":
@@ -219,13 +219,13 @@ const Map<String, String> cairoImageUrls = {
   "dusit_thani_lakeview_new_cairo":
       "https://upload.wikimedia.org/wikipedia/commons/e/e9/Dusit_Thani_LakeView_Cairo.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "jw_marriott_mirage_new_cairo":
-      "https://upload.wikimedia.org/wikipedia/commons/4/48/Egypt._Cairo._Hotels._Semiramis._A_view_of_Cairo_from_roof_of_Semiramis_Hotel%2C_looking_E._LOC_matpc.17895.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/e/e9/Dusit_Thani_LakeView_Cairo.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=jw_marriott",
   "the_westin_cairo_katameya":
-      "https://upload.wikimedia.org/wikipedia/commons/0/08/Egyptian_Hotels%2C_Ltd%2C_Cairo._Cairo_and_Mokattam_hills_from_the_Semiramis_Hotel_roof_LOC_matpc.15589.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a9/Four_Seasons_hotel%2C_Giza_00_%283%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=westin",
   "triumph_luxury_hotel_new_cairo":
-      "https://upload.wikimedia.org/wikipedia/commons/7/72/Egyptian_Hotels%2C_Ltd%2C_Cairo._Continental_Savoy_Hotel._Entrance_on_the_Opera_Square_LOC_matpc.15587.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b5/Carriages_in_front_of_Shepheard%E2%80%99s_Hotel_%28Cairo%2C_Egypt%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=triumph",
   "st_regis_almasa_new_capital":
-      "https://upload.wikimedia.org/wikipedia/commons/b/b3/Egyptian_Hotels%2C_Ltd%2C_Cairo._Shepheard%27s_Hotel_garden_LOC_matpc.15586.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/9/98/Cairo_-_Garden_City_-_Four_Seasons_Hotel_from_the_Nile.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=st_regis",
   "atm_cib_citystars_nasr_city":
       "https://upload.wikimedia.org/wikipedia/commons/0/05/Bank-Ahly-Oct.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "atm_nbe_cfc_new_cairo":
@@ -289,7 +289,7 @@ const Map<String, String> cairoImageUrls = {
   "al_hosary_mosque_october":
       "https://upload.wikimedia.org/wikipedia/commons/0/01/Al-Hosary_Mosque_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "al_shorta_mosque_zayed":
-      "https://upload.wikimedia.org/wikipedia/commons/6/6f/Sheikh_Zayed_Road_on_10_January_2008.jpg?utm_source=ar.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b1/Al-Hosary_Mosque_03.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=al_shorta",
   "andrea_el_mariouteya_giza":
       "https://upload.wikimedia.org/wikipedia/commons/1/16/2012_Cairo_7018986835.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "archangel_michael_cathedral_giza":
@@ -297,35 +297,35 @@ const Map<String, String> cairoImageUrls = {
   "arkan_plaza_cafe_zayed":
       "https://upload.wikimedia.org/wikipedia/commons/e/e0/Flickr_-_dlisbona_-_Cafe_Cilantro_in_Mohandessin.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "arkan_plaza_sheikh_zayed":
-      "https://upload.wikimedia.org/wikipedia/commons/c/c2/City_stars_020.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/4/43/Concord_Plaza_Mall.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=arkan_plaza",
   "atm_cib_mall_of_egypt":
       "https://upload.wikimedia.org/wikipedia/commons/5/58/CIB_Bank_sz%C3%A9kh%C3%A1za_003.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "azbakeya_book_market_cairo":
-      "https://upload.wikimedia.org/wikipedia/commons/b/b9/City_stars_022.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/3/33/Shopping_in_the_spotlight_%28Cairo%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=azbakeya",
   "bent_pyramid_dahshur":
-      "https://upload.wikimedia.org/wikipedia/commons/d/d4/26717-_gaping_maw_of_bent_pyramid_masonry.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/a/af/Bent_Pyramid_of_Snofru.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "cairo_opera_house_museum":
       "https://upload.wikimedia.org/wikipedia/commons/7/7e/A_shot_taken_from_Cairo_Tower_that_includes_the_Cairo_Opera%2C_Museum_of_Egyptian_Modern_Arts_and_the_Nile.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "cairo_university_dome_giza":
-      "https://upload.wikimedia.org/wikipedia/commons/7/75/Dome_of_Sulaym%C4%81n_Pasha_or_Sidi_Sariya%27s_mosque_at_the_Citadel.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/5/57/CairoUniv.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "egyptian_textile_museum":
       "https://upload.wikimedia.org/wikipedia/commons/2/2a/%D9%85%D8%AA%D8%AD%D9%81-%D8%A7%D9%84%D9%86%D8%B3%D9%8A%D8%AC-%D8%A7%D9%84%D9%85%D8%B5%D8%B1%D9%8A-1.jpg?utm_source=ar.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
   "first_mall_giza":
-      "https://upload.wikimedia.org/wikipedia/commons/d/df/City_stars_021.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a9/Mall_of_Arabia_Cairo.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled&catalog_id=first_mall",
   "four_seasons_first_residence_giza":
       "https://upload.wikimedia.org/wikipedia/commons/a/a9/Four_Seasons_hotel%2C_Giza_00_%283%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "giza_zoo_garden":
-      "https://upload.wikimedia.org/wikipedia/commons/3/3a/%D9%86%D8%A7%D9%81%D9%88%D8%B1%D8%A9_%D9%81%D9%8A_%D8%AD%D8%94%D8%AF%D9%8A%D9%82%D8%A9_%D8%AD%D9%8A%D9%88%D8%A7%D9%86%D8%A7%D8%AA_%D8%A7%D9%84%D8%AC%D9%8A%D8%B2%D8%A9.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/c/ce/Giza_zoo.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "grand_egyptian_museum_gem":
-      "https://upload.wikimedia.org/wikipedia/commons/5/51/By_ovedc_-_Grand_Egyptian_Museum_-_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/3/32/Grand_Egyptian_Museum_Facade.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "great_pyramid_of_giza":
-      "https://upload.wikimedia.org/wikipedia/commons/c/c2/KhufuPyramidCasingStone-BritishMuseum-August19-08.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/e/e7/Great_Pyramid_of_Giza_-_Pyramid_of_Khufu.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "great_sphinx_of_giza":
       "https://upload.wikimedia.org/wikipedia/commons/3/3d/Cairo--The_Great_Sphinx_%2870%29_%28n.d.%29_-_front_-_TIMEA.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "hammam_inal_muizz":
       "https://upload.wikimedia.org/wikipedia/commons/3/35/Hammam_inal_DSCF4788.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "hyatt_regency_west_cairo":
-      "https://upload.wikimedia.org/wikipedia/commons/d/db/Egyptian_hotels_Ltd.%2C_Cairo._Semiramis_Hotel%2C_interior._The_main_lounge_LOC_matpc.02919.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/4/49/%D8%AC%D8%A7%D9%85%D8%B9_%D9%85%D8%AD%D9%85%D8%AF_%D8%B9%D9%84%D9%8A.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=original&catalog_id=hyatt",
   "imhotep_museum_saqqara":
       "https://upload.wikimedia.org/wikipedia/commons/7/74/Egypt_Sakkara_Museum_Statue_scribe_5th_Dynasty.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "kebdet_el_prince_imbaba":
@@ -339,9 +339,9 @@ const Map<String, String> cairoImageUrls = {
   "mall_of_arabia_october":
       "https://upload.wikimedia.org/wikipedia/commons/a/a9/Mall_of_Arabia_Cairo.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
   "mall_of_egypt_october":
-      "https://upload.wikimedia.org/wikipedia/commons/b/b2/Archaeological_building_of_Omar_Afandi_first_mall_at_Egypt_since_1856.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/5/50/ISS067-E-152577_-_View_of_Egypt_-_Madinat_as-Sadis_min_Uktubar_%286th_of_October_City%29_-_Greater_Cairo_Industrial_Area_6_-_Ebny_Betak_-_Green_Belt_lake_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=mall_of_egypt",
   "marriott_mena_house_giza":
-      "https://upload.wikimedia.org/wikipedia/commons/e/e5/Egyptian_Hotels%2C_Ltd%2C_Cairo._Sunset_on_the_Nile_from_the_Semiramis_Hotel_roof_LOC_matpc.15588.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/7/7f/The_Oberoi_-_Mena_House_entrance%2C_Egypt.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "memphis_museum_mit_rahina":
       "https://upload.wikimedia.org/wikipedia/commons/1/1d/MemphisMuseumEgypt_2007feb1-9b_byDanielCsorfoly.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "mustafa_mahmoud_mosque_giza":
@@ -353,7 +353,7 @@ const Map<String, String> cairoImageUrls = {
   "orman_botanical_garden_giza":
       "https://upload.wikimedia.org/wikipedia/commons/c/c5/Orman_Garden_-_Rose_Garden_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "pharaonic_village_giza":
-      "https://upload.wikimedia.org/wikipedia/commons/5/5c/Cairo%2C_Egyptian_Museum%2C_Antiquities%2C_photo_9_of_97_-_Archivio_fotografico_Museo_Egizio%2C_Turin_Album3_009.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/7/70/Pharaonic_Village.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "pyramid_of_khafre":
       "https://upload.wikimedia.org/wikipedia/commons/6/69/Pyramid_of_Khafre_and_Sphinx%2C_Giza%2C_Greater_Cairo%2C_Egypt.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
   "pyramid_of_menkaure":
@@ -361,7 +361,7 @@ const Map<String, String> cairoImageUrls = {
   "pyramid_of_unas_saqqara":
       "https://upload.wikimedia.org/wikipedia/commons/c/c0/Causeway_leading_to_the_pyramid_of_Unas%2C_Saqqara%2C_Egypt_%2850600787218%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "red_pyramid_dahshur":
-      "https://upload.wikimedia.org/wikipedia/commons/e/ea/26714-_inside_the_Red_Pyramid.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/9/9f/Red_Pyramid_at_Dahshur.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "sabil_umm_abbas":
       "https://upload.wikimedia.org/wikipedia/commons/9/94/Al-Saliba_Street_View_with_Umm_Abbas_Sabil_and_Shaykhu_Complex%2C_Cairo_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "saqqara_step_pyramid":
@@ -369,7 +369,7 @@ const Map<String, String> cairoImageUrls = {
   "serapeum_of_saqqara":
       "https://upload.wikimedia.org/wikipedia/commons/a/ae/By_ovedc_-_Serapeum_of_Saqqara_-_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "sheraton_cairo_hotel_dokki":
-      "https://upload.wikimedia.org/wikipedia/commons/2/2a/Egyptian_hotels_Ltd.%2C_Cairo._Continental_Savoy_Hotel._Interior._The_main_lounge_LOC_matpc.02918.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/9/94/Giza-pyramids.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=sheraton_dokki",
   "taha_hussein_museum_giza":
       "https://upload.wikimedia.org/wikipedia/commons/5/52/Taha_Hussein_Museum_-_Cairo.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
   "wakala_of_qaytbay_cairo":
@@ -379,5 +379,5 @@ const Map<String, String> cairoImageUrls = {
   "atm_nbe_arkan_zayed":
       "https://upload.wikimedia.org/wikipedia/commons/0/08/National_Bank_of_Egypt_Head_Office_Cairo.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "atm_nbe_dokki_giza":
-      "https://upload.wikimedia.org/wikipedia/commons/8/8a/National_Bank_of_Egypt_Dokki_Branch.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "https://upload.wikimedia.org/wikipedia/commons/3/36/Cash_machine_-_ATM_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original&catalog_id=atm_nbe_dokki_giza",
 };

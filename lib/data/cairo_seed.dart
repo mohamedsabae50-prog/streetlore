@@ -2,6 +2,7 @@ import 'models/itinerary_model.dart';
 import 'models/place_model.dart';
 import 'cairo_image_urls.dart';
 import 'cairo_seed_additional.dart';
+import 'place_catalog_rules.dart';
 
 String _image(String placeId) => cairoImageUrls[placeId] ?? '';
 
@@ -882,7 +883,7 @@ final List<PlaceModel> cairoSeedPlaces = List<PlaceModel>.unmodifiable([
     priceNoteAr: 'قد تُطبق رسوم وحدود السحب البنكية',
   ),
   ...buildAdditionalCairoPlaces(),
-]);
+].map(applyPlaceCatalogRules));
 
 PlaceModel _cairoStop(String id) =>
     cairoSeedPlaces.singleWhere((place) => place.id == id);
