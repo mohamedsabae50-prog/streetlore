@@ -11,7 +11,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/atm_service.dart';
 import '../../core/services/carplay_service.dart';
 import '../../core/services/map_route_service.dart';
-import '../../data/cairo_seed.dart' show cairoSeedPlaces;
 import '../../data/models/egypt_governorate.dart';
 import '../../data/models/map_poi.dart';
 import '../../data/models/place_model.dart';
@@ -55,6 +54,50 @@ String _catLabel(BuildContext context, String cat) {
   }
 }
 
+String _normalizeMapCategory(String category) {
+  switch (category.trim().toLowerCase()) {
+    case 'cafe':
+    case 'cafes':
+      return 'cafes';
+    case 'mosque':
+    case 'mosques':
+      return 'mosques';
+    case 'church':
+    case 'churches':
+      return 'churches';
+    case 'hotel':
+    case 'hotels':
+      return 'hotels';
+    case 'museum':
+    case 'museums':
+    case 'culture':
+      return 'culture';
+    case 'park':
+    case 'parks':
+    case 'nature':
+      return 'nature';
+    case 'atm':
+    case 'atms':
+      return 'atms';
+    default:
+      return category.trim().toLowerCase();
+  }
+}
+
+List<MapPoi> _mergeAtms(Iterable<MapPoi> candidates) {
+  final result = <MapPoi>[];
+  for (final candidate in candidates) {
+    final duplicate = result.any(
+      (existing) =>
+          existing.id == candidate.id ||
+          ((existing.lat - candidate.lat).abs() < 0.0003 &&
+              (existing.lng - candidate.lng).abs() < 0.0003),
+    );
+    if (!duplicate) result.add(candidate);
+  }
+  return List.unmodifiable(result);
+}
+
 class MapViewScreen extends StatefulWidget {
   const MapViewScreen({
     super.key,
@@ -85,12 +128,11 @@ class _MapViewScreenState extends State<MapViewScreen>
   double _cameraStartZoom = 12;
   double _cameraTargetZoom = 12;
   bool _mapReady = false;
-  String? _selectedCategory;
+  final Set<String> _selectedCategories = <String>{};
   PlaceModel? _selectedPlace;
   LatLng? _userLocation;
   bool _initialCentered = false;
 
-  bool _showAtms = false;
   List<MapPoi> _atms = const [];
   late final MapRouteService _routeService;
   late final bool _ownsRouteService;
@@ -104,15 +146,11 @@ class _MapViewScreenState extends State<MapViewScreen>
   bool _arrivalAnnounced = false;
   StreamSubscription<LatLng>? _routePositionSubscription;
 
-  final Set<String> _extraLayers = <String>{};
   StreamSubscription<Position>? _positionSubscription;
   StreamSubscription<PlaceModel>? _autoCheckInSubscription;
   bool _startingPositionUpdates = false;
 
   static const _alexCenter = LatLng(31.2001, 29.9187);
-  static const _hotelsCategory = 'Hotels';
-  static const String _allOffSentinel = '__none__';
-
   @override
   void initState() {
     super.initState();
@@ -135,7 +173,11 @@ class _MapViewScreenState extends State<MapViewScreen>
     _governorates?.removeListener(_onGovernorateChanged);
     _governorates = provider;
     _lastGovernorateId = provider.activeGovernorate;
+    _atms = _curatedAtmsFor(provider.activeGovernorate);
     provider.addListener(_onGovernorateChanged);
+    if (provider.activeGovernorate == 'alexandria') {
+      unawaited(_loadNearbyAtms(_userLocation ?? _alexCenter));
+    }
   }
 
   void _onGovernorateChanged() {
@@ -146,11 +188,10 @@ class _MapViewScreenState extends State<MapViewScreen>
     _lastGovernorateId = id;
     setState(() {
       _selectedPlace = null;
-      _selectedCategory = null;
-      _extraLayers.clear();
-      _atms = _showAtms ? _curatedAtmsFor(id) : const [];
+      _selectedCategories.clear();
+      _atms = _curatedAtmsFor(id);
     });
-    if (_showAtms && id == 'alexandria') {
+    if (id == 'alexandria') {
       unawaited(_loadNearbyAtms(_userLocation ?? _alexCenter));
     }
     _animateCameraTo(governorate);
@@ -196,8 +237,6 @@ class _MapViewScreenState extends State<MapViewScreen>
       _cameraStartZoom + (_cameraTargetZoom - _cameraStartZoom) * progress,
     );
   }
-
-  bool get _allOff => _selectedCategory == _allOffSentinel;
 
   void _startAutoCheckInLocationUpdates() {
     final places = context.read<PlaceProvider>();
@@ -573,45 +612,49 @@ class _MapViewScreenState extends State<MapViewScreen>
     );
   }
 
-  void _toggleAtms() {
-    final show = !_showAtms;
-    final governorateId = context.read<GovernorateProvider>().activeGovernorate;
+  void _toggleCategory(String category) {
     setState(() {
-      _showAtms = show;
-      _atms = show ? _curatedAtmsFor(governorateId) : const [];
+      if (!_selectedCategories.add(category)) {
+        _selectedCategories.remove(category);
+      }
     });
-    if (!show || governorateId != 'alexandria') return;
-    final center = _userLocation ?? _alexCenter;
-    unawaited(_loadNearbyAtms(center));
+  }
+
+  void _selectAllCategories() {
+    setState(_selectedCategories.clear);
   }
 
   List<MapPoi> _curatedAtmsFor(String governorateId) {
-    if (governorateId == 'alexandria') {
-      return AtmService.curatedAlexandriaAtms;
-    }
-    if (governorateId != 'cairo') return const [];
-    return cairoSeedPlaces
-        .where((place) => place.category == 'ATMs')
-        .map(
-          (place) => MapPoi(
-            id: place.id,
-            name: place.nameEn,
-            address: place.address,
-            lat: place.lat,
-            lng: place.lng,
-            category: 'atm',
-            brand: place.nameEn.split(' ').first,
-            icon: Icons.atm_rounded,
-            color: place.id.contains('_cib_')
-                ? const Color(0xFFED1C24)
-                : place.id.contains('_nbe_')
-                ? const Color(0xFF0033A0)
-                : place.id.contains('_qnb_')
-                ? const Color(0xFF8B1A1A)
-                : const Color(0xFF1F4E79),
+    final governorateName =
+        EgyptGovernorate.byId[governorateId]?.nameEn ?? governorateId;
+    final candidates = <MapPoi>[
+      if (governorateId == 'alexandria') ...AtmService.curatedAlexandriaAtms,
+      ...context
+          .read<PlaceProvider>()
+          .allPlaces
+          .where((place) => place.governorate == governorateId && place.isAtm)
+          .map(
+            (place) => MapPoi(
+              id: place.id,
+              name: place.nameEn,
+              address: place.address,
+              governorate: governorateName,
+              lat: place.lat,
+              lng: place.lng,
+              category: 'ATMs',
+              brand: place.nameEn.split(' ').first,
+              icon: Icons.atm_rounded,
+              color: place.id.contains('_cib_')
+                  ? const Color(0xFFED1C24)
+                  : place.id.contains('_nbe_')
+                  ? const Color(0xFF0033A0)
+                  : place.id.contains('_qnb_')
+                  ? const Color(0xFF8B1A1A)
+                  : const Color(0xFF1F4E79),
+            ),
           ),
-        )
-        .toList(growable: false);
+    ];
+    return _mergeAtms(candidates);
   }
 
   Future<void> _loadNearbyAtms(LatLng center) async {
@@ -629,16 +672,7 @@ class _MapViewScreenState extends State<MapViewScreen>
               'alexandria') {
         return;
       }
-      final mergedAtms = [..._atms];
-      for (final candidate in nearbyAtms) {
-        final duplicate = mergedAtms.any(
-          (existing) =>
-              (existing.lat - candidate.lat).abs() < 0.0003 &&
-              (existing.lng - candidate.lng).abs() < 0.0003,
-        );
-        if (!duplicate) mergedAtms.add(candidate);
-      }
-      setState(() => _atms = mergedAtms);
+      setState(() => _atms = _mergeAtms([..._atms, ...nearbyAtms]));
     } catch (error, stackTrace) {
       debugPrint(
         'MapViewScreen: optional nearby ATM refresh failed: '
@@ -648,77 +682,75 @@ class _MapViewScreenState extends State<MapViewScreen>
   }
 
   IconData _iconForCategory(String category) {
-    switch (category) {
-      case 'Historical':
+    switch (_normalizeMapCategory(category)) {
+      case 'historical':
         return Icons.account_balance_rounded;
-      case 'Culture':
+      case 'culture':
         return Icons.museum_rounded;
-      case 'Nature':
+      case 'nature':
         return Icons.park_rounded;
-      case 'Food':
+      case 'food':
         return Icons.restaurant_rounded;
-      case 'Cafe':
-      case 'Cafes':
+      case 'cafes':
         return Icons.local_cafe_rounded;
-      case 'Shopping':
+      case 'shopping':
         return Icons.shopping_bag_rounded;
-      case 'Mosques':
+      case 'mosques':
         return Icons.mosque_rounded;
-      case 'Churches':
+      case 'churches':
         return Icons.church_rounded;
-      case 'Hotels':
+      case 'hotels':
         return Icons.bed_rounded;
+      case 'atms':
+        return Icons.atm_rounded;
       default:
         return Icons.location_on_rounded;
     }
   }
 
   Color _colorForCategory(String category) {
-    switch (category) {
-      case 'Historical':
+    switch (_normalizeMapCategory(category)) {
+      case 'historical':
         return const Color(0xFF8B5CF6);
-      case 'Culture':
+      case 'culture':
         return const Color(0xFFEC4899);
-      case 'Nature':
+      case 'nature':
         return const Color(0xFF10B981);
-      case 'Food':
+      case 'food':
         return const Color(0xFFF59E0B);
-      case 'Cafe':
-      case 'Cafes':
+      case 'cafes':
         return const Color(0xFF8B5E3C);
-      case 'Shopping':
+      case 'shopping':
         return const Color(0xFF3B82F6);
-      case 'Mosques':
+      case 'mosques':
         return const Color(0xFF14B8A6);
-      case 'Churches':
+      case 'churches':
         return const Color(0xFFF97316);
-      case 'Hotels':
+      case 'hotels':
         return const Color(0xFF6A1B9A);
+      case 'atms':
+        return const Color(0xFF10B981);
       default:
         return AppColors.primary;
     }
   }
 
   List<PlaceModel> _filtered(List<PlaceModel> all) {
-    if (_showAtms) return const <PlaceModel>[];
-    if (_showHotels) {
-      return all.where((p) => p.category == 'Hotels').toList();
-    }
-    if (_allOff) return const <PlaceModel>[];
-    if (_selectedCategory == null) return all;
+    if (_selectedCategories.isEmpty) return all;
     return all
         .where(
-          (place) =>
-              place.category == _selectedCategory ||
-              ((_selectedCategory == 'Cafe' || _selectedCategory == 'Cafes') &&
-                  place.category == 'Food'),
+          (place) => _selectedCategories.any(
+            (selected) =>
+                _normalizeMapCategory(selected) ==
+                _normalizeMapCategory(place.category),
+          ),
         )
         .toList();
   }
 
-  bool get _showHotels => _extraLayers.contains(_hotelsCategory);
-  bool get _navigationFocusMode =>
-      _routeDestination != null && !_routeArrived;
+  bool get _showAtms =>
+      _selectedCategories.isEmpty || _selectedCategories.contains('ATMs');
+  bool get _navigationFocusMode => _routeDestination != null && !_routeArrived;
 
   @override
   void dispose() {
@@ -743,6 +775,12 @@ class _MapViewScreenState extends State<MapViewScreen>
     final allPlaces = placeProvider.allPlaces;
     final visitedPlaceIds = context.watch<TripProvider>().visitedPlaceIds;
     final visible = _filtered(places);
+    final mapAtms = _mergeAtms([
+      ..._curatedAtmsFor(activeGovernorate.id),
+      ..._atms,
+    ]);
+    final visibleMarkerCount =
+        visible.length + (_showAtms ? mapAtms.length : 0);
 
     return Scaffold(
       body: Stack(
@@ -835,36 +873,73 @@ class _MapViewScreenState extends State<MapViewScreen>
                             ),
                           ),
                         ),
-                        if (_navigationFocusMode)
-                          Marker(
-                            point: _routeDestination!.point,
-                            width: 44,
-                            height: 44,
-                            child: Container(
-                              key: const ValueKey(
-                                'map-route-destination-marker',
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF5A36),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 3,
+                      if (_navigationFocusMode)
+                        Marker(
+                          point: _routeDestination!.point,
+                          width: 44,
+                          height: 44,
+                          child: Container(
+                            key: const ValueKey('map-route-destination-marker'),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF5A36),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFFFF5A36,
+                                  ).withValues(alpha: 0.5),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(
-                                      0xFFFF5A36,
-                                    ).withValues(alpha: 0.5),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.flag_rounded,
+                              color: Colors.white,
+                              size: 21,
+                            ),
+                          ),
+                        ),
+                      if (!_navigationFocusMode && _showAtms)
+                        for (final atm in mapAtms.where(
+                          (atm) => inViewport(LatLng(atm.lat, atm.lng)),
+                        ))
+                          Marker(
+                            point: LatLng(atm.lat, atm.lng),
+                            width: 40,
+                            height: 40,
+                            child: RepaintBoundary(
+                              child: GestureDetector(
+                                key: ValueKey('map-atm-marker-${atm.id}'),
+                                onTap: () {
+                                  setState(() => _selectedPlace = null);
+                                  _showAtmSheet(context, atm);
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: atm.color,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      if (showMarkerGlow)
+                                        BoxShadow(
+                                          color: atm.color.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                          blurRadius: 8,
+                                        ),
+                                    ],
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2.5,
+                                    ),
                                   ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.flag_rounded,
-                                color: Colors.white,
-                                size: 21,
+                                  child: Icon(
+                                    atm.icon,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -972,48 +1047,6 @@ class _MapViewScreenState extends State<MapViewScreen>
                             ),
                           ),
                         ),
-                      if (!_navigationFocusMode && _showAtms)
-                        for (final atm in _atms.where(
-                          (atm) => inViewport(LatLng(atm.lat, atm.lng)),
-                        ))
-                          Marker(
-                            point: LatLng(atm.lat, atm.lng),
-                            width: 40,
-                            height: 40,
-                            child: RepaintBoundary(
-                              child: GestureDetector(
-                                key: ValueKey('map-atm-marker-${atm.id}'),
-                                onTap: () {
-                                  setState(() => _selectedPlace = null);
-                                  _showAtmSheet(context, atm);
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: atm.color,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      if (showMarkerGlow)
-                                        BoxShadow(
-                                          color: atm.color.withValues(
-                                            alpha: 0.5,
-                                          ),
-                                          blurRadius: 8,
-                                        ),
-                                    ],
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2.5,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    atm.icon,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                     ],
                   );
                 },
@@ -1022,77 +1055,77 @@ class _MapViewScreenState extends State<MapViewScreen>
           ),
           if (!_navigationFocusMode)
             SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Row(
-                children: [
-                  IconButton.filled(
-                    key: const ValueKey('map-view-back-button'),
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_rounded, size: 18),
-                    style: IconButton.styleFrom(
-                      backgroundColor: context.cardColor,
-                      foregroundColor: context.textPri,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Container(
-                      key: const ValueKey('map-view-header-bar'),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: context.cardColor,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              context.tr('map_title', {
-                                'n':
-                                    '${_showAtms ? _atms.length : visible.length}',
-                              }),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: context.textPri,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: GovernorateSelector(
-                              buttonKey: const ValueKey(
-                                'map-view-governorate-pill',
-                              ),
-                              compact: true,
-                              onExploreAll: () => showGovernorateExplorerSheet(
-                                context,
-                                places: allPlaces,
-                                visitedPlaceIds: visitedPlaceIds,
-                              ),
-                            ),
-                          ),
-                        ],
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Row(
+                  children: [
+                    IconButton.filled(
+                      key: const ValueKey('map-view-back-button'),
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back_ios_rounded, size: 18),
+                      style: IconButton.styleFrom(
+                        backgroundColor: context.cardColor,
+                        foregroundColor: context.textPri,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        key: const ValueKey('map-view-header-bar'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.cardColor,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                context.tr('map_title', {
+                                  'n': '$visibleMarkerCount',
+                                }),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: context.textPri,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: GovernorateSelector(
+                                buttonKey: const ValueKey(
+                                  'map-view-governorate-pill',
+                                ),
+                                compact: true,
+                                onExploreAll: () =>
+                                    showGovernorateExplorerSheet(
+                                      context,
+                                      places: allPlaces,
+                                      visitedPlaceIds: visitedPlaceIds,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           if (_routeDestination != null)
             Positioned(
               top: _navigationFocusMode
@@ -1163,28 +1196,11 @@ class _MapViewScreenState extends State<MapViewScreen>
               child: KeyedSubtree(
                 key: const ValueKey('map-category-filter-bar'),
                 child: _CategoryFilter(
-              selected: _selectedCategory,
-              onSelect: (cat) => setState(() => _selectedCategory = cat),
-              colorOf: _colorForCategory,
-              iconOf: _iconForCategory,
-              extraLayers: const {'Hotels'},
-              activeLayers: _extraLayers,
-              onToggleExtraLayer: (layer) {
-                setState(() {
-                  if (_extraLayers.contains(layer)) {
-                    _extraLayers.remove(layer);
-
-                    if (layer == _hotelsCategory &&
-                        _selectedCategory == _hotelsCategory) {
-                      _selectedCategory = null;
-                    }
-                  } else {
-                    _extraLayers.add(layer);
-                  }
-                });
-              },
-              showAtms: _showAtms,
-              onToggleAtms: _toggleAtms,
+                  selectedCategories: _selectedCategories,
+                  onToggleCategory: _toggleCategory,
+                  onSelectAll: _selectAllCategories,
+                  colorOf: _colorForCategory,
+                  iconOf: _iconForCategory,
                 ),
               ),
             ),
@@ -1322,33 +1338,23 @@ class _SelectedPlaceCard extends StatelessWidget {
 }
 
 class _CategoryFilter extends StatelessWidget {
-  final String? selected;
-  final ValueChanged<String?> onSelect;
+  final Set<String> selectedCategories;
+  final ValueChanged<String> onToggleCategory;
+  final VoidCallback onSelectAll;
   final Color Function(String) colorOf;
   final IconData Function(String) iconOf;
 
-  final Set<String> extraLayers;
-  final Set<String> activeLayers;
-  final ValueChanged<String> onToggleExtraLayer;
-  final bool showAtms;
-  final VoidCallback onToggleAtms;
-
   const _CategoryFilter({
-    required this.selected,
-    required this.onSelect,
+    required this.selectedCategories,
+    required this.onToggleCategory,
+    required this.onSelectAll,
     required this.colorOf,
     required this.iconOf,
-    required this.extraLayers,
-    required this.activeLayers,
-    required this.onToggleExtraLayer,
-    required this.showAtms,
-    required this.onToggleAtms,
   });
 
   @override
   Widget build(BuildContext context) {
-    const cats = [
-      'All',
+    const categories = [
       'Historical',
       'Culture',
       'Nature',
@@ -1357,55 +1363,42 @@ class _CategoryFilter extends StatelessWidget {
       'Shopping',
       'Mosques',
       'Churches',
+      'Hotels',
+      'ATMs',
     ];
     final children = <Widget>[];
 
-    for (final cat in cats) {
-      final isAll = cat == 'All';
-
-      final allOn = selected == null;
-      final isSel = isAll ? allOn : cat == selected;
-      final color = isAll ? AppColors.primary : colorOf(cat);
-      children.add(
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: FilterChip(
-            selected: isSel,
-            onSelected: (_) {
-              if (isAll) {
-                final currentlyAll = selected == null;
-                onSelect(currentlyAll ? '__none__' : null);
-              } else {
-                if (cat == selected) {
-                  onSelect('__none__');
-                } else {
-                  onSelect(cat);
-                }
-              }
-            },
-            avatar: Icon(
-              isAll ? Icons.apps_rounded : iconOf(cat),
-              size: 16,
-              color: isSel ? Colors.white : color,
+    Widget buildChip({
+      required String category,
+      required bool selected,
+      required VoidCallback onPressed,
+      required Color color,
+      required IconData icon,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: FilterChip(
+          key: ValueKey('map-filter-chip-${category.toLowerCase()}'),
+          selected: selected,
+          onSelected: (_) => onPressed(),
+          avatar: Icon(icon, size: 16, color: selected ? Colors.white : color),
+          label: Text(
+            _catLabel(context, category),
+            style: TextStyle(
+              color: selected ? Colors.white : context.textPri,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
             ),
-            label: Text(
-              _catLabel(context, cat),
-              style: TextStyle(
-                color: isSel ? Colors.white : context.textPri,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-              ),
-            ),
-            backgroundColor: context.cardColor,
-            selectedColor: color,
-            checkmarkColor: Colors.white,
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: BorderSide(
-                color: isSel ? color : context.cardColor,
-                width: 1.5,
-              ),
+          ),
+          backgroundColor: context.cardColor,
+          selectedColor: color,
+          checkmarkColor: Colors.white,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: selected ? color : context.cardColor,
+              width: 1.5,
             ),
           ),
         ),
@@ -1413,90 +1406,33 @@ class _CategoryFilter extends StatelessWidget {
     }
 
     children.add(
-      Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        width: 1,
-        color: context.hintColor.withValues(alpha: 0.3),
+      buildChip(
+        category: 'All',
+        selected: selectedCategories.isEmpty,
+        onPressed: onSelectAll,
+        color: AppColors.primary,
+        icon: Icons.apps_rounded,
       ),
     );
-
-    const hotelsey = 'Hotels';
-    final isHotels = activeLayers.contains(hotelsey);
-    children.add(
-      Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: FilterChip(
-          selected: isHotels,
-          onSelected: (_) => onToggleExtraLayer(hotelsey),
-          avatar: Icon(
-            Icons.hotel_rounded,
-            size: 16,
-            color: isHotels ? Colors.white : const Color(0xFF6A1B9A),
-          ),
-          label: Text(
-            'Hotels',
-            style: TextStyle(
-              color: isHotels ? Colors.white : context.textPri,
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-            ),
-          ),
-          backgroundColor: context.cardColor,
-          selectedColor: const Color(0xFF6A1B9A),
-          checkmarkColor: Colors.white,
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(
-              color: isHotels ? const Color(0xFF6A1B9A) : context.cardColor,
-              width: 1.5,
-            ),
-          ),
+    for (final category in categories) {
+      children.add(
+        buildChip(
+          category: category,
+          selected: selectedCategories.contains(category),
+          onPressed: () => onToggleCategory(category),
+          color: colorOf(category),
+          icon: iconOf(category),
         ),
-      ),
-    );
-
-    children.add(
-      Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: FilterChip(
-          selected: showAtms,
-          onSelected: (_) => onToggleAtms(),
-          avatar: Icon(
-            Icons.atm_rounded,
-            size: 16,
-            color: showAtms ? Colors.white : const Color(0xFF10B981),
-          ),
-          label: Text(
-            'ATMs',
-            style: TextStyle(
-              color: showAtms ? Colors.white : context.textPri,
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-            ),
-          ),
-          backgroundColor: context.cardColor,
-          selectedColor: const Color(0xFF10B981),
-          checkmarkColor: Colors.white,
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(
-              color: showAtms ? const Color(0xFF10B981) : context.cardColor,
-              width: 1.5,
-            ),
-          ),
-        ),
-      ),
-    );
+      );
+    }
 
     return SizedBox(
       height: 44,
-      child: ListView(
+      child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         physics: const BouncingScrollPhysics(),
-        children: children,
+        child: Row(children: children),
       ),
     );
   }

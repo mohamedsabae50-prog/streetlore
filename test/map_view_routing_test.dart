@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetlore/core/services/map_route_service.dart';
+import 'package:streetlore/data/luxor_seed.dart';
 import 'package:streetlore/data/models/map_poi.dart';
 import 'package:streetlore/data/models/place_model.dart';
 import 'package:streetlore/logic/governorate_provider.dart';
@@ -232,12 +233,14 @@ void main() {
     tester,
   ) async {
     var startedRoute = false;
+    final openedUrls = <Uri>[];
     final locale = LocaleProvider();
     addTearDown(locale.dispose);
     final atm = MapPoi(
       id: 'atm_test',
       name: 'Test ATM',
       address: 'Cairo',
+      governorate: 'Luxor',
       lat: 30.0444,
       lng: 31.2357,
       category: 'ATM',
@@ -250,21 +253,243 @@ void main() {
         home: ChangeNotifierProvider<LocaleProvider>.value(
           value: locale,
           child: Scaffold(
-            body: AtmSheet(atm: atm, onRoute: (_) => startedRoute = true),
+            body: AtmSheet(
+              atm: atm,
+              onRoute: (_) => startedRoute = true,
+              launchMapUrl: (uri) async {
+                openedUrls.add(uri);
+                return openedUrls.length == 2;
+              },
+            ),
           ),
         ),
       ),
     );
 
+    expect(find.text('Open in Google Maps'), findsOneWidget);
     expect(find.text('Route on Map'), findsOneWidget);
     expect(find.textContaining('Check In'), findsNothing);
     expect(find.textContaining('Visit'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('atm-open-google-maps-button')));
+    await tester.pump();
+    expect(openedUrls, hasLength(2));
+    expect(openedUrls.first.path, '/maps/dir/');
+    expect(
+      openedUrls.first.queryParameters['destination'],
+      'Test ATM, Cairo, Luxor',
+    );
+    expect(openedUrls.first.queryParameters['travelmode'], 'walking');
+    expect(openedUrls.last.path, '/maps/search/');
+    expect(
+      openedUrls.last.queryParameters['query'],
+      'Test ATM 30.0444,31.2357',
+    );
     await tester.tap(find.byKey(const ValueKey('atm-route-on-map-button')));
     expect(startedRoute, isTrue);
+  });
+
+  testWidgets('map category chips show the union of Churches and Hotels', (
+    tester,
+  ) async {
+    final harness = await _pumpLuxorMap(tester);
+    addTearDown(harness.dispose);
+
+    await _tapMapFilter(tester, 'churches');
+    await _tapMapFilter(tester, 'hotels');
+
+    expect(
+      find.byKey(
+        const ValueKey('map-place-marker-luxor_virgin_mary_cathedral'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const ValueKey('map-place-marker-luxor_sofitel_winter_palace'),
+      ),
+      findsOneWidget,
+    );
+
+    await _tapMapFilter(tester, 'churches');
+    expect(
+      find.byKey(
+        const ValueKey('map-place-marker-luxor_virgin_mary_cathedral'),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.byKey(
+        const ValueKey('map-place-marker-luxor_sofitel_winter_palace'),
+      ),
+      findsOneWidget,
+    );
+    await _tapMapFilter(tester, 'hotels');
+    expect(
+      tester
+          .widget<FilterChip>(find.byKey(const ValueKey('map-filter-chip-all')))
+          .selected,
+      isTrue,
+    );
+  });
+
+  testWidgets('Luxor ATMs combine with selected Hotels on the map', (
+    tester,
+  ) async {
+    final harness = await _pumpLuxorMap(tester);
+    addTearDown(harness.dispose);
+
+    await _tapMapFilter(tester, 'hotels');
+    await _tapMapFilter(tester, 'atms');
+
+    expect(
+      find.byKey(
+        const ValueKey('map-place-marker-luxor_sofitel_winter_palace'),
+      ),
+      findsOneWidget,
+    );
+    const luxorAtmIds = [
+      'atm_nbe_luxor_temple_corniche',
+      'atm_banque_misr_karnak_plaza',
+      'atm_cib_winter_palace_luxor',
+      'atm_qnb_luxor_station_square',
+      'atm_nbe_west_bank_ferry_qurna',
+      'atm_banque_misr_steigenberger_luxor',
+    ];
+    for (final id in luxorAtmIds) {
+      expect(find.byKey(ValueKey('map-atm-marker-$id')), findsOneWidget);
+    }
+    expect(harness.places.places.where((place) => place.isAtm), isEmpty);
+  });
+
+  testWidgets('map category matching normalizes singular and plural labels', (
+    tester,
+  ) async {
+    final harness = await _pumpLuxorMap(
+      tester,
+      extraPlaces: [
+        _aliasPlace('singular-cafe', 'Cafe', 25.7000, 32.6370),
+        _aliasPlace('singular-mosque', 'Mosque', 25.7020, 32.6370),
+        _aliasPlace('singular-church', 'Church', 25.7040, 32.6370),
+        _aliasPlace('singular-hotel', 'Hotel', 25.7060, 32.6370),
+        _aliasPlace('singular-museum', 'Museum', 25.7080, 32.6370),
+        _aliasPlace('singular-park', 'Park', 25.7100, 32.6370),
+        _aliasPlace('atm_singular_test', 'ATM', 25.7120, 32.6370),
+      ],
+    );
+    addTearDown(harness.dispose);
+
+    expect(
+      harness.places.allPlaces.any(
+        (place) => place.id == 'singular-mosque' && place.category == 'Mosque',
+      ),
+      isTrue,
+    );
+    for (final category in ['cafes', 'mosques', 'churches', 'hotels']) {
+      await _tapMapFilter(tester, category);
+    }
+    await _tapMapFilter(tester, 'culture');
+    await _tapMapFilter(tester, 'nature');
+    await _tapMapFilter(tester, 'atms');
+
+    for (final id in [
+      'singular-cafe',
+      'singular-mosque',
+      'singular-church',
+      'singular-hotel',
+      'singular-museum',
+      'singular-park',
+    ]) {
+      expect(find.byKey(ValueKey('map-place-marker-$id')), findsOneWidget);
+    }
+    expect(
+      find.byKey(const ValueKey('map-atm-marker-atm_singular_test')),
+      findsOneWidget,
+    );
+    expect(harness.places.places.any((place) => place.isAtm), isFalse);
   });
 }
 
 double _distanceFromLabel(String label) {
   final value = double.parse(label.split(' ').first);
   return label.endsWith('km') ? value * 1000 : value;
+}
+
+Future<_LuxorMapHarness> _pumpLuxorMap(
+  WidgetTester tester, {
+  Iterable<PlaceModel> extraPlaces = const [],
+}) async {
+  tester.view.physicalSize = const Size(1200, 900);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  final governorates = GovernorateProvider();
+  governorates.unlockAndSelectGovernorate('luxor');
+  final places = PlaceProvider(
+    watchRemoteUpdates: false,
+    governorates: governorates,
+    isOnline: () => false,
+    initialPlaces: [...luxorSeedPlaces, ...extraPlaces],
+  );
+  final trips = TripProvider();
+  final locale = LocaleProvider();
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: governorates),
+        ChangeNotifierProvider.value(value: places),
+        ChangeNotifierProvider.value(value: trips),
+        ChangeNotifierProvider.value(value: locale),
+      ],
+      child: const MaterialApp(home: MapViewScreen(autoLocate: false)),
+    ),
+  );
+  await tester.pump();
+  return _LuxorMapHarness(
+    governorates: governorates,
+    places: places,
+    trips: trips,
+    locale: locale,
+  );
+}
+
+PlaceModel _aliasPlace(String id, String category, double lat, double lng) =>
+    PlaceModel(
+      id: id,
+      nameEn: id,
+      descriptionEn: 'A category alias map test place.',
+      imageUrl: '',
+      rating: 4.0,
+      category: category,
+      lat: lat,
+      lng: lng,
+      governorate: 'luxor',
+    );
+
+Future<void> _tapMapFilter(WidgetTester tester, String category) async {
+  final chip = find.byKey(ValueKey('map-filter-chip-$category'));
+  await tester.ensureVisible(chip);
+  await tester.tap(chip);
+  await tester.pump();
+}
+
+class _LuxorMapHarness {
+  final GovernorateProvider governorates;
+  final PlaceProvider places;
+  final TripProvider trips;
+  final LocaleProvider locale;
+
+  const _LuxorMapHarness({
+    required this.governorates,
+    required this.places,
+    required this.trips,
+    required this.locale,
+  });
+
+  void dispose() {
+    governorates.dispose();
+    places.dispose();
+    trips.dispose();
+    locale.dispose();
+  }
 }

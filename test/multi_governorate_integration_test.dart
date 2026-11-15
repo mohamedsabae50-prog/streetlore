@@ -8,7 +8,7 @@ import 'package:streetlore/core/services/ai_tour_guide_service.dart';
 import 'package:streetlore/data/cairo_seed.dart';
 import 'package:streetlore/data/luxor_seed.dart';
 import 'package:streetlore/data/mock_data.dart'
-    show fallbackPlaces, fallbackTours;
+    show MockData, fallbackPlaces, fallbackTours;
 import 'package:streetlore/data/models/egypt_governorate.dart';
 import 'package:streetlore/logic/governorate_provider.dart';
 import 'package:streetlore/logic/locale_provider.dart';
@@ -61,17 +61,35 @@ void main() {
       );
 
       expect(governorates.unlockAndSelectGovernorate('cairo'), isTrue);
-      expect(places.places, hasLength(190));
+      expect(places.places, hasLength(170));
       expect(
         places.places.every((place) => place.governorate == 'cairo'),
+        isTrue,
+      );
+      expect(places.places.where((place) => place.isAtm), isEmpty);
+      expect(
+        MockData.getByCategory(
+          'ATMs',
+          places.allPlaces,
+          governorateId: 'cairo',
+        ),
+        isEmpty,
+      );
+      expect(
+        MockData.getFeatured(
+          governorateId: 'cairo',
+        ).every((place) => place.isVisitable),
         isTrue,
       );
       expect(
         places.places.where((place) => place.category == 'Hotels'),
         hasLength(16),
       );
+      expect(places.places.where((place) => !place.isVisitable), isEmpty);
       expect(
-        places.places.where((place) => place.category == 'ATMs'),
+        places.allPlaces.where(
+          (place) => place.governorate == 'cairo' && place.isAtm,
+        ),
         hasLength(20),
       );
       expect(tours.tours, hasLength(15));
@@ -88,17 +106,21 @@ void main() {
       );
 
       expect(governorates.unlockAndSelectGovernorate('luxor'), isTrue);
-      expect(places.places, hasLength(60));
+      expect(places.places, hasLength(54));
       expect(
         places.places.every((place) => place.governorate == 'luxor'),
         isTrue,
       );
+      expect(places.places.where((place) => place.isAtm), isEmpty);
       expect(
         places.places.where((place) => place.category == 'Hotels'),
         hasLength(6),
       );
+      expect(places.places.where((place) => !place.isVisitable), isEmpty);
       expect(
-        places.places.where((place) => place.category == 'ATMs'),
+        places.allPlaces.where(
+          (place) => place.governorate == 'luxor' && place.isAtm,
+        ),
         hasLength(6),
       );
       expect(tours.tours, hasLength(6));

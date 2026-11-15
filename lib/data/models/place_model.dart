@@ -122,12 +122,14 @@ class PlaceModel {
 
   bool get isFree => priceLevel == PriceLevel.free;
 
-  bool get isVisitable {
+  bool get isAtm {
     final normalizedCategory = category.trim().toLowerCase();
-    return !id.trim().toLowerCase().startsWith('atm_') &&
-        normalizedCategory != 'atm' &&
-        normalizedCategory != 'atms';
+    return id.trim().toLowerCase().startsWith('atm_') ||
+        normalizedCategory == 'atm' ||
+        normalizedCategory == 'atms';
   }
+
+  bool get isVisitable => !isAtm;
 
   bool get hasDualPrice => priceLocalEgp != null && priceForeignerEgp != null;
 

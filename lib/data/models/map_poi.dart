@@ -4,6 +4,7 @@ class MapPoi {
   final String id;
   final String name;
   final String address;
+  final String governorate;
   final double lat;
   final double lng;
   final String category;
@@ -17,6 +18,7 @@ class MapPoi {
     required this.id,
     required this.name,
     required this.address,
+    this.governorate = 'Alexandria',
     required this.lat,
     required this.lng,
     required this.category,

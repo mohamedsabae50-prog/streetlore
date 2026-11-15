@@ -100,7 +100,10 @@ class PlaceProvider extends ChangeNotifier {
   List<PlaceModel> get places {
     final activeGovernorate = governorates?.activeGovernorate ?? 'alexandria';
     final copy = _places
-        .where((place) => place.governorate == activeGovernorate)
+        .where(
+          (place) =>
+              place.governorate == activeGovernorate && place.isVisitable,
+        )
         .toList();
     copy.sort((a, b) {
       final byOrder = a.displayOrder.compareTo(b.displayOrder);

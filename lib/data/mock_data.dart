@@ -91,7 +91,8 @@ class MockData {
           .where(
             (place) =>
                 place.governorate ==
-                EgyptGovernorate.normalizeId(governorateId),
+                    EgyptGovernorate.normalizeId(governorateId) &&
+                place.isVisitable,
           )
           .take(5)
           .toList(growable: false);
@@ -101,6 +102,7 @@ class MockData {
         .where(
           (p) =>
               p.governorate == current.governorate &&
+              p.isVisitable &&
               p.id != current.id &&
               (p.lat - current.lat).abs() < 0.05 &&
               (p.lng - current.lng).abs() < 0.05,
@@ -117,9 +119,12 @@ class MockData {
     final normalizedGovernorateId = governorateId == null
         ? null
         : EgyptGovernorate.normalizeId(governorateId);
-    final citySource = normalizedGovernorateId == null
-        ? source
-        : source.where((p) => p.governorate == normalizedGovernorateId);
+    final citySource = source.where(
+      (place) =>
+          place.isVisitable &&
+          (normalizedGovernorateId == null ||
+              place.governorate == normalizedGovernorateId),
+    );
     if (category == 'All') return citySource.toList(growable: false);
     return citySource
         .where((p) => p.category == category)

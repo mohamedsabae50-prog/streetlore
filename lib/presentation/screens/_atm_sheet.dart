@@ -7,24 +7,49 @@ import '../../data/models/map_poi.dart';
 class AtmSheet extends StatelessWidget {
   final MapPoi atm;
   final ValueChanged<MapPoi>? onRoute;
-  const AtmSheet({super.key, required this.atm, this.onRoute});
+  final Future<bool> Function(Uri uri)? launchMapUrl;
+  const AtmSheet({
+    super.key,
+    required this.atm,
+    this.onRoute,
+    this.launchMapUrl,
+  });
 
   Future<void> _openDirections(BuildContext context) async {
-    final dest = '${atm.lat},${atm.lng}';
-    final uri = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$dest&travelmode=driving',
+    final destination = Uri.encodeComponent(
+      '${atm.name}, ${atm.address}, ${atm.governorate}',
     );
+    final directionsUri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$destination&travelmode=walking',
+    );
+    final searchUri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query='
+      '${Uri.encodeComponent('${atm.name} ${atm.lat},${atm.lng}')}',
+    );
+    final launcher = launchMapUrl;
     try {
-      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!ok) {
-        throw 'launchUrl returned false';
+      if (await (launcher?.call(directionsUri) ??
+          launchUrl(
+            directionsUri,
+            mode: LaunchMode.externalApplication,
+          ))) {
+        return;
       }
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not open maps: $e')));
+    } catch (error, stackTrace) {
+      debugPrint('AtmSheet: Google Maps directions failed: $error\n$stackTrace');
     }
+    try {
+      if (await (launcher?.call(searchUri) ??
+          launchUrl(searchUri, mode: LaunchMode.externalApplication))) {
+        return;
+      }
+    } catch (error, stackTrace) {
+      debugPrint('AtmSheet: Google Maps search fallback failed: $error\n$stackTrace');
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not open Google Maps.')),
+    );
   }
 
   @override
@@ -47,26 +72,28 @@ class AtmSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            if (onRoute != null) ...[
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  key: const ValueKey('atm-route-on-map-button'),
-                  onPressed: () => onRoute!(atm),
-                  icon: const Icon(Icons.route_rounded, size: 19),
-                  label: Text(context.tr('route_on_map')),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: atm.color,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                key: const ValueKey('atm-open-google-maps-button'),
+                onPressed: () => _openDirections(context),
+                icon: const Icon(Icons.map_rounded, size: 19),
+                label: Text(
+                  Localizations.localeOf(context).languageCode == 'ar'
+                      ? 'فتح في خرائط جوجل'
+                      : 'Open in Google Maps',
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: atm.color,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
-            ],
+            ),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Container(
@@ -129,25 +156,28 @@ class AtmSheet extends StatelessWidget {
             const SizedBox(height: 18),
             Row(
               children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _openDirections(context),
-                    icon: const Icon(Icons.directions_rounded, size: 20),
-                    label: const Text(
-                      'Get Directions',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: atm.color,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(50),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                if (onRoute != null)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const ValueKey('atm-route-on-map-button'),
+                      onPressed: () => onRoute!(atm),
+                      icon: const Icon(Icons.route_rounded, size: 19),
+                      label: Text(
+                        context.tr('route_on_map'),
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: atm.color,
+                        minimumSize: const Size.fromHeight(48),
+                        side: BorderSide(color: atm.color),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  )
+                else
+                  const Spacer(),
                 const SizedBox(width: 10),
                 Container(
                   decoration: BoxDecoration(
