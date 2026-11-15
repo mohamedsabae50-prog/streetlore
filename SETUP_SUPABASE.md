@@ -16,7 +16,7 @@ This guide walks you through wiring the EgyptLore app and the new Admin panel to
 In your Supabase project:
 
 1. Open **SQL Editor** → **New query**
-2. Copy the entire contents of `supabase_setup.sql` (in the project root) and paste
+2. Copy the entire contents of `supabase/supabase_setup.sql` and paste
 3. Click **Run**
 
 You should see: `Success. No rows returned` — the tables, policies, view, and storage bucket are now created.
@@ -198,7 +198,7 @@ Supabase
 - ✏️ `lib/logic/place_provider.dart` — fetches from Supabase
 - ✏️ `lib/logic/tour_provider.dart` — fetches from Supabase
 - ➕ `lib/core/config/supabase_config.dart` — URL + key
-- ➕ `supabase_setup.sql` — schema
+- ➕ `supabase/supabase_setup.sql` — schema
 - ➕ `tools/seed.dart` — initial data import
 
 ### Admin panel (new project)

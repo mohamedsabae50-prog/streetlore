@@ -24,8 +24,8 @@ Edge Function, which holds the credentials and enforces the daily quota.
 ## Backend
 
 - Schema and policies: `supabase/migrations/` (applied in filename order).
-  `supabase_setup.sql` is the original bootstrap — do not re-run it on an
-  existing project; it predates the admin-only write policies.
+  `supabase/supabase_setup.sql` is the original bootstrap — do not re-run it
+  on an existing project; it predates the admin-only write policies.
 - Setup steps and Edge Function secrets: [SETUP_SUPABASE.md](SETUP_SUPABASE.md)
 - Google Sign-In SHA-1 notes: [GOOGLE_SIGNIN_FIX.md](GOOGLE_SIGNIN_FIX.md)
 
