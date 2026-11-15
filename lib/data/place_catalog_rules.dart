@@ -150,8 +150,7 @@ String _catalogDescription({
       description.length >= (arabic ? 65 : 95) &&
       sentences.length >= 2 &&
       sentences.length <= 3 &&
-      hasName &&
-      hasArea;
+      (place.governorate == 'luxor' || (hasName && hasArea));
   if (completeSource) return description;
 
   final firstSentence = sentences.isNotEmpty
@@ -269,6 +268,34 @@ String _neighborhood(
 }
 
 String? _expectedHours(PlaceModel place, String category, String idAndName) {
+  if (place.governorate == 'luxor') {
+    return switch (category) {
+      'historical' => switch (place.id) {
+        'luxor_karnak_temple' => '06:00 AM - 05:30 PM',
+        'luxor_temple' || 'luxor_avenue_of_sphinxes' => '06:00 AM - 09:00 PM',
+        'luxor_colossi_of_memnon' => '24 hours',
+        _ => '06:00 AM - 05:00 PM',
+      },
+      'culture' =>
+        place.id == 'luxor_howard_carter_house'
+            ? '08:00 AM - 05:00 PM'
+            : '09:00 AM - 08:00 PM',
+      'nature' => switch (place.id) {
+        'luxor_nile_corniche' => '24 hours',
+        'luxor_west_bank_balloon_field' => '04:30 AM - 08:30 AM',
+        'luxor_banana_island' ||
+        'luxor_crocodile_island_park' => '09:00 AM - 05:00 PM',
+        'luxor_felucca_sail_dock' => '06:00 AM - 10:00 PM',
+        _ => null,
+      },
+      'mosques' => '04:00 AM - 10:00 PM',
+      'churches' => '08:00 AM - 08:00 PM',
+      'shopping' => '10:00 AM - 11:00 PM',
+      'food' || 'cafes' => '10:00 AM - 01:00 AM',
+      'hotels' || 'atms' || 'atm' => '24 hours',
+      _ => null,
+    };
+  }
   if (category == 'atms' ||
       category == 'atm' ||
       category == 'hotels' ||

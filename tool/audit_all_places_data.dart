@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:streetlore/data/alexandria_image_urls.dart';
 import 'package:streetlore/data/cairo_image_urls.dart';
+import 'package:streetlore/data/luxor_image_urls.dart';
 import 'package:streetlore/data/mock_data.dart';
 import 'package:streetlore/data/models/place_model.dart';
 
@@ -167,6 +168,7 @@ Future<void> main() async {
 
   _checkImageMapDuplicates('Cairo', cairoImageUrls, issues);
   _checkImageMapDuplicates('Alexandria', alexandriaImageUrls, issues);
+  _checkImageMapDuplicates('Luxor', luxorImageUrls, issues);
 
   final alexandriaCount = places
       .where((place) => place.governorate == 'alexandria')
@@ -174,13 +176,49 @@ Future<void> main() async {
   final cairoCount = places
       .where((place) => place.governorate == 'cairo')
       .length;
+  final luxorPlaces = places
+      .where((place) => place.governorate == 'luxor')
+      .toList(growable: false);
+  final luxorCount = luxorPlaces.length;
+  if (alexandriaCount != 49) {
+    issues.add('expected 49 Alexandria places, found $alexandriaCount');
+  }
+  if (cairoCount != 190) {
+    issues.add('expected 190 Cairo/Giza places, found $cairoCount');
+  }
+  if (luxorCount != 60) {
+    issues.add('expected 60 Luxor places, found $luxorCount');
+  }
+  if (places.length != 299) {
+    issues.add('expected 299 total places, found ${places.length}');
+  }
+  if (luxorImageUrls.length != 60 ||
+      luxorImageUrls.values.toSet().length != 60) {
+    issues.add('Luxor image catalog must contain exactly 60 unique image URLs');
+  }
+  final luxorIds = luxorPlaces.map((place) => place.id).toSet();
+  if (luxorIds.length != 60 ||
+      luxorIds.difference(luxorImageUrls.keys.toSet()).isNotEmpty ||
+      luxorImageUrls.keys.toSet().difference(luxorIds).isNotEmpty) {
+    issues.add('Luxor place IDs and image catalog keys must match exactly');
+  }
+  for (final entry in luxorImageUrls.entries) {
+    final uri = Uri.tryParse(entry.value);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host != 'upload.wikimedia.org' ||
+        !uri.path.startsWith('/wikipedia/commons/')) {
+      issues.add(
+        '${entry.key}: malformed Wikimedia Commons URL in local image catalog',
+      );
+    }
+  }
   stdout.writeln(
-    'Audited $alexandriaCount Alexandria and $cairoCount Cairo/Giza places '
+    'Audited $alexandriaCount Alexandria, $cairoCount Cairo/Giza, and '
+    '$luxorCount Luxor places '
     '(${imageOwners.length} unique place image URLs).',
   );
-  stdout.writeln(
-    'HTTP status checks are performed by dart run tool/verify_cairo_seed.dart.',
-  );
+  stdout.writeln('Image checks are offline URL-format and uniqueness checks.');
   if (issues.isNotEmpty) {
     for (final issue in issues) {
       stderr.writeln('[FAIL] $issue');
@@ -194,6 +232,10 @@ Future<void> main() async {
 
 bool _requiresPaidAdmission(PlaceModel place) {
   final category = place.category.trim().toLowerCase();
+  if (place.governorate == 'luxor' &&
+      (category == 'historical' || category == 'culture')) {
+    return place.id != 'luxor_colossi_of_memnon';
+  }
   if (category == 'atms' ||
       category == 'atm' ||
       category == 'food' ||
@@ -229,6 +271,34 @@ bool _requiresPaidAdmission(PlaceModel place) {
 String? _expectedHours(PlaceModel place) {
   final category = place.category.trim().toLowerCase();
   final idAndName = '${place.id} ${place.nameEn}'.toLowerCase();
+  if (place.governorate == 'luxor') {
+    return switch (category) {
+      'historical' => switch (place.id) {
+        'luxor_karnak_temple' => '06:00 AM - 05:30 PM',
+        'luxor_temple' || 'luxor_avenue_of_sphinxes' => '06:00 AM - 09:00 PM',
+        'luxor_colossi_of_memnon' => '24 hours',
+        _ => '06:00 AM - 05:00 PM',
+      },
+      'culture' =>
+        place.id == 'luxor_howard_carter_house'
+            ? '08:00 AM - 05:00 PM'
+            : '09:00 AM - 08:00 PM',
+      'nature' => switch (place.id) {
+        'luxor_nile_corniche' => '24 hours',
+        'luxor_west_bank_balloon_field' => '04:30 AM - 08:30 AM',
+        'luxor_banana_island' ||
+        'luxor_crocodile_island_park' => '09:00 AM - 05:00 PM',
+        'luxor_felucca_sail_dock' => '06:00 AM - 10:00 PM',
+        _ => null,
+      },
+      'mosques' => '04:00 AM - 10:00 PM',
+      'churches' => '08:00 AM - 08:00 PM',
+      'shopping' => '10:00 AM - 11:00 PM',
+      'food' || 'cafes' => '10:00 AM - 01:00 AM',
+      'hotels' || 'atms' || 'atm' => '24 hours',
+      _ => null,
+    };
+  }
   if (category == 'atms' ||
       category == 'atm' ||
       category == 'hotels' ||

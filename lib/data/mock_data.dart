@@ -4,6 +4,7 @@ import 'models/egypt_governorate.dart';
 import 'alexandria_image_urls.dart';
 import 'alexandria_seed_additional.dart';
 import 'cairo_seed.dart';
+import 'luxor_seed.dart';
 import 'place_catalog_rules.dart';
 
 class MockData {
@@ -166,14 +167,21 @@ class MockData {
 
   static List<PlaceModel> get places {
     final placesById = <String, PlaceModel>{};
-    for (final place in [...fallbackPlaces, ...cairoSeedPlaces]) {
+    for (final place in [
+      ...fallbackPlaces,
+      ...cairoSeedPlaces,
+      ...luxorSeedPlaces,
+    ]) {
       placesById.putIfAbsent(place.id, () => applyPlaceCatalogRules(place));
     }
     return List.unmodifiable(placesById.values);
   }
 
-  static List<ItineraryModel> get tours =>
-      List.unmodifiable([..._seedTours, ...cairoSeedItineraries]);
+  static List<ItineraryModel> get tours => List.unmodifiable([
+    ..._seedTours,
+    ...cairoSeedItineraries,
+    ...luxorSeedItineraries,
+  ]);
 }
 
 class MockReview {

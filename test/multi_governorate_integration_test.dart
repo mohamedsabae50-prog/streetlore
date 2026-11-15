@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetlore/core/services/ai_tour_guide_service.dart';
 import 'package:streetlore/data/cairo_seed.dart';
+import 'package:streetlore/data/luxor_seed.dart';
 import 'package:streetlore/data/mock_data.dart'
     show fallbackPlaces, fallbackTours;
 import 'package:streetlore/data/models/egypt_governorate.dart';
@@ -46,7 +47,7 @@ void main() {
 
       expect(
         places.availableGovernorateIds,
-        containsAll(['alexandria', 'cairo']),
+        containsAll(['alexandria', 'cairo', 'luxor']),
       );
       expect(places.places, isNotEmpty);
       expect(
@@ -85,6 +86,23 @@ void main() {
         tours.tours.every((tour) => tour.governorate == 'alexandria'),
         isTrue,
       );
+
+      expect(governorates.unlockAndSelectGovernorate('luxor'), isTrue);
+      expect(places.places, hasLength(60));
+      expect(
+        places.places.every((place) => place.governorate == 'luxor'),
+        isTrue,
+      );
+      expect(
+        places.places.where((place) => place.category == 'Hotels'),
+        hasLength(6),
+      );
+      expect(
+        places.places.where((place) => place.category == 'ATMs'),
+        hasLength(6),
+      );
+      expect(tours.tours, hasLength(6));
+      expect(tours.tours.every((tour) => tour.governorate == 'luxor'), isTrue);
     },
   );
 
@@ -108,9 +126,22 @@ void main() {
     );
     expect(alexandriaContext, contains('الإسكندرية / Alexandria'));
     expect(alexandriaContext, isNot(contains('جولة القاهرة الفاطمية')));
+
+    final luxorContext = buildGovernorateGuideContext(
+      governorateId: 'luxor',
+      places: [...luxorSeedPlaces, ...cairoSeedPlaces],
+      itineraries: [...luxorSeedItineraries, ...cairoSeedItineraries],
+      locale: 'en',
+    );
+    expect(luxorContext, contains('Luxor / الأقصر'));
+    expect(luxorContext, contains('East Bank Royal Temples Trail'));
+    expect(
+      luxorContext,
+      isNot(contains('Fatimid Cairo & Al-Muizz Heritage Walk')),
+    );
   });
 
-  testWidgets('fog layer survives repeated Cairo and Alexandria switches', (
+  testWidgets('fog layer survives repeated governorate switches', (
     tester,
   ) async {
     final governorates = GovernorateProvider();
@@ -135,7 +166,7 @@ void main() {
     await tester.pump();
     expect(EgyptGovernorate.byId['alexandria']!.boundaryPolygon, isNotEmpty);
 
-    for (final id in ['cairo', 'alexandria', 'cairo']) {
+    for (final id in ['cairo', 'luxor', 'alexandria', 'luxor']) {
       governorates.unlockAndSelectGovernorate(id);
       await tester.pump();
       expect(
@@ -146,7 +177,9 @@ void main() {
     }
   });
 
-  testWidgets('map selector animates the camera to Cairo', (tester) async {
+  testWidgets('map selector animates the camera to Cairo and Luxor', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -156,7 +189,11 @@ void main() {
     final places = PlaceProvider(
       watchRemoteUpdates: false,
       governorates: governorates,
-      initialPlaces: [...fallbackPlaces, ...cairoSeedPlaces],
+      initialPlaces: [
+        ...fallbackPlaces,
+        ...cairoSeedPlaces,
+        ...luxorSeedPlaces,
+      ],
     );
     final tours = TourProvider(governorates: governorates);
     final trips = TripProvider();
@@ -200,5 +237,15 @@ void main() {
     final camera = MapCamera.of(tester.element(fogLayer));
     expect(camera.center.latitude, closeTo(30.0444, 0.001));
     expect(camera.center.longitude, closeTo(31.2357, 0.001));
+
+    await tester.tap(selector);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Luxor'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(governorates.activeGovernorate, 'luxor');
+    final luxorCamera = MapCamera.of(tester.element(fogLayer));
+    expect(luxorCamera.center.latitude, closeTo(25.7050, 0.001));
+    expect(luxorCamera.center.longitude, closeTo(32.6391, 0.001));
   });
 }

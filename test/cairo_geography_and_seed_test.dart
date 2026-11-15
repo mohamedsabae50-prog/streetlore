@@ -6,6 +6,8 @@ import 'package:streetlore/core/services/atm_service.dart';
 import 'package:streetlore/core/widgets/image_defaults.dart';
 import 'package:streetlore/data/alexandria_image_urls.dart';
 import 'package:streetlore/data/cairo_seed.dart';
+import 'package:streetlore/data/luxor_image_urls.dart';
+import 'package:streetlore/data/luxor_seed.dart';
 import 'package:streetlore/data/mock_data.dart';
 import 'package:streetlore/data/models/egypt_governorate.dart';
 import 'package:streetlore/data/models/itinerary_model.dart';
@@ -246,6 +248,7 @@ const _validCategories = {
 
 void main() {
   final cairo = EgyptGovernorate.byId['cairo']!;
+  final luxor = EgyptGovernorate.byId['luxor']!;
 
   test('Cairo & Giza seed has 190 places and stable core order', () {
     expect(cairoSeedPlaces, hasLength(190));
@@ -268,6 +271,173 @@ void main() {
     expect(
       MockData.tours.where((tour) => tour.governorate == 'cairo'),
       hasLength(15),
+    );
+  });
+
+  test('Luxor seed has 60 places, six tours, and unique offline URLs', () {
+    expect(luxor.id, 'luxor');
+    expect(luxor.nameEn, 'Luxor');
+    expect(luxor.nameAr, 'الأقصر');
+    expect(luxor.centerLat, 25.7050);
+    expect(luxor.centerLng, 32.6391);
+    expect(luxor.defaultZoom, 12.2);
+    expect(
+      luxor.boundaryPolygon
+          .map((point) => (point.latitude, point.longitude))
+          .toList(),
+      [
+        (25.8200, 32.5200),
+        (25.8300, 32.7200),
+        (25.7500, 32.7800),
+        (25.6200, 32.7600),
+        (25.5200, 32.6800),
+        (25.5000, 32.5000),
+        (25.6000, 32.4500),
+        (25.7400, 32.5000),
+      ],
+    );
+    expect(luxorSeedPlaces, hasLength(60));
+    expect(luxorSeedItineraries, hasLength(6));
+    expect(
+      MockData.places.where((place) => place.governorate == 'luxor'),
+      hasLength(60),
+    );
+    expect(MockData.places, hasLength(299));
+    expect(luxorImageUrls, hasLength(60));
+    expect(luxorImageUrls.values.toSet(), hasLength(60));
+    expect(
+      luxorSeedPlaces.map((place) => place.id).toSet(),
+      luxorImageUrls.keys.toSet(),
+    );
+    for (final place in luxorSeedPlaces) {
+      expect(place.governorate, 'luxor', reason: place.id);
+      expect(place.descriptionEn.trim().length, greaterThanOrEqualTo(95));
+      expect(place.descriptionAr!.trim().length, greaterThanOrEqualTo(65));
+      expect(
+        RegExp(r'[.!?](?:\s|$)').allMatches(place.descriptionEn).length,
+        greaterThanOrEqualTo(2),
+        reason: place.id,
+      );
+      expect(
+        RegExp(r'[.!?؟](?:\s|$)').allMatches(place.descriptionAr!).length,
+        greaterThanOrEqualTo(2),
+        reason: place.id,
+      );
+      final image = Uri.parse(place.imageUrl);
+      expect(image.scheme, 'https', reason: place.id);
+      expect(image.host, 'upload.wikimedia.org', reason: place.id);
+      expect(
+        image.path.startsWith('/wikipedia/commons/'),
+        isTrue,
+        reason: place.id,
+      );
+    }
+
+    final placesById = {for (final place in luxorSeedPlaces) place.id: place};
+    const paidTickets = <String, (int, int)>{
+      'luxor_karnak_temple': (80, 600),
+      'luxor_temple': (80, 500),
+      'luxor_avenue_of_sphinxes': (80, 500),
+      'luxor_museum': (50, 400),
+      'luxor_mummification_museum': (40, 300),
+      'luxor_valley_of_the_kings': (100, 750),
+      'luxor_tomb_of_tutankhamun': (80, 700),
+      'luxor_tomb_of_ramesses_vi': (60, 220),
+      'luxor_valley_of_the_queens': (60, 220),
+      'luxor_tomb_of_nefertari': (600, 2000),
+      'luxor_hatshepsut_temple': (80, 440),
+      'luxor_medinet_habu': (60, 220),
+      'luxor_ramesseum': (60, 220),
+      'luxor_deir_el_medina': (60, 220),
+      'luxor_tombs_of_the_nobles': (60, 200),
+      'luxor_ramose_tomb': (40, 160),
+      'luxor_sennedjem_tomb': (40, 160),
+      'luxor_howard_carter_house': (60, 220),
+      'luxor_temple_of_seti_i_qurna': (40, 160),
+      'luxor_merenptah_mortuary_temple': (40, 140),
+      'luxor_assasif_necropolis': (40, 160),
+      'luxor_deir_el_shelwit': (30, 100),
+      'luxor_medamud_temple': (30, 100),
+      'luxor_tod_temple': (30, 100),
+      'luxor_armant_temple': (30, 100),
+    };
+    for (final entry in paidTickets.entries) {
+      final place = placesById[entry.key]!;
+      expect(
+        (place.priceLocalEgp, place.priceForeignerEgp),
+        entry.value,
+        reason: entry.key,
+      );
+      expect(place.isFree, isFalse, reason: entry.key);
+    }
+    final colossi = placesById['luxor_colossi_of_memnon']!;
+    expect(colossi.openHours, '24 hours');
+    expect((colossi.priceLocalEgp, colossi.priceForeignerEgp), (0, 0));
+    expect(colossi.isFree, isTrue);
+    const naturePrices = <String, (int, int)>{
+      'luxor_banana_island': (50, 150),
+      'luxor_nile_corniche': (0, 0),
+      'luxor_west_bank_balloon_field': (800, 3500),
+      'luxor_felucca_sail_dock': (100, 300),
+      'luxor_crocodile_island_park': (40, 120),
+    };
+    for (final entry in naturePrices.entries) {
+      final place = placesById[entry.key]!;
+      expect(
+        (place.priceLocalEgp, place.priceForeignerEgp),
+        entry.value,
+        reason: entry.key,
+      );
+    }
+    final religiousPlaces = placesById.values.where(
+      (place) => place.category == 'Mosques' || place.category == 'Churches',
+    );
+    expect(religiousPlaces, hasLength(5));
+    expect(religiousPlaces.every((place) => place.isFree), isTrue);
+    final foodAndCafes = placesById.values.where(
+      (place) => place.category == 'Food' || place.category == 'Cafes',
+    );
+    expect(foodAndCafes, hasLength(8));
+    expect(
+      foodAndCafes.every(
+        (place) =>
+            (place.priceLevel == PriceLevel.moderate ||
+                place.priceLevel == PriceLevel.expensive) &&
+            place.openHours == '10:00 AM - 01:00 AM',
+      ),
+      isTrue,
+    );
+    final shopping = placesById.values.where(
+      (place) => place.category == 'Shopping',
+    );
+    expect(shopping, hasLength(4));
+    expect(
+      shopping.every((place) => place.openHours == '10:00 AM - 11:00 PM'),
+      isTrue,
+    );
+    final hotels = placesById.values.where(
+      (place) => place.category == 'Hotels',
+    );
+    expect(hotels, hasLength(6));
+    expect(
+      hotels.every(
+        (place) =>
+            place.priceLevel == PriceLevel.expensive &&
+            place.openHours == '24 hours',
+      ),
+      isTrue,
+    );
+    expect(
+      placesById.values.where((place) => place.category == 'ATMs'),
+      hasLength(6),
+    );
+    expect(
+      placesById.values
+          .where((place) => place.category == 'ATMs')
+          .every(
+            (place) => !place.isVisitable && place.openHours == '24 hours',
+          ),
+      isTrue,
     );
   });
 

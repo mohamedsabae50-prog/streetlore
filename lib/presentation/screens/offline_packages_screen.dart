@@ -19,7 +19,12 @@ class OfflinePackagesScreen extends StatefulWidget {
 
 class _OfflinePackagesScreenState extends State<OfflinePackagesScreen> {
   static final _cityPacks = OfflineProvider.catalog
-      .where((pack) => pack.id == 'all_alexandria' || pack.id == 'all_cairo')
+      .where(
+        (pack) =>
+            pack.id == 'all_alexandria' ||
+            pack.id == 'all_cairo' ||
+            pack.id == 'all_luxor',
+      )
       .toList(growable: false);
 
   @override
@@ -307,7 +312,9 @@ class OfflinePackagesEntryTile extends StatelessWidget {
         final downloadedCount = OfflineProvider.catalog
             .where(
               (pack) =>
-                  (pack.id == 'all_alexandria' || pack.id == 'all_cairo') &&
+                  (pack.id == 'all_alexandria' ||
+                      pack.id == 'all_cairo' ||
+                      pack.id == 'all_luxor') &&
                   offline.isDownloaded(
                     pack.id,
                     governorateId: pack.governorateId,

@@ -8,6 +8,7 @@ import '../core/constants/city_coordinates.dart';
 import '../core/services/offline_storage_service.dart';
 import '../core/services/supabase_service.dart';
 import '../data/cairo_seed.dart' show cairoSeedPlaces;
+import '../data/luxor_seed.dart' show luxorSeedPlaces;
 import '../data/mock_data.dart' show MockData, fallbackPlaces;
 import '../data/models/map_seed.dart';
 import '../data/models/place_model.dart';
@@ -438,7 +439,11 @@ class PlaceProvider extends ChangeNotifier {
 
   void mergeSeedHotels() {
     if (_places.isEmpty) return;
-    final seedPlaces = [...getSeedAlexandriaPlaces(), ...cairoSeedPlaces];
+    final seedPlaces = [
+      ...getSeedAlexandriaPlaces(),
+      ...cairoSeedPlaces,
+      ...luxorSeedPlaces,
+    ];
     final merged = deduplicatePlaces([..._places, ...seedPlaces]).toList()
       ..sort((a, b) {
         final byOrder = a.displayOrder.compareTo(b.displayOrder);

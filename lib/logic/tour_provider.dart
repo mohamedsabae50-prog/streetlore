@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/services/offline_storage_service.dart';
 import '../core/services/supabase_service.dart';
 import '../data/cairo_seed.dart' show cairoSeedItineraries;
+import '../data/luxor_seed.dart' show luxorSeedItineraries;
 import '../data/models/itinerary_model.dart';
 import '../data/models/offline_pack.dart';
 import '../data/models/place_model.dart';
@@ -319,7 +320,11 @@ class TourProvider extends ChangeNotifier {
 
   void _mergeLocalSeedTours() {
     final merged = <String, ItineraryModel>{
-      for (final tour in [...fallbackTours, ...cairoSeedItineraries])
+      for (final tour in [
+        ...fallbackTours,
+        ...cairoSeedItineraries,
+        ...luxorSeedItineraries,
+      ])
         tour.id: tour,
       for (final tour in _tours) tour.id: tour,
     };

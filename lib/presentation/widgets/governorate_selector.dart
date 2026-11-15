@@ -13,7 +13,7 @@ class GovernorateSelector extends StatelessWidget {
     this.onExploreAll,
   });
 
-  static const _cityIds = ['alexandria', 'cairo'];
+  static const _cityIds = ['alexandria', 'cairo', 'luxor'];
   static const _exploreAll = '__explore_all__';
 
   final Key? buttonKey;

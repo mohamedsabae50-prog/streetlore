@@ -176,6 +176,20 @@ class OfflineProvider extends ChangeNotifier {
       sizeMb: 24,
       coverEmoji: 'book',
     ),
+    OfflinePack(
+      id: 'all_luxor',
+      name: 'All Luxor',
+      description:
+          'Luxor temples, royal tombs, museums, Nile experiences, and curated tours.',
+      nameAr: 'كل الأقصر',
+      descriptionAr:
+          'معابد الأقصر ومقابرها الملكية ومتاحفها وتجارب النيل وجولاتها المختارة.',
+      governorateId: 'luxor',
+      placeIds: const ['__all__'],
+      categories: const [],
+      sizeMb: 18,
+      coverEmoji: 'book',
+    ),
   ];
 
   Future<void> init() async {

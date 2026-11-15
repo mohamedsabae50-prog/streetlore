@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetlore/core/services/offline_pack_storage.dart';
 import 'package:streetlore/data/cairo_seed.dart';
+import 'package:streetlore/data/luxor_seed.dart';
 import 'package:streetlore/data/mock_data.dart' show fallbackPlaces;
 import 'package:streetlore/data/models/itinerary_model.dart';
 import 'package:streetlore/data/models/offline_pack.dart';
@@ -124,7 +125,7 @@ void main() {
   });
 
   testWidgets(
-    'profile entry opens and manages the Alexandria and Cairo packs',
+    'profile entry opens and manages city-wide offline packs',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
       final governorates = GovernorateProvider();
@@ -132,7 +133,11 @@ void main() {
         watchRemoteUpdates: false,
         governorates: governorates,
         isOnline: () => false,
-        initialPlaces: [...fallbackPlaces, ...cairoSeedPlaces],
+        initialPlaces: [
+          ...fallbackPlaces,
+          ...cairoSeedPlaces,
+          ...luxorSeedPlaces,
+        ],
       );
       final tours = TourProvider(
         governorates: governorates,
@@ -177,7 +182,9 @@ void main() {
       expect(find.byType(OfflinePackagesScreen), findsOneWidget);
       expect(find.text('All Alexandria'), findsOneWidget);
       expect(find.text('All Cairo & Giza'), findsOneWidget);
+      expect(find.text('All Luxor'), findsOneWidget);
       expect(find.text('190 places · 15 tours'), findsOneWidget);
+      expect(find.text('60 places · 6 tours'), findsOneWidget);
 
       final downloadButton = find.byKey(
         const ValueKey('download-pack-all_cairo'),
@@ -186,7 +193,10 @@ void main() {
       await tester.tap(downloadButton);
       await tester.pumpAndSettle();
 
-      expect(offline.isDownloaded('all_cairo', governorateId: 'cairo'), isTrue);
+      expect(
+        offline.isDownloaded('all_cairo', governorateId: 'cairo'),
+        isTrue,
+      );
       expect(
         find.byKey(const ValueKey('update-pack-all_cairo')),
         findsOneWidget,
@@ -196,7 +206,9 @@ void main() {
         findsOneWidget,
       );
 
-      final removeButton = find.byKey(const ValueKey('remove-pack-all_cairo'));
+      final removeButton = find.byKey(
+        const ValueKey('remove-pack-all_cairo'),
+      );
       await tester.ensureVisible(removeButton);
       await tester.tap(removeButton);
       await tester.pumpAndSettle();
