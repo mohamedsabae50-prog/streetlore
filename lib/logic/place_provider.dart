@@ -9,6 +9,7 @@ import '../core/services/offline_storage_service.dart';
 import '../core/services/supabase_service.dart';
 import '../data/cairo_seed.dart' show cairoSeedPlaces;
 import '../data/luxor_seed.dart' show luxorSeedPlaces;
+import '../data/aswan_seed.dart' show aswanSeedPlaces;
 import '../data/mock_data.dart' show MockData, fallbackPlaces;
 import '../data/models/map_seed.dart';
 import '../data/models/place_model.dart';
@@ -446,6 +447,7 @@ class PlaceProvider extends ChangeNotifier {
       ...getSeedAlexandriaPlaces(),
       ...cairoSeedPlaces,
       ...luxorSeedPlaces,
+      ...aswanSeedPlaces,
     ];
     final merged = deduplicatePlaces([..._places, ...seedPlaces]).toList()
       ..sort((a, b) {
@@ -501,12 +503,29 @@ class PlaceProvider extends ChangeNotifier {
     final bEnglish = _normalizePlaceName(b.nameEn);
     final aArabic = _normalizePlaceName(a.nameAr ?? '');
     final bArabic = _normalizePlaceName(b.nameAr ?? '');
+    final sameCategory =
+        _normalizePlaceCategory(a.category) ==
+        _normalizePlaceCategory(b.category);
     return _distanceMeters(a.lat, a.lng, b.lat, b.lng) < 45 &&
         ((aEnglish.isNotEmpty && aEnglish == bEnglish) ||
             (aArabic.isNotEmpty && aArabic == bArabic) ||
-            _similarPlaceName(aEnglish, bEnglish) ||
-            _similarPlaceName(aArabic, bArabic));
+            (sameCategory &&
+                (_similarPlaceName(aEnglish, bEnglish) ||
+                    _similarPlaceName(aArabic, bArabic))));
   }
+
+  static String _normalizePlaceCategory(String value) =>
+      switch (value.trim().toLowerCase()) {
+        'cafe' => 'cafes',
+        'restaurant' || 'restaurants' => 'food',
+        'hotel' => 'hotels',
+        'atm' => 'atms',
+        'mosque' => 'mosques',
+        'church' => 'churches',
+        'museum' || 'museums' => 'culture',
+        'park' || 'parks' => 'nature',
+        final category => category,
+      };
 
   static String _normalizePlaceName(String value) {
     return value

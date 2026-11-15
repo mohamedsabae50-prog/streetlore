@@ -748,8 +748,7 @@ class _MapViewScreenState extends State<MapViewScreen>
         .toList();
   }
 
-  bool get _showAtms =>
-      _selectedCategories.isEmpty || _selectedCategories.contains('ATMs');
+  bool get _showAtms => _selectedCategories.contains('ATMs');
   bool get _navigationFocusMode => _routeDestination != null && !_routeArrived;
 
   @override

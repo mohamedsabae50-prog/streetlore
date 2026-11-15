@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetlore/core/services/offline_pack_storage.dart';
 import 'package:streetlore/data/cairo_seed.dart';
 import 'package:streetlore/data/luxor_seed.dart';
+import 'package:streetlore/data/aswan_seed.dart';
 import 'package:streetlore/data/mock_data.dart' show fallbackPlaces;
 import 'package:streetlore/data/models/itinerary_model.dart';
 import 'package:streetlore/data/models/offline_pack.dart';
@@ -124,99 +125,100 @@ void main() {
     );
   });
 
-  testWidgets(
-    'profile entry opens and manages city-wide offline packs',
-    (tester) async {
-      SharedPreferences.setMockInitialValues({});
-      final governorates = GovernorateProvider();
-      final places = PlaceProvider(
-        watchRemoteUpdates: false,
-        governorates: governorates,
-        isOnline: () => false,
-        initialPlaces: [
-          ...fallbackPlaces,
-          ...cairoSeedPlaces,
-          ...luxorSeedPlaces,
-        ],
-      );
-      final tours = TourProvider(
-        governorates: governorates,
-        isOnline: () => false,
-      );
-      final storage = _MemoryOfflineStorage();
-      final offline = OfflineProvider(storage: storage);
-      final auth = _ProAuthProvider();
-      final locale = LocaleProvider();
-      await offline.init();
+  testWidgets('profile entry opens and manages city-wide offline packs', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final governorates = GovernorateProvider();
+    final places = PlaceProvider(
+      watchRemoteUpdates: false,
+      governorates: governorates,
+      isOnline: () => false,
+      initialPlaces: [
+        ...fallbackPlaces,
+        ...cairoSeedPlaces,
+        ...luxorSeedPlaces,
+        ...aswanSeedPlaces,
+      ],
+    );
+    final tours = TourProvider(
+      governorates: governorates,
+      isOnline: () => false,
+    );
+    final storage = _MemoryOfflineStorage();
+    final offline = OfflineProvider(storage: storage);
+    final auth = _ProAuthProvider();
+    final locale = LocaleProvider();
+    await offline.init();
 
-      addTearDown(governorates.dispose);
-      addTearDown(places.dispose);
-      addTearDown(tours.dispose);
-      addTearDown(offline.dispose);
-      addTearDown(auth.dispose);
-      addTearDown(locale.dispose);
+    addTearDown(governorates.dispose);
+    addTearDown(places.dispose);
+    addTearDown(tours.dispose);
+    addTearDown(offline.dispose);
+    addTearDown(auth.dispose);
+    addTearDown(locale.dispose);
 
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider<AuthProvider>.value(value: auth),
-            ChangeNotifierProvider<LocaleProvider>.value(value: locale),
-            ChangeNotifierProvider<GovernorateProvider>.value(
-              value: governorates,
-            ),
-            ChangeNotifierProvider<PlaceProvider>.value(value: places),
-            ChangeNotifierProvider<TourProvider>.value(value: tours),
-            ChangeNotifierProvider<OfflineProvider>.value(value: offline),
-          ],
-          child: const MaterialApp(
-            home: Scaffold(body: OfflinePackagesEntryTile()),
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: auth),
+          ChangeNotifierProvider<LocaleProvider>.value(value: locale),
+          ChangeNotifierProvider<GovernorateProvider>.value(
+            value: governorates,
           ),
+          ChangeNotifierProvider<PlaceProvider>.value(value: places),
+          ChangeNotifierProvider<TourProvider>.value(value: tours),
+          ChangeNotifierProvider<OfflineProvider>.value(value: offline),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(body: OfflinePackagesEntryTile()),
         ),
-      );
+      ),
+    );
 
-      await tester.pumpAndSettle();
-      expect(find.text('Download Packages'), findsOneWidget);
-      expect(find.text('0 city packs downloaded'), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey('profile-offline-packages')));
-      await tester.pumpAndSettle();
-      expect(find.byType(OfflinePackagesScreen), findsOneWidget);
-      expect(find.text('All Alexandria'), findsOneWidget);
-      expect(find.text('All Cairo & Giza'), findsOneWidget);
-      expect(find.text('All Luxor'), findsOneWidget);
-      expect(find.text('190 places · 15 tours'), findsOneWidget);
-      expect(find.text('60 places · 6 tours'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('Download Packages'), findsOneWidget);
+    expect(find.text('0 city packs downloaded'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('profile-offline-packages')));
+    await tester.pumpAndSettle();
+    expect(find.byType(OfflinePackagesScreen), findsOneWidget);
+    expect(find.text('All Alexandria'), findsOneWidget);
+    expect(find.text('All Cairo & Giza'), findsOneWidget);
+    expect(find.text('All Luxor'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -700));
+    await tester.pumpAndSettle();
+    expect(find.text('All Aswan'), findsOneWidget);
+    expect(find.text('190 places · 15 tours'), findsOneWidget);
+    expect(find.text('60 places · 6 tours'), findsNWidgets(2));
 
-      final downloadButton = find.byKey(
-        const ValueKey('download-pack-all_cairo'),
-      );
-      await tester.ensureVisible(downloadButton);
-      await tester.tap(downloadButton);
-      await tester.pumpAndSettle();
+    final downloadButton = find.byKey(
+      const ValueKey('download-pack-all_cairo'),
+    );
+    await tester.ensureVisible(downloadButton);
+    await tester.tap(downloadButton);
+    await tester.pumpAndSettle();
 
-      expect(
-        offline.isDownloaded('all_cairo', governorateId: 'cairo'),
-        isTrue,
-      );
-      expect(
-        find.byKey(const ValueKey('update-pack-all_cairo')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('remove-pack-all_cairo')),
-        findsOneWidget,
-      );
+    expect(offline.isDownloaded('all_cairo', governorateId: 'cairo'), isTrue);
+    expect(find.byKey(const ValueKey('update-pack-all_cairo')), findsOneWidget);
+    expect(find.byKey(const ValueKey('remove-pack-all_cairo')), findsOneWidget);
 
-      final removeButton = find.byKey(
-        const ValueKey('remove-pack-all_cairo'),
-      );
-      await tester.ensureVisible(removeButton);
-      await tester.tap(removeButton);
-      await tester.pumpAndSettle();
-      expect(
-        offline.isDownloaded('all_cairo', governorateId: 'cairo'),
-        isFalse,
-      );
-      await tester.pumpWidget(const SizedBox.shrink());
-    },
-  );
+    final aswanDownloadButton = find.byKey(
+      const ValueKey('download-pack-all_aswan'),
+    );
+    await tester.ensureVisible(aswanDownloadButton);
+    await tester.tap(aswanDownloadButton);
+    await tester.pumpAndSettle();
+    expect(offline.isDownloaded('all_aswan', governorateId: 'aswan'), isTrue);
+    expect(
+      storage.places.values.where((place) => place.governorate == 'aswan'),
+      hasLength(60),
+    );
+
+    final removeButton = find.byKey(const ValueKey('remove-pack-all_cairo'));
+    await tester.ensureVisible(removeButton);
+    await tester.tap(removeButton);
+    await tester.pumpAndSettle();
+    expect(offline.isDownloaded('all_cairo', governorateId: 'cairo'), isFalse);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }

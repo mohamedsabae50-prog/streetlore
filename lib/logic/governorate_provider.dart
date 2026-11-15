@@ -150,10 +150,10 @@ class GovernorateProvider extends ChangeNotifier {
     final governorate = EgyptGovernorate.byId[id]!;
     if (languageCode == 'ar') {
       return '📍 موقعك الحالي: محافظة ${governorate.nameAr} '
-          '(قريباً تحت الضباب 🔒) — تتوفر الآن خرائط الإسكندرية والقاهرة والأقصر';
+          '(قريباً تحت الضباب 🔒) — تتوفر الآن خرائط الإسكندرية والقاهرة والأقصر وأسوان';
     }
     return '📍 Your current location: ${governorate.nameEn} Governorate '
-        '(coming soon under fog 🔒) — Alexandria, Cairo, and Luxor are available now';
+        '(coming soon under fog 🔒) — Alexandria, Cairo, Luxor, and Aswan are available now';
   }
 
   Future<void> _persist() async {

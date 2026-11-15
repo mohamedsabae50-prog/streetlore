@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:streetlore/data/alexandria_image_urls.dart';
 import 'package:streetlore/data/cairo_image_urls.dart';
 import 'package:streetlore/data/luxor_image_urls.dart';
+import 'package:streetlore/data/aswan_image_urls.dart';
 import 'package:streetlore/data/mock_data.dart';
 import 'package:streetlore/data/models/place_model.dart';
 
@@ -169,6 +170,7 @@ Future<void> main() async {
   _checkImageMapDuplicates('Cairo', cairoImageUrls, issues);
   _checkImageMapDuplicates('Alexandria', alexandriaImageUrls, issues);
   _checkImageMapDuplicates('Luxor', luxorImageUrls, issues);
+  _checkImageMapDuplicates('Aswan', aswanImageUrls, issues);
 
   final alexandriaCount = places
       .where((place) => place.governorate == 'alexandria')
@@ -180,6 +182,10 @@ Future<void> main() async {
       .where((place) => place.governorate == 'luxor')
       .toList(growable: false);
   final luxorCount = luxorPlaces.length;
+  final aswanPlaces = places
+      .where((place) => place.governorate == 'aswan')
+      .toList(growable: false);
+  final aswanCount = aswanPlaces.length;
   if (alexandriaCount != 49) {
     issues.add('expected 49 Alexandria places, found $alexandriaCount');
   }
@@ -189,8 +195,11 @@ Future<void> main() async {
   if (luxorCount != 60) {
     issues.add('expected 60 Luxor places, found $luxorCount');
   }
-  if (places.length != 299) {
-    issues.add('expected 299 total places, found ${places.length}');
+  if (aswanCount != 60) {
+    issues.add('expected 60 Aswan places, found $aswanCount');
+  }
+  if (places.length != 359) {
+    issues.add('expected 359 total places, found ${places.length}');
   }
   if (luxorImageUrls.length != 60 ||
       luxorImageUrls.values.toSet().length != 60) {
@@ -213,9 +222,30 @@ Future<void> main() async {
       );
     }
   }
+  final aswanIds = aswanPlaces.map((place) => place.id).toSet();
+  if (aswanIds.length != 60 ||
+      aswanIds.difference(aswanImageUrls.keys.toSet()).isNotEmpty ||
+      aswanImageUrls.keys.toSet().difference(aswanIds).isNotEmpty) {
+    issues.add('Aswan place IDs and image catalog keys must match exactly');
+  }
+  if (aswanImageUrls.length != 60 ||
+      aswanImageUrls.values.toSet().length != 60) {
+    issues.add('Aswan image catalog must contain exactly 60 unique image URLs');
+  }
+  for (final entry in aswanImageUrls.entries) {
+    final uri = Uri.tryParse(entry.value);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host != 'upload.wikimedia.org' ||
+        !uri.path.startsWith('/wikipedia/commons/')) {
+      issues.add(
+        '${entry.key}: malformed Wikimedia Commons URL in local image catalog',
+      );
+    }
+  }
   stdout.writeln(
-    'Audited $alexandriaCount Alexandria, $cairoCount Cairo/Giza, and '
-    '$luxorCount Luxor places '
+    'Audited $alexandriaCount Alexandria, $cairoCount Cairo/Giza, '
+    '$luxorCount Luxor, and $aswanCount Aswan places '
     '(${imageOwners.length} unique place image URLs).',
   );
   stdout.writeln('Image checks are offline URL-format and uniqueness checks.');
@@ -235,6 +265,12 @@ bool _requiresPaidAdmission(PlaceModel place) {
   if (place.governorate == 'luxor' &&
       (category == 'historical' || category == 'culture')) {
     return place.id != 'luxor_colossi_of_memnon';
+  }
+  if (place.governorate == 'aswan') {
+    if (category == 'historical' || category == 'culture') return true;
+    if (category == 'nature') {
+      return place.id != 'aswan_nile_corniche_promenade';
+    }
   }
   if (category == 'atms' ||
       category == 'atm' ||
@@ -271,6 +307,17 @@ bool _requiresPaidAdmission(PlaceModel place) {
 String? _expectedHours(PlaceModel place) {
   final category = place.category.trim().toLowerCase();
   final idAndName = '${place.id} ${place.nameEn}'.toLowerCase();
+  if (place.governorate == 'aswan') {
+    return switch (category) {
+      'historical' || 'culture' || 'nature' => place.openHours,
+      'mosques' => '04:00 AM - 10:00 PM',
+      'churches' => '08:00 AM - 08:00 PM',
+      'shopping' => '10:00 AM - 11:00 PM',
+      'food' || 'cafe' || 'cafes' => '10:00 AM - 01:00 AM',
+      'hotels' || 'atms' || 'atm' => '24 hours',
+      _ => null,
+    };
+  }
   if (place.governorate == 'luxor') {
     return switch (category) {
       'historical' => switch (place.id) {

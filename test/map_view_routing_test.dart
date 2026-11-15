@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetlore/core/services/map_route_service.dart';
+import 'package:streetlore/data/aswan_seed.dart';
 import 'package:streetlore/data/luxor_seed.dart';
 import 'package:streetlore/data/models/map_poi.dart';
 import 'package:streetlore/data/models/place_model.dart';
@@ -239,10 +240,10 @@ void main() {
     final atm = MapPoi(
       id: 'atm_test',
       name: 'Test ATM',
-      address: 'Cairo',
-      governorate: 'Luxor',
-      lat: 30.0444,
-      lng: 31.2357,
+      address: 'Aswan Governorate, Egypt',
+      governorate: 'Aswan',
+      lat: 24.0955,
+      lng: 32.9008,
       category: 'ATM',
       icon: Icons.atm_rounded,
       color: Colors.blue,
@@ -276,13 +277,13 @@ void main() {
     expect(openedUrls.first.path, '/maps/dir/');
     expect(
       openedUrls.first.queryParameters['destination'],
-      'Test ATM, Cairo, Luxor',
+      'Test ATM, Aswan Governorate, Egypt, Aswan',
     );
     expect(openedUrls.first.queryParameters['travelmode'], 'walking');
     expect(openedUrls.last.path, '/maps/search/');
     expect(
       openedUrls.last.queryParameters['query'],
-      'Test ATM 30.0444,31.2357',
+      'Test ATM 24.0955,32.9008',
     );
     await tester.tap(find.byKey(const ValueKey('atm-route-on-map-button')));
     expect(startedRoute, isTrue);
@@ -359,6 +360,56 @@ void main() {
       expect(find.byKey(ValueKey('map-atm-marker-$id')), findsOneWidget);
     }
     expect(harness.places.places.where((place) => place.isAtm), isEmpty);
+  });
+
+  testWidgets('Aswan map shows all six ATMs only under the ATMs filter', (
+    tester,
+  ) async {
+    final harness = await _pumpAswanMap(tester);
+    addTearDown(harness.dispose);
+
+    expect(harness.places.places.where((place) => place.isAtm), isEmpty);
+    expect(
+      harness.places.allPlaces.where(
+        (place) => place.governorate == 'aswan' && place.isAtm,
+      ),
+      hasLength(6),
+    );
+    expect(
+      find.byKey(
+        const ValueKey('map-atm-marker-atm_nbe_aswan_corniche_station'),
+      ),
+      findsNothing,
+    );
+
+    await _tapMapFilter(tester, 'hotels');
+    await _tapMapFilter(tester, 'atms');
+    expect(
+      find.byKey(
+        const ValueKey('map-place-marker-aswan_sofitel_legend_old_cataract'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const ValueKey('map-atm-marker-atm_nbe_aswan_corniche_station'),
+      ),
+      findsOneWidget,
+    );
+    final map = find.byType(FlutterMap);
+    for (var zoomOut = 0; zoomOut < 3; zoomOut++) {
+      await _pinchMapOut(tester, map);
+    }
+    for (final id in [
+      'atm_nbe_aswan_corniche_station',
+      'atm_banque_misr_old_cataract_aswan',
+      'atm_cib_aswan_tourist_souq',
+      'atm_qnb_nubian_museum_aswan',
+      'atm_nbe_kom_ombo_temple_plaza',
+      'atm_banque_misr_edfu_temple_square',
+    ]) {
+      expect(find.byKey(ValueKey('map-atm-marker-$id')), findsOneWidget);
+    }
   });
 
   testWidgets('map category matching normalizes singular and plural labels', (
@@ -453,6 +504,42 @@ Future<_LuxorMapHarness> _pumpLuxorMap(
   );
 }
 
+Future<_LuxorMapHarness> _pumpAswanMap(WidgetTester tester) async {
+  tester.view.physicalSize = const Size(1200, 900);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  final governorates = GovernorateProvider();
+  governorates.unlockAndSelectGovernorate('aswan');
+  final places = PlaceProvider(
+    watchRemoteUpdates: false,
+    governorates: governorates,
+    isOnline: () => false,
+    initialPlaces: aswanSeedPlaces,
+  );
+  final trips = TripProvider();
+  final locale = LocaleProvider();
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: governorates),
+        ChangeNotifierProvider.value(value: places),
+        ChangeNotifierProvider.value(value: trips),
+        ChangeNotifierProvider.value(value: locale),
+      ],
+      child: const MaterialApp(home: MapViewScreen(autoLocate: false)),
+    ),
+  );
+  await tester.pump();
+  return _LuxorMapHarness(
+    governorates: governorates,
+    places: places,
+    trips: trips,
+    locale: locale,
+  );
+}
+
 PlaceModel _aliasPlace(String id, String category, double lat, double lng) =>
     PlaceModel(
       id: id,
@@ -465,6 +552,25 @@ PlaceModel _aliasPlace(String id, String category, double lat, double lng) =>
       lng: lng,
       governorate: 'luxor',
     );
+
+Future<void> _pinchMapOut(WidgetTester tester, Finder map) async {
+  final center = tester.getCenter(map);
+  final firstFinger = await tester.startGesture(
+    center.translate(-120, 0),
+    pointer: 1,
+  );
+  final secondFinger = await tester.startGesture(
+    center.translate(120, 0),
+    pointer: 2,
+  );
+  await tester.pump();
+  await firstFinger.moveTo(center.translate(-30, 0));
+  await secondFinger.moveTo(center.translate(30, 0));
+  await tester.pumpAndSettle();
+  await firstFinger.up();
+  await secondFinger.up();
+  await tester.pumpAndSettle();
+}
 
 Future<void> _tapMapFilter(WidgetTester tester, String category) async {
   final chip = find.byKey(ValueKey('map-filter-chip-$category'));

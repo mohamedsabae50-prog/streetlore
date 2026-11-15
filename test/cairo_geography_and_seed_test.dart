@@ -5,6 +5,8 @@ import 'package:streetlore/core/services/governorate_service.dart';
 import 'package:streetlore/core/services/atm_service.dart';
 import 'package:streetlore/core/widgets/image_defaults.dart';
 import 'package:streetlore/data/alexandria_image_urls.dart';
+import 'package:streetlore/data/aswan_image_urls.dart';
+import 'package:streetlore/data/aswan_seed.dart';
 import 'package:streetlore/data/cairo_seed.dart';
 import 'package:streetlore/data/luxor_image_urls.dart';
 import 'package:streetlore/data/luxor_seed.dart';
@@ -249,6 +251,7 @@ const _validCategories = {
 void main() {
   final cairo = EgyptGovernorate.byId['cairo']!;
   final luxor = EgyptGovernorate.byId['luxor']!;
+  final aswan = EgyptGovernorate.byId['aswan']!;
 
   test('Cairo & Giza seed has 190 places and stable core order', () {
     expect(cairoSeedPlaces, hasLength(190));
@@ -302,7 +305,7 @@ void main() {
       MockData.places.where((place) => place.governorate == 'luxor'),
       hasLength(60),
     );
-    expect(MockData.places, hasLength(299));
+    expect(MockData.places, hasLength(359));
     expect(luxorImageUrls, hasLength(60));
     expect(luxorImageUrls.values.toSet(), hasLength(60));
     expect(
@@ -437,6 +440,233 @@ void main() {
           .every(
             (place) => !place.isVisitable && place.openHours == '24 hours',
           ),
+      isTrue,
+    );
+  });
+
+  test('Aswan seed has 60 priced places, six tours, and unique URLs', () {
+    expect(aswan.nameEn, 'Aswan');
+    expect(aswan.nameAr, 'أسوان');
+    expect((aswan.centerLat, aswan.centerLng), (24.0889, 32.8998));
+    expect(aswan.defaultZoom, 12.2);
+    expect(
+      aswan.boundaryPolygon
+          .map((point) => (point.latitude, point.longitude))
+          .toList(),
+      [
+        (25.0200, 32.8000),
+        (25.0200, 32.9600),
+        (24.5000, 33.0000),
+        (24.1500, 32.9600),
+        (23.9300, 32.9500),
+        (22.2800, 31.7000),
+        (22.2800, 31.5500),
+        (22.4200, 31.5500),
+        (24.1200, 32.8000),
+        (24.4500, 32.8400),
+      ],
+    );
+    expect(aswanSeedPlaces, hasLength(60));
+    expect(aswanSeedItineraries, hasLength(6));
+    expect(
+      aswanSeedPlaces.where(
+        (place) =>
+            place.category == 'Historical' || place.category == 'Culture',
+      ),
+      hasLength(24),
+    );
+    expect(
+      aswanSeedPlaces.where((place) => place.category == 'Nature'),
+      hasLength(7),
+    );
+    expect(
+      aswanSeedPlaces.where(
+        (place) => place.category == 'Mosques' || place.category == 'Churches',
+      ),
+      hasLength(5),
+    );
+    expect(
+      aswanSeedPlaces.where(
+        (place) => place.category == 'Food' || place.category == 'Cafes',
+      ),
+      hasLength(8),
+    );
+    expect(
+      aswanSeedPlaces.where((place) => place.category == 'Shopping'),
+      hasLength(4),
+    );
+    expect(
+      aswanSeedPlaces.where((place) => place.category == 'Hotels'),
+      hasLength(6),
+    );
+    expect(
+      aswanSeedPlaces.where((place) => place.category == 'ATMs'),
+      hasLength(6),
+    );
+    expect(
+      MockData.places.where((place) => place.governorate == 'aswan'),
+      hasLength(60),
+    );
+    expect(MockData.places, hasLength(359));
+    expect(aswanImageUrls, hasLength(60));
+    expect(aswanImageUrls.values.toSet(), hasLength(60));
+    expect(
+      aswanSeedPlaces.map((place) => place.id).toSet(),
+      aswanImageUrls.keys.toSet(),
+    );
+
+    final placesById = {for (final place in aswanSeedPlaces) place.id: place};
+    const paidTickets = <String, (int, int)>{
+      'aswan_philae_temple': (80, 550),
+      'aswan_abu_simbel_great_temple': (100, 750),
+      'aswan_abu_simbel_nefertari_temple': (100, 750),
+      'aswan_nubian_museum': (40, 400),
+      'aswan_unfinished_obelisk': (40, 220),
+      'aswan_high_dam_memorial': (30, 200),
+      'aswan_old_low_dam': (20, 100),
+      'aswan_kalabsha_temple': (40, 300),
+      'aswan_beit_el_wali_temple': (40, 300),
+      'aswan_kiosk_of_qertassi': (40, 300),
+      'aswan_qubbet_el_hawa_tombs': (40, 200),
+      'aswan_st_simeon_monastery': (40, 160),
+      'aswan_elephantine_museum_ruins': (40, 200),
+      'aswan_elephantine_nilometer': (40, 200),
+      'aswan_sehel_island_famine_stele': (40, 160),
+      'aswan_aga_khan_mausoleum': (30, 100),
+      'aswan_fatimid_cemetery': (30, 100),
+      'aswan_kom_ombo_temple': (60, 450),
+      'aswan_crocodile_museum_kom_ombo': (40, 200),
+      'aswan_edfu_horus_temple': (80, 550),
+      'aswan_tell_edfu_archaeological_site': (40, 150),
+      'aswan_nile_museum': (35, 150),
+      'aswan_cultural_palace_theater': (30, 120),
+      'aswan_international_sculpture_park': (30, 120),
+      'aswan_botanical_garden_kitchener': (30, 160),
+      'aswan_gharb_soheil_nubian_village': (50, 150),
+      'aswan_saluga_ghazal_protectorate': (30, 150),
+      'aswan_heissa_nubian_island': (50, 150),
+      'aswan_faryal_garden_corniche': (20, 60),
+      'aswan_west_bank_sand_dunes_viewpoint': (50, 150),
+    };
+    for (final entry in paidTickets.entries) {
+      final place = placesById[entry.key]!;
+      expect(
+        (place.priceLocalEgp, place.priceForeignerEgp),
+        entry.value,
+        reason: entry.key,
+      );
+      expect(place.isFree, isFalse, reason: entry.key);
+    }
+
+    const specialHours = <String, String>{
+      'aswan_philae_temple': '07:00 AM - 04:00 PM',
+      'aswan_abu_simbel_great_temple': '06:00 AM - 05:00 PM',
+      'aswan_abu_simbel_nefertari_temple': '06:00 AM - 05:00 PM',
+      'aswan_nubian_museum': '09:00 AM - 09:00 PM',
+      'aswan_unfinished_obelisk': '07:00 AM - 04:00 PM',
+      'aswan_high_dam_memorial': '07:00 AM - 05:00 PM',
+      'aswan_old_low_dam': '07:00 AM - 06:00 PM',
+      'aswan_kalabsha_temple': '07:00 AM - 04:00 PM',
+      'aswan_beit_el_wali_temple': '07:00 AM - 04:00 PM',
+      'aswan_kiosk_of_qertassi': '07:00 AM - 04:00 PM',
+      'aswan_qubbet_el_hawa_tombs': '07:00 AM - 04:00 PM',
+      'aswan_st_simeon_monastery': '07:00 AM - 04:00 PM',
+      'aswan_elephantine_museum_ruins': '07:00 AM - 05:00 PM',
+      'aswan_elephantine_nilometer': '07:00 AM - 05:00 PM',
+      'aswan_sehel_island_famine_stele': '07:00 AM - 05:00 PM',
+      'aswan_aga_khan_mausoleum': '08:00 AM - 05:00 PM',
+      'aswan_fatimid_cemetery': '08:00 AM - 05:00 PM',
+      'aswan_kom_ombo_temple': '07:00 AM - 08:00 PM',
+      'aswan_crocodile_museum_kom_ombo': '07:00 AM - 08:00 PM',
+      'aswan_edfu_horus_temple': '07:00 AM - 05:00 PM',
+      'aswan_tell_edfu_archaeological_site': '07:00 AM - 04:00 PM',
+      'aswan_nile_museum': '09:00 AM - 05:00 PM',
+      'aswan_cultural_palace_theater': '10:00 AM - 09:00 PM',
+      'aswan_international_sculpture_park': '08:00 AM - 06:00 PM',
+      'aswan_botanical_garden_kitchener': '08:00 AM - 05:00 PM',
+      'aswan_gharb_soheil_nubian_village': '08:00 AM - 10:00 PM',
+      'aswan_saluga_ghazal_protectorate': '08:00 AM - 04:30 PM',
+      'aswan_heissa_nubian_island': '08:00 AM - 09:00 PM',
+      'aswan_nile_corniche_promenade': '24 hours',
+      'aswan_faryal_garden_corniche': '08:00 AM - 10:00 PM',
+      'aswan_west_bank_sand_dunes_viewpoint': '07:00 AM - 08:00 PM',
+    };
+    for (final entry in specialHours.entries) {
+      expect(placesById[entry.key]!.openHours, entry.value, reason: entry.key);
+    }
+    expect(
+      placesById.values
+          .where((place) => place.category == 'Mosques')
+          .every((place) => place.openHours == '04:00 AM - 10:00 PM'),
+      isTrue,
+    );
+    expect(
+      placesById.values
+          .where((place) => place.category == 'Churches')
+          .every((place) => place.openHours == '08:00 AM - 08:00 PM'),
+      isTrue,
+    );
+    expect(
+      placesById.values
+          .where(
+            (place) => place.category == 'Food' || place.category == 'Cafes',
+          )
+          .every(
+            (place) =>
+                (place.priceLevel == PriceLevel.moderate ||
+                    place.priceLevel == PriceLevel.expensive) &&
+                place.openHours == '10:00 AM - 01:00 AM',
+          ),
+      isTrue,
+    );
+    expect(
+      placesById.values
+          .where((place) => place.category == 'Shopping')
+          .every((place) => place.openHours == '10:00 AM - 11:00 PM'),
+      isTrue,
+    );
+    expect(
+      placesById.values
+          .where((place) => place.category == 'Hotels')
+          .every(
+            (place) =>
+                place.priceLevel == PriceLevel.expensive &&
+                place.openHours == '24 hours',
+          ),
+      isTrue,
+    );
+    expect(
+      placesById.values
+          .where((place) => place.category == 'ATMs')
+          .every(
+            (place) => !place.isVisitable && place.openHours == '24 hours',
+          ),
+      isTrue,
+    );
+    for (final place in aswanSeedPlaces) {
+      expect(place.governorate, 'aswan', reason: place.id);
+      expect(place.descriptionEn.trim().length, greaterThanOrEqualTo(95));
+      expect(place.descriptionAr!.trim().length, greaterThanOrEqualTo(65));
+      expect(
+        GovernorateService.containsCoordinates(aswan, place.lat, place.lng),
+        isTrue,
+        reason: '${place.id} must lie in the Aswan boundary',
+      );
+      expect(
+        place.officialImages.single,
+        startsWith('https://upload.wikimedia.org/wikipedia/commons/'),
+        reason: place.id,
+      );
+    }
+    expect(
+      GovernorateService.containsCoordinates(luxor, 24.9780, 32.8733),
+      isFalse,
+      reason: 'Edfu must remain outside Luxor',
+    );
+    expect(
+      placesById.values
+          .where((place) => place.category == 'ATMs')
+          .every((place) => !place.isVisitable),
       isTrue,
     );
   });
@@ -766,6 +996,12 @@ void main() {
 
 bool _requiresPaidAdmission(PlaceModel place) {
   final category = place.category.trim().toLowerCase();
+  if (place.governorate == 'aswan') {
+    if (category == 'historical' || category == 'culture') return true;
+    if (category == 'nature') {
+      return place.id != 'aswan_nile_corniche_promenade';
+    }
+  }
   if (category == 'atms' ||
       category == 'atm' ||
       category == 'food' ||

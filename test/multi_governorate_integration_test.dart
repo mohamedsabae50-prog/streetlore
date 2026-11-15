@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetlore/core/services/ai_tour_guide_service.dart';
 import 'package:streetlore/data/cairo_seed.dart';
 import 'package:streetlore/data/luxor_seed.dart';
+import 'package:streetlore/data/aswan_seed.dart';
 import 'package:streetlore/data/mock_data.dart'
     show MockData, fallbackPlaces, fallbackTours;
 import 'package:streetlore/data/models/egypt_governorate.dart';
@@ -47,7 +48,7 @@ void main() {
 
       expect(
         places.availableGovernorateIds,
-        containsAll(['alexandria', 'cairo', 'luxor']),
+        containsAll(['alexandria', 'cairo', 'luxor', 'aswan']),
       );
       expect(places.places, isNotEmpty);
       expect(
@@ -125,6 +126,48 @@ void main() {
       );
       expect(tours.tours, hasLength(6));
       expect(tours.tours.every((tour) => tour.governorate == 'luxor'), isTrue);
+
+      expect(governorates.unlockAndSelectGovernorate('aswan'), isTrue);
+      expect(places.places, hasLength(54));
+      expect(
+        places.places.every(
+          (place) => place.governorate == 'aswan' && place.isVisitable,
+        ),
+        isTrue,
+      );
+      expect(places.places.where((place) => place.isAtm), isEmpty);
+      expect(
+        places.places.where((place) => place.category == 'Hotels'),
+        hasLength(6),
+      );
+      expect(
+        places.allPlaces.where(
+          (place) => place.governorate == 'aswan' && place.isAtm,
+        ),
+        hasLength(6),
+      );
+      expect(
+        MockData.getByCategory(
+          'ATMs',
+          places.allPlaces,
+          governorateId: 'aswan',
+        ),
+        isEmpty,
+      );
+      expect(
+        MockData.getFeatured(
+          governorateId: 'aswan',
+        ).every((place) => place.isVisitable),
+        isTrue,
+      );
+      expect(tours.tours, hasLength(6));
+      expect(tours.tours.every((tour) => tour.governorate == 'aswan'), isTrue);
+      expect(
+        tours.tours
+            .expand((tour) => tour.places)
+            .every((place) => place.governorate == 'aswan' && !place.isAtm),
+        isTrue,
+      );
     },
   );
 
@@ -161,6 +204,26 @@ void main() {
       luxorContext,
       isNot(contains('Fatimid Cairo & Al-Muizz Heritage Walk')),
     );
+
+    final aswanContext = buildGovernorateGuideContext(
+      governorateId: 'aswan',
+      places: [...aswanSeedPlaces, ...cairoSeedPlaces],
+      itineraries: [...aswanSeedItineraries, ...cairoSeedItineraries],
+      locale: 'en',
+    );
+    expect(aswanContext, contains('Aswan / أسوان'));
+    expect(
+      aswanContext,
+      contains('Nubia, Philae, Kom Ombo, Edfu, and Abu Simbel'),
+    );
+    expect(
+      aswanContext,
+      contains('Philae, High Dam, and Unfinished Obelisk Trail'),
+    );
+    expect(
+      aswanContext,
+      isNot(contains('Fatimid Cairo & Al-Muizz Heritage Walk')),
+    );
   });
 
   testWidgets('fog layer survives repeated governorate switches', (
@@ -188,7 +251,7 @@ void main() {
     await tester.pump();
     expect(EgyptGovernorate.byId['alexandria']!.boundaryPolygon, isNotEmpty);
 
-    for (final id in ['cairo', 'luxor', 'alexandria', 'luxor']) {
+    for (final id in ['cairo', 'luxor', 'aswan', 'alexandria', 'luxor']) {
       governorates.unlockAndSelectGovernorate(id);
       await tester.pump();
       expect(
@@ -199,7 +262,7 @@ void main() {
     }
   });
 
-  testWidgets('map selector animates the camera to Cairo and Luxor', (
+  testWidgets('map selector animates the camera to Cairo, Luxor, and Aswan', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -215,6 +278,7 @@ void main() {
         ...fallbackPlaces,
         ...cairoSeedPlaces,
         ...luxorSeedPlaces,
+        ...aswanSeedPlaces,
       ],
     );
     final tours = TourProvider(governorates: governorates);
@@ -269,5 +333,15 @@ void main() {
     final luxorCamera = MapCamera.of(tester.element(fogLayer));
     expect(luxorCamera.center.latitude, closeTo(25.7050, 0.001));
     expect(luxorCamera.center.longitude, closeTo(32.6391, 0.001));
+
+    await tester.tap(selector);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Aswan'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(governorates.activeGovernorate, 'aswan');
+    final aswanCamera = MapCamera.of(tester.element(fogLayer));
+    expect(aswanCamera.center.latitude, closeTo(24.0889, 0.001));
+    expect(aswanCamera.center.longitude, closeTo(32.8998, 0.001));
   });
 }

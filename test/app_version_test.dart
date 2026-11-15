@@ -3,9 +3,9 @@ import 'package:streetlore/core/constants/app_version.dart';
 
 void main() {
   test('user-facing app version omits the platform build number', () {
-    expect(kAppVersion, '2.1.47');
-    expect(kAppBuildNumber, 250);
-    expect(formatAppVersionLabel(), 'Version 2.1.47');
+    expect(kAppVersion, '2.1.48');
+    expect(kAppBuildNumber, 251);
+    expect(formatAppVersionLabel(), 'Version 2.1.48');
     expect(formatAppVersionLabel(), isNot(contains('+')));
   });
 }

@@ -59,6 +59,36 @@ const _admissionPrices = <String, (int, int)>{
   'wakala_of_qaytbay_cairo': (40, 200),
   'hammam_inal_muizz': (40, 200),
   'cairo_opera_house_museum': (40, 200),
+  'aswan_philae_temple': (80, 550),
+  'aswan_abu_simbel_great_temple': (100, 750),
+  'aswan_abu_simbel_nefertari_temple': (100, 750),
+  'aswan_nubian_museum': (40, 400),
+  'aswan_unfinished_obelisk': (40, 220),
+  'aswan_high_dam_memorial': (30, 200),
+  'aswan_old_low_dam': (20, 100),
+  'aswan_kalabsha_temple': (40, 300),
+  'aswan_beit_el_wali_temple': (40, 300),
+  'aswan_kiosk_of_qertassi': (40, 300),
+  'aswan_qubbet_el_hawa_tombs': (40, 200),
+  'aswan_st_simeon_monastery': (40, 160),
+  'aswan_elephantine_museum_ruins': (40, 200),
+  'aswan_elephantine_nilometer': (40, 200),
+  'aswan_sehel_island_famine_stele': (40, 160),
+  'aswan_aga_khan_mausoleum': (30, 100),
+  'aswan_fatimid_cemetery': (30, 100),
+  'aswan_kom_ombo_temple': (60, 450),
+  'aswan_crocodile_museum_kom_ombo': (40, 200),
+  'aswan_edfu_horus_temple': (80, 550),
+  'aswan_tell_edfu_archaeological_site': (40, 150),
+  'aswan_nile_museum': (35, 150),
+  'aswan_cultural_palace_theater': (30, 120),
+  'aswan_international_sculpture_park': (30, 120),
+  'aswan_botanical_garden_kitchener': (30, 160),
+  'aswan_gharb_soheil_nubian_village': (50, 150),
+  'aswan_saluga_ghazal_protectorate': (30, 150),
+  'aswan_heissa_nubian_island': (50, 150),
+  'aswan_faryal_garden_corniche': (20, 60),
+  'aswan_west_bank_sand_dunes_viewpoint': (50, 150),
 };
 
 PlaceModel applyPlaceCatalogRules(PlaceModel place) {
@@ -268,6 +298,17 @@ String _neighborhood(
 }
 
 String? _expectedHours(PlaceModel place, String category, String idAndName) {
+  if (place.governorate == 'aswan') {
+    return switch (category) {
+      'historical' || 'culture' || 'nature' => place.openHours,
+      'mosques' => '04:00 AM - 10:00 PM',
+      'churches' => '08:00 AM - 08:00 PM',
+      'shopping' => '10:00 AM - 11:00 PM',
+      'food' || 'cafe' || 'cafes' => '10:00 AM - 01:00 AM',
+      'hotels' || 'atms' || 'atm' => '24 hours',
+      _ => null,
+    };
+  }
   if (place.governorate == 'luxor') {
     return switch (category) {
       'historical' => switch (place.id) {

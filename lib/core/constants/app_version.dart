@@ -4,10 +4,10 @@
 ///
 /// The build number (`+NN`) is for platform release metadata and must not
 /// be included in user-facing version labels.
-const String kAppVersion = '2.1.47';
+const String kAppVersion = '2.1.48';
 
 /// Platform build number, kept separate from user-facing version labels.
-const int kAppBuildNumber = 250;
+const int kAppBuildNumber = 251;
 
 /// Human-friendly label for the About screen.
 String formatAppVersionLabel() => 'Version $kAppVersion';

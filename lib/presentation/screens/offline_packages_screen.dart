@@ -23,7 +23,8 @@ class _OfflinePackagesScreenState extends State<OfflinePackagesScreen> {
         (pack) =>
             pack.id == 'all_alexandria' ||
             pack.id == 'all_cairo' ||
-            pack.id == 'all_luxor',
+            pack.id == 'all_luxor' ||
+            pack.id == 'all_aswan',
       )
       .toList(growable: false);
 
@@ -314,7 +315,8 @@ class OfflinePackagesEntryTile extends StatelessWidget {
               (pack) =>
                   (pack.id == 'all_alexandria' ||
                       pack.id == 'all_cairo' ||
-                      pack.id == 'all_luxor') &&
+                      pack.id == 'all_luxor' ||
+                      pack.id == 'all_aswan') &&
                   offline.isDownloaded(
                     pack.id,
                     governorateId: pack.governorateId,

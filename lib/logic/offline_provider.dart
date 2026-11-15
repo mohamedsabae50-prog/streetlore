@@ -190,6 +190,20 @@ class OfflineProvider extends ChangeNotifier {
       sizeMb: 18,
       coverEmoji: 'book',
     ),
+    OfflinePack(
+      id: 'all_aswan',
+      name: 'All Aswan',
+      description:
+          'Aswan temples, Nubian culture, Nile islands, and curated river routes.',
+      nameAr: 'كل أسوان',
+      descriptionAr:
+          'معابد أسوان وثقافة النوبة وجزر النيل ومسارات النهر المختارة.',
+      governorateId: 'aswan',
+      placeIds: const ['__all__'],
+      categories: const [],
+      sizeMb: 18,
+      coverEmoji: 'book',
+    ),
   ];
 
   Future<void> init() async {

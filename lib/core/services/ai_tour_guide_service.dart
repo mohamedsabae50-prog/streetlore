@@ -103,7 +103,15 @@ String buildGovernorateGuideContext({
   final cityLabel = isArabic
       ? '${governorate.nameAr} / ${governorate.nameEn}'
       : '${governorate.nameEn} / ${governorate.nameAr}';
+  final localExpertise = switch (normalizedGovernorateId) {
+    'aswan' =>
+      isArabic
+          ? 'متخصص في أسوان والنوبة ومعابد فيلة وكوم أمبو وإدفو وأبو سمبل.'
+          : 'Local expertise: Aswan, Nubia, Philae, Kom Ombo, Edfu, and Abu Simbel.',
+    _ => null,
+  };
   return '''ACTIVE GOVERNORATE: $cityLabel.
+${localExpertise == null ? '' : '$localExpertise\n'}
 Nearby landmarks in this governorate: ${nearbyNames.isEmpty ? 'none available in local data' : nearbyNames.join(', ')}.
 Curated itineraries in this governorate: ${cityItineraries.isEmpty ? 'none available in local data' : cityItineraries.join(', ')}.
 Use only landmarks and routes from this active governorate when making local recommendations.''';

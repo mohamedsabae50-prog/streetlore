@@ -5,6 +5,7 @@ import 'alexandria_image_urls.dart';
 import 'alexandria_seed_additional.dart';
 import 'cairo_seed.dart';
 import 'luxor_seed.dart';
+import 'aswan_seed.dart';
 import 'place_catalog_rules.dart';
 
 class MockData {
@@ -176,6 +177,7 @@ class MockData {
       ...fallbackPlaces,
       ...cairoSeedPlaces,
       ...luxorSeedPlaces,
+      ...aswanSeedPlaces,
     ]) {
       placesById.putIfAbsent(place.id, () => applyPlaceCatalogRules(place));
     }
@@ -186,6 +188,7 @@ class MockData {
     ..._seedTours,
     ...cairoSeedItineraries,
     ...luxorSeedItineraries,
+    ...aswanSeedItineraries,
   ]);
 }
 
