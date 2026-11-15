@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:streetlore/data/alexandria_image_urls.dart';
 import 'package:streetlore/data/cairo_image_urls.dart';
@@ -6,6 +7,8 @@ import 'package:streetlore/data/luxor_image_urls.dart';
 import 'package:streetlore/data/aswan_image_urls.dart';
 import 'package:streetlore/data/mock_data.dart';
 import 'package:streetlore/data/models/place_model.dart';
+import 'package:streetlore/data/models/egypt_governorate.dart';
+import 'package:streetlore/core/services/governorate_service.dart';
 
 const _boilerplate = [
   'confirm current visitor information',
@@ -182,21 +185,42 @@ Future<void> main() async {
       .where((place) => place.governorate == 'luxor')
       .toList(growable: false);
   final luxorCount = luxorPlaces.length;
-  final aswanPlaces = places
-      .where((place) => place.governorate == 'aswan')
-      .toList(growable: false);
-  final aswanCount = aswanPlaces.length;
   if (alexandriaCount != 49) {
     issues.add('expected 49 Alexandria places, found $alexandriaCount');
   }
   if (cairoCount != 190) {
     issues.add('expected 190 Cairo/Giza places, found $cairoCount');
   }
-  if (luxorCount != 60) {
-    issues.add('expected 60 Luxor places, found $luxorCount');
+  if (luxorCount != 120) {
+    issues.add('expected 120 Luxor & Aswan records, found $luxorCount');
   }
-  if (aswanCount != 60) {
-    issues.add('expected 60 Aswan places, found $aswanCount');
+  final luxorVisitableCount = luxorPlaces
+      .where((place) => place.isVisitable)
+      .length;
+  final luxorAtmCount = luxorPlaces.where((place) => place.isAtm).length;
+  if (luxorVisitableCount != 108 || luxorAtmCount != 12) {
+    issues.add(
+      'expected 108 Luxor & Aswan visitable places and 12 map ATMs, '
+      'found $luxorVisitableCount visitable and $luxorAtmCount ATMs',
+    );
+  }
+  final luxorGovernorate = EgyptGovernorate.byId['luxor']!;
+  for (final place in luxorPlaces) {
+    if (!_strictlyInside(luxorGovernorate, place.lat, place.lng)) {
+      issues.add(
+        '${place.id}: coordinate is not strictly inside the unified Luxor & Aswan boundary',
+      );
+    }
+  }
+  final activeGovernorateIds = places
+      .map((place) => EgyptGovernorate.normalizeId(place.governorate))
+      .toSet();
+  if (activeGovernorateIds.length != 3 ||
+      !activeGovernorateIds.containsAll(['alexandria', 'cairo', 'luxor']) ||
+      EgyptGovernorate.normalizeId('aswan') != 'luxor') {
+    issues.add(
+      'active governorates must be Alexandria, Cairo & Giza, and Luxor & Aswan',
+    );
   }
   if (places.length != 359) {
     issues.add('expected 359 total places, found ${places.length}');
@@ -205,7 +229,10 @@ Future<void> main() async {
       luxorImageUrls.values.toSet().length != 60) {
     issues.add('Luxor image catalog must contain exactly 60 unique image URLs');
   }
-  final luxorIds = luxorPlaces.map((place) => place.id).toSet();
+  final luxorIds = luxorPlaces
+      .where((place) => luxorImageUrls.containsKey(place.id))
+      .map((place) => place.id)
+      .toSet();
   if (luxorIds.length != 60 ||
       luxorIds.difference(luxorImageUrls.keys.toSet()).isNotEmpty ||
       luxorImageUrls.keys.toSet().difference(luxorIds).isNotEmpty) {
@@ -222,7 +249,10 @@ Future<void> main() async {
       );
     }
   }
-  final aswanIds = aswanPlaces.map((place) => place.id).toSet();
+  final aswanIds = luxorPlaces
+      .where((place) => aswanImageUrls.containsKey(place.id))
+      .map((place) => place.id)
+      .toSet();
   if (aswanIds.length != 60 ||
       aswanIds.difference(aswanImageUrls.keys.toSet()).isNotEmpty ||
       aswanImageUrls.keys.toSet().difference(aswanIds).isNotEmpty) {
@@ -245,7 +275,7 @@ Future<void> main() async {
   }
   stdout.writeln(
     'Audited $alexandriaCount Alexandria, $cairoCount Cairo/Giza, '
-    '$luxorCount Luxor, and $aswanCount Aswan places '
+    '$luxorCount Luxor & Aswan records '
     '(${imageOwners.length} unique place image URLs).',
   );
   stdout.writeln('Image checks are offline URL-format and uniqueness checks.');
@@ -266,7 +296,8 @@ bool _requiresPaidAdmission(PlaceModel place) {
       (category == 'historical' || category == 'culture')) {
     return place.id != 'luxor_colossi_of_memnon';
   }
-  if (place.governorate == 'aswan') {
+
+  if (place.id.startsWith('aswan_')) {
     if (category == 'historical' || category == 'culture') return true;
     if (category == 'nature') {
       return place.id != 'aswan_nile_corniche_promenade';
@@ -307,7 +338,7 @@ bool _requiresPaidAdmission(PlaceModel place) {
 String? _expectedHours(PlaceModel place) {
   final category = place.category.trim().toLowerCase();
   final idAndName = '${place.id} ${place.nameEn}'.toLowerCase();
-  if (place.governorate == 'aswan') {
+  if (place.id.startsWith('aswan_')) {
     return switch (category) {
       'historical' || 'culture' || 'nature' => place.openHours,
       'mosques' => '04:00 AM - 10:00 PM',
@@ -380,6 +411,27 @@ String? _expectedHours(PlaceModel place) {
     return '08:00 AM - 10:00 PM';
   }
   return null;
+}
+
+bool _strictlyInside(EgyptGovernorate governorate, double lat, double lng) {
+  if (!GovernorateService.containsCoordinates(governorate, lat, lng)) {
+    return false;
+  }
+  final polygon = governorate.boundaryPolygon;
+  for (var index = 0; index < polygon.length; index++) {
+    final start = polygon[index];
+    final end = polygon[(index + 1) % polygon.length];
+    final cross =
+        (lng - start.longitude) * (end.latitude - start.latitude) -
+        (lat - start.latitude) * (end.longitude - start.longitude);
+    final withinSegment =
+        lng >= math.min(start.longitude, end.longitude) - 1e-10 &&
+        lng <= math.max(start.longitude, end.longitude) + 1e-10 &&
+        lat >= math.min(start.latitude, end.latitude) - 1e-10 &&
+        lat <= math.max(start.latitude, end.latitude) + 1e-10;
+    if (cross.abs() <= 1e-10 && withinSegment) return false;
+  }
+  return true;
 }
 
 bool _isOpenPublicSpace(String idAndName) =>

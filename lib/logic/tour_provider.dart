@@ -10,6 +10,7 @@ import '../core/services/supabase_service.dart';
 import '../data/cairo_seed.dart' show cairoSeedItineraries;
 import '../data/luxor_seed.dart' show luxorSeedItineraries;
 import '../data/aswan_seed.dart' show aswanSeedItineraries;
+import '../data/models/egypt_governorate.dart';
 import '../data/models/itinerary_model.dart';
 import '../data/models/offline_pack.dart';
 import '../data/models/place_model.dart';
@@ -93,7 +94,8 @@ class TourProvider extends ChangeNotifier {
   List<ItineraryModel> get tours => List.unmodifiable(
     _tours.where(
       (tour) =>
-          tour.governorate == (governorates?.activeGovernorate ?? 'alexandria'),
+          EgyptGovernorate.normalizeId(tour.governorate) ==
+          (governorates?.activeGovernorate ?? 'alexandria'),
     ),
   );
 
@@ -107,7 +109,7 @@ class TourProvider extends ChangeNotifier {
   List<ItineraryModel> get savedTours => _savedTours
       .where(
         (tour) =>
-            tour.governorate ==
+            EgyptGovernorate.normalizeId(tour.governorate) ==
             (governorates?.activeGovernorate ?? 'alexandria'),
       )
       .toList(growable: false);

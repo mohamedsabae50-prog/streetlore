@@ -24,13 +24,17 @@ class GovernorateService {
       if (containsCoordinates(alexandria, lat, lng)) {
         return alexandria;
       }
+      final luxorAndAswan = EgyptGovernorate.byId['luxor']!;
+      if (containsCoordinates(luxorAndAswan, lat, lng)) {
+        return luxorAndAswan;
+      }
       final matches = governorates.where(
         (governorate) =>
             governorate.id != 'alexandria' &&
             containsCoordinates(governorate, lat, lng),
       );
       if (matches.isNotEmpty) {
-        return matches.reduce((nearest, candidate) {
+        final detected = matches.reduce((nearest, candidate) {
           final nearestDistance = _haversineDistance(
             lat,
             lng,
@@ -45,10 +49,14 @@ class GovernorateService {
           );
           return candidateDistance < nearestDistance ? candidate : nearest;
         });
+        return EgyptGovernorate.byId[EgyptGovernorate.normalizeId(
+              detected.id,
+            )] ??
+            detected;
       }
     }
 
-    return governorates.reduce((nearest, candidate) {
+    final detected = governorates.reduce((nearest, candidate) {
       final nearestDistance = _haversineDistance(
         lat,
         lng,
@@ -63,6 +71,8 @@ class GovernorateService {
       );
       return candidateDistance < nearestDistance ? candidate : nearest;
     });
+    return EgyptGovernorate.byId[EgyptGovernorate.normalizeId(detected.id)] ??
+        detected;
   }
 
   static bool _containsPoint(List<LatLng> polygon, double lat, double lng) {

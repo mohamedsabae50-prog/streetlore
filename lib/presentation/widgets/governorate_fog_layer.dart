@@ -64,7 +64,7 @@ class GovernorateFogLayer extends StatelessWidget {
         EgyptGovernorate.byId[provider.activeGovernorate] ??
         EgyptGovernorate.byId['alexandria']!;
     final fogged = EgyptGovernorate.all
-        .where((item) => item.id != active.id)
+        .where((item) => item.id != active.id && item.id != 'aswan')
         .toList(growable: false);
     final boundaryPoints = active.boundaryPolygon
         .map((point) {
@@ -126,7 +126,11 @@ class GovernorateFogLayer extends StatelessWidget {
                   child: _FogBadge(
                     governorate: item,
                     count: places
-                        .where((place) => place.governorate == item.id)
+                        .where(
+                          (place) =>
+                              EgyptGovernorate.normalizeId(place.governorate) ==
+                              item.id,
+                        )
                         .length,
                     onTap: () => showGovernorateExplorerSheet(
                       context,

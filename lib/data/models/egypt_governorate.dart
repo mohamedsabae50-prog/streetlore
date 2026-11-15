@@ -4,6 +4,8 @@ class EgyptGovernorate {
   final String id;
   final String nameEn;
   final String nameAr;
+  final String? subtitleEn;
+  final String? subtitleAr;
   final double centerLat;
   final double centerLng;
   final double defaultZoom;
@@ -13,6 +15,8 @@ class EgyptGovernorate {
     required this.id,
     required this.nameEn,
     required this.nameAr,
+    this.subtitleEn,
+    this.subtitleAr,
     required this.centerLat,
     required this.centerLng,
     required this.defaultZoom,
@@ -21,7 +25,11 @@ class EgyptGovernorate {
 
   static String normalizeId(String id) {
     final normalized = id.trim().toLowerCase();
-    return normalized == 'giza' ? 'cairo' : normalized;
+    return switch (normalized) {
+      'giza' => 'cairo',
+      'aswan' => 'luxor',
+      _ => normalized,
+    };
   }
 
   static const List<EgyptGovernorate> all = [
@@ -435,20 +443,27 @@ class EgyptGovernorate {
     ),
     EgyptGovernorate(
       id: 'luxor',
-      nameEn: 'Luxor',
-      nameAr: 'الأقصر',
-      centerLat: 25.7050,
-      centerLng: 32.6391,
-      defaultZoom: 12.2,
+      nameEn: 'Luxor & Aswan',
+      nameAr: 'الأقصر وأسوان',
+      subtitleEn:
+          'Ancient Thebes, Valley of the Kings, Philae, Nubia & Abu Simbel',
+      subtitleAr: 'طيبة القديمة، وادي الملوك، فيلة، النوبة وأبو سمبل',
+      centerLat: 24.9500,
+      centerLng: 32.7600,
+      defaultZoom: 8.8,
       boundaryPolygon: [
-        LatLng(25.8200, 32.5200),
-        LatLng(25.8300, 32.7200),
-        LatLng(25.7500, 32.7800),
-        LatLng(25.6200, 32.7600),
-        LatLng(25.5200, 32.6800),
-        LatLng(25.5000, 32.5000),
+        LatLng(25.8300, 32.5000),
+        LatLng(25.8300, 32.7800),
+        LatLng(25.5500, 32.7800),
+        LatLng(25.0200, 32.9600),
+        LatLng(24.5000, 33.0000),
+        LatLng(24.1500, 32.9600),
+        LatLng(23.9300, 32.9500),
+        LatLng(22.2800, 31.7000),
+        LatLng(22.2800, 31.5500),
+        LatLng(22.4200, 31.5500),
+        LatLng(24.1200, 32.8000),
         LatLng(25.6000, 32.4500),
-        LatLng(25.7400, 32.5000),
       ],
     ),
     EgyptGovernorate(
@@ -490,7 +505,9 @@ class EgyptGovernorate {
   ];
 
   static final Map<String, EgyptGovernorate> byId = {
-    for (final governorate in all) governorate.id: governorate,
+    for (final governorate in all)
+      if (governorate.id != 'aswan') governorate.id: governorate,
     'giza': all.firstWhere((governorate) => governorate.id == 'cairo'),
+    'aswan': all.firstWhere((governorate) => governorate.id == 'luxor'),
   };
 }

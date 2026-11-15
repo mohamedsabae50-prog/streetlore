@@ -97,17 +97,17 @@ String buildGovernorateGuideContext({
             EgyptGovernorate.normalizeId(itinerary.governorate) ==
             normalizedGovernorateId,
       )
-      .take(4)
+      .take(normalizedGovernorateId == 'luxor' ? 12 : 4)
       .map((itinerary) => itinerary.localizedTitle(locale))
       .toList(growable: false);
   final cityLabel = isArabic
       ? '${governorate.nameAr} / ${governorate.nameEn}'
       : '${governorate.nameEn} / ${governorate.nameAr}';
   final localExpertise = switch (normalizedGovernorateId) {
-    'aswan' =>
+    'luxor' =>
       isArabic
-          ? 'متخصص في أسوان والنوبة ومعابد فيلة وكوم أمبو وإدفو وأبو سمبل.'
-          : 'Local expertise: Aswan, Nubia, Philae, Kom Ombo, Edfu, and Abu Simbel.',
+          ? 'متخصص في الأقصر وأسوان والنوبة ومعابد فيلة وكوم أمبو وإدفو وأبو سمبل.'
+          : 'Local expertise: Luxor, Aswan, Nubia, Philae, Kom Ombo, Edfu, and Abu Simbel.',
     _ => null,
   };
   return '''ACTIVE GOVERNORATE: $cityLabel.

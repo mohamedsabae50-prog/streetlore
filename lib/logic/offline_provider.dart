@@ -7,6 +7,7 @@ import '../core/services/offline_storage_service.dart';
 import '../core/services/offline_pack_storage.dart';
 import '../data/models/offline_pack.dart';
 import '../data/models/itinerary_model.dart';
+import '../data/models/egypt_governorate.dart';
 import '../data/models/place_model.dart';
 import 'place_provider.dart' show placeModelFromSupabaseRow;
 
@@ -178,30 +179,16 @@ class OfflineProvider extends ChangeNotifier {
     ),
     OfflinePack(
       id: 'all_luxor',
-      name: 'All Luxor',
+      name: 'All Luxor & Aswan',
       description:
-          'Luxor temples, royal tombs, museums, Nile experiences, and curated tours.',
-      nameAr: 'كل الأقصر',
+          'Luxor and Aswan landmarks, temples, royal tombs, Nubian culture, and curated tours.',
+      nameAr: 'كل الأقصر وأسوان',
       descriptionAr:
-          'معابد الأقصر ومقابرها الملكية ومتاحفها وتجارب النيل وجولاتها المختارة.',
+          'معالم الأقصر وأسوان ومعابدهما ومقابرهما الملكية وثقافة النوبة وجولاتهما المختارة.',
       governorateId: 'luxor',
       placeIds: const ['__all__'],
       categories: const [],
-      sizeMb: 18,
-      coverEmoji: 'book',
-    ),
-    OfflinePack(
-      id: 'all_aswan',
-      name: 'All Aswan',
-      description:
-          'Aswan temples, Nubian culture, Nile islands, and curated river routes.',
-      nameAr: 'كل أسوان',
-      descriptionAr:
-          'معابد أسوان وثقافة النوبة وجزر النيل ومسارات النهر المختارة.',
-      governorateId: 'aswan',
-      placeIds: const ['__all__'],
-      categories: const [],
-      sizeMb: 18,
+      sizeMb: 36,
       coverEmoji: 'book',
     ),
   ];
@@ -265,7 +252,10 @@ class OfflineProvider extends ChangeNotifier {
 
   bool isCached(String placeId, {String governorateId = 'alexandria'}) =>
       _cachedPlaces.any(
-        (place) => place.id == placeId && place.governorate == governorateId,
+        (place) =>
+            place.id == placeId &&
+            EgyptGovernorate.normalizeId(place.governorate) ==
+                EgyptGovernorate.normalizeId(governorateId),
       );
 
   Future<DownloadResult> downloadSinglePlace(
@@ -371,11 +361,13 @@ class OfflineProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final cityPlaces = availablePlaces.where(
-        (place) => place.governorate == pack.governorateId,
+        (place) =>
+            EgyptGovernorate.normalizeId(place.governorate) ==
+            EgyptGovernorate.normalizeId(pack.governorateId),
       );
       final selectedPlaces = cityPlaces.where((p) {
         final matchesAll = pack.placeIds.contains('__all__');
-        if (matchesAll) return true;
+        if (matchesAll) return pack.id != 'all_luxor' || p.isVisitable;
         if (pack.placeIds.contains(p.id)) return true;
         if (pack.categories.isNotEmpty &&
             pack.categories
@@ -388,7 +380,10 @@ class OfflineProvider extends ChangeNotifier {
       final selectedIds = selectedPlaces.map((place) => place.id).toSet();
       final tours = availableTours
           .where((tour) {
-            if (tour.governorate != pack.governorateId) return false;
+            if (EgyptGovernorate.normalizeId(tour.governorate) !=
+                EgyptGovernorate.normalizeId(pack.governorateId)) {
+              return false;
+            }
             if (pack.id == 'tour_${tour.id}') return true;
             if (pack.placeIds.contains('__all__')) return true;
             if (pack.categories.isEmpty && pack.placeIds.isEmpty) return false;
@@ -400,7 +395,9 @@ class OfflineProvider extends ChangeNotifier {
       };
       for (final tour in tours) {
         for (final stop in tour.places) {
-          if (stop.id.isNotEmpty && stop.governorate == pack.governorateId) {
+          if (stop.id.isNotEmpty &&
+              EgyptGovernorate.normalizeId(stop.governorate) ==
+                  EgyptGovernorate.normalizeId(pack.governorateId)) {
             placesById.putIfAbsent(stop.id, () => stop);
           }
         }
@@ -555,7 +552,10 @@ class OfflineProvider extends ChangeNotifier {
 
   bool isDownloaded(String packId, {String governorateId = 'alexandria'}) =>
       _packs.any(
-        (pack) => pack.id == packId && pack.governorateId == governorateId,
+        (pack) =>
+            pack.id == packId &&
+            EgyptGovernorate.normalizeId(pack.governorateId) ==
+                EgyptGovernorate.normalizeId(governorateId),
       );
 
   double get totalDownloadedMb => _packs.fold(0, (s, p) => s + p.sizeMb);

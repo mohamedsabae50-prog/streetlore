@@ -138,7 +138,7 @@ PlaceModel _buildAswanPlace(_AswanPlaceSpec spec) {
     lng: spec.lng,
     address: '${spec.areaEn}, Aswan Governorate, Egypt',
     addressAr: '${spec.areaAr}، محافظة أسوان، مصر',
-    governorate: 'aswan',
+    governorate: 'luxor',
     openHours: spec.openHours,
     reviewCount: 350,
     priceLevel: _aswanPriceLevel(spec),
@@ -1198,7 +1198,7 @@ aswanSeedItineraries = List<ItineraryModel>.unmodifiable([
     duration: 'Full day',
     durationAr: 'يوم كامل',
     imageUrl: aswanImageUrls['aswan_philae_temple']!,
-    governorate: 'aswan',
+    governorate: 'luxor',
     places: _aswanTourStops([
       'aswan_high_dam_memorial',
       'aswan_unfinished_obelisk',
@@ -1216,7 +1216,7 @@ aswanSeedItineraries = List<ItineraryModel>.unmodifiable([
     duration: 'Full day',
     durationAr: 'يوم كامل',
     imageUrl: aswanImageUrls['aswan_nubian_museum']!,
-    governorate: 'aswan',
+    governorate: 'luxor',
     places: _aswanTourStops([
       'aswan_nubian_museum',
       'aswan_sofitel_legend_old_cataract',
@@ -1235,7 +1235,7 @@ aswanSeedItineraries = List<ItineraryModel>.unmodifiable([
     duration: 'Full day',
     durationAr: 'يوم كامل',
     imageUrl: aswanImageUrls['aswan_qubbet_el_hawa_tombs']!,
-    governorate: 'aswan',
+    governorate: 'luxor',
     places: _aswanTourStops([
       'aswan_qubbet_el_hawa_tombs',
       'aswan_st_simeon_monastery',
@@ -1253,7 +1253,7 @@ aswanSeedItineraries = List<ItineraryModel>.unmodifiable([
     duration: 'Full day',
     durationAr: 'يوم كامل',
     imageUrl: aswanImageUrls['aswan_botanical_garden_kitchener']!,
-    governorate: 'aswan',
+    governorate: 'luxor',
     places: _aswanTourStops([
       'aswan_botanical_garden_kitchener',
       'aswan_sehel_island_famine_stele',
@@ -1272,7 +1272,7 @@ aswanSeedItineraries = List<ItineraryModel>.unmodifiable([
     duration: 'Full day',
     durationAr: 'يوم كامل',
     imageUrl: aswanImageUrls['aswan_kom_ombo_temple']!,
-    governorate: 'aswan',
+    governorate: 'luxor',
     places: _aswanTourStops([
       'aswan_kom_ombo_temple',
       'aswan_crocodile_museum_kom_ombo',
@@ -1291,7 +1291,7 @@ aswanSeedItineraries = List<ItineraryModel>.unmodifiable([
     duration: 'Full day',
     durationAr: 'يوم كامل',
     imageUrl: aswanImageUrls['aswan_abu_simbel_great_temple']!,
-    governorate: 'aswan',
+    governorate: 'luxor',
     places: _aswanTourStops([
       'aswan_abu_simbel_great_temple',
       'aswan_abu_simbel_nefertari_temple',

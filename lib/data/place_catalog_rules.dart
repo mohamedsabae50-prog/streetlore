@@ -298,7 +298,7 @@ String _neighborhood(
 }
 
 String? _expectedHours(PlaceModel place, String category, String idAndName) {
-  if (place.governorate == 'aswan') {
+  if (place.id.startsWith('aswan_')) {
     return switch (category) {
       'historical' || 'culture' || 'nature' => place.openHours,
       'mosques' => '04:00 AM - 10:00 PM',

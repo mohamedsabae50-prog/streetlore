@@ -362,55 +362,68 @@ void main() {
     expect(harness.places.places.where((place) => place.isAtm), isEmpty);
   });
 
-  testWidgets('Aswan map shows all six ATMs only under the ATMs filter', (
-    tester,
-  ) async {
-    final harness = await _pumpAswanMap(tester);
-    addTearDown(harness.dispose);
+  testWidgets(
+    'Luxor & Aswan map shows all 12 ATMs only under the ATMs filter',
+    (tester) async {
+      final harness = await _pumpUnifiedLuxorMap(tester);
+      addTearDown(harness.dispose);
 
-    expect(harness.places.places.where((place) => place.isAtm), isEmpty);
-    expect(
-      harness.places.allPlaces.where(
-        (place) => place.governorate == 'aswan' && place.isAtm,
-      ),
-      hasLength(6),
-    );
-    expect(
-      find.byKey(
-        const ValueKey('map-atm-marker-atm_nbe_aswan_corniche_station'),
-      ),
-      findsNothing,
-    );
+      expect(harness.places.places.where((place) => place.isAtm), isEmpty);
+      expect(
+        harness.places.allPlaces.where(
+          (place) => place.governorate == 'luxor' && place.isAtm,
+        ),
+        hasLength(12),
+      );
+      expect(
+        find.byKey(
+          const ValueKey('map-atm-marker-atm_nbe_aswan_corniche_station'),
+        ),
+        findsNothing,
+      );
 
-    await _tapMapFilter(tester, 'hotels');
-    await _tapMapFilter(tester, 'atms');
-    expect(
-      find.byKey(
-        const ValueKey('map-place-marker-aswan_sofitel_legend_old_cataract'),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(
-        const ValueKey('map-atm-marker-atm_nbe_aswan_corniche_station'),
-      ),
-      findsOneWidget,
-    );
-    final map = find.byType(FlutterMap);
-    for (var zoomOut = 0; zoomOut < 3; zoomOut++) {
-      await _pinchMapOut(tester, map);
-    }
-    for (final id in [
-      'atm_nbe_aswan_corniche_station',
-      'atm_banque_misr_old_cataract_aswan',
-      'atm_cib_aswan_tourist_souq',
-      'atm_qnb_nubian_museum_aswan',
-      'atm_nbe_kom_ombo_temple_plaza',
-      'atm_banque_misr_edfu_temple_square',
-    ]) {
-      expect(find.byKey(ValueKey('map-atm-marker-$id')), findsOneWidget);
-    }
-  });
+      await _tapMapFilter(tester, 'hotels');
+      await _tapMapFilter(tester, 'atms');
+      expect(
+        find.byKey(
+          const ValueKey('map-place-marker-aswan_sofitel_legend_old_cataract'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey('map-place-marker-luxor_sofitel_winter_palace'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey('map-atm-marker-atm_nbe_aswan_corniche_station'),
+        ),
+        findsOneWidget,
+      );
+      final map = find.byType(FlutterMap);
+      for (var zoomOut = 0; zoomOut < 5; zoomOut++) {
+        await _pinchMapOut(tester, map);
+      }
+      for (final id in [
+        'atm_nbe_luxor_temple_corniche',
+        'atm_banque_misr_karnak_plaza',
+        'atm_cib_winter_palace_luxor',
+        'atm_qnb_luxor_station_square',
+        'atm_nbe_west_bank_ferry_qurna',
+        'atm_banque_misr_steigenberger_luxor',
+        'atm_nbe_aswan_corniche_station',
+        'atm_banque_misr_old_cataract_aswan',
+        'atm_cib_aswan_tourist_souq',
+        'atm_qnb_nubian_museum_aswan',
+        'atm_nbe_kom_ombo_temple_plaza',
+        'atm_banque_misr_edfu_temple_square',
+      ]) {
+        expect(find.byKey(ValueKey('map-atm-marker-$id')), findsOneWidget);
+      }
+    },
+  );
 
   testWidgets('map category matching normalizes singular and plural labels', (
     tester,
@@ -504,19 +517,19 @@ Future<_LuxorMapHarness> _pumpLuxorMap(
   );
 }
 
-Future<_LuxorMapHarness> _pumpAswanMap(WidgetTester tester) async {
+Future<_LuxorMapHarness> _pumpUnifiedLuxorMap(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1200, 900);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
   final governorates = GovernorateProvider();
-  governorates.unlockAndSelectGovernorate('aswan');
+  governorates.unlockAndSelectGovernorate('luxor');
   final places = PlaceProvider(
     watchRemoteUpdates: false,
     governorates: governorates,
     isOnline: () => false,
-    initialPlaces: aswanSeedPlaces,
+    initialPlaces: [...luxorSeedPlaces, ...aswanSeedPlaces],
   );
   final trips = TripProvider();
   final locale = LocaleProvider();

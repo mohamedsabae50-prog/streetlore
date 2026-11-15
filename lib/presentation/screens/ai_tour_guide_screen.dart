@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/ai_quota_banner.dart';
 import '../../core/services/ai_tour_guide_service.dart';
+import '../../data/models/egypt_governorate.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/connectivity_provider.dart';
@@ -58,10 +59,14 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
   Future<void> _bootstrap() async {
     final locale = Localizations.localeOf(context).languageCode;
     final places = context.read<PlaceProvider>().allPlaces.where(
-      (place) => place.governorate == widget.place.governorate,
+      (place) =>
+          EgyptGovernorate.normalizeId(place.governorate) ==
+          EgyptGovernorate.normalizeId(widget.place.governorate),
     );
     final itineraries = context.read<TourProvider>().allTours.where(
-      (tour) => tour.governorate == widget.place.governorate,
+      (tour) =>
+          EgyptGovernorate.normalizeId(tour.governorate) ==
+          EgyptGovernorate.normalizeId(widget.place.governorate),
     );
     await AITourGuideService.instance.start(
       widget.place,

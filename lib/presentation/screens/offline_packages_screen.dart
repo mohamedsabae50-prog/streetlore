@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../data/models/egypt_governorate.dart';
 import '../../data/models/offline_pack.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
@@ -23,8 +24,7 @@ class _OfflinePackagesScreenState extends State<OfflinePackagesScreen> {
         (pack) =>
             pack.id == 'all_alexandria' ||
             pack.id == 'all_cairo' ||
-            pack.id == 'all_luxor' ||
-            pack.id == 'all_aswan',
+            pack.id == 'all_luxor',
       )
       .toList(growable: false);
 
@@ -141,10 +141,21 @@ class _OfflinePackagesScreenState extends State<OfflinePackagesScreen> {
                 pack: pack,
                 locale: locale,
                 placesCount: places
-                    .where((place) => place.governorate == pack.governorateId)
+                    .where(
+                      (place) =>
+                          EgyptGovernorate.normalizeId(place.governorate) ==
+                              EgyptGovernorate.normalizeId(
+                                pack.governorateId,
+                              ) &&
+                          (pack.id != 'all_luxor' || place.isVisitable),
+                    )
                     .length,
                 toursCount: tours
-                    .where((tour) => tour.governorate == pack.governorateId)
+                    .where(
+                      (tour) =>
+                          EgyptGovernorate.normalizeId(tour.governorate) ==
+                          EgyptGovernorate.normalizeId(pack.governorateId),
+                    )
                     .length,
                 isPro: auth.isPro,
                 offline: offline,
@@ -315,8 +326,7 @@ class OfflinePackagesEntryTile extends StatelessWidget {
               (pack) =>
                   (pack.id == 'all_alexandria' ||
                       pack.id == 'all_cairo' ||
-                      pack.id == 'all_luxor' ||
-                      pack.id == 'all_aswan') &&
+                      pack.id == 'all_luxor') &&
                   offline.isDownloaded(
                     pack.id,
                     governorateId: pack.governorateId,

@@ -251,7 +251,6 @@ const _validCategories = {
 void main() {
   final cairo = EgyptGovernorate.byId['cairo']!;
   final luxor = EgyptGovernorate.byId['luxor']!;
-  final aswan = EgyptGovernorate.byId['aswan']!;
 
   test('Cairo & Giza seed has 190 places and stable core order', () {
     expect(cairoSeedPlaces, hasLength(190));
@@ -277,33 +276,76 @@ void main() {
     );
   });
 
-  test('Luxor seed has 60 places, six tours, and unique offline URLs', () {
+  test('Luxor & Aswan share one 120-record governorate and 12 tours', () {
     expect(luxor.id, 'luxor');
-    expect(luxor.nameEn, 'Luxor');
-    expect(luxor.nameAr, 'الأقصر');
-    expect(luxor.centerLat, 25.7050);
-    expect(luxor.centerLng, 32.6391);
-    expect(luxor.defaultZoom, 12.2);
+    expect(luxor.nameEn, 'Luxor & Aswan');
+    expect(luxor.nameAr, 'الأقصر وأسوان');
+    expect(
+      luxor.subtitleEn,
+      'Ancient Thebes, Valley of the Kings, Philae, Nubia & Abu Simbel',
+    );
+    expect(
+      luxor.subtitleAr,
+      'طيبة القديمة، وادي الملوك، فيلة، النوبة وأبو سمبل',
+    );
+    expect(luxor.centerLat, 24.9500);
+    expect(luxor.centerLng, 32.7600);
+    expect(luxor.defaultZoom, 8.8);
+    expect(EgyptGovernorate.normalizeId('aswan'), 'luxor');
+    expect(EgyptGovernorate.byId['aswan']!.id, 'luxor');
     expect(
       luxor.boundaryPolygon
           .map((point) => (point.latitude, point.longitude))
           .toList(),
       [
-        (25.8200, 32.5200),
-        (25.8300, 32.7200),
-        (25.7500, 32.7800),
-        (25.6200, 32.7600),
-        (25.5200, 32.6800),
-        (25.5000, 32.5000),
+        (25.8300, 32.5000),
+        (25.8300, 32.7800),
+        (25.5500, 32.7800),
+        (25.0200, 32.9600),
+        (24.5000, 33.0000),
+        (24.1500, 32.9600),
+        (23.9300, 32.9500),
+        (22.2800, 31.7000),
+        (22.2800, 31.5500),
+        (22.4200, 31.5500),
+        (24.1200, 32.8000),
         (25.6000, 32.4500),
-        (25.7400, 32.5000),
       ],
     );
     expect(luxorSeedPlaces, hasLength(60));
     expect(luxorSeedItineraries, hasLength(6));
     expect(
       MockData.places.where((place) => place.governorate == 'luxor'),
-      hasLength(60),
+      hasLength(120),
+    );
+    expect(
+      MockData.places.where(
+        (place) => place.governorate == 'luxor' && place.isVisitable,
+      ),
+      hasLength(108),
+    );
+    expect(
+      MockData.places.where(
+        (place) => place.governorate == 'luxor' && place.isAtm,
+      ),
+      hasLength(12),
+    );
+    expect(
+      MockData.tours.where((tour) => tour.governorate == 'luxor'),
+      hasLength(12),
+    );
+    for (final place in MockData.places.where(
+      (place) => place.governorate == 'luxor',
+    )) {
+      expect(
+        _strictlyInside(luxor, place.lat, place.lng),
+        isTrue,
+        reason: '${place.id} must lie strictly inside the unified boundary',
+      );
+    }
+    expect(
+      EgyptGovernorate.all.map((governorate) => governorate.id),
+      containsAll(['alexandria', 'cairo', 'luxor']),
     );
     expect(MockData.places, hasLength(359));
     expect(luxorImageUrls, hasLength(60));
@@ -444,28 +486,7 @@ void main() {
     );
   });
 
-  test('Aswan seed has 60 priced places, six tours, and unique URLs', () {
-    expect(aswan.nameEn, 'Aswan');
-    expect(aswan.nameAr, 'أسوان');
-    expect((aswan.centerLat, aswan.centerLng), (24.0889, 32.8998));
-    expect(aswan.defaultZoom, 12.2);
-    expect(
-      aswan.boundaryPolygon
-          .map((point) => (point.latitude, point.longitude))
-          .toList(),
-      [
-        (25.0200, 32.8000),
-        (25.0200, 32.9600),
-        (24.5000, 33.0000),
-        (24.1500, 32.9600),
-        (23.9300, 32.9500),
-        (22.2800, 31.7000),
-        (22.2800, 31.5500),
-        (22.4200, 31.5500),
-        (24.1200, 32.8000),
-        (24.4500, 32.8400),
-      ],
-    );
+  test('Aswan seed records are part of unified Luxor & Aswan', () {
     expect(aswanSeedPlaces, hasLength(60));
     expect(aswanSeedItineraries, hasLength(6));
     expect(
@@ -504,7 +525,11 @@ void main() {
       hasLength(6),
     );
     expect(
-      MockData.places.where((place) => place.governorate == 'aswan'),
+      MockData.places.where(
+        (place) =>
+            place.governorate == 'luxor' &&
+            aswanImageUrls.containsKey(place.id),
+      ),
       hasLength(60),
     );
     expect(MockData.places, hasLength(359));
@@ -644,13 +669,13 @@ void main() {
       isTrue,
     );
     for (final place in aswanSeedPlaces) {
-      expect(place.governorate, 'aswan', reason: place.id);
+      expect(place.governorate, 'luxor', reason: place.id);
       expect(place.descriptionEn.trim().length, greaterThanOrEqualTo(95));
       expect(place.descriptionAr!.trim().length, greaterThanOrEqualTo(65));
       expect(
-        GovernorateService.containsCoordinates(aswan, place.lat, place.lng),
+        GovernorateService.containsCoordinates(luxor, place.lat, place.lng),
         isTrue,
-        reason: '${place.id} must lie in the Aswan boundary',
+        reason: '${place.id} must lie in the unified boundary',
       );
       expect(
         place.officialImages.single,
@@ -660,8 +685,8 @@ void main() {
     }
     expect(
       GovernorateService.containsCoordinates(luxor, 24.9780, 32.8733),
-      isFalse,
-      reason: 'Edfu must remain outside Luxor',
+      isTrue,
+      reason: 'Edfu must be inside the unified Luxor & Aswan boundary',
     );
     expect(
       placesById.values
@@ -996,7 +1021,7 @@ void main() {
 
 bool _requiresPaidAdmission(PlaceModel place) {
   final category = place.category.trim().toLowerCase();
-  if (place.governorate == 'aswan') {
+  if (place.id.startsWith('aswan_')) {
     if (category == 'historical' || category == 'culture') return true;
     if (category == 'nature') {
       return place.id != 'aswan_nile_corniche_promenade';
@@ -1065,6 +1090,27 @@ bool _requiresPaidAdmission(PlaceModel place) {
   return paidIds.contains(place.id) ||
       ticketedParks.contains(place.id) ||
       paidTerms.any(searchable.contains);
+}
+
+bool _strictlyInside(EgyptGovernorate governorate, double lat, double lng) {
+  if (!GovernorateService.containsCoordinates(governorate, lat, lng)) {
+    return false;
+  }
+  final polygon = governorate.boundaryPolygon;
+  for (var index = 0; index < polygon.length; index++) {
+    final start = polygon[index];
+    final end = polygon[(index + 1) % polygon.length];
+    final cross =
+        (lng - start.longitude) * (end.latitude - start.latitude) -
+        (lat - start.latitude) * (end.longitude - start.longitude);
+    final withinSegment =
+        lng >= math.min(start.longitude, end.longitude) - 1e-10 &&
+        lng <= math.max(start.longitude, end.longitude) + 1e-10 &&
+        lat >= math.min(start.latitude, end.latitude) - 1e-10 &&
+        lat <= math.max(start.latitude, end.latitude) + 1e-10;
+    if (cross.abs() <= 1e-10 && withinSegment) return false;
+  }
+  return true;
 }
 
 void _verifyCairoPlace(PlaceModel place, EgyptGovernorate cairo) {

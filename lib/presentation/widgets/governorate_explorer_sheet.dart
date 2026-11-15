@@ -15,6 +15,9 @@ class GovernoratePill extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<GovernorateProvider>();
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final regionCount = EgyptGovernorate.all
+        .where((item) => item.id != 'aswan')
+        .length;
     final active =
         EgyptGovernorate.byId[provider.activeGovernorate] ??
         EgyptGovernorate.byId['alexandria']!;
@@ -46,7 +49,7 @@ class GovernoratePill extends StatelessWidget {
                 Flexible(
                   child: Text(
                     '${isArabic ? active.nameAr : active.nameEn} · '
-                    '${provider.unlockedGovernorateIds.length}/27',
+                    '${provider.unlockedGovernorateIds.length}/$regionCount',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -57,7 +60,7 @@ class GovernoratePill extends StatelessWidget {
               else
                 Text(
                   '${isArabic ? active.nameAr : active.nameEn} · '
-                  '${provider.unlockedGovernorateIds.length}/27',
+                  '${provider.unlockedGovernorateIds.length}/$regionCount',
                   style: Theme.of(
                     context,
                   ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
@@ -109,13 +112,16 @@ class GovernorateExplorerSheet extends StatelessWidget {
     final placeCounts = <String, int>{};
     for (final place in places) {
       placeCounts.update(
-        place.governorate,
+        EgyptGovernorate.normalizeId(place.governorate),
         (count) => count + 1,
         ifAbsent: () => 1,
       );
     }
     final unlocked = governorates.unlockedGovernorateIds;
-    final ordered = [...EgyptGovernorate.all]
+    final visibleGovernorates = EgyptGovernorate.all
+        .where((item) => item.id != 'aswan')
+        .toList(growable: false);
+    final ordered = [...visibleGovernorates]
       ..sort((a, b) {
         final aOpen = unlocked.contains(a.id) || (placeCounts[a.id] ?? 0) > 0;
         final bOpen = unlocked.contains(b.id) || (placeCounts[b.id] ?? 0) > 0;
@@ -163,8 +169,8 @@ class GovernorateExplorerSheet extends StatelessWidget {
                 Expanded(
                   child: Text(
                     isArabic
-                        ? '${unlocked.length} / ${EgyptGovernorate.all.length} محافظات مفتوحة'
-                        : '${unlocked.length} / ${EgyptGovernorate.all.length} Governorates Unlocked',
+                        ? '${unlocked.length} / ${visibleGovernorates.length} محافظات مفتوحة'
+                        : '${unlocked.length} / ${visibleGovernorates.length} Governorates Unlocked',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: const Color(0xFF078B78),
                       fontWeight: FontWeight.w800,
@@ -194,7 +200,9 @@ class GovernorateExplorerSheet extends StatelessWidget {
                 final governoratePlaces = places
                     .where(
                       (place) =>
-                          place.governorate == item.id && place.isVisitable,
+                          EgyptGovernorate.normalizeId(place.governorate) ==
+                              item.id &&
+                          place.isVisitable,
                     )
                     .toList(growable: false);
                 final visited = governoratePlaces

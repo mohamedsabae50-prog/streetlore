@@ -289,22 +289,25 @@ void main() {
 
       for (final entry in cases.entries) {
         final (lat, lng) = entry.value;
+        final expectedId = entry.key == 'aswan' ? 'luxor' : entry.key;
         expect(
           GovernorateService.detectFromCoordinates(lat, lng).id,
-          entry.key,
+          expectedId,
         );
         await provider.syncWithCoordinates(
           lat,
           lng,
           availableGovernorateIds: const {'alexandria'},
         );
-        expect(provider.detectedGovernorate, entry.key);
+        expect(provider.detectedGovernorate, expectedId);
         expect(provider.activeGovernorate, 'alexandria');
         expect(provider.unlockedGovernorateIds, {'alexandria'});
-        expect(
-          provider.takeNoticeMessage('en'),
-          contains(EgyptGovernorate.byId[entry.key]!.nameEn),
-        );
+        final notice = provider.takeNoticeMessage('en');
+        if (entry.key == 'aswan') {
+          expect(notice, isNull);
+        } else {
+          expect(notice, contains(EgyptGovernorate.byId[expectedId]!.nameEn));
+        }
       }
     },
   );

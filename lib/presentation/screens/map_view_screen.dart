@@ -625,6 +625,7 @@ class _MapViewScreenState extends State<MapViewScreen>
   }
 
   List<MapPoi> _curatedAtmsFor(String governorateId) {
+    governorateId = EgyptGovernorate.normalizeId(governorateId);
     final governorateName =
         EgyptGovernorate.byId[governorateId]?.nameEn ?? governorateId;
     final candidates = <MapPoi>[
@@ -632,7 +633,12 @@ class _MapViewScreenState extends State<MapViewScreen>
       ...context
           .read<PlaceProvider>()
           .allPlaces
-          .where((place) => place.governorate == governorateId && place.isAtm)
+          .where(
+            (place) =>
+                EgyptGovernorate.normalizeId(place.governorate) ==
+                    governorateId &&
+                place.isAtm,
+          )
           .map(
             (place) => MapPoi(
               id: place.id,
@@ -768,7 +774,9 @@ class _MapViewScreenState extends State<MapViewScreen>
     final placeProvider = context.watch<PlaceProvider>();
     final governorateProvider = context.watch<GovernorateProvider>();
     final activeGovernorate =
-        EgyptGovernorate.byId[governorateProvider.activeGovernorate] ??
+        EgyptGovernorate.byId[EgyptGovernorate.normalizeId(
+          governorateProvider.activeGovernorate,
+        )] ??
         EgyptGovernorate.byId['alexandria']!;
     final places = placeProvider.places;
     final allPlaces = placeProvider.allPlaces;
@@ -836,7 +844,10 @@ class _MapViewScreenState extends State<MapViewScreen>
                       ? <PlaceModel>[]
                       : <PlaceModel>[...visible];
                   if (_selectedPlace != null &&
-                      _selectedPlace!.governorate == activeGovernorate.id &&
+                      EgyptGovernorate.normalizeId(
+                            _selectedPlace!.governorate,
+                          ) ==
+                          activeGovernorate.id &&
                       !markerPlaces.any(
                         (place) => place.id == _selectedPlace!.id,
                       )) {

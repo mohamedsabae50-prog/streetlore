@@ -3,7 +3,7 @@
 
 _flutter.buildConfig.builds.forEach((build) => {
   if (build.mainJsPath) {
-    build.mainJsPath += '?v=2.1.48-251';
+    build.mainJsPath += '?v=2.1.49-252';
   }
 });
 

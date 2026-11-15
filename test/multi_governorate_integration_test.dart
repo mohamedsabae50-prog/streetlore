@@ -46,10 +46,7 @@ void main() {
       await places.loadPlaces();
       await tours.loadTours();
 
-      expect(
-        places.availableGovernorateIds,
-        containsAll(['alexandria', 'cairo', 'luxor', 'aswan']),
-      );
+      expect(places.availableGovernorateIds, {'alexandria', 'cairo', 'luxor'});
       expect(places.places, isNotEmpty);
       expect(
         places.places.every((place) => place.governorate == 'alexandria'),
@@ -107,7 +104,7 @@ void main() {
       );
 
       expect(governorates.unlockAndSelectGovernorate('luxor'), isTrue);
-      expect(places.places, hasLength(54));
+      expect(places.places, hasLength(108));
       expect(
         places.places.every((place) => place.governorate == 'luxor'),
         isTrue,
@@ -115,36 +112,35 @@ void main() {
       expect(places.places.where((place) => place.isAtm), isEmpty);
       expect(
         places.places.where((place) => place.category == 'Hotels'),
-        hasLength(6),
+        hasLength(12),
       );
       expect(places.places.where((place) => !place.isVisitable), isEmpty);
       expect(
         places.allPlaces.where(
           (place) => place.governorate == 'luxor' && place.isAtm,
         ),
-        hasLength(6),
+        hasLength(12),
       );
-      expect(tours.tours, hasLength(6));
+      expect(tours.tours, hasLength(12));
       expect(tours.tours.every((tour) => tour.governorate == 'luxor'), isTrue);
 
       expect(governorates.unlockAndSelectGovernorate('aswan'), isTrue);
-      expect(places.places, hasLength(54));
+      expect(governorates.activeGovernorate, 'luxor');
+      expect(places.places, hasLength(108));
       expect(
-        places.places.every(
-          (place) => place.governorate == 'aswan' && place.isVisitable,
-        ),
+        places.places.every((place) => place.governorate == 'luxor'),
         isTrue,
       );
       expect(places.places.where((place) => place.isAtm), isEmpty);
       expect(
         places.places.where((place) => place.category == 'Hotels'),
-        hasLength(6),
+        hasLength(12),
       );
       expect(
         places.allPlaces.where(
-          (place) => place.governorate == 'aswan' && place.isAtm,
+          (place) => place.governorate == 'luxor' && place.isAtm,
         ),
-        hasLength(6),
+        hasLength(12),
       );
       expect(
         MockData.getByCategory(
@@ -160,12 +156,12 @@ void main() {
         ).every((place) => place.isVisitable),
         isTrue,
       );
-      expect(tours.tours, hasLength(6));
-      expect(tours.tours.every((tour) => tour.governorate == 'aswan'), isTrue);
+      expect(tours.tours, hasLength(12));
+      expect(tours.tours.every((tour) => tour.governorate == 'luxor'), isTrue);
       expect(
         tours.tours
             .expand((tour) => tour.places)
-            .every((place) => place.governorate == 'aswan' && !place.isAtm),
+            .every((place) => place.governorate == 'luxor' && !place.isAtm),
         isTrue,
       );
     },
@@ -194,12 +190,20 @@ void main() {
 
     final luxorContext = buildGovernorateGuideContext(
       governorateId: 'luxor',
-      places: [...luxorSeedPlaces, ...cairoSeedPlaces],
-      itineraries: [...luxorSeedItineraries, ...cairoSeedItineraries],
+      places: [...luxorSeedPlaces, ...aswanSeedPlaces, ...cairoSeedPlaces],
+      itineraries: [
+        ...luxorSeedItineraries,
+        ...aswanSeedItineraries,
+        ...cairoSeedItineraries,
+      ],
       locale: 'en',
     );
-    expect(luxorContext, contains('Luxor / الأقصر'));
+    expect(luxorContext, contains('Luxor & Aswan / الأقصر وأسوان'));
     expect(luxorContext, contains('East Bank Royal Temples Trail'));
+    expect(
+      luxorContext,
+      contains('Philae, High Dam, and Unfinished Obelisk Trail'),
+    );
     expect(
       luxorContext,
       isNot(contains('Fatimid Cairo & Al-Muizz Heritage Walk')),
@@ -211,7 +215,8 @@ void main() {
       itineraries: [...aswanSeedItineraries, ...cairoSeedItineraries],
       locale: 'en',
     );
-    expect(aswanContext, contains('Aswan / أسوان'));
+    expect(aswanContext, contains('Luxor & Aswan / الأقصر وأسوان'));
+    expect(aswanContext, contains('Local expertise: Luxor, Aswan, Nubia'));
     expect(
       aswanContext,
       contains('Nubia, Philae, Kom Ombo, Edfu, and Abu Simbel'),
@@ -262,86 +267,82 @@ void main() {
     }
   });
 
-  testWidgets('map selector animates the camera to Cairo, Luxor, and Aswan', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'map selector exposes three unified regions and fits Cairo and Luxor',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final governorates = GovernorateProvider();
-    final places = PlaceProvider(
-      watchRemoteUpdates: false,
-      governorates: governorates,
-      initialPlaces: [
-        ...fallbackPlaces,
-        ...cairoSeedPlaces,
-        ...luxorSeedPlaces,
-        ...aswanSeedPlaces,
-      ],
-    );
-    final tours = TourProvider(governorates: governorates);
-    final trips = TripProvider();
-    final locale = LocaleProvider();
-    addTearDown(governorates.dispose);
-    addTearDown(places.dispose);
-    addTearDown(tours.dispose);
-    addTearDown(trips.dispose);
-    addTearDown(locale.dispose);
-
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: governorates),
-          ChangeNotifierProvider.value(value: places),
-          ChangeNotifierProvider.value(value: tours),
-          ChangeNotifierProvider.value(value: trips),
-          ChangeNotifierProvider.value(value: locale),
+      final governorates = GovernorateProvider();
+      final places = PlaceProvider(
+        watchRemoteUpdates: false,
+        governorates: governorates,
+        initialPlaces: [
+          ...fallbackPlaces,
+          ...cairoSeedPlaces,
+          ...luxorSeedPlaces,
+          ...aswanSeedPlaces,
         ],
-        child: const MaterialApp(home: MapViewScreen()),
-      ),
-    );
-    await tester.pump();
+      );
+      final tours = TourProvider(governorates: governorates);
+      final trips = TripProvider();
+      final locale = LocaleProvider();
+      addTearDown(governorates.dispose);
+      addTearDown(places.dispose);
+      addTearDown(tours.dispose);
+      addTearDown(trips.dispose);
+      addTearDown(locale.dispose);
 
-    final selector = find.byKey(const ValueKey('map-view-governorate-pill'));
-    expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('map-view-header-bar')),
-        matching: selector,
-      ),
-      findsOneWidget,
-    );
-    await tester.tap(selector);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Cairo & Giza'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: governorates),
+            ChangeNotifierProvider.value(value: places),
+            ChangeNotifierProvider.value(value: tours),
+            ChangeNotifierProvider.value(value: trips),
+            ChangeNotifierProvider.value(value: locale),
+          ],
+          child: const MaterialApp(home: MapViewScreen()),
+        ),
+      );
+      await tester.pump();
 
-    expect(governorates.activeGovernorate, 'cairo');
-    final fogLayer = find.byKey(const ValueKey('governorate-cloud-fog'));
-    final camera = MapCamera.of(tester.element(fogLayer));
-    expect(camera.center.latitude, closeTo(30.0444, 0.001));
-    expect(camera.center.longitude, closeTo(31.2357, 0.001));
+      final selector = find.byKey(const ValueKey('map-view-governorate-pill'));
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('map-view-header-bar')),
+          matching: selector,
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(selector);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cairo & Giza'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 700));
 
-    await tester.tap(selector);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Luxor'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
-    expect(governorates.activeGovernorate, 'luxor');
-    final luxorCamera = MapCamera.of(tester.element(fogLayer));
-    expect(luxorCamera.center.latitude, closeTo(25.7050, 0.001));
-    expect(luxorCamera.center.longitude, closeTo(32.6391, 0.001));
+      expect(governorates.activeGovernorate, 'cairo');
+      final fogLayer = find.byKey(const ValueKey('governorate-cloud-fog'));
+      final camera = MapCamera.of(tester.element(fogLayer));
+      expect(camera.center.latitude, closeTo(30.0444, 0.001));
+      expect(camera.center.longitude, closeTo(31.2357, 0.001));
 
-    await tester.tap(selector);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Aswan'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
-    expect(governorates.activeGovernorate, 'aswan');
-    final aswanCamera = MapCamera.of(tester.element(fogLayer));
-    expect(aswanCamera.center.latitude, closeTo(24.0889, 0.001));
-    expect(aswanCamera.center.longitude, closeTo(32.8998, 0.001));
-  });
+      await tester.tap(selector);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Luxor & Aswan'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(governorates.activeGovernorate, 'luxor');
+      final luxorCamera = MapCamera.of(tester.element(fogLayer));
+      expect(luxorCamera.center.latitude, closeTo(24.9500, 0.001));
+      expect(luxorCamera.center.longitude, closeTo(32.7600, 0.001));
+
+      await tester.tap(selector);
+      await tester.pumpAndSettle();
+      expect(find.text('Aswan'), findsNothing);
+      expect(find.text('Luxor & Aswan'), findsNWidgets(2));
+    },
+  );
 }

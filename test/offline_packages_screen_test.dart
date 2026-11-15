@@ -184,12 +184,11 @@ void main() {
     expect(find.byType(OfflinePackagesScreen), findsOneWidget);
     expect(find.text('All Alexandria'), findsOneWidget);
     expect(find.text('All Cairo & Giza'), findsOneWidget);
-    expect(find.text('All Luxor'), findsOneWidget);
+    expect(find.text('All Luxor & Aswan'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -700));
     await tester.pumpAndSettle();
-    expect(find.text('All Aswan'), findsOneWidget);
     expect(find.text('190 places · 15 tours'), findsOneWidget);
-    expect(find.text('60 places · 6 tours'), findsNWidgets(2));
+    expect(find.text('108 places · 12 tours'), findsOneWidget);
 
     final downloadButton = find.byKey(
       const ValueKey('download-pack-all_cairo'),
@@ -202,16 +201,24 @@ void main() {
     expect(find.byKey(const ValueKey('update-pack-all_cairo')), findsOneWidget);
     expect(find.byKey(const ValueKey('remove-pack-all_cairo')), findsOneWidget);
 
-    final aswanDownloadButton = find.byKey(
-      const ValueKey('download-pack-all_aswan'),
+    final luxorDownloadButton = find.byKey(
+      const ValueKey('download-pack-all_luxor'),
     );
-    await tester.ensureVisible(aswanDownloadButton);
-    await tester.tap(aswanDownloadButton);
+    await tester.ensureVisible(luxorDownloadButton);
+    await tester.tap(luxorDownloadButton);
     await tester.pumpAndSettle();
-    expect(offline.isDownloaded('all_aswan', governorateId: 'aswan'), isTrue);
+    expect(offline.isDownloaded('all_luxor', governorateId: 'aswan'), isTrue);
     expect(
-      storage.places.values.where((place) => place.governorate == 'aswan'),
-      hasLength(60),
+      storage.places.values.where(
+        (place) => place.governorate == 'luxor' && place.isVisitable,
+      ),
+      hasLength(108),
+    );
+    expect(
+      storage.places.values.where(
+        (place) => place.governorate == 'luxor' && place.isAtm,
+      ),
+      isEmpty,
     );
 
     final removeButton = find.byKey(const ValueKey('remove-pack-all_cairo'));

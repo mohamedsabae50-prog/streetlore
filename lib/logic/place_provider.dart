@@ -11,6 +11,7 @@ import '../data/cairo_seed.dart' show cairoSeedPlaces;
 import '../data/luxor_seed.dart' show luxorSeedPlaces;
 import '../data/aswan_seed.dart' show aswanSeedPlaces;
 import '../data/mock_data.dart' show MockData, fallbackPlaces;
+import '../data/models/egypt_governorate.dart';
 import '../data/models/map_seed.dart';
 import '../data/models/place_model.dart';
 import 'governorate_provider.dart';
@@ -103,7 +104,9 @@ class PlaceProvider extends ChangeNotifier {
     final copy = _places
         .where(
           (place) =>
-              place.governorate == activeGovernorate && place.isVisitable,
+              EgyptGovernorate.normalizeId(place.governorate) ==
+                  activeGovernorate &&
+              place.isVisitable,
         )
         .toList();
     copy.sort((a, b) {
@@ -114,8 +117,9 @@ class PlaceProvider extends ChangeNotifier {
     return List.unmodifiable(copy);
   }
 
-  Set<String> get availableGovernorateIds =>
-      _places.map((place) => place.governorate).toSet();
+  Set<String> get availableGovernorateIds => _places
+      .map((place) => EgyptGovernorate.normalizeId(place.governorate))
+      .toSet();
   List<PlaceModel> get allPlaces => List.unmodifiable(_places);
 
   bool _loading = false;
