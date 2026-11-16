@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/services/offline_storage_service.dart';
+import '../core/services/global_progress_reset_service.dart';
 import '../core/services/supabase_service.dart';
 import '../data/cairo_seed.dart' show cairoSeedItineraries;
 import '../data/luxor_seed.dart' show luxorSeedItineraries;
@@ -169,23 +170,29 @@ class TourProvider extends ChangeNotifier {
     Set<String> visitedPlaceIds,
     List<PlaceModel> allPlaces,
   ) {
+    if (_replaceCheckedInPlaceIds(visitedPlaceIds, allPlaces)) {
+      notifyListeners();
+    }
+  }
+
+  bool _replaceCheckedInPlaceIds(
+    Set<String> checkedInPlaceIds,
+    List<PlaceModel> allPlaces,
+  ) {
+    final visitableIds = checkedInPlaceIds.where((id) {
+      if (id.trim().toLowerCase().startsWith('atm_')) return false;
+      final place = allPlaces.where((item) => item.id == id).firstOrNull;
+      return place == null || place.isVisitable;
+    }).toSet();
     final changed =
-        !_checkedInPlaceIds.containsAll(visitedPlaceIds) ||
-        !visitedPlaceIds.containsAll(_checkedInPlaceIds) ||
+        !setEquals(_checkedInPlaceIds, visitableIds) ||
         !listEquals(_allPlaces, allPlaces);
     _checkedInPlaceIds
       ..clear()
-      ..addAll(
-        visitedPlaceIds.where((id) {
-          final place = allPlaces.where((item) => item.id == id).firstOrNull;
-          return !id.trim().toLowerCase().startsWith('atm_') &&
-              (place == null || place.isVisitable);
-        }),
-      );
+      ..addAll(visitableIds);
     _allPlaces = List.unmodifiable(allPlaces);
     _checkInsLoaded = true;
-    final completionChanged = _updateAutomaticallyVisitedTours();
-    if (changed || completionChanged) notifyListeners();
+    return _updateAutomaticallyVisitedTours() || changed;
   }
 
   bool _updateAutomaticallyVisitedTours() {
@@ -246,6 +253,7 @@ class TourProvider extends ChangeNotifier {
   }
 
   Future<void> loadTours({bool force = false}) async {
+    await GlobalProgressResetService.ensureReset();
     if (_loading) return;
     if (!force && _tours.isNotEmpty) return;
     final storage = OfflineStorageService.instance;
@@ -436,6 +444,7 @@ class TourProvider extends ChangeNotifier {
   }
 
   Future<void> _loadSavedTours() async {
+    await GlobalProgressResetService.ensureReset();
     final prefs = await SharedPreferences.getInstance();
     final String? toursJson = prefs.getString('saved_tours_data');
     try {
@@ -473,6 +482,7 @@ class TourProvider extends ChangeNotifier {
 
   Future<bool> bootstrapForUser(String userId) async {
     if (userId.isEmpty) return false;
+    await GlobalProgressResetService.ensureReset();
     if (_checkInUserId != userId) {
       _checkInUserId = userId;
       _checkInsLoaded = false;
@@ -510,6 +520,7 @@ class TourProvider extends ChangeNotifier {
   }
 
   Future<void> _syncVisitedFromCheckins(String userId) async {
+    await GlobalProgressResetService.ensureReset();
     if (_tours.isEmpty) {
       try {
         await loadTours();
@@ -527,16 +538,7 @@ class TourProvider extends ChangeNotifier {
           .toSet();
 
       final wasLoaded = _checkInsLoaded;
-      _checkInsLoaded = true;
-      final changed =
-          !_checkedInPlaceIds.containsAll(checkedInPlaceIds) ||
-          !checkedInPlaceIds.containsAll(_checkedInPlaceIds);
-      if (changed) {
-        _checkedInPlaceIds
-          ..clear()
-          ..addAll(checkedInPlaceIds);
-      }
-      _updateAutomaticallyVisitedTours();
+      final changed = _replaceCheckedInPlaceIds(checkedInPlaceIds, _allPlaces);
       if (changed || !wasLoaded) {
         notifyListeners();
         debugPrint(

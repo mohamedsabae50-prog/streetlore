@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/services/global_progress_reset_service.dart';
 import '../core/services/supabase_service.dart';
 import '../data/models/place_model.dart';
 
@@ -34,6 +35,7 @@ class TripProvider extends ChangeNotifier {
 
   /// Reconcile checked-in place IDs from the current user's server records.
   Future<void> _loadVisitedFromSupabase() async {
+    await GlobalProgressResetService.ensureReset();
     final client = SupabaseService.instance.clientOrNull;
     if (client == null) {
       _replaceVisitedPlaces('', const <String>{});

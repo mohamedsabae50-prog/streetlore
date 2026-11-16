@@ -10,6 +10,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'core/constants/app_colors.dart';
+import 'core/services/global_progress_reset_service.dart';
 import 'core/services/offline_storage_service.dart';
 import 'core/services/revenuecat_service.dart';
 import 'core/services/supabase_service.dart';
@@ -122,6 +123,7 @@ Future<void> _runApplication() async {
   unawaited(RemoteConfigService.instance.initialize());
 
   await OfflineStorageService.instance.init();
+  await GlobalProgressResetService.ensureReset();
   await SupabaseService.instance.init();
   await SyncQueueService.instance.init();
   final connectivityProvider = ConnectivityProvider();

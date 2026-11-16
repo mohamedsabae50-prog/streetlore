@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/services/global_progress_reset_service.dart';
 import '../core/services/supabase_service.dart';
 
 /// StreakProvider tracks the user's DAILY activity, not the total
@@ -48,6 +49,7 @@ class StreakProvider extends ChangeNotifier {
   }
 
   Future<void> setUserId(String userId) async {
+    await GlobalProgressResetService.ensureReset();
     if (userId == _userId) return;
     await _save();
     _userId = userId;
@@ -61,6 +63,7 @@ class StreakProvider extends ChangeNotifier {
   }
 
   Future<void> _load(String userId) async {
+    await GlobalProgressResetService.ensureReset();
     final prefs = await SharedPreferences.getInstance();
     if (_userId != userId) return;
     final raw = prefs.getString('$_kPrefix$userId');
@@ -88,6 +91,7 @@ class StreakProvider extends ChangeNotifier {
   }
 
   Future<void> _save() async {
+    await GlobalProgressResetService.ensureReset();
     if (_userId.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
@@ -115,6 +119,7 @@ class StreakProvider extends ChangeNotifier {
   ///   - `_longestStreak` is updated only when current exceeds it.
   /// Returns the current streak after the call.
   Future<int> registerVisit({DateTime? when}) async {
+    await GlobalProgressResetService.ensureReset();
     if (_userId.isEmpty) return _currentStreak;
     final day = _dateOnly(when ?? DateTime.now());
     if (!_visitedDates.add(_dateKey(day))) return currentStreak;
@@ -140,6 +145,7 @@ class StreakProvider extends ChangeNotifier {
   /// of visit timestamps (used when the app knows about visits that
   /// happened while offline or via a different code path).
   Future<void> recomputeFromTimestamps(Iterable<DateTime> visits) async {
+    await GlobalProgressResetService.ensureReset();
     if (_userId.isEmpty) return;
     final days = <String>{};
     for (final v in visits) {

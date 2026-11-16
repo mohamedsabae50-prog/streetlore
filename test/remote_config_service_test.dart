@@ -42,8 +42,8 @@ void main() {
     expect(config.annualPriceAr, '199 ج.م / سنة');
     expect(config.annualUsdLabel, '~\$4.99 USD');
     expect(config.promoBannerEnabled, isFalse);
-    expect(config.latestAppVersion, '2.1.52');
-    expect(config.latestBuildNumber, 255);
+    expect(config.latestAppVersion, '2.1.53');
+    expect(config.latestBuildNumber, 256);
     expect(
       config.directApkUrl,
       'https://github.com/mohamedsabae50-prog/streetlore/releases/latest/download/app-release.apk',

@@ -7,6 +7,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import 'global_progress_reset_service.dart';
 import 'offline_storage_service.dart';
 import 'supabase_service.dart';
 
@@ -22,6 +23,8 @@ class SyncQueueService {
   bool get isOnline => _isOnline;
 
   Future<void> init() async {
+    await GlobalProgressResetService.ensureReset();
+    await GlobalProgressResetService.clearPendingCheckinQueue();
     if (_subscription != null) return;
     if (!Hive.isBoxOpen(OfflineStorageService.syncQueueBox)) {
       debugPrint(
@@ -54,6 +57,8 @@ class SyncQueueService {
     double? lat,
     double? lng,
   }) async {
+    await GlobalProgressResetService.ensureReset();
+    await GlobalProgressResetService.clearPendingCheckinQueue();
     if (!Hive.isBoxOpen(OfflineStorageService.syncQueueBox)) {
       debugPrint(
         'SyncQueueService cannot queue a check-in: Hive is not ready.',
@@ -81,6 +86,8 @@ class SyncQueueService {
   }
 
   Future<void> flush() async {
+    await GlobalProgressResetService.ensureReset();
+    await GlobalProgressResetService.clearPendingCheckinQueue();
     if (_flushing ||
         !_isOnline ||
         !Hive.isBoxOpen(OfflineStorageService.syncQueueBox)) {

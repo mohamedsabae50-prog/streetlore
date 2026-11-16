@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/services/global_progress_reset_service.dart';
 import '../data/models/gamification_stats.dart';
 import '../data/achievement_catalog.dart';
 import '../core/services/supabase_service.dart';
@@ -77,10 +78,12 @@ class GamificationProvider extends ChangeNotifier {
   }
 
   static const _kKeyPrefix = 'gamification_stats_v2';
+  static const _postResetActionKeyPrefix = 'gamification_post_reset_action_';
   int _loadGeneration = 0;
+  Future<void> _loadFuture = Future<void>.value();
 
   GamificationProvider() {
-    _load(_stats.userId);
+    _loadFuture = _load(_stats.userId);
   }
 
   void syncWithAuth(AuthProvider auth) {
@@ -92,13 +95,16 @@ class GamificationProvider extends ChangeNotifier {
     _stats = GamificationStats(userId: userId, userName: userName);
     _activity = const [];
     notifyListeners();
-    _load(userId);
+    _loadFuture = _load(userId);
   }
 
   String _keyForUser(String userId) => '${_kKeyPrefix}_$userId';
   String _activityKeyForUser(String userId) => 'gamification_activity_$userId';
+  String _postResetActionKeyForUser(String userId) =>
+      '$_postResetActionKeyPrefix$userId';
 
   Future<void> _load(String userId) async {
+    await GlobalProgressResetService.ensureReset();
     final generation = ++_loadGeneration;
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_keyForUser(userId));
@@ -133,14 +139,45 @@ class GamificationProvider extends ChangeNotifier {
 
   Future<void> bootstrapForUser(String userId) async {
     if (userId.isEmpty) return;
+    await GlobalProgressResetService.ensureReset();
+    await _loadFuture;
+    if (_stats.userId != userId) return;
+
     final remote = await SupabaseService.instance.pullStats(userId);
     if (_stats.userId != userId) return;
-    if (remote == null) {
-      debugPrint(
-        'GamificationProvider: no remote stats for $userId, keeping local',
+
+    final prefs = await SharedPreferences.getInstance();
+    final hasPostResetAction =
+        prefs.getBool(_postResetActionKeyForUser(userId)) ?? false;
+    final serverProgressWasReset =
+        remote == null ||
+        (remote.totalPoints == 0 &&
+            remote.placesVisited == 0 &&
+            remote.badges.isEmpty);
+    if (serverProgressWasReset) {
+      if (hasPostResetAction) return;
+
+      _loadGeneration++;
+      _stats = _stats.copyWith(
+        totalPoints: 0,
+        placesVisited: 0,
+        reviewsPosted: 0,
+        photosUploaded: 0,
+        chatMessagesSent: 0,
+        badges: const [],
+        level: 'Explorer',
+        currentStreak: 0,
+        longestStreak: 0,
+        totalVisitDays: 0,
+        clearLastVisitDate: true,
       );
+      _activity = const [];
+      await prefs.remove(_activityKeyForUser(userId));
+      await _save(pushToServer: false);
+      notifyListeners();
       return;
     }
+
     _loadGeneration++;
     final local = _stats;
 
@@ -178,17 +215,19 @@ class GamificationProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> _save() async {
+  Future<void> _save({bool pushToServer = true}) async {
+    await GlobalProgressResetService.ensureReset();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       _keyForUser(_stats.userId),
       jsonEncode(_stats.toJson()),
     );
 
-    SupabaseService.instance.pushStats(_stats);
+    if (pushToServer) SupabaseService.instance.pushStats(_stats);
   }
 
   Future<void> recordActivity(String type, {String? placeId}) async {
+    await GlobalProgressResetService.ensureReset();
     final event = GamificationActivity(
       type: type,
       occurredAt: DateTime.now(),
@@ -223,6 +262,8 @@ class GamificationProvider extends ChangeNotifier {
     double? lat,
     double? lng,
   }) async {
+    await GlobalProgressResetService.ensureReset();
+    await _loadFuture;
     if (action == 'check_in') {
       _lastCheckinError = null;
     }
@@ -254,6 +295,9 @@ class GamificationProvider extends ChangeNotifier {
         }
       }
     }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_postResetActionKeyForUser(_stats.userId), true);
 
     // For check_ins, let the streak provider update its own state
     // BEFORE we re-evaluate achievements (achievements depend on

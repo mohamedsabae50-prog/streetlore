@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/models/place_model.dart';
+import '../core/services/global_progress_reset_service.dart';
 import '../data/achievement_catalog.dart';
 import '../data/models/gamification_stats.dart';
 import '../core/services/supabase_service.dart';
@@ -139,6 +140,7 @@ class AchievementProvider extends ChangeNotifier {
   }
 
   Future<void> _load() async {
+    await GlobalProgressResetService.ensureReset();
     final loadGeneration = ++_loadGeneration;
     final userKey = _userKey;
     final prefs = await SharedPreferences.getInstance();
@@ -175,6 +177,7 @@ class AchievementProvider extends ChangeNotifier {
   }
 
   Future<void> _save() async {
+    await GlobalProgressResetService.ensureReset();
     final prefs = await SharedPreferences.getInstance();
     final entries = _progress.entries
         .map((e) {

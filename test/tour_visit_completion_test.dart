@@ -34,6 +34,10 @@ ItineraryModel _tour(List<PlaceModel> places, {String status = 'published'}) =>
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   test('tour completes when every stop ID is visited', () {
     final tour = _tour([
       _place('one', 'One'),
@@ -73,6 +77,22 @@ void main() {
       isTrue,
     );
   });
+
+  test(
+    'an empty check-in snapshot clears previously visited place IDs',
+    () async {
+      final provider = TourProvider();
+
+      provider.syncVisitedPlaces({'old-place'}, const []);
+      expect(provider.checkedInPlaceIds, {'old-place'});
+
+      provider.syncVisitedPlaces(const {}, const []);
+      expect(provider.checkedInPlaceIds, isEmpty);
+
+      await Future<void>.delayed(Duration.zero);
+      provider.dispose();
+    },
+  );
 
   test(
     'explicitly completed tours count as visited without stops checked in',
