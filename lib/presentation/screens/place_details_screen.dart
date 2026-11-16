@@ -21,7 +21,6 @@ import '../../core/widgets/shimmer_image.dart';
 import '../../data/mock_data.dart';
 import '../../data/models/place_model.dart';
 import '../../logic/auth_provider.dart';
-import '../../logic/connectivity_provider.dart';
 import '../../logic/blocked_users_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/review_provider.dart';
@@ -30,8 +29,6 @@ import '../../logic/trip_provider.dart';
 import '../../logic/tour_provider.dart';
 import '../../logic/gamification_provider.dart';
 import '../../logic/locale_provider.dart';
-import '../../logic/offline_provider.dart';
-import '../../logic/place_photos_provider.dart';
 import '../../data/models/review_model.dart';
 import '../../data/models/social_user.dart';
 import '../../l10n/app_strings.dart';
@@ -1093,133 +1090,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                     onTap: _openMaps,
                                   ),
                                 ),
-                                if (context.watch<AuthProvider>().isPro) ...[
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Consumer<OfflineProvider>(
-                                      builder: (context, offline, _) {
-                                        final isOnline =
-                                            context
-                                                .watch<ConnectivityProvider>()
-                                                .hasInternet !=
-                                            false;
-                                        final cached = offline.isCached(
-                                          place.id,
-                                          governorateId: place.governorate,
-                                        );
-                                        final downloading = offline
-                                            .isDownloadingPlace(
-                                              place.id,
-                                              governorateId: place.governorate,
-                                            );
-                                        return _QuickAction(
-                                          icon: cached
-                                              ? Icons.cloud_done_rounded
-                                              : Icons.cloud_download_outlined,
-                                          label: downloading
-                                              ? context.tr(
-                                                  'downloading_offline',
-                                                )
-                                              : cached
-                                              ? context.tr('downloaded')
-                                              : !isOnline
-                                              ? context.tr(
-                                                  'offline_download_requires_internet',
-                                                )
-                                              : context.tr('download_offline'),
-                                          color: downloading
-                                              ? context.quickActionPurple
-                                              : cached
-                                              ? context.quickActionSuccess
-                                              : context.quickActionPurple,
-                                          backgroundColor: cached
-                                              ? context.quickActionSuccessBg
-                                              : context.quickActionPurpleBg,
-                                          isLoading: downloading,
-                                          onTap:
-                                              downloading ||
-                                                  (!cached && !isOnline)
-                                              ? null
-                                              : () async {
-                                                  if (!context
-                                                      .read<AuthProvider>()
-                                                      .isPro) {
-                                                    return;
-                                                  }
-                                                  HapticFeedback.lightImpact();
-                                                  if (cached) {
-                                                    await offline
-                                                        .removeCachedPlace(
-                                                          place.id,
-                                                          governorateId:
-                                                              place.governorate,
-                                                        );
-                                                    if (!context.mounted) {
-                                                      return;
-                                                    }
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          context.tr(
-                                                            'removed_offline',
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    );
-                                                  } else {
-                                                    final additionalImageUrls =
-                                                        context
-                                                            .read<
-                                                              PlacePhotosProvider
-                                                            >()
-                                                            .photosFor(
-                                                              place.id,
-                                                              officialImageUrls:
-                                                                  place
-                                                                      .officialImages,
-                                                            )
-                                                            .map(
-                                                              (photo) => photo
-                                                                  .imageUrl,
-                                                            )
-                                                            .toList(
-                                                              growable: false,
-                                                            );
-                                                    final result = await offline
-                                                        .downloadSinglePlace(
-                                                          place,
-                                                          additionalImageUrls:
-                                                              additionalImageUrls,
-                                                        );
-                                                    if (!context.mounted) {
-                                                      return;
-                                                    }
-                                                    final ok =
-                                                        result is DownloadOk;
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          ok
-                                                              ? context.tr(
-                                                                  'downloaded',
-                                                                )
-                                                              : context.tr(
-                                                                  'download_failed',
-                                                                ),
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-                                                },
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
                           ),

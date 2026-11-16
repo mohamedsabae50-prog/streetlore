@@ -187,8 +187,8 @@ void main() {
     expect(find.text('All Luxor & Aswan'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -700));
     await tester.pumpAndSettle();
-    expect(find.text('190 places · 15 tours'), findsOneWidget);
-    expect(find.text('108 places · 12 tours'), findsOneWidget);
+    expect(find.text('194 places · 15 tours'), findsOneWidget);
+    expect(find.text('112 places · 12 tours'), findsOneWidget);
 
     final downloadButton = find.byKey(
       const ValueKey('download-pack-all_cairo'),
@@ -212,7 +212,7 @@ void main() {
       storage.places.values.where(
         (place) => place.governorate == 'luxor' && place.isVisitable,
       ),
-      hasLength(108),
+      hasLength(112),
     );
     expect(
       storage.places.values.where(

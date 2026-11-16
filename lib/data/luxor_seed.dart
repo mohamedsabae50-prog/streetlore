@@ -1136,6 +1136,23 @@ final List<PlaceModel> luxorSeedPlaces = List<PlaceModel>.unmodifiable([
     descriptionAr:
         'تخدم ماكينة بنك مصر منطقة الفنادق بشارع خالد بن الوليد والممشى القريب من النيل. توفر وصولاً سهلاً إلى النقد، مع العلم أن حدود البطاقة الأجنبية يحددها الصراف ومصرف البطاقة معاً.',
   )),
+  _buildLuxorPlace((
+    id: 'luxor_esna_khnum_temple',
+    nameEn: 'Temple of Khnum at Esna',
+    nameAr: 'معبد خنوم بإسنا',
+    category: 'Historical',
+    lat: 25.2933,
+    lng: 32.5561,
+    areaEn: 'Esna',
+    areaAr: 'إسنا',
+    openHours: '07:00 AM - 05:00 PM',
+    priceLocalEgp: 40,
+    priceForeignerEgp: 300,
+    descriptionEn:
+        'The Temple of Khnum at Esna honors the ram-headed creator god in a sanctuary whose surviving hypostyle hall is famed for its carved columns and astronomical ceiling. The monument stands below modern street level, revealing how the ancient town accumulated around the temple over centuries.',
+    descriptionAr:
+        'يكرّم معبد خنوم بإسنا الإله الخالق ذي رأس الكبش، وتشتهر قاعته الباقية بأعمدتها المنقوشة وسقفها الفلكي. يقع الأثر أسفل مستوى الشارع الحديث، كاشفاً كيف تراكمت المدينة القديمة حول المعبد عبر القرون.',
+  )),
 ]);
 
 final Map<String, PlaceModel> _luxorPlacesById = {

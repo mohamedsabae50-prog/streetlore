@@ -348,6 +348,14 @@ const Map<String, String> cairoImageUrls = {
       "https://upload.wikimedia.org/wikipedia/commons/3/3e/Cairo%2C_mosque_in_Mohandessin_during_Ramadan%2C_Egypt%2C_Oct_2004.jpg?utm_source=ar.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
   "new_capital_arts_culture_city":
       "https://upload.wikimedia.org/wikipedia/commons/7/7a/New_Capital_Egypt_Architectural_Landscape.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+  "cairo_abusir_pyramids_necropolis":
+      "https://upload.wikimedia.org/wikipedia/commons/3/32/Pyramids_of_Abusir%2C_Ancient_Egypt.jpg",
+  "cairo_helwan_japanese_garden":
+      "https://upload.wikimedia.org/wikipedia/commons/3/3b/Helwan_Japanese_Garden.jpg",
+  "cairo_helwan_wax_museum":
+      "https://upload.wikimedia.org/wikipedia/commons/0/02/HelwanWaxMuseum.jpg",
+  "cairo_wissa_wassef_art_center":
+      "https://upload.wikimedia.org/wikipedia/commons/5/57/Teppich3.jpg",
   "nine_pyramid_lounge_giza":
       "https://upload.wikimedia.org/wikipedia/commons/7/7a/2012_Cairo_6872889766.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
   "orman_botanical_garden_giza":

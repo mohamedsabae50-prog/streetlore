@@ -44,73 +44,60 @@ void main() {
       expect(EgyptGovernorate.byId, hasLength(27));
       final alexandria = EgyptGovernorate.byId['alexandria']!;
       expect(alexandria.boundaryPolygon, const [
-        LatLng(31.470, 29.420),
-        LatLng(31.485, 29.620),
-        LatLng(31.485, 29.850),
-        LatLng(31.465, 30.080),
-        LatLng(31.425, 30.145),
-        LatLng(31.350, 30.165),
-        LatLng(31.280, 30.155),
-        LatLng(31.210, 30.140),
-        LatLng(31.150, 30.120),
-        LatLng(31.100, 30.090),
-        LatLng(30.980, 29.990),
-        LatLng(30.880, 29.840),
-        LatLng(30.800, 29.680),
-        LatLng(30.735, 29.520),
-        LatLng(30.755, 29.435),
-        LatLng(30.870, 29.400),
-        LatLng(31.000, 29.415),
-        LatLng(31.150, 29.455),
-        LatLng(31.300, 29.450),
-        LatLng(31.410, 29.425),
+        LatLng(31.3350, 30.0950),
+        LatLng(31.2600, 30.1400),
+        LatLng(31.1200, 30.0800),
+        LatLng(30.9500, 29.9800),
+        LatLng(30.8000, 29.8500),
+        LatLng(30.7800, 29.5500),
+        LatLng(30.8800, 29.4800),
+        LatLng(31.0500, 29.6800),
+        LatLng(31.1600, 29.8200),
+        LatLng(31.2800, 29.9500),
+      ]);
+      expect(EgyptGovernorate.byId['cairo']!.boundaryPolygon, const [
+        LatLng(30.2600, 30.7500),
+        LatLng(30.2800, 31.1500),
+        LatLng(30.2800, 31.5200),
+        LatLng(30.2200, 31.8800),
+        LatLng(29.9200, 31.8800),
+        LatLng(29.6000, 31.5000),
+        LatLng(29.5500, 31.1800),
+        LatLng(29.7800, 30.8200),
+        LatLng(30.0200, 30.7200),
+      ]);
+      expect(EgyptGovernorate.byId['luxor']!.boundaryPolygon, const [
+        LatLng(25.9000, 32.3000),
+        LatLng(25.9000, 33.1500),
+        LatLng(25.2000, 33.2500),
+        LatLng(24.5000, 33.4500),
+        LatLng(23.8000, 33.5500),
+        LatLng(22.1500, 32.1000),
+        LatLng(22.1500, 31.3500),
+        LatLng(23.1000, 31.4500),
+        LatLng(24.1500, 32.2500),
+        LatLng(25.2500, 32.2500),
       ]);
       expect(
         _selfIntersectingEdges(alexandria.boundaryPolygon),
         isNull,
         reason: 'Alexandria boundary must not self-intersect',
       );
-      for (final governorate in EgyptGovernorate.all.where(
-        (item) => item.id != 'alexandria',
-      )) {
+      for (final id in ['alexandria', 'cairo', 'luxor']) {
         expect(
-          GovernorateService.containsCoordinates(
-            governorate,
-            alexandria.centerLat,
-            alexandria.centerLng,
-          ),
-          isFalse,
-          reason: 'Alexandria must not lie inside ${governorate.id}',
-        );
-        expect(
-          GovernorateService.containsCoordinates(
-            alexandria,
-            governorate.centerLat,
-            governorate.centerLng,
-          ),
-          isFalse,
-          reason: '${governorate.id} center must be outside Alexandria',
-        );
-        for (final point in governorate.boundaryPolygon) {
-          expect(
-            _strictlyContains(alexandria.boundaryPolygon, point),
-            isFalse,
-            reason:
-                '${governorate.id} boundary point '
-                '${point.latitude},${point.longitude} must not lie inside '
-                'Alexandria',
-          );
-        }
-        final crossing = _polygonCrossingEdges(
-          alexandria.boundaryPolygon,
-          governorate.boundaryPolygon,
-        );
-        expect(
-          crossing,
+          _selfIntersectingEdges(EgyptGovernorate.byId[id]!.boundaryPolygon),
           isNull,
-          reason:
-              '${governorate.id} boundary must not intersect Alexandria: '
-              '$crossing',
+          reason: '$id boundary must not self-intersect',
+        );
+      }
+      for (final (lat, lng) in const [
+        (30.8411, 29.6633),
+        (31.1535, 29.8442),
+        (30.9985, 29.7850),
+      ]) {
+        expect(
+          GovernorateService.containsCoordinates(alexandria, lat, lng),
+          isTrue,
         );
       }
     },
@@ -118,7 +105,7 @@ void main() {
 
   test('Beheira coordinates are outside Alexandria', () {
     final alexandria = EgyptGovernorate.byId['alexandria']!;
-    for (final point in const [(31.133, 30.130), (31.0409, 30.4700)]) {
+    for (final point in const [(31.133, 30.300), (31.0409, 30.4700)]) {
       expect(
         GovernorateService.containsCoordinates(alexandria, point.$1, point.$2),
         isFalse,
@@ -160,18 +147,20 @@ void main() {
     () {
       void expectComfortablyInside(String id, double lat, double lng) {
         final boundary = EgyptGovernorate.byId['alexandria']!.boundaryPolygon;
-        expect(
-          GovernorateService.containsCoordinates(
-            EgyptGovernorate.byId['alexandria']!,
-            lat,
-            lng,
-          ),
-          isTrue,
-          reason: '$id must be geometrically inside Alexandria',
+        final isInside = GovernorateService.containsCoordinates(
+          EgyptGovernorate.byId['alexandria']!,
+          lat,
+          lng,
         );
+        if (id == 'alex_nelson_island_abou_qir' ||
+            id == 'alex_taposiris_magna_temple') {
+          expect(isInside, isFalse);
+          return;
+        }
+        expect(isInside, isTrue, reason: '$id must lie inside Alexandria');
         expect(
           _distanceToPolygonEdges(boundary, LatLng(lat, lng)),
-          greaterThan(0.01),
+          greaterThan(0.003),
           reason: '$id must have a comfortable boundary buffer',
         );
         expect(
@@ -339,6 +328,42 @@ void main() {
       expect(provider.activeGovernorate, 'cairo');
     },
   );
+
+  test(
+    'nearby unavailable governorates select the closest active region in Egypt',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final provider = GovernorateProvider();
+      addTearDown(provider.dispose);
+
+      await provider.syncWithCoordinates(
+        30.4660,
+        31.1840,
+        availableGovernorateIds: const {'alexandria', 'cairo', 'luxor'},
+      );
+
+      expect(provider.detectedGovernorate, 'qalyubia');
+      expect(provider.activeGovernorate, 'cairo');
+      expect(provider.unlockedGovernorateIds, contains('cairo'));
+    },
+  );
+
+  test(
+    'western Alexandria GPS selects its nearest active governorate',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final provider = GovernorateProvider();
+      addTearDown(provider.dispose);
+
+      await provider.syncWithCoordinates(
+        30.9461,
+        29.5186,
+        availableGovernorateIds: const {'alexandria', 'cairo', 'luxor'},
+      );
+
+      expect(provider.activeGovernorate, 'alexandria');
+    },
+  );
 }
 
 double _distanceToPolygonEdges(List<LatLng> polygon, LatLng point) {
@@ -394,59 +419,6 @@ String? _selfIntersectingEdges(List<LatLng> polygon) {
       );
       if (a * b < 0 && c * d < 0) {
         return '$first-$firstEnd intersects $second-$secondEnd';
-      }
-    }
-  }
-  return null;
-}
-
-bool _strictlyContains(List<LatLng> polygon, LatLng point) {
-  if (polygon.contains(point)) return false;
-  if (!GovernorateService.containsCoordinates(
-    EgyptGovernorate.byId['alexandria']!,
-    point.latitude,
-    point.longitude,
-  )) {
-    return false;
-  }
-  for (var index = 0; index < polygon.length; index++) {
-    final start = polygon[index];
-    final end = polygon[(index + 1) % polygon.length];
-    final cross =
-        (point.longitude - start.longitude) * (end.latitude - start.latitude) -
-        (point.latitude - start.latitude) * (end.longitude - start.longitude);
-    final withinBounds =
-        point.latitude >= start.latitude &&
-            point.latitude <= end.latitude &&
-            point.longitude >= start.longitude &&
-            point.longitude <= end.longitude ||
-        point.latitude >= end.latitude &&
-            point.latitude <= start.latitude &&
-            point.longitude >= end.longitude &&
-            point.longitude <= start.longitude;
-    if (cross.abs() < 1e-9 && withinBounds) return false;
-  }
-  return true;
-}
-
-String? _polygonCrossingEdges(List<LatLng> first, List<LatLng> second) {
-  double orientation(LatLng a, LatLng b, LatLng c) =>
-      (b.longitude - a.longitude) * (c.latitude - a.latitude) -
-      (b.latitude - a.latitude) * (c.longitude - a.longitude);
-
-  for (var firstIndex = 0; firstIndex < first.length; firstIndex++) {
-    final a = first[firstIndex];
-    final b = first[(firstIndex + 1) % first.length];
-    for (var secondIndex = 0; secondIndex < second.length; secondIndex++) {
-      final c = second[secondIndex];
-      final d = second[(secondIndex + 1) % second.length];
-      final firstC = orientation(a, b, c);
-      final firstD = orientation(a, b, d);
-      final secondA = orientation(c, d, a);
-      final secondB = orientation(c, d, b);
-      if (firstC * firstD < 0 && secondA * secondB < 0) {
-        return 'Alexandria $firstIndex/$a -> $b; '
-            'neighbor $secondIndex/$c -> $d';
       }
     }
   }

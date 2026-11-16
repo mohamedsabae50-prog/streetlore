@@ -59,7 +59,7 @@ void main() {
       );
 
       expect(governorates.unlockAndSelectGovernorate('cairo'), isTrue);
-      expect(places.places, hasLength(170));
+      expect(places.places, hasLength(174));
       expect(
         places.places.every((place) => place.governorate == 'cairo'),
         isTrue,
@@ -104,7 +104,7 @@ void main() {
       );
 
       expect(governorates.unlockAndSelectGovernorate('luxor'), isTrue);
-      expect(places.places, hasLength(108));
+      expect(places.places, hasLength(112));
       expect(
         places.places.every((place) => place.governorate == 'luxor'),
         isTrue,
@@ -126,7 +126,7 @@ void main() {
 
       expect(governorates.unlockAndSelectGovernorate('aswan'), isTrue);
       expect(governorates.activeGovernorate, 'luxor');
-      expect(places.places, hasLength(108));
+      expect(places.places, hasLength(112));
       expect(
         places.places.every((place) => place.governorate == 'luxor'),
         isTrue,

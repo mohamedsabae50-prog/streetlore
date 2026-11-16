@@ -145,6 +145,11 @@ class _MapViewScreenState extends State<MapViewScreen>
   bool _routeArrived = false;
   bool _arrivalAnnounced = false;
   StreamSubscription<LatLng>? _routePositionSubscription;
+  bool _routePlannerOpen = false;
+  List<PlaceModel> _plannedStops = const [];
+  List<LatLng> _plannedRoute = const [];
+  bool _plannedRouteLoading = false;
+  int _routePlanRequestId = 0;
 
   StreamSubscription<Position>? _positionSubscription;
   StreamSubscription<PlaceModel>? _autoCheckInSubscription;
@@ -190,7 +195,13 @@ class _MapViewScreenState extends State<MapViewScreen>
       _selectedPlace = null;
       _selectedCategories.clear();
       _atms = _curatedAtmsFor(id);
+      _plannedStops = _plannedStops
+          .where(
+            (place) => EgyptGovernorate.normalizeId(place.governorate) == id,
+          )
+          .toList(growable: false);
     });
+    if (_routePlannerOpen) unawaited(_refreshPlannedRoute());
     if (id == 'alexandria') {
       unawaited(_loadNearbyAtms(_userLocation ?? _alexCenter));
     }
@@ -386,13 +397,23 @@ class _MapViewScreenState extends State<MapViewScreen>
   }
 
   Future<LatLng> _resolveRouteOrigin() async {
-    if (_userLocation != null) return _userLocation!;
+    final destinationGovernorate = _routeDestinationGovernorate;
+    if (_userLocation != null &&
+        destinationGovernorate != null &&
+        _isInsideGovernorate(_userLocation!, destinationGovernorate)) {
+      return _userLocation!;
+    }
     if (widget.routeLocationUpdates != null) {
       return _routeReferencePoint();
     }
     try {
       final lastKnown = await Geolocator.getLastKnownPosition();
-      if (lastKnown != null) {
+      if (lastKnown != null &&
+          destinationGovernorate != null &&
+          _isInsideGovernorate(
+            LatLng(lastKnown.latitude, lastKnown.longitude),
+            destinationGovernorate,
+          )) {
         final location = LatLng(lastKnown.latitude, lastKnown.longitude);
         _updateUserLocation(location);
         return location;
@@ -416,8 +437,11 @@ class _MapViewScreenState extends State<MapViewScreen>
           timeLimit: const Duration(seconds: 8),
         );
         final location = LatLng(current.latitude, current.longitude);
-        if (mounted) _updateUserLocation(location);
-        return location;
+        if (destinationGovernorate != null &&
+            _isInsideGovernorate(location, destinationGovernorate)) {
+          if (mounted) _updateUserLocation(location);
+          return location;
+        }
       }
     } catch (error, stackTrace) {
       debugPrint(
@@ -425,7 +449,44 @@ class _MapViewScreenState extends State<MapViewScreen>
         '$error\n$stackTrace',
       );
     }
-    return _routeReferencePoint();
+    return destinationGovernorate == null
+        ? _routeReferencePoint()
+        : LatLng(
+            destinationGovernorate.centerLat,
+            destinationGovernorate.centerLng,
+          );
+  }
+
+  EgyptGovernorate? get _routeDestinationGovernorate {
+    final destination = _routeDestination;
+    if (destination == null) return null;
+    final matchingPlace = context
+        .read<PlaceProvider>()
+        .allPlaces
+        .where((place) => place.id == destination.id)
+        .firstOrNull;
+    final id = matchingPlace == null
+        ? context.read<GovernorateProvider>().activeGovernorate
+        : EgyptGovernorate.normalizeId(matchingPlace.governorate);
+    return EgyptGovernorate.byId[id];
+  }
+
+  bool _isInsideGovernorate(LatLng point, EgyptGovernorate governorate) {
+    var inside = false;
+    final polygon = governorate.boundaryPolygon;
+    for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      final a = polygon[i];
+      final b = polygon[j];
+      final crosses =
+          (a.latitude > point.latitude) != (b.latitude > point.latitude) &&
+          point.longitude <
+              (b.longitude - a.longitude) *
+                      (point.latitude - a.latitude) /
+                      (b.latitude - a.latitude) +
+                  a.longitude;
+      if (crosses) inside = !inside;
+    }
+    return inside;
   }
 
   LatLng _routeReferencePoint() {
@@ -472,7 +533,7 @@ class _MapViewScreenState extends State<MapViewScreen>
       setState(() {
         _fullRoute = route;
         _routeLoading = false;
-        _userLocation ??= origin;
+        _userLocation = origin;
       });
       _applyRouteProgress(origin);
       _fitToActiveRoute();
@@ -507,10 +568,361 @@ class _MapViewScreenState extends State<MapViewScreen>
     }
   }
 
+  void _toggleRoutePlanner() {
+    setState(() {
+      _routePlannerOpen = !_routePlannerOpen;
+      _selectedPlace = null;
+      if (!_routePlannerOpen) {
+        _plannedStops = const [];
+        _plannedRoute = const [];
+        _plannedRouteLoading = false;
+        _routePlanRequestId++;
+      }
+    });
+    if (_routePlannerOpen) unawaited(_refreshPlannedRoute());
+  }
+
+  void _togglePlannedStop(PlaceModel place) {
+    final selectedIndex = _plannedStops.indexWhere(
+      (stop) => stop.id == place.id,
+    );
+    setState(() {
+      final nextStops = List<PlaceModel>.of(_plannedStops);
+      if (selectedIndex >= 0) {
+        nextStops.removeAt(selectedIndex);
+      } else {
+        nextStops.add(place);
+      }
+      _plannedStops = List.unmodifiable(nextStops);
+      _selectedPlace = null;
+    });
+    unawaited(_refreshPlannedRoute());
+  }
+
+  LatLng _routePlannerOrigin(EgyptGovernorate governorate) {
+    final location = _userLocation;
+    if (location != null && _isInsideGovernorate(location, governorate)) {
+      return location;
+    }
+    return LatLng(governorate.centerLat, governorate.centerLng);
+  }
+
+  List<PlaceModel> _sortedPlannerPlaces(
+    Iterable<PlaceModel> places,
+    EgyptGovernorate governorate,
+  ) {
+    final origin = _plannedStops.isNotEmpty
+        ? LatLng(_plannedStops.last.lat, _plannedStops.last.lng)
+        : _routePlannerOrigin(governorate);
+    final sorted = places.where((place) {
+      return place.isVisitable &&
+          EgyptGovernorate.normalizeId(place.governorate) == governorate.id;
+    }).toList();
+    sorted.sort((a, b) {
+      final distanceComparison = MapRouteService.distanceMeters(
+        origin,
+        LatLng(a.lat, a.lng),
+      ).compareTo(MapRouteService.distanceMeters(origin, LatLng(b.lat, b.lng)));
+      if (distanceComparison != 0) return distanceComparison;
+      return a.id.compareTo(b.id);
+    });
+    return sorted;
+  }
+
+  Future<void> _refreshPlannedRoute() async {
+    final requestId = ++_routePlanRequestId;
+    final governorate = EgyptGovernorate
+        .byId[context.read<GovernorateProvider>().activeGovernorate];
+    final stops = _plannedStops;
+    if (!_routePlannerOpen || governorate == null || stops.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _plannedRoute = const [];
+        _plannedRouteLoading = false;
+      });
+      return;
+    }
+    setState(() => _plannedRouteLoading = true);
+    try {
+      final route = <LatLng>[];
+      var origin = _routePlannerOrigin(governorate);
+      for (final stop in stops) {
+        final destination = LatLng(stop.lat, stop.lng);
+        final segment = await _routeService.getWalkingRoute(
+          origin,
+          destination,
+        );
+        if (route.isEmpty) {
+          route.addAll(segment);
+        } else {
+          route.addAll(segment.skip(1));
+        }
+        origin = destination;
+      }
+      if (!mounted || requestId != _routePlanRequestId) return;
+      setState(() {
+        _plannedRoute = List.unmodifiable(route);
+        _plannedRouteLoading = false;
+      });
+    } catch (error, stackTrace) {
+      debugPrint(
+        'MapViewScreen: planned route could not refresh: $error\n$stackTrace',
+      );
+      if (!mounted || requestId != _routePlanRequestId) return;
+      setState(() {
+        _plannedRoute = const [];
+        _plannedRouteLoading = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('route_start_failed'))));
+    }
+  }
+
+  void _selectPlannerGovernorate(String governorateId) {
+    if (_governorates?.unlockAndSelectGovernorate(governorateId) != true) {
+      return;
+    }
+    final governorate = EgyptGovernorate.byId[governorateId];
+    if (governorate != null) _animateCameraTo(governorate);
+  }
+
+  Widget _plannedStopBadge(PlaceModel place, bool showGlow) {
+    final stopIndex = _plannedStops.indexWhere((stop) => stop.id == place.id);
+    if (stopIndex >= 0) {
+      return Container(
+        key: ValueKey('map-route-stop-${stopIndex + 1}'),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+          ),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 2.5),
+          boxShadow: [
+            if (showGlow)
+              const BoxShadow(color: Color(0x668B5CF6), blurRadius: 9),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            '${stopIndex + 1}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      );
+    }
+    return Container(
+      decoration: BoxDecoration(
+        color: _colorForCategory(place.category),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2.5),
+        boxShadow: [
+          if (showGlow)
+            BoxShadow(
+              color: _colorForCategory(place.category).withValues(alpha: 0.45),
+              blurRadius: 8,
+            ),
+        ],
+      ),
+      child: Icon(
+        _iconForCategory(place.category),
+        color: Colors.white,
+        size: 20,
+      ),
+    );
+  }
+
+  Widget _buildRoutePlannerPanel(
+    BuildContext context,
+    EgyptGovernorate activeGovernorate,
+    List<PlaceModel> allPlaces,
+  ) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final plannerPlaces = _sortedPlannerPlaces(allPlaces, activeGovernorate);
+    return Positioned(
+      left: 12,
+      right: 12,
+      bottom: 12,
+      height: 330,
+      child: Material(
+        key: const ValueKey('map-route-planner-panel'),
+        color: context.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        elevation: 10,
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Walking Route',
+                      style: TextStyle(
+                        color: context.textPri,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  if (_plannedRouteLoading)
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  IconButton(
+                    key: const ValueKey('map-route-planner-close'),
+                    tooltip: 'Close route planner',
+                    onPressed: _toggleRoutePlanner,
+                    icon: const Icon(Icons.close_rounded),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 42,
+                child: ListView(
+                  key: const ValueKey('route-planner-governorate-chips'),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (final id in const ['alexandria', 'cairo', 'luxor'])
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8),
+                        child: ChoiceChip(
+                          key: ValueKey('route-planner-governorate-$id'),
+                          label: Text(
+                            locale == 'ar'
+                                ? EgyptGovernorate.byId[id]!.nameAr
+                                : EgyptGovernorate.byId[id]!.nameEn,
+                          ),
+                          selected: activeGovernorate.id == id,
+                          onSelected: (selected) {
+                            if (selected) _selectPlannerGovernorate(id);
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(2, 8, 2, 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Pick places',
+                        style: TextStyle(
+                          color: context.textPri,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${_plannedStops.length} stops',
+                      style: TextStyle(
+                        color: context.textSec,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: plannerPlaces.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No visitable places in this governorate.',
+                          style: TextStyle(color: context.textSec),
+                        ),
+                      )
+                    : ListView.separated(
+                        key: const ValueKey('route-planner-place-list'),
+                        itemCount: plannerPlaces.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 4),
+                        itemBuilder: (context, index) {
+                          final place = plannerPlaces[index];
+                          final stopIndex = _plannedStops.indexWhere(
+                            (stop) => stop.id == place.id,
+                          );
+                          return ListTile(
+                            key: ValueKey('route-planner-place-${place.id}'),
+                            dense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                            ),
+                            leading: CircleAvatar(
+                              radius: 16,
+                              backgroundColor: stopIndex >= 0
+                                  ? const Color(0xFF8B5CF6)
+                                  : _colorForCategory(place.category),
+                              child: stopIndex >= 0
+                                  ? Text(
+                                      '${stopIndex + 1}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    )
+                                  : Icon(
+                                      _iconForCategory(place.category),
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                            ),
+                            title: Text(
+                              place.localizedName(locale),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: context.textPri,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            trailing: Icon(
+                              stopIndex >= 0
+                                  ? Icons.remove_circle_outline
+                                  : Icons.add_circle_outline,
+                              color: context.textSec,
+                              size: 20,
+                            ),
+                            onTap: () => _togglePlannedStop(place),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _updateUserLocation(LatLng location) {
     if (!mounted) return;
+    final previousLocation = _userLocation;
+    final governorate = EgyptGovernorate.byId[
+      context.read<GovernorateProvider>().activeGovernorate
+    ];
+    final originMoved =
+        previousLocation == null ||
+        MapRouteService.distanceMeters(previousLocation, location) >= 100 ||
+        (governorate != null &&
+            _isInsideGovernorate(previousLocation, governorate) !=
+                _isInsideGovernorate(location, governorate));
     setState(() => _userLocation = location);
     _applyRouteProgress(location);
+    if (_routePlannerOpen && _plannedStops.isNotEmpty && originMoved) {
+      unawaited(_refreshPlannedRoute());
+    }
   }
 
   void _applyRouteProgress(LatLng location) {
@@ -782,6 +1194,7 @@ class _MapViewScreenState extends State<MapViewScreen>
     final allPlaces = placeProvider.allPlaces;
     final visitedPlaceIds = context.watch<TripProvider>().visitedPlaceIds;
     final visible = _filtered(places);
+    final plannerPlaces = _sortedPlannerPlaces(allPlaces, activeGovernorate);
     final mapAtms = _mergeAtms([
       ..._curatedAtmsFor(activeGovernorate.id),
       ..._atms,
@@ -817,13 +1230,18 @@ class _MapViewScreenState extends State<MapViewScreen>
                   places: allPlaces,
                   visitedPlaceIds: visitedPlaceIds,
                 ),
-              if (_remainingRoute.length > 1)
+              if ((_routePlannerOpen && _plannedRoute.length > 1) ||
+                  (!_routePlannerOpen && _remainingRoute.length > 1))
                 PolylineLayer(
                   key: const ValueKey('map-route-polyline-layer'),
                   polylines: [
                     Polyline(
-                      points: _remainingRoute,
-                      color: const Color(0xFF00D9FF),
+                      points: _routePlannerOpen
+                          ? _plannedRoute
+                          : _remainingRoute,
+                      color: _routePlannerOpen
+                          ? const Color(0xFF14B8A6)
+                          : const Color(0xFF00D9FF),
                       strokeWidth: 7,
                       borderColor: const Color(0xFF10243A),
                       borderStrokeWidth: 5,
@@ -842,6 +1260,8 @@ class _MapViewScreenState extends State<MapViewScreen>
                       point.longitude <= bounds.east + padding;
                   final markerPlaces = _navigationFocusMode
                       ? <PlaceModel>[]
+                      : _routePlannerOpen
+                      ? <PlaceModel>[...plannerPlaces]
                       : <PlaceModel>[...visible];
                   if (_selectedPlace != null &&
                       EgyptGovernorate.normalizeId(
@@ -855,12 +1275,49 @@ class _MapViewScreenState extends State<MapViewScreen>
                   }
                   final visiblePlaces = markerPlaces.where((place) {
                     final point = LatLng(place.lat, place.lng);
-                    return place.id == _selectedPlace?.id || inViewport(point);
+                    return _routePlannerOpen ||
+                        place.id == _selectedPlace?.id ||
+                        inViewport(point);
                   });
                   final showMarkerGlow = camera.zoom >= 13.5;
                   return MarkerLayer(
                     markers: [
-                      if (_userLocation != null)
+                      if (_routePlannerOpen)
+                        Marker(
+                          point: _routePlannerOrigin(activeGovernorate),
+                          width: 70,
+                          height: 34,
+                          child: Container(
+                            key: const ValueKey('map-route-user-location'),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3B82F6),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF3B82F6,
+                                  ).withValues(alpha: 0.45),
+                                  blurRadius: 9,
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                Localizations.localeOf(context).languageCode ==
+                                        'ar'
+                                    ? 'موقعك'
+                                    : 'You',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      else if (_userLocation != null)
                         Marker(
                           point: _userLocation!,
                           width: 26,
@@ -956,23 +1413,31 @@ class _MapViewScreenState extends State<MapViewScreen>
                       for (final p in visiblePlaces)
                         Marker(
                           point: LatLng(p.lat, p.lng),
-                          width: p.isVisitable && visitedPlaceIds.contains(p.id)
+                          width: _routePlannerOpen
+                              ? 42
+                              : p.isVisitable && visitedPlaceIds.contains(p.id)
                               ? 50
                               : 44,
-                          height:
-                              p.isVisitable && visitedPlaceIds.contains(p.id)
+                          height: _routePlannerOpen
+                              ? 42
+                              : p.isVisitable && visitedPlaceIds.contains(p.id)
                               ? 50
                               : 44,
                           child: RepaintBoundary(
                             child: GestureDetector(
                               key: ValueKey('map-place-marker-${p.id}'),
                               onTap: () {
-                                setState(() => _selectedPlace = p);
+                                if (_routePlannerOpen) {
+                                  _togglePlannedStop(p);
+                                } else {
+                                  setState(() => _selectedPlace = p);
+                                }
                                 _mapController.move(LatLng(p.lat, p.lng), 14);
                               },
-                              child:
-                                  p.isVisitable &&
-                                      visitedPlaceIds.contains(p.id)
+                              child: _routePlannerOpen
+                                  ? _plannedStopBadge(p, showMarkerGlow)
+                                  : p.isVisitable &&
+                                        visitedPlaceIds.contains(p.id)
                                   ? Stack(
                                       clipBehavior: Clip.none,
                                       alignment: Alignment.center,
@@ -1158,7 +1623,9 @@ class _MapViewScreenState extends State<MapViewScreen>
                 onEndRoute: _endRoute,
               ),
             ),
-          if (_selectedPlace != null && !_navigationFocusMode)
+          if (_selectedPlace != null &&
+              !_navigationFocusMode &&
+              !_routePlannerOpen)
             Positioned(
               left: 16,
               right: 16,
@@ -1185,7 +1652,11 @@ class _MapViewScreenState extends State<MapViewScreen>
             ),
           Positioned(
             right: 16,
-            bottom: _selectedPlace != null ? 220 : 72,
+            bottom: _routePlannerOpen
+                ? 350
+                : _selectedPlace != null
+                ? 220
+                : 72,
             child: FloatingActionButton.small(
               heroTag: 'locate-fab',
               tooltip: context.tr('map_my_location'),
@@ -1198,7 +1669,9 @@ class _MapViewScreenState extends State<MapViewScreen>
               ),
             ),
           ),
-          if (!_navigationFocusMode)
+          if (_routePlannerOpen)
+            _buildRoutePlannerPanel(context, activeGovernorate, allPlaces),
+          if (!_navigationFocusMode && !_routePlannerOpen)
             Positioned(
               left: 0,
               right: 0,
@@ -1211,6 +1684,22 @@ class _MapViewScreenState extends State<MapViewScreen>
                   onSelectAll: _selectAllCategories,
                   colorOf: _colorForCategory,
                   iconOf: _iconForCategory,
+                ),
+              ),
+            ),
+          if (!_navigationFocusMode && !_routePlannerOpen)
+            Positioned(
+              left: 16,
+              bottom: _selectedPlace != null ? 220 : 76,
+              child: FilledButton.icon(
+                key: const ValueKey('map-open-route-planner'),
+                onPressed: _toggleRoutePlanner,
+                icon: const Icon(Icons.directions_walk_rounded, size: 18),
+                label: const Text('Walking Route'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: context.cardColor,
+                  foregroundColor: context.textPri,
+                  elevation: 5,
                 ),
               ),
             ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
@@ -9,14 +10,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetlore/core/services/map_route_service.dart';
 import 'package:streetlore/data/aswan_seed.dart';
 import 'package:streetlore/data/luxor_seed.dart';
+import 'package:streetlore/data/models/egypt_governorate.dart';
 import 'package:streetlore/data/models/map_poi.dart';
 import 'package:streetlore/data/models/place_model.dart';
 import 'package:streetlore/logic/governorate_provider.dart';
 import 'package:streetlore/logic/locale_provider.dart';
 import 'package:streetlore/logic/place_provider.dart';
+import 'package:streetlore/logic/auth_provider.dart';
+import 'package:streetlore/logic/review_provider.dart';
 import 'package:streetlore/logic/trip_provider.dart';
 import 'package:streetlore/presentation/screens/_atm_sheet.dart';
 import 'package:streetlore/presentation/screens/map_view_screen.dart';
+import 'package:streetlore/presentation/screens/place_details_screen.dart';
 import 'package:streetlore/presentation/widgets/map_route_hud.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -289,6 +294,171 @@ void main() {
     expect(startedRoute, isTrue);
   });
 
+  testWidgets(
+    'route planner scopes places, orders stops from the origin, and numbers pins',
+    (tester) async {
+      final nearStop = _aliasPlace('near-stop', 'Historical', 25.6872, 32.6396);
+      final farStop = _aliasPlace('far-stop', 'Food', 25.7200, 32.6900);
+      final cairoPlace = PlaceModel(
+        id: 'cairo-place',
+        nameEn: 'Cairo Place',
+        descriptionEn: 'A place in another governorate.',
+        imageUrl: '',
+        rating: 4.0,
+        category: 'Historical',
+        lat: 30.0444,
+        lng: 31.2357,
+        governorate: 'cairo',
+      );
+      final routeSegments = <List<LatLng>>[];
+      final routeService = MapRouteService(
+        routeFetcher: (origin, destination) async {
+          routeSegments.add([origin, destination]);
+          return [origin, destination];
+        },
+      );
+      final harness = await _pumpLuxorMap(
+        tester,
+        extraPlaces: [nearStop, farStop, cairoPlace],
+        routeService: routeService,
+        includeSeedPlaces: false,
+      );
+      addTearDown(() {
+        routeService.close();
+        harness.dispose();
+      });
+
+      await tester.tap(find.byKey(const ValueKey('map-open-route-planner')));
+      await tester.pumpAndSettle();
+      expect(find.text('Walking Route'), findsOneWidget);
+      expect(find.text('Pick places'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('route-planner-governorate-alexandria')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('map-place-marker-cairo-place')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('route-planner-place-cairo-place')),
+        findsNothing,
+      );
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey('route-planner-place-near-stop')),
+            )
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey('route-planner-place-far-stop')),
+              )
+              .dy,
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('route-planner-place-far-stop')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('map-place-marker-near-stop')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('map-route-stop-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('map-route-stop-2')), findsOneWidget);
+      expect(routeSegments, hasLength(3));
+      final luxorAnchor = LatLng(
+        EgyptGovernorate.byId['luxor']!.centerLat,
+        EgyptGovernorate.byId['luxor']!.centerLng,
+      );
+      expect(routeSegments[0].first, luxorAnchor);
+      expect(routeSegments[0].last, const LatLng(25.7200, 32.6900));
+      expect(routeSegments[1].first, luxorAnchor);
+      expect(routeSegments[1].last, const LatLng(25.7200, 32.6900));
+      expect(routeSegments.last.first, const LatLng(25.7200, 32.6900));
+      expect(routeSegments.last.last, const LatLng(25.6872, 32.6396));
+
+      await tester.tap(
+        find.byKey(const ValueKey('route-planner-governorate-cairo')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('route-planner-place-cairo-place')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('route-planner-place-far-stop')),
+        findsNothing,
+      );
+      expect(find.byKey(const ValueKey('map-route-stop-1')), findsNothing);
+    },
+  );
+
+  testWidgets('place details has no single-place offline download action', (
+    tester,
+  ) async {
+    final governorates = GovernorateProvider();
+    const place = PlaceModel(
+      id: 'place-details-no-download',
+      nameEn: 'Place Details Test',
+      descriptionEn: 'A place details action test.',
+      imageUrl: '',
+      rating: 4.0,
+      lat: 31.2,
+      lng: 29.9,
+      enableGallery: false,
+      enableChat: false,
+    );
+    final places = PlaceProvider(
+      watchRemoteUpdates: false,
+      governorates: governorates,
+      isOnline: () => false,
+      initialPlaces: const [place],
+    );
+    final trips = TripProvider();
+    final locale = LocaleProvider();
+    final reviews = ReviewProvider();
+    final auth = _ProAuthProvider();
+    addTearDown(() {
+      governorates.dispose();
+      places.dispose();
+      trips.dispose();
+      locale.dispose();
+      reviews.dispose();
+      auth.dispose();
+    });
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: auth),
+          ChangeNotifierProvider.value(value: locale),
+          ChangeNotifierProvider.value(value: places),
+          ChangeNotifierProvider.value(value: reviews),
+          ChangeNotifierProvider.value(value: trips),
+        ],
+        child: MaterialApp(
+          supportedLocales: const [Locale('en'), Locale('ar')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: const PlaceDetailsScreen(place: place),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump();
+
+    expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Route on Map'), findsOneWidget);
+    expect(find.text('Download for Offline'), findsNothing);
+    expect(find.text('Downloaded'), findsNothing);
+    expect(find.byIcon(Icons.cloud_download_outlined), findsNothing);
+    expect(find.byIcon(Icons.cloud_done_rounded), findsNothing);
+  });
+
   testWidgets('map category chips show the union of Churches and Hotels', (
     tester,
   ) async {
@@ -481,6 +651,8 @@ double _distanceFromLabel(String label) {
 Future<_LuxorMapHarness> _pumpLuxorMap(
   WidgetTester tester, {
   Iterable<PlaceModel> extraPlaces = const [],
+  MapRouteService? routeService,
+  bool includeSeedPlaces = true,
 }) async {
   tester.view.physicalSize = const Size(1200, 900);
   tester.view.devicePixelRatio = 1;
@@ -493,7 +665,7 @@ Future<_LuxorMapHarness> _pumpLuxorMap(
     watchRemoteUpdates: false,
     governorates: governorates,
     isOnline: () => false,
-    initialPlaces: [...luxorSeedPlaces, ...extraPlaces],
+    initialPlaces: [if (includeSeedPlaces) ...luxorSeedPlaces, ...extraPlaces],
   );
   final trips = TripProvider();
   final locale = LocaleProvider();
@@ -505,7 +677,9 @@ Future<_LuxorMapHarness> _pumpLuxorMap(
         ChangeNotifierProvider.value(value: trips),
         ChangeNotifierProvider.value(value: locale),
       ],
-      child: const MaterialApp(home: MapViewScreen(autoLocate: false)),
+      child: MaterialApp(
+        home: MapViewScreen(autoLocate: false, routeService: routeService),
+      ),
     ),
   );
   await tester.pump();
@@ -611,4 +785,9 @@ class _LuxorMapHarness {
     trips.dispose();
     locale.dispose();
   }
+}
+
+class _ProAuthProvider extends AuthProvider {
+  @override
+  bool get isPro => true;
 }

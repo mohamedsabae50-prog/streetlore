@@ -43,6 +43,8 @@ class GamificationProvider extends ChangeNotifier {
     avatarColorHex: '0xFF3B82F6',
   );
   GamificationStats get stats => _stats;
+  GamificationLevel get currentLevel =>
+      GamificationStats.levelDetailsForPoints(_stats.totalPoints);
   List<GamificationActivity> _activity = const [];
   List<GamificationActivity> get activity => _activity;
 

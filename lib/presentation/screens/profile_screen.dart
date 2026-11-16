@@ -14,6 +14,8 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/confetti_overlay.dart';
 import '../../data/achievement_catalog.dart';
+import '../../data/models/egypt_governorate.dart';
+import '../../data/models/gamification_stats.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/geofence_provider.dart';
 import '../../logic/tour_provider.dart';
@@ -902,11 +904,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                   child: Consumer<GamificationProvider>(
                     builder: (context, g, _) {
-                      final badgesById = {
+                      final allBadges = GamificationStats.badgeCatalog;
+                      final visitedIds = context
+                          .watch<TourProvider>()
+                          .checkedInPlaceIds;
+                      final visitedPlaces = context
+                          .watch<PlaceProvider>()
+                          .allPlaces
+                          .where(
+                            (place) =>
+                                place.isVisitable &&
+                                visitedIds.contains(place.id),
+                          )
+                          .toList(growable: false);
+                      final alexandriaVisits = visitedPlaces
+                          .where(
+                            (place) =>
+                                EgyptGovernorate.normalizeId(
+                                  place.governorate,
+                                ) ==
+                                'alexandria',
+                          )
+                          .length;
+                      final cairoGizaVisits = visitedPlaces
+                          .where(
+                            (place) => const {'cairo', 'giza'}.contains(
+                              EgyptGovernorate.normalizeId(place.governorate),
+                            ),
+                          )
+                          .length;
+                      final upperEgyptVisits = visitedPlaces
+                          .where(
+                            (place) => const {'luxor', 'aswan'}.contains(
+                              EgyptGovernorate.normalizeId(place.governorate),
+                            ),
+                          )
+                          .length;
+                      final regionCount =
+                          (alexandriaVisits > 0 ? 1 : 0) +
+                          (cairoGizaVisits > 0 ? 1 : 0) +
+                          (upperEgyptVisits > 0 ? 1 : 0);
+                      final visitedCount =
+                          g.stats.placesVisited > visitedPlaces.length
+                          ? g.stats.placesVisited
+                          : visitedPlaces.length;
+                      final toursCompleted = context
+                          .watch<TourProvider>()
+                          .visitedToursCount;
+                      final locale = context.watch<LocaleProvider>();
+                      final legacyBadgesById = {
                         for (final badge in g.stats.badges)
                           AchievementCatalog.canonicalId(badge.id): badge,
                       };
-                      final badges = badgesById.values.toList(growable: false);
+                      const representedLegacyIds = {
+                        'first_step',
+                        'street_explorer',
+                        'explorer_5',
+                        'explorer_10',
+                        'explorer_25',
+                        'tour_finisher',
+                        'streak_3',
+                        'streak_7',
+                        'streak_30',
+                      };
+                      final legacyBadges = legacyBadgesById.values
+                          .where(
+                            (badge) => !representedLegacyIds.contains(badge.id),
+                          )
+                          .toList(growable: false);
+                      int progressFor(GamificationBadgeDefinition badge) {
+                        return switch (badge.metric) {
+                          GamificationBadgeMetric.placesVisited ||
+                          GamificationBadgeMetric.aiHistorian =>
+                            badge.metric == GamificationBadgeMetric.aiHistorian
+                                ? g.stats.chatMessagesSent
+                                : visitedCount,
+                          GamificationBadgeMetric.alexandriaVisits =>
+                            alexandriaVisits,
+                          GamificationBadgeMetric.cairoGizaVisits =>
+                            cairoGizaVisits,
+                          GamificationBadgeMetric.upperEgyptVisits =>
+                            upperEgyptVisits,
+                          GamificationBadgeMetric.allRegions => regionCount,
+                          GamificationBadgeMetric.toursCompleted =>
+                            toursCompleted,
+                          GamificationBadgeMetric.streakDays =>
+                            g.stats.currentStreak,
+                        };
+                      }
+
+                      final unlockedCount = allBadges
+                          .where(
+                            (badge) =>
+                                progressFor(badge) >= badge.target ||
+                                g.stats.badges.any(
+                                  (earned) => earned.id == badge.id,
+                                ),
+                          )
+                          .length;
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -916,65 +1011,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: context.textPri,
                             ),
                           ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$unlockedCount / ${allBadges.length} unlocked',
+                            style: TextStyle(
+                              color: context.textSec,
+                              fontSize: 12,
+                            ),
+                          ),
                           const SizedBox(height: 10),
-                          if (badges.isEmpty)
-                            Text(
-                              context.tr('no_badges'),
-                              style: TextStyle(
-                                color: context.textSec,
-                                fontSize: 13,
-                              ),
-                            )
-                          else
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final cardWidth = (constraints.maxWidth - 8) / 2;
+                              return Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  for (final badge in allBadges)
+                                    SizedBox(
+                                      width: cardWidth,
+                                      child: _ProfileBadgeCard(
+                                        definition: badge,
+                                        current: progressFor(badge),
+                                        unlocked:
+                                            progressFor(badge) >=
+                                                badge.target ||
+                                            g.stats.badges.any(
+                                              (earned) => earned.id == badge.id,
+                                            ),
+                                        isArabic: locale.isArabic,
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
+                          ),
+                          if (legacyBadges.isNotEmpty) ...[
+                            const SizedBox(height: 10),
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
                               children: [
-                                for (var i = 0; i < badges.length; i++)
-                                  FadeInUp(
-                                    delay: Duration(milliseconds: 60 * i),
-                                    offsetY: 12,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
+                                for (final badge in legacyBadges)
+                                  Tooltip(
+                                    message: context.tr(badge.description),
+                                    child: Chip(
+                                      avatar: const Icon(
+                                        Icons.workspace_premium_rounded,
+                                        size: 16,
                                       ),
-                                      decoration: BoxDecoration(
-                                        gradient: AppColors.primaryGradient,
-                                        borderRadius: BorderRadius.circular(14),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.primary.withValues(
-                                              alpha: 0.25,
-                                            ),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.workspace_premium_rounded,
-                                            color: Colors.white,
-                                            size: 16,
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            context.tr(badges[i].name),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                      label: Text(context.tr(badge.name)),
                                     ),
                                   ),
                               ],
                             ),
+                          ],
                         ],
                       );
                     },
@@ -2057,3 +2148,101 @@ class _Div extends StatelessWidget {
     );
   }
 }
+
+class _ProfileBadgeCard extends StatelessWidget {
+  final GamificationBadgeDefinition definition;
+  final int current;
+  final bool unlocked;
+  final bool isArabic;
+
+  const _ProfileBadgeCard({
+    required this.definition,
+    required this.current,
+    required this.unlocked,
+    required this.isArabic,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = unlocked ? AppColors.primary : context.textSec;
+    final progress = (current / definition.target).clamp(0.0, 1.0);
+    return Container(
+      constraints: const BoxConstraints(minHeight: 140),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: unlocked ? 0.08 : 0.035),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                _profileBadgeIcon(definition.iconName),
+                color: color,
+                size: 18,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  isArabic ? definition.nameAr : definition.nameEn,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: context.textPri,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Icon(
+                unlocked ? Icons.check_circle_rounded : Icons.lock_outline,
+                color: color,
+                size: 15,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            isArabic ? definition.descriptionAr : definition.descriptionEn,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: context.textSec, fontSize: 10),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$current / ${definition.target}',
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: progress,
+            minHeight: 4,
+            borderRadius: BorderRadius.circular(4),
+            color: color,
+            backgroundColor: color.withValues(alpha: 0.14),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+IconData _profileBadgeIcon(String iconName) => switch (iconName) {
+  'place' => Icons.place_rounded,
+  'explore' => Icons.explore_rounded,
+  'workspace_premium' => Icons.workspace_premium_rounded,
+  'location_city' => Icons.location_city_rounded,
+  'public' => Icons.public_rounded,
+  'check_circle' => Icons.check_circle_rounded,
+  'route' => Icons.route_rounded,
+  'psychology' => Icons.psychology_rounded,
+  'local_fire_department' => Icons.local_fire_department_rounded,
+  _ => Icons.emoji_events_rounded,
+};

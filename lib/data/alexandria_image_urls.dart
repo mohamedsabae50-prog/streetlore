@@ -20,4 +20,12 @@ const Map<String, String> alexandriaImageUrls = {
       'https://upload.wikimedia.org/wikipedia/commons/5/56/Shatby_Ancient_Tombs_Alexandria.jpg',
   'alex_nelson_island_abou_qir':
       'https://upload.wikimedia.org/wikipedia/commons/c/c4/Nelson_Island_Abu_Qir.jpg',
+  'alex_abu_mena_unesco':
+      'https://upload.wikimedia.org/wikipedia/commons/1/16/Artifacts_at_Abu_Mena_%28IV%29.jpg',
+  'alex_el_max_venice_canal':
+      'https://upload.wikimedia.org/wikipedia/commons/e/eb/Fishermen0.jpg',
+  'alex_taposiris_magna_temple':
+      'https://upload.wikimedia.org/wikipedia/commons/1/10/Internal_view_towards_South_of_the_Osiris_Temple_in_Taposiris_Magna.JPG',
+  'alex_amreya_heritage_souq':
+      'https://upload.wikimedia.org/wikipedia/commons/7/78/Amreya.jpg',
 };

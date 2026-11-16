@@ -119,4 +119,6 @@ const Map<String, String> luxorImageUrls = {
       "https://upload.wikimedia.org/wikipedia/commons/4/4a/1975_wurde_das_Luxor-Museum_er%C3%B6ffnet._13.jpg",
   "atm_banque_misr_steigenberger_luxor":
       "https://upload.wikimedia.org/wikipedia/commons/f/f2/1975_wurde_das_Luxor-Museum_er%C3%B6ffnet._14.jpg",
+  "luxor_esna_khnum_temple":
+      "https://upload.wikimedia.org/wikipedia/commons/4/41/Egypt.Esna.Temple.01.jpg",
 };

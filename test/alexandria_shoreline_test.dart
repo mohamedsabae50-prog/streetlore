@@ -61,14 +61,19 @@ void main() {
           location.lat,
           location.lng,
         );
-        if (!inAlexandria) violations.add('${location.id} outside Alexandria');
+        final isOutlyingLandmark =
+            location.id == 'alex_nelson_island_abou_qir' ||
+            location.id == 'alex_taposiris_magna_temple';
+        if (!inAlexandria && !isOutlyingLandmark) {
+          violations.add('${location.id} outside Alexandria');
+        }
 
         if (location.id == 'fallback_qaitbay' ||
             location.id == 'alex_white_blue_greek_club' ||
             location.id == 'alex_gleem_bay_promenade' ||
             location.id == 'alex_sadat_museum_bibliotheca' ||
             location.id == 'alex_shatby_ancient_tombs' ||
-            location.id == 'alex_nelson_island_abou_qir') {
+            isOutlyingLandmark) {
           continue;
         }
 

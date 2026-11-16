@@ -1,62 +1,128 @@
 const Map<String, String> aswanImageUrls = {
-  "aswan_philae_temple": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Philae_Temple_Complex%2C_Agilkia_Island%2C_Aswan%2C_AG%2C_EGY_%2848026831186%29.jpg",
-  "aswan_abu_simbel_great_temple": "https://upload.wikimedia.org/wikipedia/commons/8/83/Aswan_Elephantine_Island_R02.jpg",
-  "aswan_abu_simbel_nefertari_temple": "https://upload.wikimedia.org/wikipedia/commons/5/50/Elephantine_Island%2C_Aswan%2C_AG%2C_EGY_%2848025286316%29.jpg",
-  "aswan_nubian_museum": "https://upload.wikimedia.org/wikipedia/commons/7/77/Aswan_Nubian_Museum_entrance.jpg",
-  "aswan_unfinished_obelisk": "https://upload.wikimedia.org/wikipedia/commons/8/86/Elephantine_Island%2C_Aswan%2C_AG%2C_EGY_%2848025393122%29.jpg",
-  "aswan_high_dam_memorial": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Elephantine_Island%2C_Aswan%2C_AG%2C_EGY_%2848025511608%29.jpg",
-  "aswan_old_low_dam": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Elephantine_Island%2C_a_fortified_settlement_located_just_before_the_First_Cataract_of_the_Nile%2C_Aswan%2C_Egypt_-_52673879067.jpg",
-  "aswan_kalabsha_temple": "https://upload.wikimedia.org/wikipedia/commons/7/79/Elephantine_Island_by_Hatem_Moushir_107.JPG",
-  "aswan_beit_el_wali_temple": "https://upload.wikimedia.org/wikipedia/commons/0/02/Elephantine_Island_by_Hatem_Moushir_175.JPG",
-  "aswan_kiosk_of_qertassi": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Elephantine_Island_by_Hatem_Moushir_181.JPG",
-  "aswan_qubbet_el_hawa_tombs": "https://upload.wikimedia.org/wikipedia/commons/c/c3/Elephantine_Island_by_Hatem_Moushir_39.JPG",
-  "aswan_st_simeon_monastery": "https://upload.wikimedia.org/wikipedia/commons/4/44/Elephantine_Island_by_Hatem_Moushir_42.JPG",
-  "aswan_elephantine_museum_ruins": "https://upload.wikimedia.org/wikipedia/commons/8/87/Nubian_village_in_Elephantine_Island_Aswan.jpg",
-  "aswan_elephantine_nilometer": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Ruins%2C_Elephantine_Island%2C_Aswan%2C_AG%2C_EGY_%2848025392278%29.jpg",
-  "aswan_sehel_island_famine_stele": "https://upload.wikimedia.org/wikipedia/commons/e/e9/PHILAE_TEMPLE.jpg",
-  "aswan_aga_khan_mausoleum": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Philae_Island%2C_Aswan.jpg",
-  "aswan_fatimid_cemetery": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Philae_Temple_Complex%2C_Agilkia_Island%2C_Aswan%2C_AG%2C_EGY_%2848026942002%29.jpg",
-  "aswan_kom_ombo_temple": "https://upload.wikimedia.org/wikipedia/commons/6/6d/Egret_in_Aswan_-_Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058075375%29.jpg",
-  "aswan_crocodile_museum_kom_ombo": "https://upload.wikimedia.org/wikipedia/commons/6/66/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058033521%29.jpg",
-  "aswan_edfu_horus_temple": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Temple_Edfou_Egypte.jpg",
-  "aswan_tell_edfu_archaeological_site": "https://upload.wikimedia.org/wikipedia/commons/9/94/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058035197%29.jpg",
-  "aswan_nile_museum": "https://upload.wikimedia.org/wikipedia/commons/d/da/Philae_Temple_Complex%2C_Agilkia_Island%2C_Aswan%2C_AG%2C_EGY_%2848027052466%29.jpg",
-  "aswan_cultural_palace_theater": "https://upload.wikimedia.org/wikipedia/commons/5/51/Philae_Temple_Complex%2C_Agilkia_Island%2C_Aswan%2C_AG%2C_EGY_%2848027166582%29.jpg",
-  "aswan_international_sculpture_park": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Philae_Temple_SFEC-ASWAN-2009-080.jpg",
-  "aswan_botanical_garden_kitchener": "https://upload.wikimedia.org/wikipedia/commons/5/52/Philae_temple_aswan.jpg",
-  "aswan_gharb_soheil_nubian_village": "https://upload.wikimedia.org/wikipedia/commons/9/99/Ruins_on_Elephantine_Island%2C_Aswan%2C_Egypt.jpg",
-  "aswan_saluga_ghazal_protectorate": "https://upload.wikimedia.org/wikipedia/commons/7/7a/Temple_of_Philae_in_Aswan.jpg",
-  "aswan_heissa_nubian_island": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058037545%29.jpg",
-  "aswan_nile_corniche_promenade": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058038333%29.jpg",
-  "aswan_faryal_garden_corniche": "https://upload.wikimedia.org/wikipedia/commons/d/dc/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058038533%29.jpg",
-  "aswan_west_bank_sand_dunes_viewpoint": "https://upload.wikimedia.org/wikipedia/commons/d/df/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058054539%29.jpg",
-  "aswan_el_tabia_mosque": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Egypt.Aswan.Mosque.02.jpg",
-  "aswan_el_haj_hassan_mosque": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058058391%29.jpg",
-  "aswan_sayyida_zaynab_mosque_souq": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058060295%29.jpg",
-  "aswan_archangel_michael_cathedral": "https://upload.wikimedia.org/wikipedia/commons/6/69/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058062969%29.jpg",
-  "aswan_virgin_mary_church_corniche": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058063477%29.jpg",
-  "aswan_1902_restaurant_old_cataract": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058073427%29.jpg",
-  "aswan_al_masry_restaurant": "https://upload.wikimedia.org/wikipedia/commons/4/4e/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058075145%29.jpg",
-  "aswan_al_dokkah_nubian_island_restaurant": "https://upload.wikimedia.org/wikipedia/commons/c/c8/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058081007%29.jpg",
-  "aswan_makka_corniche_restaurant": "https://upload.wikimedia.org/wikipedia/commons/5/5a/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058084053%29.jpg",
-  "aswan_ibis_panorama_restaurant": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058084795%29.jpg",
-  "aswan_old_cataract_terrace_cafe": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058086351%29.jpg",
-  "aswan_nubian_dreams_cafe_gharb_soheil": "https://upload.wikimedia.org/wikipedia/commons/5/59/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058086625%29.jpg",
-  "aswan_karkadeh_souq_heritage_cafe": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058089187%29.jpg",
-  "aswan_sharia_el_souq_bazaar": "https://upload.wikimedia.org/wikipedia/commons/4/44/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058089541%29.jpg",
-  "aswan_nubian_spices_henna_market": "https://upload.wikimedia.org/wikipedia/commons/9/93/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058091437%29.jpg",
-  "aswan_gharb_soheil_handicraft_bazaar": "https://upload.wikimedia.org/wikipedia/commons/4/43/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058092015%29.jpg",
-  "aswan_daraw_historic_market": "https://upload.wikimedia.org/wikipedia/commons/b/bd/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058775858%29.jpg",
-  "aswan_sofitel_legend_old_cataract": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058776552%29.jpg",
-  "aswan_movenpick_resort_elephantine": "https://upload.wikimedia.org/wikipedia/commons/6/63/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058777754%29.jpg",
-  "aswan_benben_by_dhara_heissa": "https://upload.wikimedia.org/wikipedia/commons/5/5f/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058778524%29.jpg",
-  "aswan_tolip_hotel_corniche": "https://upload.wikimedia.org/wikipedia/commons/2/2c/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058792510%29.jpg",
-  "aswan_kato_dool_wellness_resort": "https://upload.wikimedia.org/wikipedia/commons/8/8e/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058794870%29.jpg",
-  "aswan_pyramisa_isis_island_resort": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058795830%29.jpg",
-  "atm_nbe_aswan_corniche_station": "https://upload.wikimedia.org/wikipedia/commons/8/8f/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058796244%29.jpg",
-  "atm_banque_misr_old_cataract_aswan": "https://upload.wikimedia.org/wikipedia/commons/0/02/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058797962%29.jpg",
-  "atm_cib_aswan_tourist_souq": "https://upload.wikimedia.org/wikipedia/commons/d/d9/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058801724%29.jpg",
-  "atm_qnb_nubian_museum_aswan": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058810740%29.jpg",
-  "atm_nbe_kom_ombo_temple_plaza": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058813594%29.jpg",
-  "atm_banque_misr_edfu_temple_square": "https://upload.wikimedia.org/wikipedia/commons/1/18/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058814132%29.jpg",
+  "aswan_philae_temple":
+      "https://upload.wikimedia.org/wikipedia/commons/3/3a/Philae_Temple_Complex%2C_Agilkia_Island%2C_Aswan%2C_AG%2C_EGY_%2848026831186%29.jpg",
+  "aswan_abu_simbel_great_temple":
+      "https://upload.wikimedia.org/wikipedia/commons/8/83/Aswan_Elephantine_Island_R02.jpg",
+  "aswan_abu_simbel_nefertari_temple":
+      "https://upload.wikimedia.org/wikipedia/commons/5/50/Elephantine_Island%2C_Aswan%2C_AG%2C_EGY_%2848025286316%29.jpg",
+  "aswan_nubian_museum":
+      "https://upload.wikimedia.org/wikipedia/commons/7/77/Aswan_Nubian_Museum_entrance.jpg",
+  "aswan_unfinished_obelisk":
+      "https://upload.wikimedia.org/wikipedia/commons/8/86/Elephantine_Island%2C_Aswan%2C_AG%2C_EGY_%2848025393122%29.jpg",
+  "aswan_high_dam_memorial":
+      "https://upload.wikimedia.org/wikipedia/commons/2/2f/Elephantine_Island%2C_Aswan%2C_AG%2C_EGY_%2848025511608%29.jpg",
+  "aswan_old_low_dam":
+      "https://upload.wikimedia.org/wikipedia/commons/6/6f/Elephantine_Island%2C_a_fortified_settlement_located_just_before_the_First_Cataract_of_the_Nile%2C_Aswan%2C_Egypt_-_52673879067.jpg",
+  "aswan_kalabsha_temple":
+      "https://upload.wikimedia.org/wikipedia/commons/7/79/Elephantine_Island_by_Hatem_Moushir_107.JPG",
+  "aswan_beit_el_wali_temple":
+      "https://upload.wikimedia.org/wikipedia/commons/0/02/Elephantine_Island_by_Hatem_Moushir_175.JPG",
+  "aswan_kiosk_of_qertassi":
+      "https://upload.wikimedia.org/wikipedia/commons/d/dd/Elephantine_Island_by_Hatem_Moushir_181.JPG",
+  "aswan_qubbet_el_hawa_tombs":
+      "https://upload.wikimedia.org/wikipedia/commons/c/c3/Elephantine_Island_by_Hatem_Moushir_39.JPG",
+  "aswan_st_simeon_monastery":
+      "https://upload.wikimedia.org/wikipedia/commons/4/44/Elephantine_Island_by_Hatem_Moushir_42.JPG",
+  "aswan_elephantine_museum_ruins":
+      "https://upload.wikimedia.org/wikipedia/commons/8/87/Nubian_village_in_Elephantine_Island_Aswan.jpg",
+  "aswan_elephantine_nilometer":
+      "https://upload.wikimedia.org/wikipedia/commons/e/ef/Ruins%2C_Elephantine_Island%2C_Aswan%2C_AG%2C_EGY_%2848025392278%29.jpg",
+  "aswan_sehel_island_famine_stele":
+      "https://upload.wikimedia.org/wikipedia/commons/e/e9/PHILAE_TEMPLE.jpg",
+  "aswan_aga_khan_mausoleum":
+      "https://upload.wikimedia.org/wikipedia/commons/a/a2/Philae_Island%2C_Aswan.jpg",
+  "aswan_fatimid_cemetery":
+      "https://upload.wikimedia.org/wikipedia/commons/2/2a/Philae_Temple_Complex%2C_Agilkia_Island%2C_Aswan%2C_AG%2C_EGY_%2848026942002%29.jpg",
+  "aswan_kom_ombo_temple":
+      "https://upload.wikimedia.org/wikipedia/commons/6/6d/Egret_in_Aswan_-_Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058075375%29.jpg",
+  "aswan_crocodile_museum_kom_ombo":
+      "https://upload.wikimedia.org/wikipedia/commons/6/66/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058033521%29.jpg",
+  "aswan_edfu_horus_temple":
+      "https://upload.wikimedia.org/wikipedia/commons/7/7f/Temple_Edfou_Egypte.jpg",
+  "aswan_tell_edfu_archaeological_site":
+      "https://upload.wikimedia.org/wikipedia/commons/9/94/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058035197%29.jpg",
+  "aswan_nile_museum":
+      "https://upload.wikimedia.org/wikipedia/commons/d/da/Philae_Temple_Complex%2C_Agilkia_Island%2C_Aswan%2C_AG%2C_EGY_%2848027052466%29.jpg",
+  "aswan_cultural_palace_theater":
+      "https://upload.wikimedia.org/wikipedia/commons/5/51/Philae_Temple_Complex%2C_Agilkia_Island%2C_Aswan%2C_AG%2C_EGY_%2848027166582%29.jpg",
+  "aswan_international_sculpture_park":
+      "https://upload.wikimedia.org/wikipedia/commons/6/6a/Philae_Temple_SFEC-ASWAN-2009-080.jpg",
+  "aswan_botanical_garden_kitchener":
+      "https://upload.wikimedia.org/wikipedia/commons/5/52/Philae_temple_aswan.jpg",
+  "aswan_gharb_soheil_nubian_village":
+      "https://upload.wikimedia.org/wikipedia/commons/9/99/Ruins_on_Elephantine_Island%2C_Aswan%2C_Egypt.jpg",
+  "aswan_saluga_ghazal_protectorate":
+      "https://upload.wikimedia.org/wikipedia/commons/7/7a/Temple_of_Philae_in_Aswan.jpg",
+  "aswan_heissa_nubian_island":
+      "https://upload.wikimedia.org/wikipedia/commons/a/ab/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058037545%29.jpg",
+  "aswan_nile_corniche_promenade":
+      "https://upload.wikimedia.org/wikipedia/commons/5/5b/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058038333%29.jpg",
+  "aswan_faryal_garden_corniche":
+      "https://upload.wikimedia.org/wikipedia/commons/d/dc/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058038533%29.jpg",
+  "aswan_west_bank_sand_dunes_viewpoint":
+      "https://upload.wikimedia.org/wikipedia/commons/d/df/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058054539%29.jpg",
+  "aswan_el_tabia_mosque":
+      "https://upload.wikimedia.org/wikipedia/commons/f/f7/Egypt.Aswan.Mosque.02.jpg",
+  "aswan_el_haj_hassan_mosque":
+      "https://upload.wikimedia.org/wikipedia/commons/f/fa/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058058391%29.jpg",
+  "aswan_sayyida_zaynab_mosque_souq":
+      "https://upload.wikimedia.org/wikipedia/commons/d/d4/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058060295%29.jpg",
+  "aswan_archangel_michael_cathedral":
+      "https://upload.wikimedia.org/wikipedia/commons/6/69/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058062969%29.jpg",
+  "aswan_virgin_mary_church_corniche":
+      "https://upload.wikimedia.org/wikipedia/commons/d/d4/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058063477%29.jpg",
+  "aswan_1902_restaurant_old_cataract":
+      "https://upload.wikimedia.org/wikipedia/commons/b/bc/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058073427%29.jpg",
+  "aswan_al_masry_restaurant":
+      "https://upload.wikimedia.org/wikipedia/commons/4/4e/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058075145%29.jpg",
+  "aswan_al_dokkah_nubian_island_restaurant":
+      "https://upload.wikimedia.org/wikipedia/commons/c/c8/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058081007%29.jpg",
+  "aswan_makka_corniche_restaurant":
+      "https://upload.wikimedia.org/wikipedia/commons/5/5a/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058084053%29.jpg",
+  "aswan_ibis_panorama_restaurant":
+      "https://upload.wikimedia.org/wikipedia/commons/1/1b/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058084795%29.jpg",
+  "aswan_old_cataract_terrace_cafe":
+      "https://upload.wikimedia.org/wikipedia/commons/4/4f/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058086351%29.jpg",
+  "aswan_nubian_dreams_cafe_gharb_soheil":
+      "https://upload.wikimedia.org/wikipedia/commons/5/59/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058086625%29.jpg",
+  "aswan_karkadeh_souq_heritage_cafe":
+      "https://upload.wikimedia.org/wikipedia/commons/c/cf/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058089187%29.jpg",
+  "aswan_sharia_el_souq_bazaar":
+      "https://upload.wikimedia.org/wikipedia/commons/4/44/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058089541%29.jpg",
+  "aswan_nubian_spices_henna_market":
+      "https://upload.wikimedia.org/wikipedia/commons/9/93/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058091437%29.jpg",
+  "aswan_gharb_soheil_handicraft_bazaar":
+      "https://upload.wikimedia.org/wikipedia/commons/4/43/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058092015%29.jpg",
+  "aswan_daraw_historic_market":
+      "https://upload.wikimedia.org/wikipedia/commons/b/bd/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058775858%29.jpg",
+  "aswan_sofitel_legend_old_cataract":
+      "https://upload.wikimedia.org/wikipedia/commons/d/d7/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058776552%29.jpg",
+  "aswan_movenpick_resort_elephantine":
+      "https://upload.wikimedia.org/wikipedia/commons/6/63/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058777754%29.jpg",
+  "aswan_benben_by_dhara_heissa":
+      "https://upload.wikimedia.org/wikipedia/commons/5/5f/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058778524%29.jpg",
+  "aswan_tolip_hotel_corniche":
+      "https://upload.wikimedia.org/wikipedia/commons/2/2c/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058792510%29.jpg",
+  "aswan_kato_dool_wellness_resort":
+      "https://upload.wikimedia.org/wikipedia/commons/8/8e/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058794870%29.jpg",
+  "aswan_pyramisa_isis_island_resort":
+      "https://upload.wikimedia.org/wikipedia/commons/c/c6/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058795830%29.jpg",
+  "atm_nbe_aswan_corniche_station":
+      "https://upload.wikimedia.org/wikipedia/commons/8/8f/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058796244%29.jpg",
+  "atm_banque_misr_old_cataract_aswan":
+      "https://upload.wikimedia.org/wikipedia/commons/0/02/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058797962%29.jpg",
+  "atm_cib_aswan_tourist_souq":
+      "https://upload.wikimedia.org/wikipedia/commons/d/d9/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058801724%29.jpg",
+  "atm_qnb_nubian_museum_aswan":
+      "https://upload.wikimedia.org/wikipedia/commons/a/ae/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058810740%29.jpg",
+  "atm_nbe_kom_ombo_temple_plaza":
+      "https://upload.wikimedia.org/wikipedia/commons/a/a4/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058813594%29.jpg",
+  "atm_banque_misr_edfu_temple_square":
+      "https://upload.wikimedia.org/wikipedia/commons/1/18/Egypt_Nile_River_Cruise_-_Luxor%2C_Edfu%2C_Kom_Ombo%2C_Aswan_%284058814132%29.jpg",
+  "aswan_el_kab_necropolis":
+      "https://upload.wikimedia.org/wikipedia/commons/4/46/Tombs_at_El_Kab.jpg",
+  "aswan_wadi_el_sebua_temples":
+      "https://upload.wikimedia.org/wikipedia/commons/d/d9/The_Wadi_es-Sebua_Temple_by_Dennis_G._Jarvis.jpg",
+  "aswan_amada_pennut_temples":
+      "https://upload.wikimedia.org/wikipedia/commons/e/ee/Amada_Temple_by_Dennis_G._Jarvis.jpg",
 };

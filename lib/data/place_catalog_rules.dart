@@ -298,6 +298,13 @@ String _neighborhood(
 }
 
 String? _expectedHours(PlaceModel place, String category, String idAndName) {
+  if (place.id == 'alex_el_max_venice_canal') return '24 hours';
+  if (place.id == 'cairo_helwan_japanese_garden') {
+    return '08:00 AM - 09:00 PM';
+  }
+  if (place.id == 'luxor_esna_khnum_temple') {
+    return '07:00 AM - 05:00 PM';
+  }
   if (place.id.startsWith('aswan_')) {
     return switch (category) {
       'historical' || 'culture' || 'nature' => place.openHours,

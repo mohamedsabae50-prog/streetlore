@@ -185,22 +185,22 @@ Future<void> main() async {
       .where((place) => place.governorate == 'luxor')
       .toList(growable: false);
   final luxorCount = luxorPlaces.length;
-  if (alexandriaCount != 49) {
-    issues.add('expected 49 Alexandria places, found $alexandriaCount');
+  if (alexandriaCount != 53) {
+    issues.add('expected 53 Alexandria places, found $alexandriaCount');
   }
-  if (cairoCount != 190) {
-    issues.add('expected 190 Cairo/Giza places, found $cairoCount');
+  if (cairoCount != 194) {
+    issues.add('expected 194 Cairo/Giza places, found $cairoCount');
   }
-  if (luxorCount != 120) {
-    issues.add('expected 120 Luxor & Aswan records, found $luxorCount');
+  if (luxorCount != 124) {
+    issues.add('expected 124 Luxor & Aswan records, found $luxorCount');
   }
   final luxorVisitableCount = luxorPlaces
       .where((place) => place.isVisitable)
       .length;
   final luxorAtmCount = luxorPlaces.where((place) => place.isAtm).length;
-  if (luxorVisitableCount != 108 || luxorAtmCount != 12) {
+  if (luxorVisitableCount != 112 || luxorAtmCount != 12) {
     issues.add(
-      'expected 108 Luxor & Aswan visitable places and 12 map ATMs, '
+      'expected 112 Luxor & Aswan visitable places and 12 map ATMs, '
       'found $luxorVisitableCount visitable and $luxorAtmCount ATMs',
     );
   }
@@ -222,18 +222,18 @@ Future<void> main() async {
       'active governorates must be Alexandria, Cairo & Giza, and Luxor & Aswan',
     );
   }
-  if (places.length != 359) {
-    issues.add('expected 359 total places, found ${places.length}');
+  if (places.length != 371) {
+    issues.add('expected 371 total places, found ${places.length}');
   }
-  if (luxorImageUrls.length != 60 ||
-      luxorImageUrls.values.toSet().length != 60) {
-    issues.add('Luxor image catalog must contain exactly 60 unique image URLs');
+  if (luxorImageUrls.length != 61 ||
+      luxorImageUrls.values.toSet().length != 61) {
+    issues.add('Luxor image catalog must contain exactly 61 unique image URLs');
   }
   final luxorIds = luxorPlaces
       .where((place) => luxorImageUrls.containsKey(place.id))
       .map((place) => place.id)
       .toSet();
-  if (luxorIds.length != 60 ||
+  if (luxorIds.length != 61 ||
       luxorIds.difference(luxorImageUrls.keys.toSet()).isNotEmpty ||
       luxorImageUrls.keys.toSet().difference(luxorIds).isNotEmpty) {
     issues.add('Luxor place IDs and image catalog keys must match exactly');
@@ -253,14 +253,14 @@ Future<void> main() async {
       .where((place) => aswanImageUrls.containsKey(place.id))
       .map((place) => place.id)
       .toSet();
-  if (aswanIds.length != 60 ||
+  if (aswanIds.length != 63 ||
       aswanIds.difference(aswanImageUrls.keys.toSet()).isNotEmpty ||
       aswanImageUrls.keys.toSet().difference(aswanIds).isNotEmpty) {
     issues.add('Aswan place IDs and image catalog keys must match exactly');
   }
-  if (aswanImageUrls.length != 60 ||
-      aswanImageUrls.values.toSet().length != 60) {
-    issues.add('Aswan image catalog must contain exactly 60 unique image URLs');
+  if (aswanImageUrls.length != 63 ||
+      aswanImageUrls.values.toSet().length != 63) {
+    issues.add('Aswan image catalog must contain exactly 63 unique image URLs');
   }
   for (final entry in aswanImageUrls.entries) {
     final uri = Uri.tryParse(entry.value);
@@ -355,6 +355,7 @@ String? _expectedHours(PlaceModel place) {
         'luxor_karnak_temple' => '06:00 AM - 05:30 PM',
         'luxor_temple' || 'luxor_avenue_of_sphinxes' => '06:00 AM - 09:00 PM',
         'luxor_colossi_of_memnon' => '24 hours',
+        'luxor_esna_khnum_temple' => '07:00 AM - 05:00 PM',
         _ => '06:00 AM - 05:00 PM',
       },
       'culture' =>
@@ -400,6 +401,9 @@ String? _expectedHours(PlaceModel place) {
         : '10:00 AM - 01:00 AM';
   }
   if (category == 'nature') {
+    if (place.id == 'cairo_helwan_japanese_garden') {
+      return '08:00 AM - 09:00 PM';
+    }
     if (place.id == 'zed_park_sheikh_zayed') {
       return '01:00 PM - 11:00 PM';
     }
@@ -435,6 +439,7 @@ bool _strictlyInside(EgyptGovernorate governorate, double lat, double lng) {
 }
 
 bool _isOpenPublicSpace(String idAndName) =>
+    idAndName.contains('alex_el_max_venice_canal') ||
     idAndName.contains('street') ||
     idAndName.contains('square') ||
     idAndName.contains('bridge') ||

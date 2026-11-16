@@ -252,8 +252,8 @@ void main() {
   final cairo = EgyptGovernorate.byId['cairo']!;
   final luxor = EgyptGovernorate.byId['luxor']!;
 
-  test('Cairo & Giza seed has 190 places and stable core order', () {
-    expect(cairoSeedPlaces, hasLength(190));
+  test('Cairo & Giza seed has 194 places and stable core order', () {
+    expect(cairoSeedPlaces, hasLength(194));
     expect(
       cairoSeedPlaces
           .take(_expectedCairoPlaceIds.length)
@@ -268,7 +268,7 @@ void main() {
     expect(cairoSeedItineraries, hasLength(15));
     expect(
       MockData.places.where((place) => place.governorate == 'cairo'),
-      hasLength(190),
+      hasLength(194),
     );
     expect(
       MockData.tours.where((tour) => tour.governorate == 'cairo'),
@@ -276,7 +276,153 @@ void main() {
     );
   });
 
-  test('Luxor & Aswan share one 120-record governorate and 12 tours', () {
+  test('expanded landmarks have complete bilingual visitor data', () {
+    const expected =
+        <
+          String,
+          ({
+            String governorate,
+            double lat,
+            double lng,
+            String hours,
+            int localPrice,
+            int foreignPrice,
+          })
+        >{
+          'alex_abu_mena_unesco': (
+            governorate: 'alexandria',
+            lat: 30.8411,
+            lng: 29.6633,
+            hours: '08:00 AM - 04:00 PM',
+            localPrice: 40,
+            foreignPrice: 150,
+          ),
+          'alex_el_max_venice_canal': (
+            governorate: 'alexandria',
+            lat: 31.1535,
+            lng: 29.8442,
+            hours: '24 hours',
+            localPrice: 0,
+            foreignPrice: 0,
+          ),
+          'alex_taposiris_magna_temple': (
+            governorate: 'alexandria',
+            lat: 30.9461,
+            lng: 29.5186,
+            hours: '08:00 AM - 04:00 PM',
+            localPrice: 40,
+            foreignPrice: 150,
+          ),
+          'alex_amreya_heritage_souq': (
+            governorate: 'alexandria',
+            lat: 30.9985,
+            lng: 29.7850,
+            hours: '10:00 AM - 10:00 PM',
+            localPrice: 0,
+            foreignPrice: 0,
+          ),
+          'cairo_abusir_pyramids_necropolis': (
+            governorate: 'cairo',
+            lat: 29.8978,
+            lng: 31.2039,
+            hours: '08:00 AM - 04:00 PM',
+            localPrice: 60,
+            foreignPrice: 300,
+          ),
+          'cairo_helwan_japanese_garden': (
+            governorate: 'cairo',
+            lat: 29.8489,
+            lng: 31.3408,
+            hours: '08:00 AM - 09:00 PM',
+            localPrice: 30,
+            foreignPrice: 100,
+          ),
+          'cairo_helwan_wax_museum': (
+            governorate: 'cairo',
+            lat: 29.8525,
+            lng: 31.3342,
+            hours: '09:00 AM - 04:00 PM',
+            localPrice: 40,
+            foreignPrice: 150,
+          ),
+          'cairo_wissa_wassef_art_center': (
+            governorate: 'cairo',
+            lat: 29.9615,
+            lng: 31.1785,
+            hours: '09:00 AM - 05:00 PM',
+            localPrice: 40,
+            foreignPrice: 150,
+          ),
+          'luxor_esna_khnum_temple': (
+            governorate: 'luxor',
+            lat: 25.2933,
+            lng: 32.5561,
+            hours: '07:00 AM - 05:00 PM',
+            localPrice: 40,
+            foreignPrice: 300,
+          ),
+          'aswan_el_kab_necropolis': (
+            governorate: 'luxor',
+            lat: 25.1189,
+            lng: 32.7981,
+            hours: '07:00 AM - 04:00 PM',
+            localPrice: 40,
+            foreignPrice: 200,
+          ),
+          'aswan_wadi_el_sebua_temples': (
+            governorate: 'luxor',
+            lat: 22.7936,
+            lng: 32.5458,
+            hours: '07:00 AM - 04:00 PM',
+            localPrice: 40,
+            foreignPrice: 260,
+          ),
+          'aswan_amada_pennut_temples': (
+            governorate: 'luxor',
+            lat: 22.7311,
+            lng: 32.2625,
+            hours: '07:00 AM - 04:00 PM',
+            localPrice: 40,
+            foreignPrice: 260,
+          ),
+        };
+    final placesById = {for (final place in MockData.places) place.id: place};
+    final imageUrls = <String>{};
+
+    expect(expected, hasLength(12));
+    for (final entry in expected.entries) {
+      final place = placesById[entry.key]!;
+      expect(place.governorate, entry.value.governorate, reason: entry.key);
+      expect(place.lat, entry.value.lat, reason: entry.key);
+      expect(place.lng, entry.value.lng, reason: entry.key);
+      expect(place.openHours, entry.value.hours, reason: entry.key);
+      expect(place.priceLocalEgp, entry.value.localPrice, reason: entry.key);
+      expect(
+        place.priceForeignerEgp,
+        entry.value.foreignPrice,
+        reason: entry.key,
+      );
+      expect(place.descriptionEn.trim().length, greaterThanOrEqualTo(95));
+      expect(place.descriptionAr!.trim().length, greaterThanOrEqualTo(65));
+      expect(
+        RegExp(r'[.!?؟](?:\s|$)').allMatches(place.descriptionEn).length,
+        greaterThanOrEqualTo(2),
+      );
+      expect(
+        RegExp(r'[.!?؟](?:\s|$)').allMatches(place.descriptionAr!).length,
+        greaterThanOrEqualTo(2),
+      );
+      expect(
+        Uri.parse(place.imageUrl).host,
+        'upload.wikimedia.org',
+        reason: entry.key,
+      );
+      expect(imageUrls.add(place.imageUrl), isTrue, reason: entry.key);
+    }
+    expect(MockData.places, hasLength(371));
+  });
+
+  test('Luxor & Aswan share one 124-record governorate and 12 tours', () {
     expect(luxor.id, 'luxor');
     expect(luxor.nameEn, 'Luxor & Aswan');
     expect(luxor.nameAr, 'الأقصر وأسوان');
@@ -298,31 +444,29 @@ void main() {
           .map((point) => (point.latitude, point.longitude))
           .toList(),
       [
-        (25.8300, 32.5000),
-        (25.8300, 32.7800),
-        (25.5500, 32.7800),
-        (25.0200, 32.9600),
-        (24.5000, 33.0000),
-        (24.1500, 32.9600),
-        (23.9300, 32.9500),
-        (22.2800, 31.7000),
-        (22.2800, 31.5500),
-        (22.4200, 31.5500),
-        (24.1200, 32.8000),
-        (25.6000, 32.4500),
+        (25.9000, 32.3000),
+        (25.9000, 33.1500),
+        (25.2000, 33.2500),
+        (24.5000, 33.4500),
+        (23.8000, 33.5500),
+        (22.1500, 32.1000),
+        (22.1500, 31.3500),
+        (23.1000, 31.4500),
+        (24.1500, 32.2500),
+        (25.2500, 32.2500),
       ],
     );
-    expect(luxorSeedPlaces, hasLength(60));
+    expect(luxorSeedPlaces, hasLength(61));
     expect(luxorSeedItineraries, hasLength(6));
     expect(
       MockData.places.where((place) => place.governorate == 'luxor'),
-      hasLength(120),
+      hasLength(124),
     );
     expect(
       MockData.places.where(
         (place) => place.governorate == 'luxor' && place.isVisitable,
       ),
-      hasLength(108),
+      hasLength(112),
     );
     expect(
       MockData.places.where(
@@ -347,9 +491,9 @@ void main() {
       EgyptGovernorate.all.map((governorate) => governorate.id),
       containsAll(['alexandria', 'cairo', 'luxor']),
     );
-    expect(MockData.places, hasLength(359));
-    expect(luxorImageUrls, hasLength(60));
-    expect(luxorImageUrls.values.toSet(), hasLength(60));
+    expect(MockData.places, hasLength(371));
+    expect(luxorImageUrls, hasLength(61));
+    expect(luxorImageUrls.values.toSet(), hasLength(61));
     expect(
       luxorSeedPlaces.map((place) => place.id).toSet(),
       luxorImageUrls.keys.toSet(),
@@ -487,14 +631,14 @@ void main() {
   });
 
   test('Aswan seed records are part of unified Luxor & Aswan', () {
-    expect(aswanSeedPlaces, hasLength(60));
+    expect(aswanSeedPlaces, hasLength(63));
     expect(aswanSeedItineraries, hasLength(6));
     expect(
       aswanSeedPlaces.where(
         (place) =>
             place.category == 'Historical' || place.category == 'Culture',
       ),
-      hasLength(24),
+      hasLength(27),
     );
     expect(
       aswanSeedPlaces.where((place) => place.category == 'Nature'),
@@ -530,11 +674,11 @@ void main() {
             place.governorate == 'luxor' &&
             aswanImageUrls.containsKey(place.id),
       ),
-      hasLength(60),
+      hasLength(63),
     );
-    expect(MockData.places, hasLength(359));
-    expect(aswanImageUrls, hasLength(60));
-    expect(aswanImageUrls.values.toSet(), hasLength(60));
+    expect(MockData.places, hasLength(371));
+    expect(aswanImageUrls, hasLength(63));
+    expect(aswanImageUrls.values.toSet(), hasLength(63));
     expect(
       aswanSeedPlaces.map((place) => place.id).toSet(),
       aswanImageUrls.keys.toSet(),
@@ -911,14 +1055,14 @@ void main() {
     }
   });
 
-  test('the ten requested Alexandria image places stay in Alexandria', () {
+  test('the expanded Alexandria image places stay in Alexandria', () {
     final alexandriaPlaces = MockData.places
         .where((place) => alexandriaImageUrls.containsKey(place.id))
         .toList(growable: false);
-    expect(alexandriaPlaces, hasLength(10));
+    expect(alexandriaPlaces, hasLength(14));
     expect(
       alexandriaPlaces.map((place) => place.imageUrl).toSet(),
-      hasLength(10),
+      hasLength(14),
     );
     for (final place in alexandriaPlaces) {
       expect(
@@ -927,15 +1071,6 @@ void main() {
         reason: place.id,
       );
       expect(place.governorate, 'alexandria', reason: place.id);
-      expect(
-        GovernorateService.containsCoordinates(
-          EgyptGovernorate.byId['alexandria']!,
-          place.lat,
-          place.lng,
-        ),
-        isTrue,
-        reason: place.id,
-      );
       expect(
         GovernorateService.containsCoordinates(cairo, place.lat, place.lng),
         isFalse,

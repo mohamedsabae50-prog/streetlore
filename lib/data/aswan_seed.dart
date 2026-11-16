@@ -1175,6 +1175,57 @@ final List<PlaceModel> aswanSeedPlaces = List<PlaceModel>.unmodifiable([
     storyAr:
         'تقع ماكينة بنك مصر قرب مدخل زوار معبد إدفو ووسط المدينة، وتفيد في التنقل الإقليمي والمشتريات المحلية',
   )),
+  _buildAswanPlace((
+    id: 'aswan_el_kab_necropolis',
+    nameEn: 'El-Kab Ancient City & Tombs',
+    nameAr: 'مدينة ومقابر الكاب',
+    category: 'Historical',
+    lat: 25.1189,
+    lng: 32.7981,
+    areaEn: 'El-Kab',
+    areaAr: 'الكاب',
+    openHours: '07:00 AM - 04:00 PM',
+    priceLocalEgp: 40,
+    priceForeignerEgp: 200,
+    storyEn:
+        'the ancient walled settlement of Nekheb preserves temples and rock-cut tombs that trace Upper Egypt’s history from early dynasties through the New Kingdom',
+    storyAr:
+        'تحفظ مدينة نخِب القديمة المحاطة بالأسوار معابد ومقابر صخرية توثق تاريخ صعيد مصر من الأسرات المبكرة حتى الدولة الحديثة',
+  )),
+  _buildAswanPlace((
+    id: 'aswan_wadi_el_sebua_temples',
+    nameEn: 'Temples of Wadi el-Sebua',
+    nameAr: 'معابد وادي السبوع',
+    category: 'Historical',
+    lat: 22.7936,
+    lng: 32.5458,
+    areaEn: 'Wadi el-Sebua, Lake Nasser',
+    areaAr: 'وادي السبوع، بحيرة ناصر',
+    openHours: '07:00 AM - 04:00 PM',
+    priceLocalEgp: 40,
+    priceForeignerEgp: 260,
+    storyEn:
+        'the New Kingdom sanctuary built by Ramesses II combines a processional avenue of sphinxes with a rock-cut temple dedicated to Amun-Ra and the deified king',
+    storyAr:
+        'يجمع المعبد الذي شيده رمسيس الثاني في الدولة الحديثة بين طريق احتفالي تصطف عليه تماثيل أبي الهول ومعبد منحوت في الصخر مكرس لآمون رع والملك المؤله',
+  )),
+  _buildAswanPlace((
+    id: 'aswan_amada_pennut_temples',
+    nameEn: 'Temple of Amada & Derr',
+    nameAr: 'معبد عمدا والدر',
+    category: 'Historical',
+    lat: 22.7311,
+    lng: 32.2625,
+    areaEn: 'Lake Nasser',
+    areaAr: 'بحيرة ناصر',
+    openHours: '07:00 AM - 04:00 PM',
+    priceLocalEgp: 40,
+    priceForeignerEgp: 260,
+    storyEn:
+        'the Temple of Amada and the nearby temple of Derr preserve richly decorated Nubian sanctuaries relocated during the Lake Nasser rescue campaign',
+    storyAr:
+        'يحفظ معبد عمدا ومعبد الدر القريب مزارات نوبية غنية بالزخارف نُقلت خلال حملة إنقاذ آثار بحيرة ناصر',
+  )),
 ]);
 
 final Map<String, PlaceModel> _aswanPlacesById = {
