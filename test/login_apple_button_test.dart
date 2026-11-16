@@ -137,7 +137,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('web login displays the governorate preview button', (
+  testWidgets('login does not display the local preview button', (
     tester,
   ) async {
     final auth = _AppleSignInAuthProvider();
@@ -154,12 +154,9 @@ void main() {
 
     expect(
       find.byKey(const ValueKey('login-local-preview-button')),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(
-      find.text('Explore Preview · تصفح المعاينة (الإسكندرية والقاهرة)'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('Explore Preview'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

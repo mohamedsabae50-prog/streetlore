@@ -38,6 +38,7 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
     'Mosques',
   ];
   String _selectedCategory = 'Culture';
+  String _suggestionType = 'regular';
   final _mapController = MapController();
   LatLng? _selectedLocation;
   Uint8List? _imageBytes;
@@ -159,20 +160,29 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
         if (mounted) setState(() => _isUploadingImage = false);
       }
 
-      await client.from('suggested_places').insert({
-        'user_id': user.id,
-        'title': _titleController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'category': _selectedCategory,
-        'lat': location.latitude,
-        'lng': location.longitude,
-        'image_url': imageUrl,
-        'status': 'pending',
-      });
+      final metadataSaved = await SupabaseService.instance
+          .submitPlaceSuggestion({
+            'user_id': user.id,
+            'title': _titleController.text.trim(),
+            'description': _descriptionController.text.trim(),
+            'category': _selectedCategory,
+            'lat': location.latitude,
+            'lng': location.longitude,
+            'image_url': imageUrl,
+            'status': 'pending',
+          }, suggestionType: _suggestionType);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('suggest_place_success'))),
+        SnackBar(
+          content: Text(
+            context.tr(
+              metadataSaved
+                  ? 'suggest_place_success'
+                  : 'suggest_place_legacy_schema_warning',
+            ),
+          ),
+        ),
       );
       Navigator.of(context).pop();
     } catch (error) {
@@ -209,7 +219,7 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
-        title: const Text('Suggest a Hidden Gem'),
+        title: Text(context.tr('suggest_place_title')),
         backgroundColor: context.bgColor,
         foregroundColor: context.textPri,
         elevation: 0,
@@ -240,7 +250,7 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        context.tr('pro_hidden_gem_reward'),
+                        context.tr('place_suggestion_rewards_banner'),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -250,6 +260,36 @@ class _SuggestPlaceScreenState extends State<SuggestPlaceScreen> {
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                context.tr('suggestion_type'),
+                style: TextStyle(
+                  color: context.textPri,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<String>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(
+                    value: 'regular',
+                    icon: const Icon(Icons.place_outlined),
+                    label: Text(context.tr('suggestion_type_regular')),
+                  ),
+                  ButtonSegment(
+                    value: 'hidden_gem',
+                    icon: const Icon(Icons.diamond_outlined),
+                    label: Text(context.tr('suggestion_type_hidden_gem')),
+                  ),
+                ],
+                selected: {_suggestionType},
+                onSelectionChanged: _isSubmitting
+                    ? null
+                    : (selection) =>
+                          setState(() => _suggestionType = selection.first),
               ),
               const SizedBox(height: 16),
               Text(

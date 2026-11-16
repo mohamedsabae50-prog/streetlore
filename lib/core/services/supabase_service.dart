@@ -1428,6 +1428,53 @@ class SupabaseService {
     }
   }
 
+  Future<bool> submitPlaceSuggestion(
+    Map<String, dynamic> fields, {
+    required String suggestionType,
+  }) async {
+    final client = clientOrNull;
+    if (client == null) {
+      throw StateError('Supabase client not initialized');
+    }
+
+    final rewardDays = switch (suggestionType) {
+      'regular' => 7,
+      'hidden_gem' => 30,
+      _ => throw ArgumentError.value(
+        suggestionType,
+        'suggestionType',
+        'Expected regular or hidden_gem.',
+      ),
+    };
+    final legacyFields = Map<String, dynamic>.from(fields);
+    final modernFields = {
+      ...legacyFields,
+      'suggestion_type': suggestionType,
+      'is_hidden_gem': suggestionType == 'hidden_gem',
+      'reward_days': rewardDays,
+    };
+
+    try {
+      await client.from('suggested_places').insert(modernFields);
+      return true;
+    } on PostgrestException catch (error) {
+      if (!_isMissingSuggestionMetadataColumn(error)) rethrow;
+      debugPrint(
+        'SupabaseService: suggestion metadata columns are not available; '
+        'retrying with the legacy suggested_places schema.',
+      );
+      await client.from('suggested_places').insert(legacyFields);
+      return false;
+    }
+  }
+
+  bool _isMissingSuggestionMetadataColumn(PostgrestException error) {
+    return error.code == '42703' ||
+        error.code == 'PGRST204' ||
+        (error.message.toLowerCase().contains('column') &&
+            error.message.toLowerCase().contains('schema cache'));
+  }
+
   /// Deletes the authenticated user's account and cascading user-owned data.
   Future<Map<String, dynamic>> deleteAccount() async {
     final client = clientOrNull;

@@ -58,6 +58,7 @@ class AchievementProvider extends ChangeNotifier {
   String _userKey = 'guest';
   Map<String, AchievementProgress> _progress = {};
   bool _initialized = false;
+  bool _recalculationScheduled = false;
   int _loadGeneration = 0;
   int _friendCount = 0;
   int _friendCountGeneration = 0;
@@ -74,6 +75,7 @@ class AchievementProvider extends ChangeNotifier {
     _userKey = _effectiveKey();
     unawaited(_load());
     places.addListener(_onSourceChanged);
+    gam.addListener(_onSourceChanged);
     streak.addListener(_onSourceChanged);
     tours.addListener(_onSourceChanged);
     unawaited(refreshFriendCount());
@@ -82,13 +84,19 @@ class AchievementProvider extends ChangeNotifier {
   @override
   void dispose() {
     places.removeListener(_onSourceChanged);
+    gam.removeListener(_onSourceChanged);
     streak.removeListener(_onSourceChanged);
     tours.removeListener(_onSourceChanged);
     super.dispose();
   }
 
   void _onSourceChanged() {
-    if (_initialized) _recalculateAll();
+    if (!_initialized || _recalculationScheduled) return;
+    _recalculationScheduled = true;
+    scheduleMicrotask(() {
+      _recalculationScheduled = false;
+      if (_initialized) _recalculateAll();
+    });
   }
 
   String _effectiveKey() {
@@ -199,7 +207,9 @@ class AchievementProvider extends ChangeNotifier {
     if (!_initialized || (auth.userId.isNotEmpty && !tours.checkInsLoaded)) {
       return 0;
     }
-    return _progress.values.where((p) => p.unlocked).length;
+    return AchievementCatalog.all
+        .where((definition) => _progress[definition.id]?.unlocked == true)
+        .length;
   }
 
   int get totalAvailable => AchievementCatalog.all.length;
@@ -236,9 +246,14 @@ class AchievementProvider extends ChangeNotifier {
     if (auth.userId.isNotEmpty && !tours.checkInsLoaded) return;
 
     final stats = gam.stats;
-    final all = places.places;
+    final all = places.allPlaces
+        .where((place) => place.isVisitable)
+        .toList(growable: false);
     final streakDays = streak.currentStreak;
-    final checkedInPlaceIds = tours.checkedInPlaceIds;
+    final visitablePlaceIds = all.map((place) => place.id).toSet();
+    final checkedInPlaceIds = tours.checkedInPlaceIds.intersection(
+      visitablePlaceIds,
+    );
     final visitedCount = checkedInPlaceIds.length;
     final checkedInPlaces = all
         .where(

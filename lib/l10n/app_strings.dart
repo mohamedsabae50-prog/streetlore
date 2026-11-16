@@ -345,6 +345,22 @@ class AppStrings {
       'en': 'Your place suggestion was submitted.',
       'ar': 'تم إرسال اقتراح المكان.',
     },
+    'suggest_place_title': {'en': 'Suggest a Place', 'ar': 'اقترح مكانًا'},
+    'suggestion_type': {'en': 'Suggestion Type', 'ar': 'نوع الاقتراح'},
+    'suggestion_type_regular': {'en': 'Regular Place', 'ar': 'مكان عادي'},
+    'suggestion_type_hidden_gem': {'en': 'Hidden Gem', 'ar': 'جوهرة مخفية'},
+    'place_suggestion_rewards_banner': {
+      'en':
+          '🌟 Regular Place Approved = 1 Week Free Pro (7 Days)\n💎 Hidden Gem Approved = 1 Month Free Pro (30 Days)',
+      'ar':
+          '🌟 مكان عادي مقبول = اشتراك Pro مجاني لمدة أسبوع (7 أيام)\n💎 جوهرة مخفية مقبولة = اشتراك Pro مجاني لمدة شهر (30 يومًا)',
+    },
+    'suggest_place_legacy_schema_warning': {
+      'en':
+          'Your suggestion was submitted. Reward type tracking is pending a database update.',
+      'ar':
+          'تم إرسال اقتراحك. سيتم تفعيل تتبع نوع المكافأة بعد تحديث قاعدة البيانات.',
+    },
     'pro_monthly_reward_title': {
       'en': 'Finish #1 Top Visitor of the Month and earn 1 Month of Pro FREE!',
       'ar': 'أنه الشهر في المركز الأول كأفضل زائر واربح شهرًا من برو مجانًا!',

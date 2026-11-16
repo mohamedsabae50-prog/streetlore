@@ -6,12 +6,19 @@ import '../../data/models/gamification_stats.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/achievement_provider.dart';
 import '../../logic/gamification_provider.dart';
+import '../../logic/gamification_badge_progress.dart';
 import '../../logic/place_provider.dart';
+import '../../logic/tour_provider.dart';
 
 class AchievementsScreen extends StatefulWidget {
-  const AchievementsScreen({super.key, this.embedded = false});
+  const AchievementsScreen({
+    super.key,
+    this.embedded = false,
+    this.badgesOnly = false,
+  });
 
   final bool embedded;
+  final bool badgesOnly;
 
   @override
   State<AchievementsScreen> createState() => _AchievementsScreenState();
@@ -28,7 +35,11 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
           ? null
           : AppBar(
               title: Text(
-                context.tr('gamification_title'),
+                widget.badgesOnly
+                    ? (Localizations.localeOf(context).languageCode == 'ar'
+                          ? 'الشارات'
+                          : 'Badges')
+                    : context.tr('gamification_title'),
                 style: const TextStyle(fontWeight: FontWeight.w800),
               ),
               centerTitle: true,
@@ -42,106 +53,111 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-      body: Consumer<AchievementProvider>(
-        builder: (context, ach, _) {
-          final stats = context.watch<GamificationProvider>().stats;
-          final unlocked = ach.totalUnlocked;
-          final total = ach.totalAvailable;
-          final points = ach.totalPointsEarned;
-          final ratio = ach.completionRatio;
+      body: widget.badgesOnly
+          ? const _BadgeCollection()
+          : Consumer<AchievementProvider>(
+              builder: (context, ach, _) {
+                final stats = context.watch<GamificationProvider>().stats;
+                final unlocked = ach.totalUnlocked;
+                final total = ach.totalAvailable;
+                final points = ach.totalPointsEarned;
+                final ratio = ach.completionRatio;
 
-          final byCategory =
-              <AchievementCategory, List<AchievementDefinition>>{};
-          for (final def in AchievementCatalog.all) {
-            final progress = ach.progressFor(def.id);
-            if (_filter == 'unlocked' && !progress.unlocked) continue;
-            if (_filter == 'progress' && progress.unlocked) continue;
-            byCategory.putIfAbsent(def.category, () => []).add(def);
-          }
-          byCategory.removeWhere((_, items) => items.isEmpty);
+                final byCategory =
+                    <AchievementCategory, List<AchievementDefinition>>{};
+                for (final def in AchievementCatalog.all) {
+                  final progress = ach.progressFor(def.id);
+                  if (_filter == 'unlocked' && !progress.unlocked) continue;
+                  if (_filter == 'progress' && progress.unlocked) continue;
+                  byCategory.putIfAbsent(def.category, () => []).add(def);
+                }
+                byCategory.removeWhere((_, items) => items.isEmpty);
 
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: _Header(
-                  unlocked: unlocked,
-                  total: total,
-                  points: points,
-                  ratio: ratio,
-                  stats: stats,
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: _FilterBar(
-                  selected: _filter,
-                  onSelected: (filter) => setState(() => _filter = filter),
-                ),
-              ),
-              SliverToBoxAdapter(child: _CategoryMastery(achievements: ach)),
-              for (final entry in byCategory.entries) ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _categoryIcon(entry.key),
-                          color: context.textSec,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _categoryLabel(context, entry.key),
-                          style: TextStyle(
-                            color: context.textPri,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '${entry.value.where((d) => ach.progressFor(d.id).unlocked).length}/${entry.value.length}',
-                          style: TextStyle(
-                            color: context.textSec,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                return CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: _Header(
+                        unlocked: unlocked,
+                        total: total,
+                        points: points,
+                        ratio: ratio,
+                        stats: stats,
+                      ),
                     ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 0.72,
+                    SliverToBoxAdapter(
+                      child: _FilterBar(
+                        selected: _filter,
+                        onSelected: (filter) =>
+                            setState(() => _filter = filter),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: _CategoryMastery(achievements: ach),
+                    ),
+                    for (final entry in byCategory.entries) ...[
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _categoryIcon(entry.key),
+                                color: context.textSec,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _categoryLabel(context, entry.key),
+                                style: TextStyle(
+                                  color: context.textPri,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '${entry.value.where((d) => ach.progressFor(d.id).unlocked).length}/${entry.value.length}',
+                                style: TextStyle(
+                                  color: context.textSec,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                    delegate: SliverChildBuilderDelegate((context, i) {
-                      final def = entry.value[i];
-                      return _AchievementTile(
-                        definition: def,
-                        progress: ach.progressFor(def.id),
-                      );
-                    }, childCount: entry.value.length),
-                  ),
-                ),
-              ],
-              SliverToBoxAdapter(
-                child: _ActivityTimeline(
-                  events: context.watch<GamificationProvider>().activity,
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 32)),
-            ],
-          );
-        },
-      ),
+                      ),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 12,
+                                crossAxisSpacing: 12,
+                                childAspectRatio: 0.72,
+                              ),
+                          delegate: SliverChildBuilderDelegate((context, i) {
+                            final def = entry.value[i];
+                            return _AchievementTile(
+                              definition: def,
+                              progress: ach.progressFor(def.id),
+                            );
+                          }, childCount: entry.value.length),
+                        ),
+                      ),
+                    ],
+                    SliverToBoxAdapter(
+                      child: _ActivityTimeline(
+                        events: context.watch<GamificationProvider>().activity,
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                  ],
+                );
+              },
+            ),
     );
   }
 
@@ -197,6 +213,185 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       case AchievementCategory.special:
         return 'Special';
     }
+  }
+}
+
+class _BadgeCollection extends StatelessWidget {
+  const _BadgeCollection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer4<
+      GamificationProvider,
+      PlaceProvider,
+      TourProvider,
+      AchievementProvider
+    >(
+      builder: (context, gam, places, tours, achievements, _) {
+        final badges = GamificationStats.badgeCatalog;
+        final progressById = GamificationBadgeProgress.calculate(
+          stats: gam.stats,
+          allPlaces: places.allPlaces,
+          checkedInPlaceIds: tours.checkedInPlaceIds,
+          toursCompleted: tours.visitedToursCount,
+          achievements: achievements,
+        );
+        int progressFor(GamificationBadgeDefinition badge) =>
+            progressById[badge.id] ?? 0;
+        bool isUnlocked(GamificationBadgeDefinition badge) =>
+            GamificationBadgeProgress.isUnlocked(
+              badge,
+              progressFor(badge),
+              gam.stats,
+            );
+        final unlockedCount = badges.where(isUnlocked).length;
+        final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+        return CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        isArabic ? 'الشارات المتاحة' : 'Badge collection',
+                        style: TextStyle(
+                          color: context.textPri,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '$unlockedCount / ${badges.length}',
+                      style: TextStyle(
+                        color: context.textSec,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.72,
+                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final badge = badges[index];
+                  final current = progressFor(badge);
+                  return _GamificationBadgeTile(
+                    key: ValueKey('gamification-badge-${badge.id}'),
+                    badge: badge,
+                    current: current,
+                    unlocked: isUnlocked(badge),
+                    isArabic: isArabic,
+                  );
+                }, childCount: badges.length),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _GamificationBadgeTile extends StatelessWidget {
+  const _GamificationBadgeTile({
+    super.key,
+    required this.badge,
+    required this.current,
+    required this.unlocked,
+    required this.isArabic,
+  });
+
+  final GamificationBadgeDefinition badge;
+  final int current;
+  final bool unlocked;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = unlocked ? AppColors.primary : context.textSec;
+    final ratio = (current / badge.target).clamp(0.0, 1.0).toDouble();
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                GamificationBadgeProgress.iconFor(badge.iconName),
+                color: color,
+                size: 20,
+              ),
+              const Spacer(),
+              Icon(
+                unlocked ? Icons.check_circle_rounded : Icons.lock_outline,
+                color: color,
+                size: 16,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isArabic ? badge.nameAr : badge.nameEn,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: context.textPri,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Expanded(
+            child: Text(
+              isArabic ? badge.descriptionAr : badge.descriptionEn,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: context.textSec,
+                fontSize: 10,
+                height: 1.3,
+              ),
+            ),
+          ),
+          Text(
+            '$current / ${badge.target}',
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 5),
+          LinearProgressIndicator(
+            value: ratio,
+            minHeight: 4,
+            borderRadius: BorderRadius.circular(4),
+            color: color,
+            backgroundColor: color.withValues(alpha: 0.14),
+          ),
+        ],
+      ),
+    );
   }
 }
 
