@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/map_route_service.dart';
+import '../../core/services/offline_tile_provider.dart';
 import '../../core/services/governorate_service.dart';
 import '../../data/models/egypt_governorate.dart';
 import '../../data/models/place_model.dart';
@@ -173,6 +174,24 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
     return total;
   }
 
+  void _fitSelectedRoute(EgyptGovernorate governorate) {
+    if (!_mapReady || _selected.isEmpty) return;
+    try {
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: LatLngBounds.fromPoints([
+            _routeOrigin(governorate),
+            ..._selected.map((place) => LatLng(place.lat, place.lng)),
+            ..._routePoints,
+          ]),
+          padding: const EdgeInsets.all(40),
+        ),
+      );
+    } catch (error) {
+      debugPrint('WalkingRoutesScreen: could not fit selected route: $error');
+    }
+  }
+
   List<PlaceModel> _sortedPlaces(
     Iterable<PlaceModel> places,
     EgyptGovernorate governorate,
@@ -184,7 +203,9 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
         .where(
           (place) =>
               place.isVisitable &&
-              EgyptGovernorate.normalizeId(place.governorate) == governorate.id,
+              EgyptGovernorate.normalizeId(place.governorate) ==
+                  governorate.id &&
+              !_selected.any((stop) => stop.id == place.id),
         )
         .toList();
     sorted.sort((a, b) {
@@ -215,6 +236,7 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
       _routePoints = const [];
       _routeLoading = true;
     });
+    _fitSelectedRoute(governorate);
 
     try {
       final route = <LatLng>[];
@@ -237,6 +259,7 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
         _routePoints = List.unmodifiable(route);
         _routeLoading = false;
       });
+      _fitSelectedRoute(governorate);
     } catch (error, stackTrace) {
       debugPrint(
         'WalkingRoutesScreen: route could not refresh: $error\n$stackTrace',
@@ -276,6 +299,9 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
         _selected.add(p);
       }
     });
+    final governorate =
+        EgyptGovernorate.byId[_governorates?.activeGovernorate ?? 'alexandria'];
+    if (governorate != null) _fitSelectedRoute(governorate);
     unawaited(_refreshRoute());
     if (_mapReady && _selected.isNotEmpty) {
       final last = _selected.last;
@@ -516,6 +542,7 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
                           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.alsaba.egyptlore',
                       maxZoom: 19,
+                      tileProvider: OfflineTileProvider(),
                     ),
                     if (_selected.isNotEmpty)
                       PolylineLayer(
@@ -564,7 +591,7 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
                             ),
                           ),
                         ),
-                        for (final place in places)
+                        for (final place in _selected)
                           Marker(
                             point: LatLng(place.lat, place.lng),
                             width: 40,
@@ -601,6 +628,8 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
             child: _PlaceSelector(
               places: places,
               selected: _selected,
+              distanceKm: distanceMeters / 1000,
+              minutes: MapRouteService.walkingMinutes(distanceMeters),
               onToggle: _togglePlace,
             ),
           ),
@@ -716,19 +745,130 @@ class _RouteSummary extends StatelessWidget {
 class _PlaceSelector extends StatelessWidget {
   final List<PlaceModel> places;
   final List<PlaceModel> selected;
+  final double distanceKm;
+  final int minutes;
   final ValueChanged<PlaceModel> onToggle;
 
   const _PlaceSelector({
     required this.places,
     required this.selected,
+    required this.distanceKm,
+    required this.minutes,
     required this.onToggle,
   });
+
+  String _formatTime(int mins) {
+    if (mins < 60) return '$mins min';
+    return '${mins ~/ 60}h ${mins % 60}m';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Selected Stops / المحطات المختارة',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: context.textPri,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Text(
+                '${distanceKm.toStringAsFixed(1)} km · ${_formatTime(minutes)}',
+                key: const ValueKey('walking-route-selected-distance'),
+                style: TextStyle(
+                  color: context.textSec,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 54,
+          child: ListView(
+            key: const ValueKey('walking-route-selected-stops'),
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            children: [
+              for (final entry in selected.asMap().entries)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 8),
+                  child: Container(
+                    key: ValueKey(
+                      'walking-route-selected-stop-${entry.value.id}',
+                    ),
+                    padding: const EdgeInsetsDirectional.only(start: 8, end: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 12,
+                          backgroundColor: AppColors.primary,
+                          child: Text(
+                            '${entry.key + 1}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 130),
+                          child: Text(
+                            entry.value.localizedName(
+                              Localizations.localeOf(context).languageCode,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: context.textPri,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          key: ValueKey(
+                            'walking-route-remove-stop-${entry.value.id}',
+                          ),
+                          tooltip: 'Remove stop',
+                          visualDensity: VisualDensity.compact,
+                          constraints: const BoxConstraints.tightFor(
+                            width: 30,
+                            height: 30,
+                          ),
+                          padding: EdgeInsets.zero,
+                          onPressed: () => onToggle(entry.value),
+                          icon: const Icon(Icons.close_rounded, size: 17),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
           child: Row(

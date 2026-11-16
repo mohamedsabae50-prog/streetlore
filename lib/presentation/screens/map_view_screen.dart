@@ -123,6 +123,7 @@ class _MapViewScreenState extends State<MapViewScreen>
   late final AnimationController _cameraAnimation;
   GovernorateProvider? _governorates;
   String? _lastGovernorateId;
+  bool _lastFogEnabled = true;
   LatLng _cameraStart = _alexCenter;
   LatLng _cameraTarget = _alexCenter;
   double _cameraStartZoom = 12;
@@ -178,6 +179,7 @@ class _MapViewScreenState extends State<MapViewScreen>
     _governorates?.removeListener(_onGovernorateChanged);
     _governorates = provider;
     _lastGovernorateId = provider.activeGovernorate;
+    _lastFogEnabled = provider.fogEnabled;
     _atms = _curatedAtmsFor(provider.activeGovernorate);
     provider.addListener(_onGovernorateChanged);
     if (provider.activeGovernorate == 'alexandria') {
@@ -187,10 +189,18 @@ class _MapViewScreenState extends State<MapViewScreen>
 
   void _onGovernorateChanged() {
     final id = _governorates?.activeGovernorate;
-    if (id == null || id == _lastGovernorateId) return;
+    final fogEnabled = _governorates?.fogEnabled ?? true;
+    if (id == null) return;
+    if (id == _lastGovernorateId) {
+      if (fogEnabled == _lastFogEnabled) return;
+      _lastFogEnabled = fogEnabled;
+      if (!fogEnabled && !_routePlannerOpen) _fitToAllPlaces();
+      return;
+    }
     final governorate = EgyptGovernorate.byId[id];
     if (governorate == null) return;
     _lastGovernorateId = id;
+    _lastFogEnabled = fogEnabled;
     setState(() {
       _selectedPlace = null;
       _selectedCategories.clear();
@@ -205,7 +215,36 @@ class _MapViewScreenState extends State<MapViewScreen>
     if (id == 'alexandria') {
       unawaited(_loadNearbyAtms(_userLocation ?? _alexCenter));
     }
-    _animateCameraTo(governorate);
+    if (!fogEnabled && !_routePlannerOpen) {
+      _fitToAllPlaces();
+    } else {
+      _animateCameraTo(governorate);
+    }
+  }
+
+  void _fitToAllPlaces() {
+    if (!_mapReady || _routePlannerOpen) return;
+    final places = context.read<PlaceProvider>().allPlaces;
+    final points = <LatLng>[
+      for (final place in places)
+        if (place.isVisitable || place.isAtm) LatLng(place.lat, place.lng),
+      for (final id in const ['alexandria', 'cairo', 'luxor', 'red_sea'])
+        LatLng(
+          EgyptGovernorate.byId[id]!.centerLat,
+          EgyptGovernorate.byId[id]!.centerLng,
+        ),
+    ];
+    if (points.length < 2) return;
+    try {
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: LatLngBounds.fromPoints(points),
+          padding: const EdgeInsets.fromLTRB(32, 110, 32, 90),
+        ),
+      );
+    } catch (error) {
+      debugPrint('MapViewScreen: could not fit all governorates: $error');
+    }
   }
 
   void _onMapReady() {
@@ -220,6 +259,8 @@ class _MapViewScreenState extends State<MapViewScreen>
       }
       setState(() => _selectedPlace = initialDestination);
       unawaited(_startRoute(MapRouteDestination.fromPlace(initialDestination)));
+    } else if (!context.read<GovernorateProvider>().fogEnabled) {
+      _fitToAllPlaces();
     } else if (widget.autoLocate) {
       _locateUser();
     }
@@ -596,6 +637,9 @@ class _MapViewScreenState extends State<MapViewScreen>
       _plannedStops = List.unmodifiable(nextStops);
       _selectedPlace = null;
     });
+    final governorate = EgyptGovernorate
+        .byId[context.read<GovernorateProvider>().activeGovernorate];
+    if (governorate != null) _fitToPlannedRoute(governorate);
     unawaited(_refreshPlannedRoute());
   }
 
@@ -616,7 +660,8 @@ class _MapViewScreenState extends State<MapViewScreen>
         : _routePlannerOrigin(governorate);
     final sorted = places.where((place) {
       return place.isVisitable &&
-          EgyptGovernorate.normalizeId(place.governorate) == governorate.id;
+          EgyptGovernorate.normalizeId(place.governorate) == governorate.id &&
+          !_plannedStops.any((stop) => stop.id == place.id);
     }).toList();
     sorted.sort((a, b) {
       final distanceComparison = MapRouteService.distanceMeters(
@@ -627,6 +672,51 @@ class _MapViewScreenState extends State<MapViewScreen>
       return a.id.compareTo(b.id);
     });
     return sorted;
+  }
+
+  void _fitToPlannedRoute(EgyptGovernorate governorate) {
+    if (!_mapReady || !_routePlannerOpen || _plannedStops.isEmpty) return;
+    final points = <LatLng>[
+      _routePlannerOrigin(governorate),
+      ..._plannedStops.map((place) => LatLng(place.lat, place.lng)),
+      ..._plannedRoute,
+    ];
+    try {
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: LatLngBounds.fromPoints(points),
+          padding: const EdgeInsets.fromLTRB(32, 90, 32, 430),
+        ),
+      );
+    } catch (error) {
+      debugPrint('MapViewScreen: could not fit planned route: $error');
+    }
+  }
+
+  double _plannedDistanceMeters(EgyptGovernorate governorate) {
+    if (_plannedRoute.length > 1) {
+      var distance = 0.0;
+      for (var index = 1; index < _plannedRoute.length; index++) {
+        distance += MapRouteService.distanceMeters(
+          _plannedRoute[index - 1],
+          _plannedRoute[index],
+        );
+      }
+      return distance;
+    }
+    var origin = _routePlannerOrigin(governorate);
+    var distance = 0.0;
+    for (final stop in _plannedStops) {
+      final destination = LatLng(stop.lat, stop.lng);
+      distance += MapRouteService.distanceMeters(origin, destination);
+      origin = destination;
+    }
+    return distance;
+  }
+
+  String _formatWalkingTime(int minutes) {
+    if (minutes < 60) return '$minutes min';
+    return '${minutes ~/ 60}h ${minutes % 60}m';
   }
 
   Future<void> _refreshPlannedRoute() async {
@@ -642,7 +732,11 @@ class _MapViewScreenState extends State<MapViewScreen>
       });
       return;
     }
-    setState(() => _plannedRouteLoading = true);
+    setState(() {
+      _plannedRoute = const [];
+      _plannedRouteLoading = true;
+    });
+    _fitToPlannedRoute(governorate);
     try {
       final route = <LatLng>[];
       var origin = _routePlannerOrigin(governorate);
@@ -664,6 +758,7 @@ class _MapViewScreenState extends State<MapViewScreen>
         _plannedRoute = List.unmodifiable(route);
         _plannedRouteLoading = false;
       });
+      _fitToPlannedRoute(governorate);
     } catch (error, stackTrace) {
       debugPrint(
         'MapViewScreen: planned route could not refresh: $error\n$stackTrace',
@@ -743,11 +838,12 @@ class _MapViewScreenState extends State<MapViewScreen>
   ) {
     final locale = Localizations.localeOf(context).languageCode;
     final plannerPlaces = _sortedPlannerPlaces(allPlaces, activeGovernorate);
+    final distanceMeters = _plannedDistanceMeters(activeGovernorate);
     return Positioned(
       left: 12,
       right: 12,
       bottom: 12,
-      height: 330,
+      height: 420,
       child: Material(
         key: const ValueKey('map-route-planner-panel'),
         color: context.cardColor,
@@ -811,6 +907,110 @@ class _MapViewScreenState extends State<MapViewScreen>
                           onSelected: (selected) {
                             if (selected) _selectPlannerGovernorate(id);
                           },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(2, 6, 2, 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Selected Stops / المحطات المختارة',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: context.textPri,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${(distanceMeters / 1000).toStringAsFixed(1)} km · '
+                      '${_formatWalkingTime(MapRouteService.walkingMinutes(distanceMeters))}',
+                      style: TextStyle(
+                        color: context.textSec,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 54,
+                child: ListView(
+                  key: const ValueKey('map-route-selected-stops'),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (final entry in _plannedStops.asMap().entries)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8),
+                        child: Container(
+                          padding: const EdgeInsetsDirectional.only(
+                            start: 8,
+                            end: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.bgAlt,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: const Color(
+                                0xFF14B8A6,
+                              ).withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircleAvatar(
+                                radius: 12,
+                                backgroundColor: const Color(0xFF14B8A6),
+                                child: Text(
+                                  '${entry.key + 1}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 130,
+                                ),
+                                child: Text(
+                                  entry.value.localizedName(locale),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: context.textPri,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                key: ValueKey(
+                                  'map-route-remove-stop-${entry.value.id}',
+                                ),
+                                tooltip: 'Remove stop',
+                                visualDensity: VisualDensity.compact,
+                                constraints: const BoxConstraints.tightFor(
+                                  width: 30,
+                                  height: 30,
+                                ),
+                                padding: EdgeInsets.zero,
+                                onPressed: () =>
+                                    _togglePlannedStop(entry.value),
+                                icon: const Icon(Icons.close_rounded, size: 17),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                   ],
@@ -914,9 +1114,8 @@ class _MapViewScreenState extends State<MapViewScreen>
   void _updateUserLocation(LatLng location) {
     if (!mounted) return;
     final previousLocation = _userLocation;
-    final governorate = EgyptGovernorate.byId[
-      context.read<GovernorateProvider>().activeGovernorate
-    ];
+    final governorate = EgyptGovernorate
+        .byId[context.read<GovernorateProvider>().activeGovernorate];
     final originMoved =
         previousLocation == null ||
         MapRouteService.distanceMeters(previousLocation, location) >= 100 ||
@@ -1198,14 +1397,27 @@ class _MapViewScreenState extends State<MapViewScreen>
     final places = placeProvider.places;
     final allPlaces = placeProvider.allPlaces;
     final visitedPlaceIds = context.watch<TripProvider>().visitedPlaceIds;
-    final visible = _filtered(places);
-    final plannerPlaces = _sortedPlannerPlaces(allPlaces, activeGovernorate);
+    final visibleSource = governorateProvider.fogEnabled
+        ? places
+        : allPlaces.where((place) => place.isVisitable).toList(growable: false);
+    final visible = _filtered(visibleSource);
     final mapAtms = _mergeAtms([
-      ..._curatedAtmsFor(activeGovernorate.id),
+      for (final id
+          in governorateProvider.fogEnabled
+              ? [activeGovernorate.id]
+              : const ['alexandria', 'cairo', 'luxor', 'red_sea'])
+        ..._curatedAtmsFor(id),
       ..._atms,
     ]);
-    final visibleMarkerCount =
-        visible.length + (_showAtms ? mapAtms.length : 0);
+    final visibleMarkerCount = _routePlannerOpen
+        ? _plannedStops.length
+        : visible.length + (_showAtms ? mapAtms.length : 0);
+    final plannedRoutePoints = _plannedRoute.length > 1
+        ? _plannedRoute
+        : <LatLng>[
+            if (_routePlannerOpen) _routePlannerOrigin(activeGovernorate),
+            ..._plannedStops.map((place) => LatLng(place.lat, place.lng)),
+          ];
 
     return Scaffold(
       body: Stack(
@@ -1230,19 +1442,19 @@ class _MapViewScreenState extends State<MapViewScreen>
                 maxNativeZoom: 17,
                 tileProvider: OfflineTileProvider(),
               ),
-              if (!_navigationFocusMode)
+              if (!_navigationFocusMode && !_routePlannerOpen)
                 GovernorateFogLayer(
                   places: allPlaces,
                   visitedPlaceIds: visitedPlaceIds,
                 ),
-              if ((_routePlannerOpen && _plannedRoute.length > 1) ||
+              if ((_routePlannerOpen && plannedRoutePoints.length > 1) ||
                   (!_routePlannerOpen && _remainingRoute.length > 1))
                 PolylineLayer(
                   key: const ValueKey('map-route-polyline-layer'),
                   polylines: [
                     Polyline(
                       points: _routePlannerOpen
-                          ? _plannedRoute
+                          ? plannedRoutePoints
                           : _remainingRoute,
                       color: _routePlannerOpen
                           ? const Color(0xFF14B8A6)
@@ -1266,7 +1478,7 @@ class _MapViewScreenState extends State<MapViewScreen>
                   final markerPlaces = _navigationFocusMode
                       ? <PlaceModel>[]
                       : _routePlannerOpen
-                      ? <PlaceModel>[...plannerPlaces]
+                      ? <PlaceModel>[..._plannedStops]
                       : <PlaceModel>[...visible];
                   if (_selectedPlace != null &&
                       EgyptGovernorate.normalizeId(
@@ -1373,7 +1585,9 @@ class _MapViewScreenState extends State<MapViewScreen>
                             ),
                           ),
                         ),
-                      if (!_navigationFocusMode && _showAtms)
+                      if (!_navigationFocusMode &&
+                          !_routePlannerOpen &&
+                          _showAtms)
                         for (final atm in mapAtms.where(
                           (atm) => inViewport(LatLng(atm.lat, atm.lng)),
                         ))
@@ -1658,7 +1872,7 @@ class _MapViewScreenState extends State<MapViewScreen>
           Positioned(
             right: 16,
             bottom: _routePlannerOpen
-                ? 350
+                ? 440
                 : _selectedPlace != null
                 ? 220
                 : 72,

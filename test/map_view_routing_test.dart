@@ -330,6 +330,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Walking Route'), findsOneWidget);
       expect(find.text('Pick places'), findsOneWidget);
+      expect(find.text('Selected Stops / المحطات المختارة'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('route-planner-governorate-alexandria')),
         findsOneWidget,
@@ -362,12 +363,20 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.tap(
-        find.byKey(const ValueKey('map-place-marker-near-stop')),
+        find.byKey(const ValueKey('route-planner-place-near-stop')),
       );
       await tester.pumpAndSettle();
 
       expect(find.byKey(const ValueKey('map-route-stop-1')), findsOneWidget);
       expect(find.byKey(const ValueKey('map-route-stop-2')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('map-place-marker-cairo-place')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('map-route-remove-stop-far-stop')),
+        findsOneWidget,
+      );
       expect(routeSegments, hasLength(3));
       final luxorAnchor = LatLng(
         EgyptGovernorate.byId['luxor']!.centerLat,
@@ -455,6 +464,49 @@ void main() {
     expect(find.text('Downloaded'), findsNothing);
     expect(find.byIcon(Icons.cloud_download_outlined), findsNothing);
     expect(find.byIcon(Icons.cloud_done_rounded), findsNothing);
+  });
+
+  testWidgets('disabling fog shows place markers across governorates', (
+    tester,
+  ) async {
+    final cairoPlace = PlaceModel(
+      id: 'fog-off-cairo-place',
+      nameEn: 'Cairo Place',
+      descriptionEn: 'A place in another governorate.',
+      imageUrl: '',
+      rating: 4.0,
+      category: 'Historical',
+      lat: 30.0444,
+      lng: 31.2357,
+      governorate: 'cairo',
+    );
+    final harness = await _pumpLuxorMap(
+      tester,
+      extraPlaces: [cairoPlace],
+      includeSeedPlaces: false,
+    );
+    addTearDown(harness.dispose);
+
+    expect(
+      find.byKey(const ValueKey('map-place-marker-fog-off-cairo-place')),
+      findsNothing,
+    );
+    harness.governorates.setFogEnabled(false);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('map-place-marker-fog-off-cairo-place')),
+      findsOneWidget,
+    );
+    final camera = MapCamera.of(
+      tester.element(
+        find.byKey(const ValueKey('map-place-marker-fog-off-cairo-place')),
+      ),
+    );
+    expect(
+      camera.visibleBounds.contains(const LatLng(30.0444, 31.2357)),
+      isTrue,
+    );
   });
 
   testWidgets('map category chips show the union of Churches and Hotels', (

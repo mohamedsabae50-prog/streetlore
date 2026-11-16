@@ -57,7 +57,7 @@ void main() {
       expect(find.text('You'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('walking-route-category-alex-near')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(const ValueKey('walking-route-place-cairo-place')),
@@ -83,9 +83,26 @@ void main() {
       expect(calls.first.origin, liveOrigin);
       expect(calls.first.destination, const LatLng(31.2053, 29.9252));
 
-      await tester.tap(
-        find.byKey(const ValueKey('walking-route-place-alex-far')),
+      expect(
+        find.byKey(const ValueKey('walking-route-category-alex-next')),
+        findsNothing,
       );
+      expect(
+        find.byKey(const ValueKey('walking-route-selected-stop-alex-near')),
+        findsOneWidget,
+      );
+      final farRow = find.byKey(
+        const ValueKey('walking-route-picker-alex-far'),
+      );
+      await tester.scrollUntilVisible(
+        farRow,
+        100,
+        scrollable: find.descendant(
+          of: find.byKey(const ValueKey('walking-route-place-list')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.tap(farRow);
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('walking-route-stop-1')),
@@ -159,14 +176,22 @@ void main() {
       );
 
       await tester.tap(
-        find.byKey(const ValueKey('walking-route-place-alex-near')),
+        find.byKey(const ValueKey('walking-route-remove-stop-alex-near')),
       );
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('walking-route-stop-1')),
         findsOneWidget,
       );
+      expect(
+        find.byKey(const ValueKey('walking-route-stop-4')),
+        findsOneWidget,
+      );
       expect(find.byKey(const ValueKey('walking-route-stop-5')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('walking-route-picker-alex-near')),
+        findsOneWidget,
+      );
     },
   );
 
@@ -216,6 +241,10 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey('walking-route-place-cairo-place')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('walking-route-picker-cairo-place')),
         findsOneWidget,
       );
       await tester.tap(
@@ -258,6 +287,10 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey('walking-route-place-red-sea-place')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('walking-route-picker-red-sea-place')),
         findsOneWidget,
       );
       await tester.tap(
