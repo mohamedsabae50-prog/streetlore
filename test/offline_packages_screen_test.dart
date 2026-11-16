@@ -9,6 +9,7 @@ import 'package:streetlore/data/cairo_seed.dart';
 import 'package:streetlore/data/luxor_seed.dart';
 import 'package:streetlore/data/aswan_seed.dart';
 import 'package:streetlore/data/mock_data.dart' show fallbackPlaces;
+import 'package:streetlore/data/red_sea_seed.dart';
 import 'package:streetlore/data/models/itinerary_model.dart';
 import 'package:streetlore/data/models/offline_pack.dart';
 import 'package:streetlore/data/models/place_model.dart';
@@ -139,6 +140,7 @@ void main() {
         ...cairoSeedPlaces,
         ...luxorSeedPlaces,
         ...aswanSeedPlaces,
+        ...redSeaSeedPlaces,
       ],
     );
     final tours = TourProvider(
@@ -187,6 +189,8 @@ void main() {
     expect(find.text('All Luxor & Aswan'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -700));
     await tester.pumpAndSettle();
+    expect(find.text('All Hurghada & Marsa Alam'), findsOneWidget);
+    expect(find.text('54 places · 6 tours'), findsOneWidget);
     expect(find.text('194 places · 15 tours'), findsOneWidget);
     expect(find.text('112 places · 12 tours'), findsOneWidget);
 
@@ -217,6 +221,29 @@ void main() {
     expect(
       storage.places.values.where(
         (place) => place.governorate == 'luxor' && place.isAtm,
+      ),
+      isEmpty,
+    );
+
+    final redSeaDownloadButton = find.byKey(
+      const ValueKey('download-pack-all_red_sea'),
+    );
+    await tester.ensureVisible(redSeaDownloadButton);
+    await tester.tap(redSeaDownloadButton);
+    await tester.pumpAndSettle();
+    expect(
+      offline.isDownloaded('all_red_sea', governorateId: 'red_sea'),
+      isTrue,
+    );
+    expect(
+      storage.places.values.where(
+        (place) => place.governorate == 'red_sea' && place.isVisitable,
+      ),
+      hasLength(54),
+    );
+    expect(
+      storage.places.values.where(
+        (place) => place.governorate == 'red_sea' && place.isAtm,
       ),
       isEmpty,
     );

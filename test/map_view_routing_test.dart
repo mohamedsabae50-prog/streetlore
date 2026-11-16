@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetlore/core/services/map_route_service.dart';
 import 'package:streetlore/data/aswan_seed.dart';
 import 'package:streetlore/data/luxor_seed.dart';
+import 'package:streetlore/data/red_sea_seed.dart';
 import 'package:streetlore/data/models/egypt_governorate.dart';
 import 'package:streetlore/data/models/map_poi.dart';
 import 'package:streetlore/data/models/place_model.dart';
@@ -279,17 +280,14 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('atm-open-google-maps-button')));
     await tester.pump();
     expect(openedUrls, hasLength(2));
-    expect(openedUrls.first.path, '/maps/dir/');
+    expect(openedUrls.first.path, '/maps/search/');
     expect(
-      openedUrls.first.queryParameters['destination'],
-      'Test ATM, Aswan Governorate, Egypt, Aswan',
+      openedUrls.first.queryParameters['query'],
+      'Test ATM @ 24.0955,32.9008',
     );
-    expect(openedUrls.first.queryParameters['travelmode'], 'walking');
-    expect(openedUrls.last.path, '/maps/search/');
-    expect(
-      openedUrls.last.queryParameters['query'],
-      'Test ATM 24.0955,32.9008',
-    );
+    expect(openedUrls.last.path, '/maps/dir/');
+    expect(openedUrls.last.queryParameters['destination'], '24.0955,32.9008');
+    expect(openedUrls.last.queryParameters['travelmode'], 'walking');
     await tester.tap(find.byKey(const ValueKey('atm-route-on-map-button')));
     expect(startedRoute, isTrue);
   });
@@ -595,6 +593,36 @@ void main() {
     },
   );
 
+  testWidgets('Red Sea map exposes its six ATMs under the ATMs filter', (
+    tester,
+  ) async {
+    final harness = await _pumpRedSeaMap(tester);
+    addTearDown(harness.dispose);
+
+    expect(harness.places.places.where((place) => place.isAtm), isEmpty);
+    expect(
+      harness.places.allPlaces.where(
+        (place) => place.governorate == 'red_sea' && place.isAtm,
+      ),
+      hasLength(6),
+    );
+    await _tapMapFilter(tester, 'atms');
+    final map = find.byType(FlutterMap);
+    for (var zoomOut = 0; zoomOut < 5; zoomOut++) {
+      await _pinchMapOut(tester, map);
+    }
+    for (final id in [
+      'atm_nbe_hurghada_new_marina',
+      'atm_banque_misr_sheraton_road_hurghada',
+      'atm_cib_abu_tig_marina_el_gouna',
+      'atm_qnb_senzo_mall_hurghada',
+      'atm_nbe_port_ghalib_marina_marsa_alam',
+      'atm_banque_misr_marsa_alam_town_center',
+    ]) {
+      expect(find.byKey(ValueKey('map-atm-marker-$id')), findsOneWidget);
+    }
+  });
+
   testWidgets('map category matching normalizes singular and plural labels', (
     tester,
   ) async {
@@ -704,6 +732,42 @@ Future<_LuxorMapHarness> _pumpUnifiedLuxorMap(WidgetTester tester) async {
     governorates: governorates,
     isOnline: () => false,
     initialPlaces: [...luxorSeedPlaces, ...aswanSeedPlaces],
+  );
+  final trips = TripProvider();
+  final locale = LocaleProvider();
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: governorates),
+        ChangeNotifierProvider.value(value: places),
+        ChangeNotifierProvider.value(value: trips),
+        ChangeNotifierProvider.value(value: locale),
+      ],
+      child: const MaterialApp(home: MapViewScreen(autoLocate: false)),
+    ),
+  );
+  await tester.pump();
+  return _LuxorMapHarness(
+    governorates: governorates,
+    places: places,
+    trips: trips,
+    locale: locale,
+  );
+}
+
+Future<_LuxorMapHarness> _pumpRedSeaMap(WidgetTester tester) async {
+  tester.view.physicalSize = const Size(1200, 900);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  final governorates = GovernorateProvider();
+  governorates.unlockAndSelectGovernorate('red_sea');
+  final places = PlaceProvider(
+    watchRemoteUpdates: false,
+    governorates: governorates,
+    isOnline: () => false,
+    initialPlaces: redSeaSeedPlaces,
   );
   final trips = TripProvider();
   final locale = LocaleProvider();

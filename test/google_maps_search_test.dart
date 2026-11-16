@@ -15,17 +15,18 @@ void main() {
     governorate: 'alexandria',
   );
 
-  test('Google Maps search contains only cleaned name and governorate', () {
-    final uri = googleMapsSearchUri(place);
-    expect(
-      uri.queryParameters['query'],
-      'Citadel of Qaitbay, Alexandria, Egypt',
-    );
-    expect(uri.queryParameters['query'], isNot(contains('31.2139')));
-    expect(uri.queryParameters['query'], isNot(contains('29.8856')));
-    expect(uri.queryParameters['query'], isNot(contains('14')));
-    expect(uri.queryParameters['query'], isNot(contains('123')));
-  });
+  test(
+    'Google Maps search includes the cleaned name and exact coordinates',
+    () {
+      final uri = googleMapsSearchUri(place);
+      expect(
+        uri.queryParameters['query'],
+        'Citadel of Qaitbay @ 31.2139,29.8856',
+      );
+      expect(uri.queryParameters['query'], isNot(contains('14')));
+      expect(uri.queryParameters['query'], isNot(contains('123')));
+    },
+  );
 
   test('removes plus codes from the search query', () {
     const plusCodePlace = PlaceModel(
@@ -40,7 +41,7 @@ void main() {
     );
     expect(
       googleMapsSearchUri(plusCodePlace).queryParameters['query'],
-      'Alexandria, Alexandria, Egypt',
+      'Alexandria @ 31.0,29.0',
     );
   });
 }

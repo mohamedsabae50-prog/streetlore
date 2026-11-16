@@ -11,7 +11,12 @@ class GovernorateProvider extends ChangeNotifier {
   static const _activeKey = 'active_governorate';
   static const _unlockedKey = 'unlocked_governorates';
   static const _fogEnabledKey = 'governorate_fog_enabled';
-  static const _activeGovernorateIds = ['alexandria', 'cairo', 'luxor'];
+  static const _activeGovernorateIds = [
+    'alexandria',
+    'cairo',
+    'luxor',
+    'red_sea',
+  ];
 
   String _activeGovernorate = 'alexandria';
   String _detectedGovernorate = 'alexandria';

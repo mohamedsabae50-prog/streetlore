@@ -191,6 +191,19 @@ class OfflineProvider extends ChangeNotifier {
       sizeMb: 36,
       coverEmoji: 'book',
     ),
+    OfflinePack(
+      id: 'all_red_sea',
+      name: 'All Hurghada & Marsa Alam',
+      description:
+          'Hurghada and Marsa Alam landmarks, beaches, and Red Sea attractions.',
+      nameAr: 'كل الغردقة ومرسى علم',
+      descriptionAr: 'معالم الغردقة ومرسى علم وشواطئ البحر الأحمر.',
+      governorateId: 'red_sea',
+      placeIds: const ['__all__'],
+      categories: const [],
+      sizeMb: 36,
+      coverEmoji: 'book',
+    ),
   ];
 
   Future<void> init() async {
@@ -365,9 +378,13 @@ class OfflineProvider extends ChangeNotifier {
             EgyptGovernorate.normalizeId(place.governorate) ==
             EgyptGovernorate.normalizeId(pack.governorateId),
       );
+      final visitableOnlyPack =
+          pack.id == 'all_luxor' || pack.id == 'all_red_sea';
       final selectedPlaces = cityPlaces.where((p) {
         final matchesAll = pack.placeIds.contains('__all__');
-        if (matchesAll) return pack.id != 'all_luxor' || p.isVisitable;
+        if (matchesAll) {
+          return !visitableOnlyPack || p.isVisitable;
+        }
         if (pack.placeIds.contains(p.id)) return true;
         if (pack.categories.isNotEmpty &&
             pack.categories
@@ -397,7 +414,8 @@ class OfflineProvider extends ChangeNotifier {
         for (final stop in tour.places) {
           if (stop.id.isNotEmpty &&
               EgyptGovernorate.normalizeId(stop.governorate) ==
-                  EgyptGovernorate.normalizeId(pack.governorateId)) {
+                  EgyptGovernorate.normalizeId(pack.governorateId) &&
+              (!visitableOnlyPack || stop.isVisitable)) {
             placesById.putIfAbsent(stop.id, () => stop);
           }
         }

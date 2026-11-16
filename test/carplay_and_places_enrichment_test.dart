@@ -169,15 +169,13 @@ void main() {
       expect(googleMaps.host, 'www.google.com');
       expect(googleMaps.path, '/maps/search/');
       expect(googleMaps.queryParameters['query'], contains(place.nameEn));
-      expect(
-        googleMaps.queryParameters['query'],
-        isNot(contains('${place.lng}')),
-      );
+      expect(googleMaps.queryParameters['query'], contains('${place.lat}'));
+      expect(googleMaps.queryParameters['query'], contains('${place.lng}'));
       expect(webFallback.scheme, 'https');
       expect(webFallback, googleMaps);
     });
 
-    test('navigation search does not depend on raw coordinates', () {
+    test('navigation search rejects invalid coordinates', () {
       const invalidPlace = PlaceModel(
         id: 'invalid',
         nameEn: 'Invalid',
@@ -188,13 +186,13 @@ void main() {
         lng: 29.9,
       );
 
-      final uri = CarPlayService.instance.navigationUri(
-        invalidPlace,
-        platform: TargetPlatform.android,
+      expect(
+        () => CarPlayService.instance.navigationUri(
+          invalidPlace,
+          platform: TargetPlatform.android,
+        ),
+        throwsArgumentError,
       );
-      expect(uri.queryParameters['query'], contains('Invalid'));
-      expect(uri.queryParameters['query'], isNot(contains('95')));
-      expect(uri.queryParameters['query'], isNot(contains('29.9')));
     });
   });
 }

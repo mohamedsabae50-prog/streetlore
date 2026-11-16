@@ -10,6 +10,7 @@ import '../core/services/supabase_service.dart';
 import '../data/cairo_seed.dart' show cairoSeedPlaces;
 import '../data/luxor_seed.dart' show luxorSeedPlaces;
 import '../data/aswan_seed.dart' show aswanSeedPlaces;
+import '../data/red_sea_seed.dart' show redSeaSeedPlaces;
 import '../data/mock_data.dart' show MockData, fallbackPlaces;
 import '../data/models/egypt_governorate.dart';
 import '../data/models/map_seed.dart';
@@ -117,9 +118,10 @@ class PlaceProvider extends ChangeNotifier {
     return List.unmodifiable(copy);
   }
 
-  Set<String> get availableGovernorateIds => _places
-      .map((place) => EgyptGovernorate.normalizeId(place.governorate))
-      .toSet();
+  Set<String> get availableGovernorateIds => {
+    ..._places.map((place) => EgyptGovernorate.normalizeId(place.governorate)),
+    'red_sea',
+  };
   List<PlaceModel> get allPlaces => List.unmodifiable(_places);
 
   bool _loading = false;
@@ -452,6 +454,7 @@ class PlaceProvider extends ChangeNotifier {
       ...cairoSeedPlaces,
       ...luxorSeedPlaces,
       ...aswanSeedPlaces,
+      ...redSeaSeedPlaces,
     ];
     final merged = deduplicatePlaces([..._places, ...seedPlaces]).toList()
       ..sort((a, b) {

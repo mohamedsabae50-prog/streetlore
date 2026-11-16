@@ -89,6 +89,37 @@ const _admissionPrices = <String, (int, int)>{
   'aswan_heissa_nubian_island': (50, 150),
   'aswan_faryal_garden_corniche': (20, 60),
   'aswan_west_bank_sand_dunes_viewpoint': (50, 150),
+  'red_sea_el_quseir_ottoman_fortress': (40, 200),
+  'red_sea_hurghada_museum': (80, 300),
+  'red_sea_hurghada_grand_aquarium': (250, 1200),
+  'red_sea_sand_city_hurghada': (120, 450),
+  'red_sea_mini_egypt_park_makadi': (150, 500),
+  'red_sea_mons_claudianus_roman_quarry': (40, 200),
+  'red_sea_mons_porphyrites_quarry': (40, 200),
+  'red_sea_myos_hormos_quseir_qadim': (40, 180),
+  'red_sea_bir_umm_fawakhir_mines': (40, 180),
+  'red_sea_sikait_smaragdus_mines': (50, 220),
+  'red_sea_el_gouna_cultural_museum': (60, 220),
+  'red_sea_dolphin_world_makadi': (200, 750),
+  'red_sea_sahl_hasheesh_sunken_city': (50, 200),
+  'red_sea_safaga_old_port_citadel': (30, 120),
+  'red_sea_port_ghalib_khan_promenade': (50, 200),
+  'red_sea_ras_gharib_lighthouse_heritage': (30, 120),
+  'red_sea_giftun_island_orange_bay': (150, 600),
+  'red_sea_mahmya_island_reserve': (200, 800),
+  'red_sea_abu_dabbab_dugong_bay': (100, 450),
+  'red_sea_wadi_el_gemal_national_park': (60, 300),
+  'red_sea_sharm_el_luli_lagoon': (60, 300),
+  'red_sea_nayzak_natural_meteor_pool': (50, 200),
+  'red_sea_sataya_dolphin_house_reef': (150, 650),
+  'red_sea_samadai_dolphin_house_marsa': (150, 650),
+  'red_sea_qulaan_mangrove_lagoon': (50, 200),
+  'red_sea_el_fanadir_reef_hurghada': (100, 400),
+  'red_sea_soma_bay_ras_abu_soma': (100, 400),
+  'red_sea_zeytouna_beach_el_gouna': (120, 450),
+  'red_sea_makadi_bay_house_reef': (100, 400),
+  'red_sea_sharm_el_naga_coral_bay': (120, 500),
+  'red_sea_marsa_mubarak_turtle_bay': (120, 500),
 };
 
 PlaceModel applyPlaceCatalogRules(PlaceModel place) {
@@ -289,9 +320,13 @@ String _neighborhood(
   final firstSegment = address.split(',').first.trim();
   if (firstSegment.isNotEmpty) return firstSegment;
   return arabic
-      ? governorate == 'alexandria'
+      ? governorate == 'red_sea'
+            ? 'البحر الأحمر'
+            : governorate == 'alexandria'
             ? 'الإسكندرية'
             : 'القاهرة والجيزة'
+      : governorate == 'red_sea'
+      ? 'Red Sea Governorate'
       : governorate == 'alexandria'
       ? 'Alexandria'
       : 'Cairo and Giza';
@@ -310,6 +345,19 @@ String? _expectedHours(PlaceModel place, String category, String idAndName) {
       'historical' || 'culture' || 'nature' => place.openHours,
       'mosques' => '04:00 AM - 10:00 PM',
       'churches' => '08:00 AM - 08:00 PM',
+      'shopping' => '10:00 AM - 11:00 PM',
+      'food' || 'cafe' || 'cafes' => '10:00 AM - 01:00 AM',
+      'hotels' || 'atms' || 'atm' => '24 hours',
+      _ => null,
+    };
+  }
+  if (place.governorate == 'red_sea') {
+    return switch (category) {
+      'historical' ||
+      'culture' ||
+      'nature' ||
+      'mosques' ||
+      'churches' => place.openHours,
       'shopping' => '10:00 AM - 11:00 PM',
       'food' || 'cafe' || 'cafes' => '10:00 AM - 01:00 AM',
       'hotels' || 'atms' || 'atm' => '24 hours',

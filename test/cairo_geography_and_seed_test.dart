@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +12,8 @@ import 'package:streetlore/data/cairo_seed.dart';
 import 'package:streetlore/data/luxor_image_urls.dart';
 import 'package:streetlore/data/luxor_seed.dart';
 import 'package:streetlore/data/mock_data.dart';
+import 'package:streetlore/data/red_sea_image_urls.dart';
+import 'package:streetlore/data/red_sea_seed.dart';
 import 'package:streetlore/data/models/egypt_governorate.dart';
 import 'package:streetlore/data/models/itinerary_model.dart';
 import 'package:streetlore/data/models/place_model.dart';
@@ -419,7 +422,7 @@ void main() {
       );
       expect(imageUrls.add(place.imageUrl), isTrue, reason: entry.key);
     }
-    expect(MockData.places, hasLength(371));
+    expect(MockData.places, hasLength(431));
   });
 
   test('Luxor & Aswan share one 124-record governorate and 12 tours', () {
@@ -491,7 +494,7 @@ void main() {
       EgyptGovernorate.all.map((governorate) => governorate.id),
       containsAll(['alexandria', 'cairo', 'luxor']),
     );
-    expect(MockData.places, hasLength(371));
+    expect(MockData.places, hasLength(431));
     expect(luxorImageUrls, hasLength(61));
     expect(luxorImageUrls.values.toSet(), hasLength(61));
     expect(
@@ -676,7 +679,7 @@ void main() {
       ),
       hasLength(63),
     );
-    expect(MockData.places, hasLength(371));
+    expect(MockData.places, hasLength(431));
     expect(aswanImageUrls, hasLength(63));
     expect(aswanImageUrls.values.toSet(), hasLength(63));
     expect(
@@ -967,14 +970,69 @@ void main() {
         final uri = Uri.tryParse(imageUrl);
         expect(uri?.scheme, 'https', reason: '${place.id}: $imageUrl');
         expect(
-          uri?.host == 'upload.wikimedia.org' ||
-              (place.governorate == 'alexandria' &&
-                  const {
-                    'images.unsplash.com',
-                    'tbivoxyxclwjjspwsgvc.supabase.co',
-                  }.contains(uri?.host)),
-          isTrue,
+          uri?.host,
+          'upload.wikimedia.org',
           reason: '${place.id}: $imageUrl',
+        );
+      }
+      final governorate = EgyptGovernorate.byId[place.governorate]!;
+      expect(
+        place.lat.isFinite && place.lng.isFinite,
+        isTrue,
+        reason: place.id,
+      );
+      expect(place.lat, inInclusiveRange(-90, 90), reason: place.id);
+      expect(place.lng, inInclusiveRange(-180, 180), reason: place.id);
+      expect(
+        _strictlyInside(governorate, place.lat, place.lng),
+        isTrue,
+        reason: '${place.id} must be strictly inside ${governorate.id}',
+      );
+    }
+
+    expect(MockData.places, hasLength(431));
+    expect(MockData.places.where((place) => place.isVisitable), hasLength(393));
+    expect(MockData.places.where((place) => place.isAtm), hasLength(38));
+    expect(redSeaSeedPlaces, hasLength(60));
+    expect(redSeaSeedPlaces.where((place) => place.isVisitable), hasLength(54));
+    expect(redSeaSeedPlaces.where((place) => place.isAtm), hasLength(6));
+    expect(redSeaImageUrls.keys.toSet(), {
+      ...redSeaSeedPlaces.map((place) => place.id),
+    });
+    final profileSource = File(
+      'lib/presentation/screens/profile_screen.dart',
+    ).readAsStringSync();
+    expect(profileSource, isNot(contains('_BadgesLevelCard')));
+    expect(profileSource, isNot(contains('View All Badges')));
+  });
+
+  test('Red Sea image URLs are unique Wikimedia Commons assets', () {
+    expect(redSeaImageUrls, hasLength(60));
+    expect(redSeaImageUrls.values.toSet(), hasLength(60));
+    for (final entry in redSeaImageUrls.entries) {
+      final uri = Uri.parse(entry.value);
+      expect(uri.scheme, 'https', reason: entry.key);
+      expect(uri.host, 'upload.wikimedia.org', reason: entry.key);
+      expect(uri.path, startsWith('/wikipedia/commons/'), reason: entry.key);
+    }
+  });
+
+  test('all place images are unique Wikimedia HTTPS URLs', () {
+    final imageOwners = <String, String>{};
+    for (final place in MockData.places) {
+      for (final imageUrl in place.officialImages) {
+        final uri = Uri.parse(imageUrl);
+        expect(uri.scheme, 'https', reason: '${place.id}: $imageUrl');
+        expect(
+          uri.host,
+          'upload.wikimedia.org',
+          reason: '${place.id}: $imageUrl',
+        );
+        final previousOwner = imageOwners.putIfAbsent(imageUrl, () => place.id);
+        expect(
+          previousOwner,
+          place.id,
+          reason: '$imageUrl is shared by $previousOwner and ${place.id}',
         );
       }
     }

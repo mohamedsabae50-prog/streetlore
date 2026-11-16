@@ -108,6 +108,10 @@ String buildGovernorateGuideContext({
       isArabic
           ? 'متخصص في الأقصر وأسوان والنوبة ومعابد فيلة وكوم أمبو وإدفو وأبو سمبل.'
           : 'Local expertise: Luxor, Aswan, Nubia, Philae, Kom Ombo, Edfu, and Abu Simbel.',
+    'red_sea' =>
+      isArabic
+          ? 'متخصص في الغردقة ومرسى علم وساحل البحر الأحمر والشعاب المرجانية والحياة البحرية.'
+          : 'Local expertise: Hurghada, Marsa Alam, the Red Sea coast, coral reefs, and marine life.',
     _ => null,
   };
   return '''ACTIVE GOVERNORATE: $cityLabel.

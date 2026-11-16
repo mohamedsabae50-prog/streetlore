@@ -44,13 +44,13 @@ void main() {
       expect(EgyptGovernorate.byId, hasLength(27));
       final alexandria = EgyptGovernorate.byId['alexandria']!;
       expect(alexandria.boundaryPolygon, const [
-        LatLng(31.3350, 30.0950),
+        LatLng(31.3800, 30.1150),
         LatLng(31.2600, 30.1400),
         LatLng(31.1200, 30.0800),
         LatLng(30.9500, 29.9800),
         LatLng(30.8000, 29.8500),
         LatLng(30.7800, 29.5500),
-        LatLng(30.8800, 29.4800),
+        LatLng(30.8800, 29.3500),
         LatLng(31.0500, 29.6800),
         LatLng(31.1600, 29.8200),
         LatLng(31.2800, 29.9500),
@@ -83,13 +83,28 @@ void main() {
         isNull,
         reason: 'Alexandria boundary must not self-intersect',
       );
-      for (final id in ['alexandria', 'cairo', 'luxor']) {
+      for (final id in ['alexandria', 'cairo', 'luxor', 'red_sea']) {
         expect(
           _selfIntersectingEdges(EgyptGovernorate.byId[id]!.boundaryPolygon),
           isNull,
           reason: '$id boundary must not self-intersect',
         );
       }
+      final redSea = EgyptGovernorate.byId['red_sea']!;
+      expect(redSea.nameEn, 'Hurghada & Marsa Alam');
+      expect(redSea.nameAr, 'الغردقة ومرسى علم');
+      expect((redSea.centerLat, redSea.centerLng), (26.8500, 33.9500));
+      expect(redSea.defaultZoom, 8.8);
+      expect(
+        GovernorateService.containsCoordinates(
+          redSea,
+          redSea.centerLat,
+          redSea.centerLng,
+        ),
+        isTrue,
+      );
+      expect(EgyptGovernorate.normalizeId('Hurghada'), 'red_sea');
+      expect(EgyptGovernorate.normalizeId('marsa_alam'), 'red_sea');
       for (final (lat, lng) in const [
         (30.8411, 29.6633),
         (31.1535, 29.8442),
@@ -102,6 +117,49 @@ void main() {
       }
     },
   );
+
+  test('all four active catalogs fit their polygons and map image rules', () {
+    final regionIds = {'alexandria', 'cairo', 'luxor', 'red_sea'};
+    final imageOwners = <String, String>{};
+    expect(MockData.places, hasLength(431));
+    expect(
+      MockData.places
+          .map((place) => EgyptGovernorate.normalizeId(place.governorate))
+          .toSet(),
+      regionIds,
+    );
+    for (final place in MockData.places) {
+      final governorate = EgyptGovernorate.byId[place.governorate]!;
+      expect(
+        place.lat.isFinite && place.lng.isFinite,
+        isTrue,
+        reason: place.id,
+      );
+      expect(place.lat, inInclusiveRange(-90, 90), reason: place.id);
+      expect(place.lng, inInclusiveRange(-180, 180), reason: place.id);
+      expect(
+        GovernorateService.containsCoordinates(
+          governorate,
+          place.lat,
+          place.lng,
+        ),
+        isTrue,
+        reason: '${place.id} must lie in ${governorate.id}',
+      );
+      for (final url in place.officialImages) {
+        final uri = Uri.parse(url);
+        expect(uri.scheme, 'https', reason: place.id);
+        expect(uri.host, 'upload.wikimedia.org', reason: place.id);
+        expect(
+          imageOwners.putIfAbsent(url, () => place.id),
+          place.id,
+          reason: '$url must be unique',
+        );
+      }
+    }
+    expect(MockData.places.where((place) => place.isVisitable), hasLength(393));
+    expect(MockData.places.where((place) => place.isAtm), hasLength(38));
+  });
 
   test('Beheira coordinates are outside Alexandria', () {
     final alexandria = EgyptGovernorate.byId['alexandria']!;
@@ -152,11 +210,6 @@ void main() {
           lat,
           lng,
         );
-        if (id == 'alex_nelson_island_abou_qir' ||
-            id == 'alex_taposiris_magna_temple') {
-          expect(isInside, isFalse);
-          return;
-        }
         expect(isInside, isTrue, reason: '$id must lie inside Alexandria');
         expect(
           _distanceToPolygonEdges(boundary, LatLng(lat, lng)),
@@ -221,11 +274,8 @@ void main() {
         expect(place.rating, inInclusiveRange(4.4, 4.9));
         expect(
           place.imageUrl,
-          anyOf(
-            startsWith('https://images.unsplash.com/'),
-            startsWith('https://upload.wikimedia.org/'),
-          ),
-          reason: '${place.id} must have an HTTPS Wikimedia or Unsplash photo',
+          startsWith('https://upload.wikimedia.org/'),
+          reason: '${place.id} must have a Wikimedia Commons photo',
         );
         expect(place.governorate, 'alexandria');
       }
@@ -274,6 +324,7 @@ void main() {
         'matrouh': (31.3543, 27.2373),
         'luxor': (25.6872, 32.6396),
         'aswan': (24.0889, 32.8998),
+        'red_sea': (26.8500, 33.9500),
       };
 
       for (final entry in cases.entries) {
@@ -283,16 +334,24 @@ void main() {
           GovernorateService.detectFromCoordinates(lat, lng).id,
           expectedId,
         );
+        final availableGovernorateIds = entry.key == 'red_sea'
+            ? const {'alexandria', 'red_sea'}
+            : const {'alexandria'};
         await provider.syncWithCoordinates(
           lat,
           lng,
-          availableGovernorateIds: const {'alexandria'},
+          availableGovernorateIds: availableGovernorateIds,
         );
         expect(provider.detectedGovernorate, expectedId);
-        expect(provider.activeGovernorate, 'alexandria');
-        expect(provider.unlockedGovernorateIds, {'alexandria'});
+        if (entry.key == 'red_sea') {
+          expect(provider.activeGovernorate, 'red_sea');
+          expect(provider.unlockedGovernorateIds, {'alexandria', 'red_sea'});
+        } else {
+          expect(provider.activeGovernorate, 'alexandria');
+          expect(provider.unlockedGovernorateIds, {'alexandria'});
+        }
         final notice = provider.takeNoticeMessage('en');
-        if (entry.key == 'aswan') {
+        if (entry.key == 'aswan' || entry.key == 'red_sea') {
           expect(notice, isNull);
         } else {
           expect(notice, contains(EgyptGovernorate.byId[expectedId]!.nameEn));

@@ -10,6 +10,7 @@ import '../core/services/supabase_service.dart';
 import '../data/cairo_seed.dart' show cairoSeedItineraries;
 import '../data/luxor_seed.dart' show luxorSeedItineraries;
 import '../data/aswan_seed.dart' show aswanSeedItineraries;
+import '../data/red_sea_seed.dart' show redSeaSeedItineraries;
 import '../data/models/egypt_governorate.dart';
 import '../data/models/itinerary_model.dart';
 import '../data/models/offline_pack.dart';
@@ -328,6 +329,7 @@ class TourProvider extends ChangeNotifier {
         ...cairoSeedItineraries,
         ...luxorSeedItineraries,
         ...aswanSeedItineraries,
+        ...redSeaSeedItineraries,
       ])
         tour.id: tour,
       for (final tour in _tours) tour.id: tour,

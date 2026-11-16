@@ -792,7 +792,12 @@ class _MapViewScreenState extends State<MapViewScreen>
                   key: const ValueKey('route-planner-governorate-chips'),
                   scrollDirection: Axis.horizontal,
                   children: [
-                    for (final id in const ['alexandria', 'cairo', 'luxor'])
+                    for (final id in const [
+                      'alexandria',
+                      'cairo',
+                      'luxor',
+                      'red_sea',
+                    ])
                       Padding(
                         padding: const EdgeInsetsDirectional.only(end: 8),
                         child: ChoiceChip(

@@ -180,6 +180,7 @@ void main() {
           _place('alex-place', 'alexandria', 31.2053, 29.9252),
           _place('cairo-place', 'cairo', 30.045, 31.236),
           _place('luxor-place', 'luxor', 25.688, 32.640),
+          _place('red-sea-place', 'red_sea', 26.8525, 33.9925),
         ],
         locationProvider: () async => alexandriaLocation,
         routeService: MapRouteService(
@@ -192,7 +193,7 @@ void main() {
       addTearDown(() => _disposeHarness(tester, harness));
 
       await harness.pump(tester);
-      for (final id in ['alexandria', 'cairo', 'luxor']) {
+      for (final id in ['alexandria', 'cairo', 'luxor', 'red_sea']) {
         expect(
           find.byKey(ValueKey('walking-routes-governorate-$id')),
           findsOneWidget,
@@ -245,6 +246,29 @@ void main() {
         EgyptGovernorate.byId['luxor']!.centerLng,
       );
       expect(calls.last.origin, luxorAnchor);
+
+      await tester.tap(
+        find.byKey(const ValueKey('walking-routes-governorate-red_sea')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('walking-route-stop-1')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('walking-route-place-luxor-place')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('walking-route-place-red-sea-place')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('walking-route-picker-red-sea-place')),
+      );
+      await tester.pumpAndSettle();
+      final redSeaAnchor = LatLng(
+        EgyptGovernorate.byId['red_sea']!.centerLat,
+        EgyptGovernorate.byId['red_sea']!.centerLng,
+      );
+      expect(calls.last.origin, redSeaAnchor);
     },
   );
 }

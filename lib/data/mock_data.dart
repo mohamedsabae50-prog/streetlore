@@ -7,6 +7,7 @@ import 'cairo_seed.dart';
 import 'luxor_seed.dart';
 import 'aswan_seed.dart';
 import 'place_catalog_rules.dart';
+import 'red_sea_seed.dart';
 
 class MockData {
   MockData._();
@@ -180,6 +181,7 @@ class MockData {
       ...cairoSeedPlaces,
       ...luxorSeedPlaces,
       ...aswanSeedPlaces,
+      ...redSeaSeedPlaces,
     ]) {
       placesById.putIfAbsent(place.id, () => applyPlaceCatalogRules(place));
     }
@@ -191,6 +193,7 @@ class MockData {
     ...cairoSeedItineraries,
     ...luxorSeedItineraries,
     ...aswanSeedItineraries,
+    ...redSeaSeedItineraries,
   ]);
 }
 
@@ -218,7 +221,7 @@ const PlaceModel _fallbackNationalMuseum = PlaceModel(
   descriptionAr:
       'قصر إيطالي الطراز شُيّد عام 1926، ويضم آثاراً من العصور الفرعونية واليونانية والرومانية والقبطية والإسلامية.',
   imageUrl:
-      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/11.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/8a/EWUG_visit_to_Alexandria_National_Museum%2C_April_2025_-_005.jpg",
   rating: 4.6,
   category: 'Culture',
   categoryAr: 'ثقافة',
@@ -244,7 +247,7 @@ const PlaceModel _fallbackGraecoRomanMuseum = PlaceModel(
   descriptionAr:
       'متحف مُجدّد يضم آلاف القطع الأثرية من العصرين البطلمي والروماني في الإسكندرية.',
   imageUrl:
-      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/43.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a1/GLAM_team_visit_to_the_Graeco-Roman_Museum.jpg",
   rating: 4.7,
   category: 'Culture',
   categoryAr: 'ثقافة',
@@ -270,9 +273,9 @@ const PlaceModel _fallbackRomanAmphitheatre = PlaceModel(
   descriptionAr:
       'مسرح روماني يضم ثلاثة عشر صفاً من المدرجات الرخامية، اكتُشف خلال أعمال التنقيب في وسط الإسكندرية.',
   imageUrl:
-      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/9.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/91/AlexandriaAmphitheatre.jpg",
   imageUrls: [
-    "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/9.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/9/91/AlexandriaAmphitheatre.jpg",
   ],
   rating: 4.5,
   category: 'Historical',
@@ -299,7 +302,7 @@ const PlaceModel _fallbackStanleyBridge = PlaceModel(
   descriptionAr:
       'جسر الإسكندرية الشهير بأقواسه البيضاء الممتدة فوق خليج ستانلي على كورنيش البحر المتوسط.',
   imageUrl:
-      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/8.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/7/70/Stanley_Bridge%2C_Alexandria%2C_Jan._2019-1.jpg",
   rating: 4.6,
   category: 'Nature',
   categoryAr: 'طبيعة',
@@ -326,9 +329,9 @@ final List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'قلعة قايتباي هي حصن دفاعي يعود للقرن الخامس عشر الميلادي، مبني على أنقاض منارة الإسكندرية القديمة، إحدى عجائب الدنيا السبع. تقع على شاطئ البحر المتوسط وتتميز بمعمارها الأيوبي الرائع.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/p_1784811618524.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/4/47/Citadel_of_Qaitbay_in_Alexandria%2C_Egypt.png",
     imageUrls: [
-      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/p_1784811618524.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/4/47/Citadel_of_Qaitbay_in_Alexandria%2C_Egypt.png",
     ],
     rating: 4.7,
     category: 'Historical',
@@ -355,9 +358,9 @@ final List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'مكتبة الإسكندرية الجديدة صرح ثقافي ضخم على شاطئ البحر المتوسط، تجسيد معاصر للمكتبة الأسطورية التي كانت مركزاً للعلوم والمعرفة في العالم القديم. تضم مليوني كتاب ومتاحف وقاعات عروض.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/2.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/0/0f/Bibliotheca_Alexandrina_GLAM_EGY_03.jpg",
     imageUrls: [
-      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/2.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/0f/Bibliotheca_Alexandrina_GLAM_EGY_03.jpg",
     ],
     rating: 4.8,
     category: 'Culture',
@@ -384,7 +387,7 @@ final List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'عمود بومبي عمود ضخم من الجرانيت يعود للعصر الروماني، يبلغ ارتفاعه 30 متراً، وهو أعلى عمود انتصار خارج روما. أُقيم عام 297 م تكريماً للإمبراطور دقلديانوس.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/7.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/5/5d/Pompey%27s_Pillar_%28Archaeological_site_in_Alexandria_2017%29_%2C_photo_by_Hatem_moushir_2.jpg",
     rating: 4.5,
     category: 'Historical',
     categoryAr: 'تاريخي',
@@ -410,7 +413,7 @@ final List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'مقابر كوم الشقافة من أبرز المواقع الأثرية في الإسكندرية، تُعد إحدى عجائب الدنيا السبع في العصر الوسيط. متاهة متعددة الطوابق تمزج بين الفن الروماني والمصري القديم.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/4.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/6/6e/Catacombs_of_Kom_El_Shoqafa%2C_Alexandria%2C_Egypt.jpg",
     rating: 4.6,
     category: 'Historical',
     categoryAr: 'تاريخي',
@@ -436,9 +439,9 @@ final List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'حدائق المنتزه الملكية خضراء غناء تحيط بقصر المنتزه التاريخي الذي بناه الخديوي عباس. واحة طبيعية خلابة تطل على البحر المتوسط وتجمع بين الجمال والتاريخ.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/3.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/f/f6/MONTAZA_GARDENS_AND_PARK%2C_ALEXANDRIA%2C_EGYPT.jpg",
     imageUrls: [
-      "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/3.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/f6/MONTAZA_GARDENS_AND_PARK%2C_ALEXANDRIA%2C_EGYPT.jpg",
     ],
     rating: 4.5,
     category: 'Nature',
@@ -465,7 +468,7 @@ final List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'مسجد العطارين أحد المساجد التاريخية العريقة في قلب الإسكندرية القديمة. يعود تاريخه للعصر المملوكي ويتميز بزخارفه الإسلامية الرائعة وروحانيته العالية.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/50.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/d/db/Alexandria._-_Attarine_Mosque._-_btv1b10114854h_%281_of_2%29.jpg",
     rating: 4.3,
     category: 'Mosques',
     categoryAr: 'مساجد',
@@ -521,7 +524,7 @@ final List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'قصر ملكي سابق في زيزينيا يعرض مجوهرات ومقتنيات أسرة محمد علي، إلى جانب القاعات المزخرفة التي تشكل جزءاً من تجربة الزيارة.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_royal_jewelry_museum.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/c/cb/Royal_Jewelry_Museum_Alexandria.jpg",
     rating: 4.6,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -565,7 +568,7 @@ final List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'مسجد تاريخي بارز في وسط الإسكندرية، يشتهر بعمارة تعود إلى العصر العثماني ومكانته الراسخة في التاريخ الديني والعمراني للمدينة.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_nabi_daniel_mosque.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/5/59/Nabi_Daniel_Mosque.JPG",
     rating: 4.5,
     category: 'Mosques',
     categoryAr: 'مساجد',
@@ -587,7 +590,7 @@ final List<PlaceModel> fallbackPlaces = [
     descriptionAr:
         'دار أوبرا الإسكندرية التاريخية، افتُتحت عام ١٩٢١ وسُمّيت باسم الموسيقار المصري سيد درويش. لا يزال المسرح الإيطالي الطراز يستضيف الأوبرا والحفلات والعروض الثقافية.',
     imageUrl:
-        "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/alex_sayed_darwish_theatre.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/5/5d/Sayed_Darwish_Theatre_in_Alexandria%2C_76.JPG",
     rating: 4.6,
     category: 'Culture',
     categoryAr: 'ثقافة',
@@ -614,7 +617,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مطعم إسكندراني شهير للمشويات يقدم الكباب والكفتة والمقبلات المصرية في أجواء عائلية مميزة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/3/3b/Alexandria-seafood-spread.jpg',
     rating: 4.8,
     category: 'Food',
     categoryAr: 'مطاعم',
@@ -636,7 +639,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مطعم مأكولات بحرية شهير يقدم الأسماك الطازجة وأطباق الإسكندرية البحرية المعروفة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/0/07/Alexandria_fresh_fishes.jpg',
     rating: 4.7,
     category: 'Food',
     categoryAr: 'مطاعم',
@@ -658,7 +661,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'وجهة إسكندرانية معروفة للأجبان ومنتجات الألبان والسندويتشات الطازجة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/4/4b/Fast_food_restaurant_at_Ramleh_Station%2C_Alexandria.jpg',
     rating: 4.5,
     category: 'Food',
     categoryAr: 'مطاعم',
@@ -680,7 +683,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مطعم للمأكولات المصرية التقليدية يشتهر بوصفاته الأصيلة وأجوائه المستوحاة من التراث.',
     imageUrl:
-        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/7/76/Mostafa_Gad_restaurant_branch_at_Ahmed_Oraby_Square%2C_Alexandria_01.jpg',
     rating: 4.6,
     category: 'Food',
     categoryAr: 'مطاعم',
@@ -702,7 +705,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مطعم إيطالي عريق في وسط المدينة يقدم أطباق الباستا والمأكولات الأوروبية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/8/81/Mostafa_Gad_restaurant_branch_at_Ahmed_Oraby_Square%2C_Alexandria_02.jpg',
     rating: 4.6,
     category: 'Food',
     categoryAr: 'مطاعم',
@@ -724,7 +727,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مطعم النادي اليوناني على الميناء الشرقي، يشتهر بالمأكولات البحرية وإطلالة الميناء.',
     imageUrl:
-        'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/7/70/Mostafa_Gad_restaurant_branch_at_Al_Iskandar_Al_Akbar_Street%2C_Raml_Station%2C_Alexandria.jpg',
     rating: 4.7,
     category: 'Food',
     categoryAr: 'مطاعم',
@@ -746,7 +749,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مطعم شعبي محبوب يشتهر بسندويتشات الكبدة على الطريقة الإسكندرانية والأكلات السريعة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=1200&q=85',
+        'https://upload.wikimedia.org/wikipedia/commons/8/8a/Torshi_at_Gad_in_Alexandria.jpg',
     rating: 4.5,
     category: 'Food',
     categoryAr: 'مطاعم',
@@ -768,7 +771,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مطعم ومخبز مصري بالقرب من محطة الرمل يقدم السندويتشات والوجبات المعروفة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/5/58/Foul_Mohamed_Ahmed_-_foul.jpg',
     rating: 4.4,
     category: 'Food',
     categoryAr: 'مطاعم',
@@ -790,7 +793,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مطعم محلي مفضل للمشويات والمأكولات البحرية والوجبات المصرية الوفيرة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1547592180-85f173990554?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/0/0a/House_of_liver_sandwiches.jpg',
     rating: 4.5,
     category: 'Food',
     categoryAr: 'مطاعم',
@@ -812,7 +815,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مطعم مأكولات بحرية في وسط الإسكندرية يقدم الأسماك المحلية وأطباق البحر التقليدية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/9/96/Elmasry_Egyptian_Food_Cart.jpg',
     rating: 4.6,
     category: 'Food',
     categoryAr: 'مطاعم',
@@ -834,7 +837,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مقهى تاريخي في وسط المدينة يجمع بين القهوة المحمصة الطازجة والطابع الإسكندراني الأصيل.',
     imageUrl:
-        'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/7/7f/Al_Iskandar_Al_Akbar_Street_-_coffee_shop_Buffet_Misr.jpg',
     rating: 4.7,
     category: 'Cafe',
     categoryAr: 'كافيهات',
@@ -856,7 +859,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'حلواني ومقهى إسكندراني شهير يقدم الحلويات الفرنسية والقهوة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/3/3e/Alexandria._Arabian_Coffee_Shop-Alexandrie._Caf%C3%A9_arabe_-_btv1b10101289c_%281_of_2%29.jpg',
     rating: 4.7,
     category: 'Cafe',
     categoryAr: 'كافيهات',
@@ -878,7 +881,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مقهى وحلواني بطابع كلاسيكي في قلب الإسكندرية، مناسب للقهوة والحلويات.',
     imageUrl:
-        'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/a/a9/Alexandria._Arabian_Coffee_Shop-Alexandrie._Caf%C3%A9_arabe_-_btv1b10101289c_%282_of_2%29.jpg',
     rating: 4.6,
     category: 'Cafe',
     categoryAr: 'كافيهات',
@@ -900,7 +903,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'محمصة ومتجر قهوة في وسط الإسكندرية يقدم خلطات قهوة طازجة ومطحونة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/b/b1/Focacceria_behind_the_Opera%2C_Alexandria_-_menu.jpg',
     rating: 4.6,
     category: 'Cafe',
     categoryAr: 'كافيهات',
@@ -922,7 +925,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مقهى عصري قرب خليج جليم للقهوة والوجبات الخفيفة وأجواء الحي الساحلي الهادئة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/a/a5/Egypt_painted_and_described_%281902%29_%2814760793854%29.jpg',
     rating: 4.5,
     category: 'Cafe',
     categoryAr: 'كافيهات',
@@ -944,7 +947,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مقهى ولاونج حيوي في جليم يقدم القهوة والوجبات الخفيفة وجلسات مسائية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/1/16/Hurghada_Coffee_shop_1.jpg',
     rating: 4.5,
     category: 'Cafe',
     categoryAr: 'كافيهات',
@@ -966,7 +969,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مقهى محلي قرب سابا باشا يقدم القهوة والوجبات الخفيفة والأطباق البسيطة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/3/3c/Simple_popular_Egyptian_workman_stands_in_cafe_waite_costumer_in_a_great_look.jpg',
     rating: 4.4,
     category: 'Cafe',
     categoryAr: 'كافيهات',
@@ -988,7 +991,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مقهى للقهوة المختصة في كفر عبده يقدم مشروبات الإسبريسو وقائمة مقهى متنوعة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1493857671505-72967e2e2760?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/0/0c/Illustration_by_David_Roberts%2C_digitally_enhanced_by_rawpixel-com_118.jpg',
     rating: 4.7,
     category: 'Cafe',
     categoryAr: 'كافيهات',
@@ -1010,7 +1013,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مقهى ومحل آيس كريم في سان ستيفانو للقهوة والحلوى والاستراحة قرب الساحل.',
     imageUrl:
-        'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/2/2d/Mobile_coffee_shop%2C_Egypt_Esplanade%2C_Cowes%2C_Isle_of_Wight%2C_England.jpg',
     rating: 4.5,
     category: 'Cafe',
     categoryAr: 'كافيهات',
@@ -1032,7 +1035,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'وجهة تسوق كبيرة تضم كارفور ومحلات الأزياء والمطاعم ومرافق ترفيهية للعائلة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=1200&q=85',
+        'https://upload.wikimedia.org/wikipedia/commons/5/5e/Flickr_-_dlisbona_-_City_Centre_mall%2C_Alexandria_-_at_midnight.jpg',
     rating: 4.6,
     category: 'Shopping',
     categoryAr: 'تسوق',
@@ -1054,7 +1057,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'وجهة راقية للتسوق والمطاعم على البحر بجوار فندق فور سيزونز.',
     imageUrl:
-        'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/8/84/San_Stefano_Grand_Plaza%2C_Alexandria%2C_Egypt.jpg',
     rating: 4.7,
     category: 'Shopping',
     categoryAr: 'تسوق',
@@ -1076,7 +1079,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مجمع تسوق واسع في سموحة يضم المتاجر والمقاهي والمطاعم وخيارات ترفيهية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?auto=format&fit=crop&w=1200&q=85',
+        'https://upload.wikimedia.org/wikipedia/commons/3/38/Alexandria%2C_Egypt_%282007-05-057%29.jpg',
     rating: 4.5,
     category: 'Shopping',
     categoryAr: 'تسوق',
@@ -1120,7 +1123,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'وجهة في سيدي جابر للمطاعم والمقاهي والترفيه داخل مبنى ذي قبة مميزة.',
     imageUrl:
-        'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&w=1200&q=85',
+        'https://upload.wikimedia.org/wikipedia/commons/c/cf/Alexandria_Tram_218.jpg',
     rating: 4.5,
     category: 'Shopping',
     categoryAr: 'تسوق',
@@ -1142,7 +1145,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'مركز للتسوق ونمط الحياة في منطقة سموحة يضم المتاجر والخدمات المحلية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1567958451986-2de427a4a0be?auto=format&fit=crop&w=1200&q=85',
+        'https://upload.wikimedia.org/wikipedia/commons/2/2f/Alexandria_-_Egypt.jpg',
     rating: 4.4,
     category: 'Shopping',
     categoryAr: 'تسوق',
@@ -1164,7 +1167,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'سوق شعبي نابض في المنشية للتسوق وشراء الملابس والإكسسوارات والاحتياجات اليومية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/1/14/2009_newsstand_Alexandria_Egypt_7002861933.jpg',
     rating: 4.5,
     category: 'Shopping',
     categoryAr: 'تسوق',
@@ -1186,7 +1189,7 @@ final List<PlaceModel> curatedAlexandriaPlaces = [
     descriptionAr:
         'جولة في وسط المدينة بين العمارة التراثية والمتاجر المستقلة والمقاهي والمعالم الثقافية.',
     imageUrl:
-        'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&q=85&fit=crop',
+        'https://upload.wikimedia.org/wikipedia/commons/7/71/Egypt%2C_Alexandria%2C_The_Corniche_of_Alexandria.jpg',
     rating: 4.7,
     category: 'Shopping',
     categoryAr: 'تسوق',
@@ -1226,7 +1229,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'قلعة قايتباي هي حصن دفاعي يعود للقرن الخامس عشر الميلادي، مبني على أنقاض منارة الإسكندرية القديمة، إحدى عجائب الدنيا السبع. تقع على شاطئ البحر المتوسط وتتميز بمعمارها الأيوبي الرائع.',
         imageUrl:
-            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/p_1784811618524.jpg",
+            "https://upload.wikimedia.org/wikipedia/commons/4/47/Citadel_of_Qaitbay_in_Alexandria%2C_Egypt.png",
         rating: 4.7,
         category: 'Historical',
         categoryAr: 'تاريخي',
@@ -1251,7 +1254,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'عمود بومبي عمود ضخم من الجرانيت يعود للعصر الروماني، يبلغ ارتفاعه 30 متراً، وهو أعلى عمود انتصار خارج روما. أُقيم عام 297 م تكريماً للإمبراطور دقلديانوس.',
         imageUrl:
-            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/7.jpg",
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/Pompey%27s_Pillar_%28Archaeological_site_in_Alexandria_2017%29_%2C_photo_by_Hatem_moushir_2.jpg",
         rating: 4.5,
         category: 'Historical',
         categoryAr: 'تاريخي',
@@ -1276,7 +1279,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'مقابر كوم الشقافة من أبرز المواقع الأثرية في الإسكندرية، تُعد إحدى عجائب الدنيا السبع في العصر الوسيط. متاهة متعددة الطوابق تمزج بين الفن الروماني والمصري القديم.',
         imageUrl:
-            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/4.jpg",
+            "https://upload.wikimedia.org/wikipedia/commons/6/6e/Catacombs_of_Kom_El_Shoqafa%2C_Alexandria%2C_Egypt.jpg",
         rating: 4.6,
         category: 'Historical',
         categoryAr: 'تاريخي',
@@ -1301,7 +1304,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'مكتبة الإسكندرية الجديدة صرح ثقافي ضخم على شاطئ البحر المتوسط، تجسيد معاصر للمكتبة الأسطورية التي كانت مركزاً للعلوم والمعرفة في العالم القديم. تضم مليوني كتاب ومتاحف وقاعات عروض.',
         imageUrl:
-            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/2.jpg",
+            "https://upload.wikimedia.org/wikipedia/commons/0/0f/Bibliotheca_Alexandrina_GLAM_EGY_03.jpg",
         rating: 4.8,
         category: 'Culture',
         categoryAr: 'ثقافة',
@@ -1341,7 +1344,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'حدائق المنتزه الملكية خضراء غناء تحيط بقصر المنتزه التاريخي الذي بناه الخديوي عباس. واحة طبيعية خلابة تطل على البحر المتوسط وتجمع بين الجمال والتاريخ.',
         imageUrl:
-            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/3.jpg",
+            "https://upload.wikimedia.org/wikipedia/commons/f/f6/MONTAZA_GARDENS_AND_PARK%2C_ALEXANDRIA%2C_EGYPT.jpg",
         rating: 4.5,
         category: 'Nature',
         categoryAr: 'طبيعة',
@@ -1381,7 +1384,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'مسجد العطارين أحد المساجد التاريخية العريقة في قلب الإسكندرية القديمة. يعود تاريخه للعصر المملوكي ويتميز بزخارفه الإسلامية الرائعة وروحانيته العالية.',
         imageUrl:
-            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/50.jpg",
+            "https://upload.wikimedia.org/wikipedia/commons/d/db/Alexandria._-_Attarine_Mosque._-_btv1b10114854h_%281_of_2%29.jpg",
         rating: 4.3,
         category: 'Mosques',
         categoryAr: 'مساجد',
@@ -1449,7 +1452,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'عمود روماني ضخم من الجرانيت الأحمر أُقيم عام 297م في منطقة السيرابيوم.',
         imageUrl:
-            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/7.jpg",
+            "https://upload.wikimedia.org/wikipedia/commons/5/5d/Pompey%27s_Pillar_%28Archaeological_site_in_Alexandria_2017%29_%2C_photo_by_Hatem_moushir_2.jpg",
         rating: 4.5,
         category: 'Historical',
         categoryAr: 'تاريخي',
@@ -1489,7 +1492,7 @@ const List<ItineraryModel> fallbackTours = [
         descriptionAr:
             'مكتبة ومركز ثقافي حديث على ساحل البحر المتوسط في الإسكندرية.',
         imageUrl:
-            "https://tbivoxyxclwjjspwsgvc.supabase.co/storage/v1/object/public/place-images/2.jpg",
+            "https://upload.wikimedia.org/wikipedia/commons/0/0f/Bibliotheca_Alexandrina_GLAM_EGY_03.jpg",
         rating: 4.8,
         category: 'Culture',
         categoryAr: 'ثقافة',

@@ -1,17 +1,22 @@
 import '../../data/models/place_model.dart';
 
 Uri googleMapsSearchUri(PlaceModel place, {String? locale}) {
+  if (!place.lat.isFinite ||
+      !place.lng.isFinite ||
+      place.lat < -90 ||
+      place.lat > 90 ||
+      place.lng < -180 ||
+      place.lng > 180) {
+    throw ArgumentError.value(
+      (place.lat, place.lng),
+      'place coordinates',
+      'must be valid latitude and longitude',
+    );
+  }
   final cleanName = cleanPlaceName(place.localizedName(locale ?? 'en'));
-  final governorate = place.governorate
-      .split(RegExp(r'[_\s-]+'))
-      .where((part) => part.isNotEmpty)
-      .map(
-        (part) => '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
-      )
-      .join(' ');
   return Uri.https('www.google.com', '/maps/search/', {
     'api': '1',
-    'query': '$cleanName, $governorate, Egypt',
+    'query': '$cleanName @ ${place.lat},${place.lng}',
   });
 }
 

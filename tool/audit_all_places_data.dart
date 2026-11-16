@@ -5,6 +5,7 @@ import 'package:streetlore/data/alexandria_image_urls.dart';
 import 'package:streetlore/data/cairo_image_urls.dart';
 import 'package:streetlore/data/luxor_image_urls.dart';
 import 'package:streetlore/data/aswan_image_urls.dart';
+import 'package:streetlore/data/red_sea_image_urls.dart';
 import 'package:streetlore/data/mock_data.dart';
 import 'package:streetlore/data/models/place_model.dart';
 import 'package:streetlore/data/models/egypt_governorate.dart';
@@ -18,11 +19,6 @@ const _boilerplate = [
   'check current opening hours',
   'check current prices and fees',
 ];
-
-const _legacyAlexandriaImageHosts = {
-  'images.unsplash.com',
-  'tbivoxyxclwjjspwsgvc.supabase.co',
-};
 
 const _paidAdmissionTerms = [
   'museum',
@@ -93,6 +89,14 @@ Future<void> main() async {
     if (!placeIds.add(place.id)) {
       issues.add('${place.id}: duplicate place ID');
     }
+    if (!place.lat.isFinite ||
+        !place.lng.isFinite ||
+        place.lat < -90 ||
+        place.lat > 90 ||
+        place.lng < -180 ||
+        place.lng > 180) {
+      issues.add('${place.id}: invalid Google Maps coordinates');
+    }
 
     final text = '${place.descriptionEn} ${place.descriptionAr}'.toLowerCase();
     if (_boilerplate.any(text.contains)) {
@@ -154,13 +158,7 @@ Future<void> main() async {
           uri.scheme == 'https' &&
           uri.host == 'upload.wikimedia.org' &&
           uri.path.isNotEmpty;
-      final validLegacyAlexandriaUrl =
-          place.governorate == 'alexandria' &&
-          uri != null &&
-          uri.scheme == 'https' &&
-          _legacyAlexandriaImageHosts.contains(uri.host) &&
-          uri.path.isNotEmpty;
-      if (!validWikimediaUrl && !validLegacyAlexandriaUrl) {
+      if (!validWikimediaUrl) {
         issues.add('${place.id}: image is not a Wikimedia HTTPS URL: $url');
       }
       final previous = imageOwners.putIfAbsent(url, () => place.id);
@@ -174,6 +172,7 @@ Future<void> main() async {
   _checkImageMapDuplicates('Alexandria', alexandriaImageUrls, issues);
   _checkImageMapDuplicates('Luxor', luxorImageUrls, issues);
   _checkImageMapDuplicates('Aswan', aswanImageUrls, issues);
+  _checkImageMapDuplicates('Red Sea', redSeaImageUrls, issues);
 
   final alexandriaCount = places
       .where((place) => place.governorate == 'alexandria')
@@ -184,12 +183,31 @@ Future<void> main() async {
   final luxorPlaces = places
       .where((place) => place.governorate == 'luxor')
       .toList(growable: false);
+  final redSeaPlaces = places
+      .where((place) => place.governorate == 'red_sea')
+      .toList(growable: false);
   final luxorCount = luxorPlaces.length;
   if (alexandriaCount != 53) {
     issues.add('expected 53 Alexandria places, found $alexandriaCount');
   }
+  final alexandriaPlaces = places
+      .where((place) => place.governorate == 'alexandria')
+      .toList(growable: false);
+  if (alexandriaPlaces.where((place) => place.isVisitable).length != 53 ||
+      alexandriaPlaces.where((place) => place.isAtm).isNotEmpty) {
+    issues.add(
+      'expected 53 Alexandria visitable places and no Alexandria ATMs',
+    );
+  }
   if (cairoCount != 194) {
     issues.add('expected 194 Cairo/Giza places, found $cairoCount');
+  }
+  final cairoPlaces = places
+      .where((place) => place.governorate == 'cairo')
+      .toList(growable: false);
+  if (cairoPlaces.where((place) => place.isVisitable).length != 174 ||
+      cairoPlaces.where((place) => place.isAtm).length != 20) {
+    issues.add('expected 174 Cairo/Giza visitable places and 20 map ATMs');
   }
   if (luxorCount != 124) {
     issues.add('expected 124 Luxor & Aswan records, found $luxorCount');
@@ -204,26 +222,86 @@ Future<void> main() async {
       'found $luxorVisitableCount visitable and $luxorAtmCount ATMs',
     );
   }
-  final luxorGovernorate = EgyptGovernorate.byId['luxor']!;
-  for (final place in luxorPlaces) {
-    if (!_strictlyInside(luxorGovernorate, place.lat, place.lng)) {
+  if (redSeaPlaces.length != 60 ||
+      redSeaPlaces.where((place) => place.isVisitable).length != 54 ||
+      redSeaPlaces.where((place) => place.isAtm).length != 6) {
+    issues.add(
+      'expected 60 Red Sea records (54 visitable and 6 map ATMs), '
+      'found ${redSeaPlaces.length} records '
+      '(${redSeaPlaces.where((place) => place.isVisitable).length} visitable, '
+      '${redSeaPlaces.where((place) => place.isAtm).length} ATMs)',
+    );
+  }
+  final visitableCount = places.where((place) => place.isVisitable).length;
+  final atmCount = places.where((place) => place.isAtm).length;
+  if (visitableCount != 393 || atmCount != 38) {
+    issues.add(
+      'expected 393 visitable places and 38 map ATMs, '
+      'found $visitableCount visitable and $atmCount ATMs',
+    );
+  }
+  for (final governorateId in ['alexandria', 'cairo', 'luxor', 'red_sea']) {
+    final governorate = EgyptGovernorate.byId[governorateId]!;
+    for (final place in places.where(
+      (place) => place.governorate == governorateId,
+    )) {
+      if (!_strictlyInside(governorate, place.lat, place.lng)) {
+        issues.add(
+          '${place.id}: coordinate is not strictly inside the '
+          '$governorateId boundary',
+        );
+      }
+    }
+  }
+  if (redSeaImageUrls.length != 60 ||
+      redSeaImageUrls.values.toSet().length != 60) {
+    issues.add('Red Sea image catalog must contain exactly 60 unique URLs');
+  }
+  final redSeaIds = redSeaPlaces
+      .where((place) => redSeaImageUrls.containsKey(place.id))
+      .map((place) => place.id)
+      .toSet();
+  if (redSeaIds.length != 60 ||
+      redSeaIds.difference(redSeaImageUrls.keys.toSet()).isNotEmpty ||
+      redSeaImageUrls.keys.toSet().difference(redSeaIds).isNotEmpty) {
+    issues.add('Red Sea place IDs and image catalog keys must match exactly');
+  }
+  for (final entry in redSeaImageUrls.entries) {
+    final uri = Uri.tryParse(entry.value);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host != 'upload.wikimedia.org' ||
+        !uri.path.startsWith('/wikipedia/commons/')) {
       issues.add(
-        '${place.id}: coordinate is not strictly inside the unified Luxor & Aswan boundary',
+        '${entry.key}: malformed Wikimedia Commons URL in local image catalog',
       );
     }
   }
   final activeGovernorateIds = places
       .map((place) => EgyptGovernorate.normalizeId(place.governorate))
       .toSet();
-  if (activeGovernorateIds.length != 3 ||
-      !activeGovernorateIds.containsAll(['alexandria', 'cairo', 'luxor']) ||
+  if (activeGovernorateIds.length != 4 ||
+      !activeGovernorateIds.containsAll([
+        'alexandria',
+        'cairo',
+        'luxor',
+        'red_sea',
+      ]) ||
       EgyptGovernorate.normalizeId('aswan') != 'luxor') {
     issues.add(
-      'active governorates must be Alexandria, Cairo & Giza, and Luxor & Aswan',
+      'active governorates must be Alexandria, Cairo & Giza, '
+      'Luxor & Aswan, and Red Sea',
     );
   }
-  if (places.length != 371) {
-    issues.add('expected 371 total places, found ${places.length}');
+  if (places.length != 431) {
+    issues.add('expected 431 total places, found ${places.length}');
+  }
+  final profileScreen = File(
+    'lib/presentation/screens/profile_screen.dart',
+  ).readAsStringSync();
+  if (profileScreen.contains('_BadgesLevelCard') ||
+      profileScreen.contains('View All Badges')) {
+    issues.add('ProfileScreen must not contain a badges card or button');
   }
   if (luxorImageUrls.length != 61 ||
       luxorImageUrls.values.toSet().length != 61) {
@@ -275,8 +353,11 @@ Future<void> main() async {
   }
   stdout.writeln(
     'Audited $alexandriaCount Alexandria, $cairoCount Cairo/Giza, '
-    '$luxorCount Luxor & Aswan records '
+    '$luxorCount Luxor & Aswan, and ${redSeaPlaces.length} Red Sea records '
     '(${imageOwners.length} unique place image URLs).',
+  );
+  stdout.writeln(
+    'Place split: $visitableCount visitable, $atmCount map-only ATMs.',
   );
   stdout.writeln('Image checks are offline URL-format and uniqueness checks.');
   if (issues.isNotEmpty) {
@@ -338,6 +419,14 @@ bool _requiresPaidAdmission(PlaceModel place) {
 String? _expectedHours(PlaceModel place) {
   final category = place.category.trim().toLowerCase();
   final idAndName = '${place.id} ${place.nameEn}'.toLowerCase();
+  if (place.governorate == 'red_sea') {
+    return switch (category) {
+      'shopping' => '10:00 AM - 11:00 PM',
+      'food' || 'cafe' || 'cafes' => '10:00 AM - 01:00 AM',
+      'hotels' || 'atms' || 'atm' => '24 hours',
+      _ => null,
+    };
+  }
   if (place.id.startsWith('aswan_')) {
     return switch (category) {
       'historical' || 'culture' || 'nature' => place.openHours,

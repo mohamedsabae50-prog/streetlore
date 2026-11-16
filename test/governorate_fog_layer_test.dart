@@ -116,6 +116,26 @@ void main() {
     expect(EgyptGovernorate.byId['alexandria']!.boundaryPolygon, isNotEmpty);
   });
 
+  test('fog outlines are defined for all four active regions', () {
+    for (final id in ['alexandria', 'cairo', 'luxor', 'red_sea']) {
+      final governorate = EgyptGovernorate.byId[id]!;
+      expect(governorate.boundaryPolygon.length, greaterThanOrEqualTo(4));
+      expect(
+        governorate.boundaryPolygon.every(
+          (point) =>
+              point.latitude.isFinite &&
+              point.longitude.isFinite &&
+              point.latitude >= -90 &&
+              point.latitude <= 90 &&
+              point.longitude >= -180 &&
+              point.longitude <= 180,
+        ),
+        isTrue,
+        reason: '$id fog polygon must have valid coordinates',
+      );
+    }
+  });
+
   testWidgets('governorate badge bounds do not overlap at zoom six', (
     tester,
   ) async {

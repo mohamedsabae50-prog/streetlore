@@ -24,7 +24,8 @@ class _OfflinePackagesScreenState extends State<OfflinePackagesScreen> {
         (pack) =>
             pack.id == 'all_alexandria' ||
             pack.id == 'all_cairo' ||
-            pack.id == 'all_luxor',
+            pack.id == 'all_luxor' ||
+            pack.id == 'all_red_sea',
       )
       .toList(growable: false);
 
@@ -147,7 +148,9 @@ class _OfflinePackagesScreenState extends State<OfflinePackagesScreen> {
                               EgyptGovernorate.normalizeId(
                                 pack.governorateId,
                               ) &&
-                          (pack.id != 'all_luxor' || place.isVisitable),
+                          ((pack.id != 'all_luxor' &&
+                                  pack.id != 'all_red_sea') ||
+                              place.isVisitable),
                     )
                     .length,
                 toursCount: tours
@@ -326,7 +329,8 @@ class OfflinePackagesEntryTile extends StatelessWidget {
               (pack) =>
                   (pack.id == 'all_alexandria' ||
                       pack.id == 'all_cairo' ||
-                      pack.id == 'all_luxor') &&
+                      pack.id == 'all_luxor' ||
+                      pack.id == 'all_red_sea') &&
                   offline.isDownloaded(
                     pack.id,
                     governorateId: pack.governorateId,

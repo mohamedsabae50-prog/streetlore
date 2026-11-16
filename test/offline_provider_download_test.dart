@@ -182,6 +182,58 @@ void main() {
     expect(storage.packs, isEmpty);
   });
 
+  test('Red Sea full pack includes visitable places only', () async {
+    final storage = _MemoryOfflineStorage();
+    final provider = OfflineProvider(storage: storage);
+    await provider.init();
+    const visitablePlace = PlaceModel(
+      id: 'hurghada_landmark',
+      nameEn: 'Hurghada landmark',
+      descriptionEn: 'A Red Sea landmark.',
+      imageUrl: '',
+      rating: 4.5,
+      category: 'Historical',
+      lat: 27.2579,
+      lng: 33.8116,
+      governorate: 'red_sea',
+    );
+    const atm = PlaceModel(
+      id: 'atm_red_sea',
+      nameEn: 'Red Sea ATM',
+      descriptionEn: '',
+      imageUrl: '',
+      rating: 0,
+      category: 'ATM',
+      lat: 27.2579,
+      lng: 33.8116,
+      governorate: 'red_sea',
+    );
+    const itinerary = ItineraryModel(
+      id: 'red_sea_route',
+      title: 'Red Sea route',
+      description: '',
+      duration: '2 hours',
+      imageUrl: '',
+      governorate: 'red_sea',
+      places: [atm],
+    );
+    final pack = OfflineProvider.catalog.singleWhere(
+      (candidate) => candidate.id == 'all_red_sea',
+    );
+
+    final result = await provider.download(
+      pack,
+      availablePlaces: const [visitablePlace, atm],
+      availableTours: const [itinerary],
+      isPro: true,
+    );
+
+    expect(result, isA<DownloadOk>());
+    expect(storage.places.values.map((place) => place.id), [
+      'hurghada_landmark',
+    ]);
+  });
+
   test(
     'Cairo and Alexandria offline packs use isolated bundles and state',
     () async {

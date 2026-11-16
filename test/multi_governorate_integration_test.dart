@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +10,7 @@ import 'package:streetlore/core/services/ai_tour_guide_service.dart';
 import 'package:streetlore/data/cairo_seed.dart';
 import 'package:streetlore/data/luxor_seed.dart';
 import 'package:streetlore/data/aswan_seed.dart';
+import 'package:streetlore/data/red_sea_seed.dart';
 import 'package:streetlore/data/mock_data.dart'
     show MockData, fallbackPlaces, fallbackTours;
 import 'package:streetlore/data/models/egypt_governorate.dart';
@@ -46,7 +49,12 @@ void main() {
       await places.loadPlaces();
       await tours.loadTours();
 
-      expect(places.availableGovernorateIds, {'alexandria', 'cairo', 'luxor'});
+      expect(places.availableGovernorateIds, {
+        'alexandria',
+        'cairo',
+        'luxor',
+        'red_sea',
+      });
       expect(places.places, isNotEmpty);
       expect(
         places.places.every((place) => place.governorate == 'alexandria'),
@@ -164,8 +172,37 @@ void main() {
             .every((place) => place.governorate == 'luxor' && !place.isAtm),
         isTrue,
       );
+
+      expect(governorates.unlockAndSelectGovernorate('red_sea'), isTrue);
+      expect(places.places, hasLength(54));
+      expect(
+        places.places.every(
+          (place) => place.governorate == 'red_sea' && place.isVisitable,
+        ),
+        isTrue,
+      );
+      expect(
+        places.allPlaces.where(
+          (place) => place.governorate == 'red_sea' && place.isAtm,
+        ),
+        hasLength(6),
+      );
+      expect(tours.tours, hasLength(6));
+      expect(
+        tours.tours.every((tour) => tour.governorate == 'red_sea'),
+        isTrue,
+      );
     },
   );
+
+  test('profile source contains no badges card or View All Badges action', () {
+    final source = File(
+      'lib/presentation/screens/profile_screen.dart',
+    ).readAsStringSync();
+
+    expect(source, isNot(contains('_BadgesLevelCard')));
+    expect(source, isNot(contains('View All Badges')));
+  });
 
   test('AI context uses active-city landmarks and itineraries', () {
     final cairoContext = buildGovernorateGuideContext(
@@ -268,7 +305,7 @@ void main() {
   });
 
   testWidgets(
-    'map selector exposes three unified regions and fits Cairo and Luxor',
+    'map selector exposes unified regions and fits Cairo, Luxor, and Red Sea',
     (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
@@ -284,6 +321,7 @@ void main() {
           ...cairoSeedPlaces,
           ...luxorSeedPlaces,
           ...aswanSeedPlaces,
+          ...redSeaSeedPlaces,
         ],
       );
       final tours = TourProvider(governorates: governorates);
@@ -343,6 +381,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Aswan'), findsNothing);
       expect(find.text('Luxor & Aswan'), findsNWidgets(2));
+
+      await tester.tap(find.text('Hurghada & Marsa Alam'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(governorates.activeGovernorate, 'red_sea');
+      final redSeaCamera = MapCamera.of(tester.element(fogLayer));
+      expect(redSeaCamera.center.latitude, closeTo(26.8500, 0.001));
+      expect(redSeaCamera.center.longitude, closeTo(33.9500, 0.001));
     },
   );
 }

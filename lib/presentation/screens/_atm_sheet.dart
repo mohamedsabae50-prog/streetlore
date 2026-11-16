@@ -15,36 +15,34 @@ class AtmSheet extends StatelessWidget {
     this.launchMapUrl,
   });
 
-  Future<void> _openDirections(BuildContext context) async {
-    final destination = Uri.encodeComponent(
-      '${atm.name}, ${atm.address}, ${atm.governorate}',
-    );
-    final directionsUri = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$destination&travelmode=walking',
-    );
-    final searchUri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query='
-      '${Uri.encodeComponent('${atm.name} ${atm.lat},${atm.lng}')}',
-    );
+  Future<void> _openGoogleMaps(BuildContext context) async {
+    final searchUri = Uri.https('www.google.com', '/maps/search/', {
+      'api': '1',
+      'query': '${atm.name} @ ${atm.lat},${atm.lng}',
+    });
+    final directionsUri = Uri.https('www.google.com', '/maps/dir/', {
+      'api': '1',
+      'destination': '${atm.lat},${atm.lng}',
+      'travelmode': 'walking',
+    });
     final launcher = launchMapUrl;
-    try {
-      if (await (launcher?.call(directionsUri) ??
-          launchUrl(
-            directionsUri,
-            mode: LaunchMode.externalApplication,
-          ))) {
-        return;
-      }
-    } catch (error, stackTrace) {
-      debugPrint('AtmSheet: Google Maps directions failed: $error\n$stackTrace');
-    }
     try {
       if (await (launcher?.call(searchUri) ??
           launchUrl(searchUri, mode: LaunchMode.externalApplication))) {
         return;
       }
     } catch (error, stackTrace) {
-      debugPrint('AtmSheet: Google Maps search fallback failed: $error\n$stackTrace');
+      debugPrint('AtmSheet: Google Maps search failed: $error\n$stackTrace');
+    }
+    try {
+      if (await (launcher?.call(directionsUri) ??
+          launchUrl(directionsUri, mode: LaunchMode.externalApplication))) {
+        return;
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        'AtmSheet: Google Maps directions fallback failed: $error\n$stackTrace',
+      );
     }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -76,7 +74,7 @@ class AtmSheet extends StatelessWidget {
               width: double.infinity,
               child: FilledButton.icon(
                 key: const ValueKey('atm-open-google-maps-button'),
-                onPressed: () => _openDirections(context),
+                onPressed: () => _openGoogleMaps(context),
                 icon: const Icon(Icons.map_rounded, size: 19),
                 label: Text(
                   Localizations.localeOf(context).languageCode == 'ar'

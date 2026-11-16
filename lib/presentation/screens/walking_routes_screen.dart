@@ -472,7 +472,12 @@ class _WalkingRoutesScreenState extends State<WalkingRoutesScreen> {
               padding: const EdgeInsetsDirectional.only(start: 16, end: 16),
               scrollDirection: Axis.horizontal,
               children: [
-                for (final id in const ['alexandria', 'cairo', 'luxor'])
+                for (final id in const [
+                  'alexandria',
+                  'cairo',
+                  'luxor',
+                  'red_sea',
+                ])
                   Padding(
                     padding: const EdgeInsetsDirectional.only(end: 8),
                     child: ChoiceChip(

@@ -13,16 +13,13 @@ import '../../core/services/supabase_service.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/animated_icons.dart';
 import '../../core/widgets/confetti_overlay.dart';
-import '../../data/models/gamification_stats.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/geofence_provider.dart';
 import '../../logic/tour_provider.dart';
 import '../../logic/theme_provider.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/gamification_provider.dart';
-import '../../logic/gamification_badge_progress.dart';
 import 'package:flutter/scheduler.dart';
-import '../../logic/achievement_provider.dart';
 import '../../logic/locale_provider.dart';
 import '../../logic/streak_provider.dart';
 import '../../l10n/app_strings.dart';
@@ -31,7 +28,6 @@ import 'emergency_screen.dart';
 import 'currency_converter_screen.dart';
 import 'journal_screen.dart';
 import 'prayer_times_screen.dart';
-import 'achievements_screen.dart';
 import 'admin_panel_screen.dart';
 import 'legal_document_screen.dart';
 import 'offline_packages_screen.dart';
@@ -898,12 +894,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
 
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: const _BadgesLevelCard(),
-                ),
-              ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 24, 16, 4),
@@ -1809,201 +1799,6 @@ class _Div extends StatelessWidget {
       indent: 68,
       endIndent: 16,
       color: context.dividerColor,
-    );
-  }
-}
-
-class _BadgesLevelCard extends StatelessWidget {
-  const _BadgesLevelCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final gam = context.watch<GamificationProvider>();
-    final achievements = context.watch<AchievementProvider>();
-    final isArabic = context.watch<LocaleProvider>().isArabic;
-    final stats = gam.stats;
-    final placeProvider = context.watch<PlaceProvider>();
-    final tourProvider = context.watch<TourProvider>();
-    final levels = GamificationStats.levels;
-    final level = gam.currentLevel;
-    final badges = GamificationStats.badgeCatalog;
-    final progressById = GamificationBadgeProgress.calculate(
-      stats: stats,
-      allPlaces: placeProvider.allPlaces,
-      checkedInPlaceIds: tourProvider.checkedInPlaceIds,
-      toursCompleted: tourProvider.visitedToursCount,
-      achievements: achievements,
-    );
-    int progressFor(GamificationBadgeDefinition badge) =>
-        progressById[badge.id] ?? 0;
-    bool isUnlocked(GamificationBadgeDefinition badge) =>
-        GamificationBadgeProgress.isUnlocked(badge, progressFor(badge), stats);
-    final unlockedCount = badges.where(isUnlocked).length;
-    final nextLevel = level.number < levels.length
-        ? levels[level.number]
-        : null;
-    final xpIntoLevel = stats.totalPoints - level.minimumPoints;
-    final levelXpTarget = nextLevel == null
-        ? 0
-        : nextLevel.minimumPoints - level.minimumPoints;
-    final xpProgress = nextLevel == null
-        ? 1.0
-        : (xpIntoLevel / levelXpTarget).clamp(0.0, 1.0).toDouble();
-
-    final unlockedBadges = badges
-        .where(isUnlocked)
-        .take(4)
-        .toList(growable: false);
-    final badgesToShow = unlockedBadges.isNotEmpty
-        ? unlockedBadges
-        : (badges.toList()..sort((left, right) {
-                final leftRatio = progressFor(left) / left.target;
-                final rightRatio = progressFor(right) / right.target;
-                return rightRatio.compareTo(leftRatio);
-              }))
-              .take(4)
-              .toList(growable: false);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: context.borderColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.military_tech_rounded, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  isArabic ? 'الشارات والمستوى' : 'Badges & Level',
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: context.textPri,
-                  ),
-                ),
-              ),
-              Text(
-                '$unlockedCount / ${badges.length}',
-                style: TextStyle(
-                  color: context.textSec,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '${isArabic ? 'المستوى' : 'Level'} ${level.number} / '
-            '${levels.length} · ${level.titleForLocale(isArabic ? 'ar' : 'en')}',
-            style: TextStyle(
-              color: context.textPri,
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 7),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(5),
-            child: LinearProgressIndicator(
-              value: xpProgress,
-              minHeight: 7,
-              backgroundColor: context.borderColor,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            nextLevel == null
-                ? '${stats.totalPoints} XP · ${isArabic ? 'الحد الأقصى' : 'MAX'}'
-                : '$xpIntoLevel / $levelXpTarget XP',
-            style: TextStyle(color: context.textSec, fontSize: 11),
-          ),
-          const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final definition in badgesToShow)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 8),
-                    child: Tooltip(
-                      message: isArabic
-                          ? definition.descriptionAr
-                          : definition.descriptionEn,
-                      child: Container(
-                        constraints: const BoxConstraints(maxWidth: 160),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.35),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              GamificationBadgeProgress.iconFor(
-                                definition.iconName,
-                              ),
-                              size: 15,
-                              color: AppColors.primary,
-                            ),
-                            const SizedBox(width: 5),
-                            Flexible(
-                              child: Text(
-                                isArabic
-                                    ? definition.nameAr
-                                    : definition.nameEn,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: context.textPri,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              key: const ValueKey('view-all-badges'),
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AchievementsScreen(badgesOnly: true),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.grid_view_rounded, size: 18),
-              label: Text(
-                'View All Badges (${badges.length}) / عرض كل الشارات',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
