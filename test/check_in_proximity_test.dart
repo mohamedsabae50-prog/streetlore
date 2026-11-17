@@ -46,7 +46,7 @@ void main() {
       final far = _place(
         id: 'far',
         name: 'Far place',
-        lat: 31.2 + _latitudeOffset(160),
+        lat: 31.2 + _latitudeOffset(260),
       );
       final provider = PlaceProvider(
         watchRemoteUpdates: false,

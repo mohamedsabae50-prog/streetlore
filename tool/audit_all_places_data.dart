@@ -83,6 +83,10 @@ Future<void> main() async {
     'sheikh_zayed_road',
     'city_stars',
     'omar_afandi',
+    'map',
+    'flag',
+    'logo',
+    'stamp',
   ];
 
   for (final place in places) {
@@ -161,9 +165,10 @@ Future<void> main() async {
       if (!validWikimediaUrl) {
         issues.add('${place.id}: image is not a Wikimedia HTTPS URL: $url');
       }
-      final previous = imageOwners.putIfAbsent(url, () => place.id);
+      final imageKey = uri == null ? url : Uri.decodeComponent(uri.path);
+      final previous = imageOwners.putIfAbsent(imageKey, () => place.id);
       if (previous != place.id) {
-        issues.add('${place.id}: image URL is also used by $previous');
+        issues.add('${place.id}: Commons image path is also used by $previous');
       }
     }
   }
@@ -252,6 +257,28 @@ Future<void> main() async {
         );
       }
     }
+  }
+  var coordinateCollisionCount = 0;
+  final coordinateCollisionExamples = <String>[];
+  for (var first = 0; first < places.length; first++) {
+    for (var second = first + 1; second < places.length; second++) {
+      final distance = _distanceMeters(places[first], places[second]);
+      if (distance < 15) {
+        coordinateCollisionCount++;
+        if (coordinateCollisionExamples.length < 8) {
+          coordinateCollisionExamples.add(
+            '${places[first].id} / ${places[second].id}: '
+            '${distance.toStringAsFixed(1)} m',
+          );
+        }
+      }
+    }
+  }
+  if (coordinateCollisionCount > 0) {
+    issues.add(
+      '$coordinateCollisionCount place pairs are less than 15 m apart '
+      '(examples: ${coordinateCollisionExamples.join('; ')})',
+    );
   }
   if (redSeaImageUrls.length != 60 ||
       redSeaImageUrls.values.toSet().length != 60) {
@@ -525,6 +552,22 @@ bool _strictlyInside(EgyptGovernorate governorate, double lat, double lng) {
     if (cross.abs() <= 1e-10 && withinSegment) return false;
   }
   return true;
+}
+
+double _distanceMeters(PlaceModel first, PlaceModel second) {
+  const earthRadiusMeters = 6371000.0;
+  final firstLat = first.lat * math.pi / 180;
+  final secondLat = second.lat * math.pi / 180;
+  final latitudeDelta = (second.lat - first.lat) * math.pi / 180;
+  final longitudeDelta = (second.lng - first.lng) * math.pi / 180;
+  final haversine =
+      math.pow(math.sin(latitudeDelta / 2), 2) +
+      math.cos(firstLat) *
+          math.cos(secondLat) *
+          math.pow(math.sin(longitudeDelta / 2), 2);
+  return earthRadiusMeters *
+      2 *
+      math.asin(math.sqrt(haversine.clamp(0, 1)));
 }
 
 bool _isOpenPublicSpace(String idAndName) =>

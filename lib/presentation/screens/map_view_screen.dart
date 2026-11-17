@@ -18,7 +18,7 @@ import '../../core/services/offline_tile_provider.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/governorate_provider.dart';
-import '../../logic/trip_provider.dart';
+import '../../logic/tour_provider.dart';
 import '../widgets/governorate_explorer_sheet.dart';
 import '../widgets/governorate_fog_layer.dart';
 import '../widgets/governorate_selector.dart';
@@ -153,7 +153,6 @@ class _MapViewScreenState extends State<MapViewScreen>
   int _routePlanRequestId = 0;
 
   StreamSubscription<Position>? _positionSubscription;
-  StreamSubscription<PlaceModel>? _autoCheckInSubscription;
   bool _startingPositionUpdates = false;
 
   static const _alexCenter = LatLng(31.2001, 29.9187);
@@ -292,12 +291,31 @@ class _MapViewScreenState extends State<MapViewScreen>
 
   void _startAutoCheckInLocationUpdates() {
     final places = context.read<PlaceProvider>();
-    _autoCheckInSubscription = places.autoCheckIns.listen(
-      _showAutoCheckInSnackBar,
-      onError: (Object error, StackTrace stackTrace) {
-        debugPrint('MapViewScreen auto check-in notification failed: $error');
-      },
-    );
+    unawaited(_subscribeToPositionUpdates(places));
+    unawaited(_checkCurrentPositionForAutoCheckIn(places));
+  }
+
+  Future<void> _checkCurrentPositionForAutoCheckIn(PlaceProvider places) async {
+    if (kIsWeb) return;
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) return;
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.unableToDetermine) {
+        return;
+      }
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 8),
+      );
+      if (mounted) await _evaluateAutoCheckIn(places, position);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'MapViewScreen initial auto check-in location failed: '
+        '$error\n$stackTrace',
+      );
+    }
   }
 
   Future<void> _subscribeToPositionUpdates(
@@ -322,7 +340,7 @@ class _MapViewScreenState extends State<MapViewScreen>
           Geolocator.getPositionStream(
             locationSettings: const LocationSettings(
               accuracy: LocationAccuracy.high,
-              distanceFilter: 15,
+              distanceFilter: 25,
             ),
           ).listen(
             (position) {
@@ -381,23 +399,6 @@ class _MapViewScreenState extends State<MapViewScreen>
     } catch (error, stackTrace) {
       debugPrint('MapViewScreen auto check-in failed: $error\n$stackTrace');
     }
-  }
-
-  void _showAutoCheckInSnackBar(PlaceModel place) {
-    if (!mounted || (ModalRoute.of(context)?.isCurrent == false)) return;
-    final locale = Localizations.localeOf(context).languageCode;
-    final message = context.tr('auto_checkin_success', {
-      'place': place.localizedName(locale),
-    });
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF059669),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        duration: const Duration(seconds: 4),
-      ),
-    );
   }
 
   Future<void> _locateUser({bool move = false}) async {
@@ -1377,7 +1378,6 @@ class _MapViewScreenState extends State<MapViewScreen>
   void dispose() {
     _governorates?.removeListener(_onGovernorateChanged);
     unawaited(_positionSubscription?.cancel());
-    unawaited(_autoCheckInSubscription?.cancel());
     unawaited(_routePositionSubscription?.cancel());
     if (_ownsRouteService) _routeService.close();
     _cameraAnimation.dispose();
@@ -1396,7 +1396,8 @@ class _MapViewScreenState extends State<MapViewScreen>
         EgyptGovernorate.byId['alexandria']!;
     final places = placeProvider.places;
     final allPlaces = placeProvider.allPlaces;
-    final visitedPlaceIds = context.watch<TripProvider>().visitedPlaceIds;
+    final visitedPlaceIds =
+        context.watch<TourProvider?>()?.checkedInPlaceIds ?? const <String>{};
     final visibleSource = governorateProvider.fogEnabled
         ? places
         : allPlaces.where((place) => place.isVisitable).toList(growable: false);
@@ -1665,14 +1666,14 @@ class _MapViewScreenState extends State<MapViewScreen>
                                           width: 42,
                                           height: 42,
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF059669),
+                                            color: const Color(0xFF10B981),
                                             shape: BoxShape.circle,
                                             boxShadow: [
                                               if (showMarkerGlow ||
                                                   p.id == _selectedPlace?.id)
                                                 BoxShadow(
                                                   color: const Color(
-                                                    0xFF059669,
+                                                    0xFF10B981,
                                                   ).withValues(alpha: 0.5),
                                                   blurRadius: 9,
                                                   spreadRadius: 2,
@@ -1696,7 +1697,7 @@ class _MapViewScreenState extends State<MapViewScreen>
                                             width: 19,
                                             height: 19,
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF4C542),
+                                              color: const Color(0xFF10B981),
                                               shape: BoxShape.circle,
                                               border: Border.all(
                                                 color: Colors.white,
@@ -1705,7 +1706,7 @@ class _MapViewScreenState extends State<MapViewScreen>
                                             ),
                                             child: const Icon(
                                               Icons.check,
-                                              color: Color(0xFF14532D),
+                                              color: Colors.white,
                                               size: 13,
                                             ),
                                           ),

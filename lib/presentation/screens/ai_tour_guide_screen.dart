@@ -10,6 +10,7 @@ import '../../data/models/egypt_governorate.dart';
 import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/connectivity_provider.dart';
+import '../../logic/auth_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/tour_provider.dart';
 import 'package:provider/provider.dart';
@@ -46,6 +47,9 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
   bool _started = false;
   bool _bootstrapStarted = false;
   bool _sending = false;
+  int _quotaRemaining = 3;
+  int _quotaLimit = 3;
+  bool _quotaUnlimited = false;
   String? _streamingReply;
 
   @override
@@ -89,9 +93,17 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
   Future<void> _send() async {
     if (_isOffline()) return;
     final text = _inputCtrl.text.trim();
-    if (text.isEmpty || _sending) return;
+    if (text.isEmpty ||
+        _sending ||
+        (!(context.read<AuthProvider>().isPro ||
+                context.read<AuthProvider>().isAdmin ||
+                _quotaUnlimited) &&
+            _quotaRemaining <= 0)) {
+      return;
+    }
     HapticFeedback.lightImpact();
     _inputCtrl.clear();
+    _quotaKey.currentState?.consumeOne();
     setState(() {
       _sending = true;
       _streamingReply = '';
@@ -148,12 +160,14 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     final isOffline = widget.isOfflineOverride == null
         ? context.watch<ConnectivityProvider>().hasInternet == false
         : widget.isOfflineOverride!;
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
+        toolbarHeight: 86,
         backgroundColor: context.bgColor,
         elevation: 0,
         leading: IconButton(
@@ -171,6 +185,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            _buildQuotaSubtitle(context, auth.isPro || auth.isAdmin),
             Text(
               widget.place.localizedName(
                 Localizations.localeOf(context).languageCode,
@@ -186,10 +201,6 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
       ),
       body: Column(
         children: [
-          AiQuotaBanner(
-            key: _quotaKey,
-            fetchQuotaStatus: widget.fetchQuotaStatus,
-          ),
           Expanded(
             child: !_started
                 ? const Center(child: CircularProgressIndicator())
@@ -204,10 +215,49 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
                 style: TextStyle(color: context.textSec, fontSize: 12),
               ),
             ),
+          AiQuotaBanner(
+            key: _quotaKey,
+            fetchQuotaStatus: widget.fetchQuotaStatus,
+            onStatusChanged: _updateQuota,
+            onUpgrade: _openPaywall,
+          ),
           _buildInputBar(enabled: !isOffline),
         ],
       ),
     );
+  }
+
+  Widget _buildQuotaSubtitle(BuildContext context, bool isPro) {
+    final message = isPro || _quotaUnlimited
+        ? context.tr('ai_quota_pro_unlimited')
+        : context.tr('ai_quota_remaining', {
+            'remaining': '$_quotaRemaining',
+            'limit': '$_quotaLimit',
+          });
+    return SizedBox(
+      height: 16,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(
+          message,
+          style: TextStyle(
+            color: context.textSec,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _updateQuota(AiQuotaSnapshot snapshot) {
+    if (!mounted) return;
+    setState(() {
+      _quotaRemaining = snapshot.remaining;
+      _quotaLimit = snapshot.limit;
+      _quotaUnlimited = snapshot.unlimited;
+    });
   }
 
   Widget _buildChatList() {

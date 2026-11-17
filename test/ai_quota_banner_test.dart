@@ -44,8 +44,8 @@ void main() {
       ),
     );
 
-    expect(find.byKey(const ValueKey('ai-quota-banner')), findsOneWidget);
-    expect(find.text('3 of 3 AI calls remaining'), findsOneWidget);
+    expect(find.byKey(const Key('ai-quota-remaining-banner')), findsOneWidget);
+    expect(find.text('Remaining AI uses today: 3 / 3'), findsOneWidget);
     expect(find.text('Resets at midnight UTC'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });

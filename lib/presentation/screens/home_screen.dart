@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -59,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final ScrollController _scrollCtrl = ScrollController();
   bool _isSearchFocused = false;
   List<Map<String, dynamic>> _friendsPlaceVisits = const [];
+  StreamSubscription<Position>? _positionSubscription;
 
   late final AnimationController _headerCtrl;
   late final Animation<double> _headerFade;
@@ -140,6 +144,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ).showSnackBar(SnackBar(content: Text(context.tr('loc_service_off'))));
     } else if (status == LocationPermissionStatus.granted) {
       try {
+        final placeProvider = context.read<PlaceProvider>();
+        final governorates = context.read<GovernorateProvider>();
+        final availableGovernorateIds = placeProvider.availableGovernorateIds;
         final position = await Geolocator.getCurrentPosition(
           timeLimit: const Duration(seconds: 8),
         );
@@ -148,12 +155,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           position.latitude,
           position.longitude,
         );
-        await context.read<GovernorateProvider>().syncWithCoordinates(
+        await _evaluateAutoCheckIn(placeProvider, position);
+        _subscribeToPositionUpdates(placeProvider);
+        await governorates.syncWithCoordinates(
           position.latitude,
           position.longitude,
-          availableGovernorateIds: context
-              .read<PlaceProvider>()
-              .availableGovernorateIds,
+          availableGovernorateIds: availableGovernorateIds,
         );
       } catch (error, stackTrace) {
         debugPrint(
@@ -164,8 +171,42 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  void _subscribeToPositionUpdates(PlaceProvider places) {
+    if (kIsWeb || _positionSubscription != null) return;
+    _positionSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 25,
+          ),
+        ).listen(
+          (position) => unawaited(_evaluateAutoCheckIn(places, position)),
+          onError: (Object error, StackTrace stackTrace) {
+            debugPrint(
+              'HomeScreen location stream failed: $error\n$stackTrace',
+            );
+          },
+        );
+  }
+
+  Future<void> _evaluateAutoCheckIn(
+    PlaceProvider places,
+    Position position,
+  ) async {
+    try {
+      await places.evaluateAutoCheckInForPosition(
+        lat: position.latitude,
+        lng: position.longitude,
+        accuracy: position.accuracy,
+      );
+    } catch (error, stackTrace) {
+      debugPrint('HomeScreen auto check-in failed: $error\n$stackTrace');
+    }
+  }
+
   @override
   void dispose() {
+    unawaited(_positionSubscription?.cancel());
     _searchController.dispose();
     _searchFocus.dispose();
     _scrollCtrl.dispose();
@@ -215,7 +256,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   List<PlaceModel> _filtered(List<PlaceModel> all) {
-    final base = _isSearching ? _searchResults(all) : _categoryFiltered(all);
+    final checkedInIds =
+        context.watch<TourProvider?>()?.checkedInPlaceIds ?? const <String>{};
+    final unvisited = all
+        .where((place) => !checkedInIds.contains(place.id))
+        .toList(growable: false);
+    final base = _isSearching
+        ? _searchResults(unvisited)
+        : _categoryFiltered(unvisited);
     final isPro = context.read<AuthProvider>().isPro;
     var result = isPro
         ? base

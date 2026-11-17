@@ -110,9 +110,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Cairo'), findsOneWidget);
-      expect(find.text('3 of 3 AI calls remaining'), findsOneWidget);
+      expect(find.text('Remaining AI uses today: 3 / 3'), findsNWidgets(2));
       final quotaTop = tester.getTopLeft(
-        find.byKey(const ValueKey('ai-quota-banner')),
+        find.byKey(const Key('ai-quota-remaining-banner')),
       );
       expect(
         quotaTop.dy,
@@ -125,7 +125,7 @@ void main() {
 
       expect(messagesSent, 1);
       expect(quotaFetches, 2);
-      expect(find.text('2 of 3 AI calls remaining'), findsOneWidget);
+      expect(find.text('Remaining AI uses today: 2 / 3'), findsNWidgets(2));
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
@@ -195,9 +195,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('3 of 3 AI calls remaining'), findsOneWidget);
+    expect(find.text('Remaining AI uses today: 3 / 3'), findsNWidgets(2));
     expect(
-      tester.getTopLeft(find.byKey(const ValueKey('ai-quota-banner'))).dy,
+      tester.getTopLeft(find.byKey(const Key('ai-quota-remaining-banner'))).dy,
       lessThan(tester.getTopLeft(find.byType(TextField)).dy),
     );
     await tester.enterText(find.byType(TextField), 'Tell me more');
@@ -206,7 +206,7 @@ void main() {
 
     expect(messagesSent, 1);
     expect(quotaFetches, 2);
-    expect(find.text('2 of 3 AI calls remaining'), findsOneWidget);
+    expect(find.text('Remaining AI uses today: 2 / 3'), findsNWidgets(2));
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

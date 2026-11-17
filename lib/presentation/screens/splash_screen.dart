@@ -430,29 +430,6 @@ class _SplashScreenState extends State<SplashScreen>
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 17,
-                            vertical: 9,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0x1AD4AF37),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: const Color(0x55D4AF37)),
-                          ),
-                          child: Text(
-                            isArabic
-                                ? 'استكشف الحكايات والكنوز من حولك'
-                                : 'Discover the Hidden Stories Around You',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Color(0xFFE7D6AF),
-                              fontSize: 13,
-                              letterSpacing: .25,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),

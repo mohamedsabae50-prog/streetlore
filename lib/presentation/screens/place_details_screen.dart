@@ -12,6 +12,7 @@ import '../../core/animations/app_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/social_share_service.dart';
 import '../../core/services/checkin_location_service.dart';
+import '../../core/utils/checkin_error_sanitizer.dart';
 import '../../core/services/app_review_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/services/google_maps_search.dart';
@@ -110,31 +111,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
         .autoCheckIns
         .listen(
           (place) {
-            if (!mounted || ModalRoute.of(context)?.isCurrent == false) {
-              return;
-            }
-            if (place.id == widget.place.id) setState(() => _isVisited = true);
-            final locale = Localizations.localeOf(context).languageCode;
-            ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-              SnackBar(
-                content: Text(
-                  context.tr('auto_checkin_success', {
-                    'place': place.localizedName(locale),
-                  }),
-                ),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: const Color(0xFF059669),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                duration: const Duration(seconds: 4),
-              ),
-            );
+            if (!mounted || place.id != widget.place.id) return;
+            setState(() => _isVisited = true);
           },
           onError: (Object error, StackTrace stackTrace) {
-            debugPrint(
-              'PlaceDetailsScreen auto check-in notification failed: $error',
-            );
+            debugPrint('PlaceDetailsScreen auto check-in state failed: $error');
           },
         );
   }
@@ -749,6 +730,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                       isLoading: _checkInGuard.isBusy,
                                       onTap: () => _checkInGuard.run(() async {
                                         HapticFeedback.mediumImpact();
+                                        final locale = Localizations.localeOf(
+                                          context,
+                                        ).languageCode;
                                         final wasVisited = _isVisited;
                                         if (!wasVisited) {
                                           final streak = context
@@ -861,6 +845,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                           final checkinError =
                                               gamification.lastCheckinError;
                                           if (checkinError != null) {
+                                            final cleanCheckinError =
+                                                sanitizeCheckInError(
+                                                  checkinError,
+                                                  locale: locale,
+                                                );
                                             gamification.clearCheckinError();
                                             tripProvider.unmarkVisited(
                                               place.id,
@@ -874,7 +863,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen>
                                             messenger.showSnackBar(
                                               SnackBar(
                                                 content: Text(
-                                                  '${context.tr('checkin_save_failed')}: $checkinError',
+                                                  cleanCheckinError,
                                                 ),
                                                 backgroundColor: Colors.red,
                                               ),

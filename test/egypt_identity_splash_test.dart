@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:streetlore/logic/locale_provider.dart';
+import 'package:streetlore/presentation/screens/onboarding_screen.dart';
 import 'package:streetlore/presentation/screens/splash_screen.dart';
 
 void main() {
@@ -57,6 +60,7 @@ void main() {
 
     expect(find.byKey(const ValueKey('radar-stage')), findsOneWidget);
     expect(find.text('EgyptLore'), findsOneWidget);
+    expect(find.text('Discover the Hidden Stories Around You'), findsNothing);
     expect(find.byKey(const ValueKey('splash-progress')), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
     expect(find.byKey(const ValueKey('pyramids-stage')), findsNothing);
@@ -127,5 +131,20 @@ void main() {
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
     expect(opacityOfStage(const ValueKey('pyramids-stage')), 1);
     expect(progressValue(), closeTo(1, 0.001));
+  });
+
+  testWidgets('onboarding retains the hidden stories subtitle', (tester) async {
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => LocaleProvider(),
+        child: const MaterialApp(home: OnboardingScreen()),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.textContaining('Discover the Hidden Stories Around You'),
+      findsOneWidget,
+    );
   });
 }

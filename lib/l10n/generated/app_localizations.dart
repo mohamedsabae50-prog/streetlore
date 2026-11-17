@@ -1511,7 +1511,7 @@ abstract class AppLocalizations {
   /// Translation key: ob_sub_1
   ///
   /// In en, this message translates to:
-  /// **'Uncover 30+ hidden gems and landmarks of Alexandria that most tourists never find.'**
+  /// **'Uncover 30+ hidden gems and landmarks of Alexandria that most tourists never find.\nDiscover the Hidden Stories Around You'**
   String get ob_sub_1;
 
   /// Translation key: ob_sub_2
@@ -2477,7 +2477,7 @@ abstract class AppLocalizations {
   /// Translation key: ai_quota_remaining
   ///
   /// In en, this message translates to:
-  /// **'{remaining} of {limit} AI calls remaining'**
+  /// **'Remaining AI uses today: {remaining} / {limit}'**
   String ai_quota_remaining(String remaining, String limit);
 
   /// No description provided for @ai_quota_retry.
@@ -3563,13 +3563,13 @@ abstract class AppLocalizations {
   /// No description provided for @checkin_too_far.
   ///
   /// In en, this message translates to:
-  /// **'Move closer to this place to check in. The allowed distance varies by place.'**
+  /// **'You must be within 200 meters of this place to check in'**
   String get checkin_too_far;
 
   /// Shown when proximity automatically checks in a place
   ///
   /// In en, this message translates to:
-  /// **'🎉 Auto checked in at {place}!'**
+  /// **'Auto Check-in: Visited {place}! +XP'**
   String auto_checkin_success(String place);
 
   /// No description provided for @checkin_location_permission.

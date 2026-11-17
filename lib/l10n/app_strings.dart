@@ -272,12 +272,12 @@ class AppStrings {
       'ar': 'رصيد الذكاء الاصطناعي غير متاح',
     },
     'ai_quota_remaining': {
-      'en': '{remaining} of {limit} AI calls remaining',
-      'ar': 'متبقي {remaining} من {limit} طلبات للذكاء الاصطناعي',
+      'en': 'Remaining AI uses today: {remaining} / {limit}',
+      'ar': 'المرات المتبقية لاستخدام المساعد اليوم: {remaining} من {limit}',
     },
     'ai_quota_pro_unlimited': {
-      'en': 'PRO · Unlimited AI messages',
-      'ar': 'برو · رسائل ذكاء اصطناعي غير محدودة',
+      'en': 'Remaining AI uses today: Unlimited (Pro)',
+      'ar': 'المرات المتبقية اليوم: غير محدود (Pro)',
     },
     'ai_quota_reset_utc': {
       'en': 'Resets at midnight UTC',
@@ -1495,14 +1495,12 @@ class AppStrings {
       'ar': 'تعذر تشغيل تنبيهات الأماكن القريبة. حاول مرة أخرى.',
     },
     'checkin_too_far': {
-      'en':
-          'Move closer to this place to check in. The allowed distance varies by place.',
-      'ar':
-          'اقترب أكثر من هذا المكان لتسجيل الزيارة. تختلف المسافة المسموح بها حسب المكان.',
+      'en': 'You must be within 200 meters of this place to check in',
+      'ar': 'يجب أن تكون داخل نطاق المكان (200 متر) لتسجيل الزيارة',
     },
     'auto_checkin_success': {
-      'en': '🎉 Auto checked in at {place}!',
-      'ar': '🎉 تم تسجيل زيارتك تلقائياً في {place}!',
+      'en': 'Auto Check-in: Visited {place}! +XP',
+      'ar': 'تم تسجيل زيارتك تلقائياً لـ {place}! +XP',
     },
     'checkin_location_permission': {
       'en': 'Allow location access to verify your check-in.',
@@ -2018,9 +2016,9 @@ class AppStrings {
     'ob_title_1': {'en': 'Discover the Unseen', 'ar': 'اكتشف المخفي'},
     'ob_sub_1': {
       'en':
-          'Uncover 30+ hidden gems and landmarks of Alexandria that most tourists never find.',
+          'Uncover 30+ hidden gems and landmarks of Alexandria that most tourists never find.\nDiscover the Hidden Stories Around You',
       'ar':
-          'اكتشف أكتر من ٣٠ جوهرة مخفية ومعلم في إسكندرية معظم السياح مبيعرفوهاش.',
+          'اكتشف أكتر من ٣٠ جوهرة مخفية ومعلم في إسكندرية معظم السياح مبيعرفوهاش.\nاستكشف الحكايات والكنوز من حولك',
     },
     'ob_title_2': {'en': 'Plan Your Journey', 'ar': 'خطط رحلتك'},
     'ob_sub_2': {

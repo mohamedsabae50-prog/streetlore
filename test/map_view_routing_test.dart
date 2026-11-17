@@ -20,6 +20,7 @@ import 'package:streetlore/logic/place_provider.dart';
 import 'package:streetlore/logic/auth_provider.dart';
 import 'package:streetlore/logic/review_provider.dart';
 import 'package:streetlore/logic/trip_provider.dart';
+import 'package:streetlore/logic/tour_provider.dart';
 import 'package:streetlore/presentation/screens/_atm_sheet.dart';
 import 'package:streetlore/presentation/screens/map_view_screen.dart';
 import 'package:streetlore/presentation/screens/place_details_screen.dart';
@@ -79,6 +80,8 @@ void main() {
       initialPlaces: const [place, nearbyPlace],
     );
     final trips = TripProvider();
+    final tours = TourProvider(governorates: governorates);
+    tours.syncVisitedPlaces({'nearby-place'}, const [place, nearbyPlace]);
     final locale = LocaleProvider();
     final locationController = StreamController<LatLng>.broadcast(sync: true);
     LatLng? routeOrigin;
@@ -94,6 +97,7 @@ void main() {
       governorates.dispose();
       places.dispose();
       trips.dispose();
+      tours.dispose();
       locale.dispose();
     });
 
@@ -103,6 +107,7 @@ void main() {
           ChangeNotifierProvider.value(value: governorates),
           ChangeNotifierProvider.value(value: places),
           ChangeNotifierProvider.value(value: trips),
+          ChangeNotifierProvider.value(value: tours),
           ChangeNotifierProvider.value(value: locale),
         ],
         child: MaterialApp(
@@ -119,6 +124,20 @@ void main() {
     expect(
       find.byKey(const ValueKey('map-place-marker-nearby-place')),
       findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('map-place-marker-nearby-place')),
+        matching: find.byIcon(Icons.check_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('map-place-marker-nearby-place')),
+        matching: find.byWidgetPredicate(_isEmeraldVisitedPin),
+      ),
+      findsNWidgets(2),
     );
     await tester.tap(
       find.byKey(const ValueKey('map-place-marker-route-destination')),
@@ -722,6 +741,11 @@ void main() {
     expect(harness.places.places.any((place) => place.isAtm), isFalse);
   });
 }
+
+bool _isEmeraldVisitedPin(Widget widget) =>
+    widget is Container &&
+    widget.decoration is BoxDecoration &&
+    (widget.decoration! as BoxDecoration).color == const Color(0xFF10B981);
 
 double _distanceFromLabel(String label) {
   final value = double.parse(label.split(' ').first);

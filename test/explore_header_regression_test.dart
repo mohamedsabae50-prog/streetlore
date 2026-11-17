@@ -43,21 +43,33 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final governorates = GovernorateProvider();
+    const testPlaces = [
+      PlaceModel(
+        id: 'test-place',
+        nameEn: 'Test Place',
+        descriptionEn: 'A test landmark',
+        imageUrl: '',
+        rating: 4.5,
+        lat: 31.2,
+        lng: 29.9,
+      ),
+      PlaceModel(
+        id: 'visited-place',
+        nameEn: 'Visited Place',
+        descriptionEn: 'Already explored.',
+        imageUrl: '',
+        rating: 4.2,
+        lat: 31.21,
+        lng: 29.91,
+      ),
+    ];
     final places = PlaceProvider(
       watchRemoteUpdates: false,
       governorates: governorates,
-      initialPlaces: const [
-        PlaceModel(
-          id: 'test-place',
-          nameEn: 'Test Place',
-          descriptionEn: 'A test landmark',
-          imageUrl: '',
-          rating: 4.5,
-          lat: 31.2,
-          lng: 29.9,
-        ),
-      ],
+      initialPlaces: testPlaces,
     );
+    final tours = TourProvider(governorates: governorates);
+    tours.syncVisitedPlaces({'visited-place'}, testPlaces);
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -65,9 +77,7 @@ void main() {
             create: (_) => _ExploreTestAuth(),
           ),
           ChangeNotifierProvider<PlaceProvider>.value(value: places),
-          ChangeNotifierProvider<TourProvider>(
-            create: (_) => TourProvider(governorates: governorates),
-          ),
+          ChangeNotifierProvider<TourProvider>.value(value: tours),
           ChangeNotifierProvider<TripProvider>(create: (_) => TripProvider()),
           ChangeNotifierProvider<GovernorateProvider>.value(
             value: governorates,
@@ -83,6 +93,8 @@ void main() {
     await tester.pump();
     CompassService.instance.stop();
 
+    expect(find.text('Visited Place'), findsNothing);
+    expect(find.text('Test Place'), findsNWidgets(2));
     expect(find.text('EgyptLore'), findsOneWidget);
     final selectorBox = tester.renderObject<RenderBox>(
       find.byKey(const ValueKey('home-governorate-selector')),

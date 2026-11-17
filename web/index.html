@@ -91,10 +91,6 @@
       font: 500 clamp(25px, 6vw, 34px) Georgia, serif;
       letter-spacing: .08em;
     }
-    .preloader-tagline {
-      color: #e7d6af;
-      font-size: 13px;
-    }
     .preloader-progress {
       width: 118px;
       height: 2px;
@@ -127,7 +123,6 @@
         <img class="preloader-logo" src="assets/assets/images/compass_only.png" alt="">
       </div>
       <div class="preloader-title">EgyptLore</div>
-      <div class="preloader-tagline">Discover the Hidden Stories Around You</div>
       <div class="preloader-progress" aria-hidden="true"></div>
     </div>
   </div>
@@ -149,7 +144,7 @@
       window.setTimeout(hidePreloader, 900);
 
       var bootstrap = document.createElement('script');
-      bootstrap.src = 'flutter_bootstrap.js?v=2.1.54-257';
+      bootstrap.src = 'flutter_bootstrap.js?v=2.1.55-258';
       bootstrap.async = true;
       bootstrap.onerror = function (error) {
         console.error('Unable to load Flutter bootstrap:', error);

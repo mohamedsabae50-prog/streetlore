@@ -103,6 +103,20 @@ void main() {
         ),
         isTrue,
       );
+      expect(
+        GovernorateService.containsCoordinates(redSea, 29.111667, 32.665278),
+        isTrue,
+        reason: 'Zafarana Lighthouse must lie inside the Red Sea boundary',
+      );
+      expect(
+        GovernorateService.containsCoordinates(
+          redSea,
+          23.9109505,
+          35.4759377,
+        ),
+        isTrue,
+        reason: 'Berenice Troglodytica must lie inside the Red Sea boundary',
+      );
       expect(EgyptGovernorate.normalizeId('Hurghada'), 'red_sea');
       expect(EgyptGovernorate.normalizeId('marsa_alam'), 'red_sea');
       for (final (lat, lng) in const [

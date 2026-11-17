@@ -31,6 +31,20 @@ double getEffectiveCheckInRadiusMeters(PlaceModel place) {
   return 300;
 }
 
+double getAutoCheckInRadiusMeters(PlaceModel place) {
+  final identity = _normalizeCheckInName(
+    '${place.id} ${place.nameEn} ${place.nameAr ?? ''}',
+  );
+  final category = place.category.toLowerCase();
+  if (category == 'nature' ||
+      category == 'shopping' ||
+      _largeLandmarkAliases.any(identity.contains) ||
+      _largeComplexAliases.any(identity.contains)) {
+    return 250;
+  }
+  return 180;
+}
+
 String _normalizeCheckInName(String value) => value
     .toLowerCase()
     .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
@@ -78,9 +92,21 @@ const _largeLandmarkAliases = <String>[
   'مقابر كوم الشقافة',
 ];
 
+const _largeComplexAliases = <String>[
+  'mall',
+  'park',
+  'temple',
+  'resort',
+  'complex',
+  'مول',
+  'حديقة',
+  'منتزه',
+  'معبد',
+  'منتجع',
+];
+
 class PlaceProvider extends ChangeNotifier {
   static const _placesCacheKey = 'supabase_places_v2';
-  static const double kAutoCheckInRadiusMeters = 50.0;
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -171,12 +197,11 @@ class PlaceProvider extends ChangeNotifier {
       );
     }
 
-    final safeAccuracy = accuracy.isFinite
-        ? accuracy.clamp(0.0, kAutoCheckInRadiusMeters)
-        : 0.0;
+    final safeAccuracy = accuracy.isFinite ? accuracy.clamp(0.0, 80.0) : 0.0;
     final newlyCheckedIn = <PlaceModel>[];
-    for (final place in places) {
+    for (final place in _places) {
       if (!place.isVisitable ||
+          !_hasValidCoords(place.lat, place.lng) ||
           isVisited(place.id) ||
           _autoCheckInAttemptedIds.contains(place.id)) {
         continue;
@@ -184,8 +209,7 @@ class PlaceProvider extends ChangeNotifier {
 
       final rawDistance = _distanceMeters(lat, lng, place.lat, place.lng);
       final effectiveDistance = math.max(0.0, rawDistance - safeAccuracy);
-      final radius =
-          kAutoCheckInRadiusMeters + (_isMegaPark(place) ? 50.0 : 0.0);
+      final radius = getAutoCheckInRadiusMeters(place);
       if (effectiveDistance > radius) continue;
 
       _autoCheckInAttemptedIds.add(place.id);
@@ -591,13 +615,6 @@ class PlaceProvider extends ChangeNotifier {
     return 2 *
         earthRadiusMeters *
         math.asin(math.sqrt(haversine.clamp(0.0, 1.0)));
-  }
-
-  static bool _isMegaPark(PlaceModel place) {
-    final identity = _normalizeCheckInName(
-      '${place.id} ${place.nameEn} ${place.nameAr ?? ''}',
-    );
-    return _megaParkAliases.any(identity.contains);
   }
 
   static double _radians(double degrees) => degrees * math.pi / 180;

@@ -764,7 +764,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ob_sub_1 =>
-      'Uncover 30+ hidden gems and landmarks of Alexandria that most tourists never find.';
+      'Uncover 30+ hidden gems and landmarks of Alexandria that most tourists never find.\nDiscover the Hidden Stories Around You';
 
   @override
   String get ob_sub_2 =>
@@ -1279,7 +1279,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String ai_quota_remaining(String remaining, String limit) {
-    return '$remaining of $limit AI calls remaining';
+    return 'Remaining AI uses today: $remaining / $limit';
   }
 
   @override
@@ -1883,11 +1883,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkin_too_far =>
-      'Move closer to this place to check in. The allowed distance varies by place.';
+      'You must be within 200 meters of this place to check in';
 
   @override
   String auto_checkin_success(String place) {
-    return '🎉 Auto checked in at $place!';
+    return 'Auto Check-in: Visited $place! +XP';
   }
 
   @override

@@ -758,7 +758,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get ob_sub_1 =>
-      'اكتشف أكتر من ٣٠ جوهرة مخفية ومعلم في إسكندرية معظم السياح مبيعرفوهاش.';
+      'اكتشف أكتر من ٣٠ جوهرة مخفية ومعلم في إسكندرية معظم السياح مبيعرفوهاش.\nاستكشف الحكايات والكنوز من حولك';
 
   @override
   String get ob_sub_2 =>
@@ -1272,7 +1272,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String ai_quota_remaining(String remaining, String limit) {
-    return 'متبقي $remaining من $limit طلبات للذكاء الاصطناعي';
+    return 'المرات المتبقية لاستخدام المساعد اليوم: $remaining من $limit';
   }
 
   @override
@@ -1863,11 +1863,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get checkin_too_far =>
-      'اقترب أكثر من هذا المكان لتسجيل الزيارة. تختلف المسافة المسموح بها حسب المكان.';
+      'يجب أن تكون داخل نطاق المكان (200 متر) لتسجيل الزيارة';
 
   @override
   String auto_checkin_success(String place) {
-    return '🎉 تم تسجيل زيارتك تلقائياً في $place!';
+    return 'تم تسجيل زيارتك تلقائياً لـ $place! +XP';
   }
 
   @override

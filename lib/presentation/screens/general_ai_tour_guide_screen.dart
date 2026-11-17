@@ -7,6 +7,7 @@ import '../../core/services/gemini_rest_client.dart';
 import '../../core/widgets/ai_quota_banner.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/connectivity_provider.dart';
+import '../../logic/auth_provider.dart';
 import '../../logic/governorate_provider.dart';
 import '../../logic/place_provider.dart';
 import '../../logic/tour_provider.dart';
@@ -43,6 +44,9 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   final String _sessionId = const Uuid().v4();
 
   final List<_Msg> _messages = [];
+  int _quotaRemaining = 3;
+  int _quotaLimit = 3;
+  bool _quotaUnlimited = false;
 
   @override
   void didChangeDependencies() {
@@ -117,7 +121,14 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   Future<void> _send() async {
     if (_isOffline()) return;
     final text = _input.text.trim();
-    if (text.isEmpty || _busy) return;
+    if (text.isEmpty ||
+        _busy ||
+        (!(context.read<AuthProvider>().isPro ||
+                context.read<AuthProvider>().isAdmin ||
+                _quotaUnlimited) &&
+            _quotaRemaining <= 0)) {
+      return;
+    }
     final history = _messages
         .where((message) => message.text.isNotEmpty)
         .map(
@@ -128,6 +139,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
         )
         .toList(growable: false);
     final responseId = const Uuid().v4();
+    _quotaKey.currentState?.consumeOne();
     setState(() {
       _messages.add(_Msg(id: '', role: _Role.user, text: text));
       _messages.add(_Msg(id: responseId, role: _Role.bot, text: ''));
@@ -204,8 +216,42 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
     });
   }
 
+  Widget _buildQuotaSubtitle(BuildContext context, bool isPro) {
+    final message = isPro || _quotaUnlimited
+        ? context.tr('ai_quota_pro_unlimited')
+        : context.tr('ai_quota_remaining', {
+            'remaining': '$_quotaRemaining',
+            'limit': '$_quotaLimit',
+          });
+    return SizedBox(
+      height: 16,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(
+          message,
+          style: const TextStyle(
+            color: Color(0xFFD1D5DB),
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _updateQuota(AiQuotaSnapshot snapshot) {
+    if (!mounted) return;
+    setState(() {
+      _quotaRemaining = snapshot.remaining;
+      _quotaLimit = snapshot.limit;
+      _quotaUnlimited = snapshot.unlimited;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     final governorateId = context
         .watch<GovernorateProvider>()
         .activeGovernorate;
@@ -216,17 +262,25 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
-        title: Row(
+        toolbarHeight: 72,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.travel_explore_rounded, color: Colors.white),
-            SizedBox(width: 10),
-            Text(
-              context.tr('ai_guide_general_title'),
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
+            Row(
+              children: [
+                const Icon(Icons.travel_explore_rounded, color: Colors.white),
+                const SizedBox(width: 10),
+                Text(
+                  context.tr('ai_guide_general_title'),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
+            _buildQuotaSubtitle(context, auth.isPro || auth.isAdmin),
           ],
         ),
         backgroundColor: AppColors.primary,
@@ -235,10 +289,6 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
       ),
       body: Column(
         children: [
-          AiQuotaBanner(
-            key: _quotaKey,
-            fetchQuotaStatus: widget.fetchQuotaStatus,
-          ),
           Expanded(
             child: ListView.builder(
               controller: _scroll,
@@ -275,6 +325,12 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
                 style: TextStyle(color: context.textSec, fontSize: 12),
               ),
             ),
+          AiQuotaBanner(
+            key: _quotaKey,
+            fetchQuotaStatus: widget.fetchQuotaStatus,
+            onStatusChanged: _updateQuota,
+            onUpgrade: _openPaywall,
+          ),
           _Composer(
             controller: _input,
             focusNode: _focus,

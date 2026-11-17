@@ -20,6 +20,7 @@ import 'core/services/carplay_service.dart';
 import 'core/services/remote_config_service.dart';
 import 'core/widgets/offline_mode_banner.dart';
 import 'core/config/app_config.dart';
+import 'data/models/place_model.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'l10n/app_strings.dart';
 import 'logic/place_provider.dart';
@@ -200,7 +201,9 @@ Future<void> _runApplication() async {
     squad: squad,
   );
   placeProvider.configureAutoCheckIn(
-    isPlaceVisited: tripProvider.isVisited,
+    isPlaceVisited: (placeId) =>
+        tripProvider.isVisited(placeId) ||
+        tourProvider.checkedInPlaceIds.contains(placeId),
     recordCheckIn: (place) async {
       tripProvider.markVisited(place.id);
       try {
@@ -394,6 +397,44 @@ class _EgyptLoreAppState extends State<EgyptLoreApp>
     with WidgetsBindingObserver {
   final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   bool _offlineNoticeShown = false;
+  bool _autoCheckInTrackingInitialized = false;
+  StreamSubscription<Position>? _autoCheckInPositionSubscription;
+  StreamSubscription<PlaceModel>? _autoCheckInNotificationSubscription;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_autoCheckInTrackingInitialized) return;
+    _autoCheckInTrackingInitialized = true;
+    final places = context.read<PlaceProvider>();
+    _autoCheckInNotificationSubscription = places.autoCheckIns.listen(
+      (place) {
+        if (!mounted) return;
+        final message = AppStrings.tr(context, 'auto_checkin_success', {
+          'place': place.localizedName(
+            context.read<LocaleProvider>().locale.languageCode,
+          ),
+        });
+        _scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF059669),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        debugPrint('Auto check-in notification stream failed: $error');
+      },
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_startAutoCheckInTracking());
+    });
+  }
 
   @override
   void initState() {
@@ -413,8 +454,73 @@ class _EgyptLoreAppState extends State<EgyptLoreApp>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_startAutoCheckInTracking());
+    }
+  }
+
+  Future<void> _startAutoCheckInTracking() async {
+    if (kIsWeb) return;
+    final places = context.read<PlaceProvider>();
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) return;
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.unableToDetermine) {
+        return;
+      }
+      _autoCheckInPositionSubscription ??=
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 25,
+            ),
+          ).listen(
+            (position) =>
+                unawaited(_evaluateAutoCheckInPosition(places, position)),
+            onError: (Object error, StackTrace stackTrace) {
+              debugPrint(
+                'App auto check-in location stream failed: '
+                '$error\n$stackTrace',
+              );
+            },
+          );
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 8),
+      );
+      await _evaluateAutoCheckInPosition(places, position);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'App auto check-in location check failed: $error\n$stackTrace',
+      );
+    }
+  }
+
+  Future<void> _evaluateAutoCheckInPosition(
+    PlaceProvider places,
+    Position position,
+  ) async {
+    try {
+      await places.evaluateAutoCheckInForPosition(
+        lat: position.latitude,
+        lng: position.longitude,
+        accuracy: position.accuracy,
+      );
+    } catch (error, stackTrace) {
+      debugPrint(
+        'App auto check-in location update failed: $error\n$stackTrace',
+      );
+    }
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_autoCheckInPositionSubscription?.cancel());
+    unawaited(_autoCheckInNotificationSubscription?.cancel());
     super.dispose();
   }
 
