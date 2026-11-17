@@ -192,16 +192,16 @@ Future<void> main() async {
       .where((place) => place.governorate == 'red_sea')
       .toList(growable: false);
   final luxorCount = luxorPlaces.length;
-  if (alexandriaCount != 53) {
-    issues.add('expected 53 Alexandria places, found $alexandriaCount');
+  if (alexandriaCount != 68) {
+    issues.add('expected 68 Alexandria places, found $alexandriaCount');
   }
   final alexandriaPlaces = places
       .where((place) => place.governorate == 'alexandria')
       .toList(growable: false);
-  if (alexandriaPlaces.where((place) => place.isVisitable).length != 53 ||
+  if (alexandriaPlaces.where((place) => place.isVisitable).length != 68 ||
       alexandriaPlaces.where((place) => place.isAtm).isNotEmpty) {
     issues.add(
-      'expected 53 Alexandria visitable places and no Alexandria ATMs',
+      'expected 68 Alexandria visitable places and no Alexandria ATMs',
     );
   }
   if (cairoCount != 194) {
@@ -239,9 +239,9 @@ Future<void> main() async {
   }
   final visitableCount = places.where((place) => place.isVisitable).length;
   final atmCount = places.where((place) => place.isAtm).length;
-  if (visitableCount != 393 || atmCount != 38) {
+  if (visitableCount != 408 || atmCount != 38) {
     issues.add(
-      'expected 393 visitable places and 38 map ATMs, '
+      'expected 408 visitable places and 38 map ATMs, '
       'found $visitableCount visitable and $atmCount ATMs',
     );
   }
@@ -320,8 +320,8 @@ Future<void> main() async {
       'Luxor & Aswan, and Red Sea',
     );
   }
-  if (places.length != 431) {
-    issues.add('expected 431 total places, found ${places.length}');
+  if (places.length != 446) {
+    issues.add('expected 446 total places, found ${places.length}');
   }
   final profileScreen = File(
     'lib/presentation/screens/profile_screen.dart',

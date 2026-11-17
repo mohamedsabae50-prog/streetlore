@@ -137,8 +137,8 @@ void main() {
         'saved',
       ]);
       expect(sections[0].places, isNotEmpty);
-      expect(sections[1].places, hasLength(19));
-      expect(sections[2].places, hasLength(8));
+      expect(sections[1].places, hasLength(22));
+      expect(sections[2].places, hasLength(10));
       expect(sections[3].places, [curatedAlexandriaPlaces.first]);
       expect(
         sections[0].places.first.id,

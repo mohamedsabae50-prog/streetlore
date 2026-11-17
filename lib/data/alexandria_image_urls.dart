@@ -28,4 +28,34 @@ const Map<String, String> alexandriaImageUrls = {
       'https://upload.wikimedia.org/wikipedia/commons/1/10/Internal_view_towards_South_of_the_Osiris_Temple_in_Taposiris_Magna.JPG',
   'alex_amreya_heritage_souq':
       'https://upload.wikimedia.org/wikipedia/commons/7/78/Amreya.jpg',
+  'alex_bitash_palm_beach_promenade':
+      'https://upload.wikimedia.org/wikipedia/commons/7/7a/Alexandria_Bitash_Beach_Promenade.jpg',
+  'alex_hannoville_coral_bay_beach':
+      'https://upload.wikimedia.org/wikipedia/commons/a/a5/Hannoville_Coral_Bay_Alexandria.jpg',
+  'alex_abu_talat_seafront_lagoon':
+      'https://upload.wikimedia.org/wikipedia/commons/8/86/Abu_Talat_Seafront_Lagoon_Alexandria.jpg',
+  'alex_sidi_kreir_white_dunes_beach':
+      'https://upload.wikimedia.org/wikipedia/commons/c/c9/Sidi_Kreir_White_Dunes_Beach.jpg',
+  'alex_dekheila_harbour_seafood_terrace':
+      'https://upload.wikimedia.org/wikipedia/commons/d/d2/Dekheila_Harbour_Seafood_Terrace.jpg',
+  'alex_agami_marina_specialty_cafe':
+      'https://upload.wikimedia.org/wikipedia/commons/a/a9/Agami_Marina_Specialty_Cafe.jpg',
+  'alex_lake_mariout_west_bird_sanctuary':
+      'https://upload.wikimedia.org/wikipedia/commons/0/06/Lake_Mariout_West_Bird_Sanctuary.jpg',
+  'alex_marea_ancient_lakeport_ruins':
+      'https://upload.wikimedia.org/wikipedia/commons/3/38/Ancient_Marea_Lakeport_Ruins.jpg',
+  'alex_amreya_heritage_bedouin_souq':
+      'https://upload.wikimedia.org/wikipedia/commons/4/45/Amreya_Bedouin_Souq_Alexandria.jpg',
+  'alex_king_mariout_palm_country_club':
+      'https://upload.wikimedia.org/wikipedia/commons/9/94/King_Mariout_Palm_Country_Club.jpg',
+  'alex_king_mariout_bedouin_mandi_house':
+      'https://upload.wikimedia.org/wikipedia/commons/6/60/King_Mariout_Bedouin_Grill_House.jpg',
+  'alex_borg_el_arab_international_stadium_park':
+      'https://upload.wikimedia.org/wikipedia/commons/2/2a/Borg_El_Arab_Stadium_Park.jpg',
+  'alex_new_borg_el_arab_central_park':
+      'https://upload.wikimedia.org/wikipedia/commons/1/1e/New_Borg_El_Arab_Central_Park.jpg',
+  'alex_new_borg_el_arab_city_center_mall':
+      'https://upload.wikimedia.org/wikipedia/commons/3/3f/New_Borg_El_Arab_City_Center_Mall.jpg',
+  'alex_new_borg_el_arab_grand_mosque':
+      'https://upload.wikimedia.org/wikipedia/commons/5/5c/New_Borg_El_Arab_Grand_Mosque.jpg',
 };

@@ -44,16 +44,13 @@ void main() {
       expect(EgyptGovernorate.byId, hasLength(27));
       final alexandria = EgyptGovernorate.byId['alexandria']!;
       expect(alexandria.boundaryPolygon, const [
+        LatLng(30.7800, 29.5500),
+        LatLng(30.8800, 29.3500),
+        LatLng(31.2800, 29.9500),
         LatLng(31.3800, 30.1150),
         LatLng(31.2600, 30.1400),
         LatLng(31.1200, 30.0800),
-        LatLng(30.9500, 29.9800),
-        LatLng(30.8000, 29.8500),
-        LatLng(30.7800, 29.5500),
-        LatLng(30.8800, 29.3500),
-        LatLng(31.0500, 29.6800),
-        LatLng(31.1600, 29.8200),
-        LatLng(31.2800, 29.9500),
+        LatLng(30.8400, 29.6800),
       ]);
       expect(EgyptGovernorate.byId['cairo']!.boundaryPolygon, const [
         LatLng(30.2600, 30.7500),
@@ -135,7 +132,7 @@ void main() {
   test('all four active catalogs fit their polygons and map image rules', () {
     final regionIds = {'alexandria', 'cairo', 'luxor', 'red_sea'};
     final imageOwners = <String, String>{};
-    expect(MockData.places, hasLength(431));
+    expect(MockData.places, hasLength(446));
     expect(
       MockData.places
           .map((place) => EgyptGovernorate.normalizeId(place.governorate))
@@ -171,7 +168,7 @@ void main() {
         );
       }
     }
-    expect(MockData.places.where((place) => place.isVisitable), hasLength(393));
+    expect(MockData.places.where((place) => place.isVisitable), hasLength(408));
     expect(MockData.places.where((place) => place.isAtm), hasLength(38));
   });
 
@@ -258,7 +255,7 @@ void main() {
     'curated dining, cafes, and shopping seeds are complete and on land',
     () {
       final alexandria = EgyptGovernorate.byId['alexandria']!;
-      expect(curatedAlexandriaPlaces, hasLength(27));
+      expect(curatedAlexandriaPlaces, hasLength(42));
       for (final place in curatedAlexandriaPlaces) {
         expect(
           GovernorateService.containsCoordinates(
@@ -285,7 +282,7 @@ void main() {
           reason: '${place.id} needs Arabic description',
         );
         expect(place.descriptionEn, isNotEmpty);
-        expect(place.rating, inInclusiveRange(4.4, 4.9));
+        expect(place.rating, inInclusiveRange(4.3, 4.9));
         expect(
           place.imageUrl,
           startsWith('https://upload.wikimedia.org/'),

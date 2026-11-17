@@ -9,7 +9,7 @@ import 'package:streetlore/data/models/map_seed.dart';
 import 'package:streetlore/presentation/widgets/alexandria_shoreline.dart';
 
 const _mediterraneanShoreline = <LatLng>[
-  LatLng(31.135, 29.65),
+  LatLng(31.135, 29.52),
   LatLng(31.150, 29.70),
   LatLng(31.170, 29.77),
   LatLng(31.185, 29.82),

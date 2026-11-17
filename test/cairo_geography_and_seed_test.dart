@@ -422,7 +422,7 @@ void main() {
       );
       expect(imageUrls.add(place.imageUrl), isTrue, reason: entry.key);
     }
-    expect(MockData.places, hasLength(431));
+    expect(MockData.places, hasLength(446));
   });
 
   test('Luxor & Aswan share one 124-record governorate and 12 tours', () {
@@ -494,7 +494,7 @@ void main() {
       EgyptGovernorate.all.map((governorate) => governorate.id),
       containsAll(['alexandria', 'cairo', 'luxor']),
     );
-    expect(MockData.places, hasLength(431));
+    expect(MockData.places, hasLength(446));
     expect(luxorImageUrls, hasLength(61));
     expect(luxorImageUrls.values.toSet(), hasLength(61));
     expect(
@@ -679,7 +679,7 @@ void main() {
       ),
       hasLength(63),
     );
-    expect(MockData.places, hasLength(431));
+    expect(MockData.places, hasLength(446));
     expect(aswanImageUrls, hasLength(63));
     expect(aswanImageUrls.values.toSet(), hasLength(63));
     expect(
@@ -990,8 +990,8 @@ void main() {
       );
     }
 
-    expect(MockData.places, hasLength(431));
-    expect(MockData.places.where((place) => place.isVisitable), hasLength(393));
+    expect(MockData.places, hasLength(446));
+    expect(MockData.places.where((place) => place.isVisitable), hasLength(408));
     expect(MockData.places.where((place) => place.isAtm), hasLength(38));
     expect(redSeaSeedPlaces, hasLength(60));
     expect(redSeaSeedPlaces.where((place) => place.isVisitable), hasLength(54));
@@ -1096,6 +1096,38 @@ void main() {
     }
   });
 
+  test('Alexandria western coast stays safely inside the boundary', () {
+    final alexandria = EgyptGovernorate.byId['alexandria']!;
+    for (final point in const [
+      (lat: 31.0959, lng: 29.7604),
+      (lat: 31.0835, lng: 29.7395),
+      (lat: 31.0595, lng: 29.7015),
+      (lat: 31.0195, lng: 29.6485),
+      (lat: 30.9850, lng: 29.5150),
+    ]) {
+      expect(
+        GovernorateService.containsCoordinates(alexandria, point.lat, point.lng),
+        isTrue,
+        reason: '(${point.lat}, ${point.lng}) must remain inside Alexandria',
+      );
+      final minDistanceToPolygon = alexandria.boundaryPolygon
+          .map(
+            (boundaryPoint) => _haversineMeters(
+              point.lat,
+              point.lng,
+              boundaryPoint.latitude,
+              boundaryPoint.longitude,
+            ),
+          )
+          .reduce(math.min);
+      expect(
+        minDistanceToPolygon,
+        greaterThanOrEqualTo(1500),
+        reason: '(${point.lat}, ${point.lng}) should stay at least 1.5 km inside the coastline boundary',
+      );
+    }
+  });
+
   test('Giza landmarks resolve to Cairo & Giza, not a separate region', () {
     expect(EgyptGovernorate.byId['giza']!.id, 'cairo');
     expect(
@@ -1117,10 +1149,10 @@ void main() {
     final alexandriaPlaces = MockData.places
         .where((place) => alexandriaImageUrls.containsKey(place.id))
         .toList(growable: false);
-    expect(alexandriaPlaces, hasLength(14));
+    expect(alexandriaPlaces, hasLength(29));
     expect(
       alexandriaPlaces.map((place) => place.imageUrl).toSet(),
-      hasLength(14),
+      hasLength(29),
     );
     for (final place in alexandriaPlaces) {
       expect(
