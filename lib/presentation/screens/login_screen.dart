@@ -14,6 +14,7 @@ import 'main_navigation.dart';
 import 'choose_username_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
+import '../widgets/password_reset_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({
@@ -129,6 +130,9 @@ class _LoginScreenState extends State<LoginScreen>
       initialUsername: _isSignUp ? _usernameCtrl.text.trim() : '',
     );
   }
+
+  Future<void> _showPasswordReset() =>
+      PasswordResetDialog.show(context, initialEmail: _emailCtrl.text.trim());
 
   Future<void> _signInWithApple() async {
     final messenger = ScaffoldMessenger.of(context);
@@ -398,6 +402,24 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                           const SizedBox(height: 14),
+                          if (!_isSignUp)
+                            Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: TextButton.icon(
+                                key: const Key('forgot-password-button'),
+                                onPressed: _showPasswordReset,
+                                icon: const Icon(
+                                  Icons.lock_reset_rounded,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  context.tr('forgot_password'),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
                           FadeInUp(
                             delay: const Duration(milliseconds: 510),
                             child: Row(

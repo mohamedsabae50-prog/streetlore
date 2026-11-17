@@ -270,6 +270,37 @@ class SupabaseService {
     return status;
   }
 
+  Future<void> resetPasswordForEmail(String email) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    await client.auth.resetPasswordForEmail(email.trim());
+  }
+
+  Future<void> verifyPasswordRecoveryOtp({
+    required String email,
+    required String token,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    await client.auth.verifyOTP(
+      email: email.trim(),
+      token: token.trim(),
+      type: OtpType.recovery,
+    );
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase is unavailable.');
+    }
+    await client.auth.updateUser(UserAttributes(password: newPassword));
+  }
+
   Stream<List<ChatMessage>>? streamMessages(String placeId) {
     if (_client == null) return null;
     try {

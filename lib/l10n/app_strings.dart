@@ -275,6 +275,11 @@ class AppStrings {
       'en': 'Remaining AI uses today: {remaining} / {limit}',
       'ar': 'المرات المتبقية لاستخدام المساعد اليوم: {remaining} من {limit}',
     },
+    'ai_quota_pro_remaining': {
+      'en': 'Remaining AI uses today: {remaining} / 50 (Pro)',
+      'ar': 'المرات المتبقية لاستخدام المساعد اليوم: {remaining} من 50 (Pro)',
+    },
+    'ai_place_view': {'en': 'View Place', 'ar': 'عرض المكان'},
     'ai_quota_pro_unlimited': {
       'en': 'Remaining AI uses today: Unlimited (Pro)',
       'ar': 'المرات المتبقية اليوم: غير محدود (Pro)',
@@ -918,6 +923,14 @@ class AppStrings {
     },
     'section_app_settings': {'en': 'App Settings', 'ar': 'إعدادات التطبيق'},
     'section_about': {'en': 'About', 'ar': 'حول'},
+    'profile_reset_password': {
+      'en': 'Reset / Change Password',
+      'ar': 'تغيير / إعادة تعيين كلمة المرور',
+    },
+    'profile_reset_password_subtitle': {
+      'en': 'Get a secure reset code by email',
+      'ar': 'احصل على رمز إعادة تعيين آمن عبر البريد',
+    },
     'dark_theme_on': {'en': 'Dark theme enabled', 'ar': 'الوضع الداكن مفعّل'},
     'light_theme_on': {'en': 'Light theme active', 'ar': 'الوضع الفاتح مفعّل'},
     'clear_all_warning': {
@@ -1959,6 +1972,60 @@ class AppStrings {
       'ar': 'حصل حاجة غلط. حاول تاني.',
     },
     'login_password': {'en': 'Password', 'ar': 'كلمة المرور'},
+    'forgot_password': {'en': 'Forgot Password?', 'ar': 'نسيت كلمة المرور؟'},
+    'password_reset_title': {
+      'en': 'Reset your password',
+      'ar': 'إعادة تعيين كلمة المرور',
+    },
+    'password_reset_send_code': {
+      'en': 'Send recovery code',
+      'ar': 'إرسال رمز الاستعادة',
+    },
+    'password_reset_code_sent': {
+      'en': 'Recovery code sent. Check your email.',
+      'ar': 'تم إرسال رمز الاستعادة. تحقق من بريدك الإلكتروني.',
+    },
+    'password_reset_code': {
+      'en': 'Email recovery code',
+      'ar': 'رمز الاستعادة المرسل إلى البريد',
+    },
+    'password_reset_verify_code': {'en': 'Verify code', 'ar': 'تحقق من الرمز'},
+    'password_reset_new_password': {
+      'en': 'New password',
+      'ar': 'كلمة المرور الجديدة',
+    },
+    'password_reset_confirm_password': {
+      'en': 'Confirm new password',
+      'ar': 'تأكيد كلمة المرور الجديدة',
+    },
+    'password_reset_update': {
+      'en': 'Update password',
+      'ar': 'تحديث كلمة المرور',
+    },
+    'password_reset_success': {
+      'en': 'Your password has been updated.',
+      'ar': 'تم تحديث كلمة المرور.',
+    },
+    'password_reset_invalid_email': {
+      'en': 'Enter a valid email address.',
+      'ar': 'أدخل عنوان بريد إلكتروني صالحاً.',
+    },
+    'password_reset_invalid_code': {
+      'en': 'Enter the recovery code from your email.',
+      'ar': 'أدخل رمز الاستعادة الموجود في بريدك الإلكتروني.',
+    },
+    'password_reset_password_short': {
+      'en': 'Password must be at least 6 characters.',
+      'ar': 'يجب ألا تقل كلمة المرور عن 6 أحرف.',
+    },
+    'password_reset_password_mismatch': {
+      'en': 'The passwords do not match.',
+      'ar': 'كلمتا المرور غير متطابقتين.',
+    },
+    'password_reset_failed': {
+      'en': 'Password reset failed. Check your details and try again.',
+      'ar': 'تعذرت إعادة تعيين كلمة المرور. تحقق من البيانات وحاول مرة أخرى.',
+    },
     'login_password_hint': {
       'en': 'Enter your password',
       'ar': 'اكتب كلمة مرورك',

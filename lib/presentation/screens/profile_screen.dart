@@ -35,6 +35,7 @@ import 'paywall_screen.dart';
 import 'suggest_place_screen.dart';
 import 'search_users_screen.dart';
 import '../widgets/social_user_widgets.dart';
+import '../widgets/password_reset_dialog.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -1112,6 +1113,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                         ),
                         _Div(),
+                        Consumer<AuthProvider>(
+                          builder: (context, auth, _) {
+                            if (!auth.isLoggedIn || auth.isGuest) {
+                              return const SizedBox.shrink();
+                            }
+                            return _ActionTile(
+                              key: const Key('profile-reset-password-button'),
+                              icon: Icons.lock_reset_rounded,
+                              title: context.tr('profile_reset_password'),
+                              subtitle: context.tr(
+                                'profile_reset_password_subtitle',
+                              ),
+                              color: const Color(0xFF0EA5E9),
+                              onTap: () => PasswordResetDialog.show(
+                                context,
+                                initialEmail: auth.userEmail,
+                              ),
+                            );
+                          },
+                        ),
+                        _Div(),
                         _ActionTile(
                           icon: Icons.mosque_rounded,
                           title: context.tr('prayer_times'),
@@ -1734,6 +1756,7 @@ class _ActionTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _ActionTile({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,

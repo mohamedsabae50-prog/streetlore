@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../services/ai_tour_guide_service.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/auth_provider.dart';
 import '../services/supabase_service.dart';
@@ -45,36 +46,49 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
   void initState() {
     super.initState();
     final auth = context.read<AuthProvider>();
-    if (auth.isPro || auth.isAdmin) {
-      _loading = false;
-      return;
-    }
-    _status = const {'used_today': 0, 'daily_limit': 3, 'remaining': 3};
+    final limit = auth.isPro || auth.isAdmin
+        ? kProDailyAiLimit
+        : kFreeDailyAiLimit;
+    _status = AiQuotaStatus(
+      dailyLimit: limit,
+      usedToday: 0,
+      nextResetAt: _nextUtcReset(),
+    ).toMap();
     _loading = false;
-    if (widget.fetchQuotaStatus != null || SupabaseService.instance.isLive) {
-      refresh();
-    }
+    refresh();
+  }
+
+  DateTime _nextUtcReset() {
+    final now = DateTime.now().toUtc();
+    return DateTime.utc(now.year, now.month, now.day + 1);
   }
 
   Future<void> refresh() async {
     if (!mounted) return;
     _resetTimer?.cancel();
     setState(() {
-      _loading = _status == null;
       _error = null;
     });
     try {
-      final status =
-          await (widget.fetchQuotaStatus?.call() ??
-              SupabaseService.instance.fetchAiQuotaStatus());
+      final auth = context.read<AuthProvider>();
+      final shouldFetchServer =
+          widget.fetchQuotaStatus != null || SupabaseService.instance.isLive;
+      final status = await AITourGuideService.resolveQuotaStatus(
+        isPro: auth.isPro || auth.isAdmin,
+        userId: auth.currentUserId,
+        fetchServerStatus: shouldFetchServer
+            ? widget.fetchQuotaStatus ??
+                  SupabaseService.instance.fetchAiQuotaStatus
+            : null,
+      );
       if (!mounted) return;
+      final statusMap = status.toMap();
       setState(() {
-        _status = status;
+        _status = statusMap;
         _loading = false;
       });
-      widget.onStatusChanged?.call(_snapshot(status));
-      final resetAt = DateTime.parse(status['next_reset_at'] as String);
-      final untilReset = resetAt.difference(DateTime.now());
+      widget.onStatusChanged?.call(_snapshot(statusMap));
+      final untilReset = status.nextResetAt.difference(DateTime.now().toUtc());
       final delay = untilReset <= Duration.zero
           ? const Duration(seconds: 1)
           : untilReset;
@@ -83,35 +97,33 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
       debugPrint('AiQuotaBanner.refresh failed: $error\n$stackTrace');
       if (!mounted) return;
       setState(() {
-        _error = error.toString();
+        _error = 'ai_quota_unavailable';
         _loading = false;
       });
       _resetTimer = Timer(const Duration(minutes: 1), refresh);
     }
   }
 
-  void consumeOne() {
+  Future<bool> consumeOne() async {
     final status = _status;
-    if (status == null ||
-        status['unlimited'] == true ||
-        status['is_unlimited'] == true) {
-      return;
-    }
-    final remaining = (status['remaining'] as num?)?.toInt() ?? 0;
-    if (remaining <= 0) return;
-    final updated = <String, dynamic>{
-      ...status,
-      'used_today': ((status['used_today'] as num?)?.toInt() ?? 0) + 1,
-      'remaining': remaining - 1,
-    };
+    if (status == null) return false;
+    final auth = context.read<AuthProvider>();
+    final updatedStatus = await AITourGuideService.consumeLocalQuota(
+      isPro: auth.isPro || auth.isAdmin,
+      userId: auth.currentUserId,
+      observedServerUsage: (status['used_today'] as num?)?.toInt() ?? 0,
+    );
+    if (!mounted) return false;
+    final updated = updatedStatus.toMap();
     setState(() => _status = updated);
     widget.onStatusChanged?.call(_snapshot(updated));
+    return true;
   }
 
   AiQuotaSnapshot _snapshot(Map<String, dynamic> status) => AiQuotaSnapshot(
     remaining: (status['remaining'] as num?)?.toInt() ?? 0,
     limit: (status['daily_limit'] as num?)?.toInt() ?? 0,
-    unlimited: status['unlimited'] == true || status['is_unlimited'] == true,
+    unlimited: false,
   );
 
   @override
@@ -125,18 +137,19 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
     final auth = context.select<AuthProvider, (bool, bool)>(
       (provider) => (provider.isAdmin, provider.isPro),
     );
-    final unlimited =
-        auth.$1 ||
-        auth.$2 ||
-        _status?['unlimited'] == true ||
-        _status?['is_unlimited'] == true;
-    final message = auth.$2 || unlimited
-        ? context.tr('ai_quota_pro_unlimited')
-        : _loading
-        ? context.tr('ai_quota_loading')
+    final isPro = auth.$1 || auth.$2;
+    final limit = isPro
+        ? kProDailyAiLimit
+        : (_status?['daily_limit'] as num?)?.toInt() ?? kFreeDailyAiLimit;
+    final remaining = (_status?['remaining'] as num?)?.toInt() ?? limit;
+    final message = isPro
+        ? context.tr('ai_quota_pro_remaining', {
+            'remaining': '$remaining',
+            'limit': '$limit',
+          })
         : context.tr('ai_quota_remaining', {
-            'remaining': '${_status!['remaining']}',
-            'limit': '${_status!['daily_limit']}',
+            'remaining': '$remaining',
+            'limit': '$limit',
           });
     return Container(
       key: const Key('ai-quota-remaining-banner'),
@@ -167,7 +180,7 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (!_loading && _error == null && !unlimited)
+                if (!_loading && _error == null)
                   Text(
                     context.tr('ai_quota_reset_utc'),
                     style: const TextStyle(
@@ -177,7 +190,7 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
                   ),
                 if (_error != null)
                   Text(
-                    _error!,
+                    context.tr(_error!),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -188,7 +201,7 @@ class AiQuotaBannerState extends State<AiQuotaBanner> {
               ],
             ),
           ),
-          if (!unlimited &&
+          if (!isPro &&
               !_loading &&
               (_status?['remaining'] as num?)?.toInt() == 0 &&
               widget.onUpgrade != null)

@@ -4,7 +4,10 @@ import 'package:uuid/uuid.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/ai_tour_guide_service.dart';
 import '../../core/services/gemini_rest_client.dart';
+import '../../core/utils/ai_place_matcher.dart';
 import '../../core/widgets/ai_quota_banner.dart';
+import '../../data/mock_data.dart';
+import '../../data/models/place_model.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/connectivity_provider.dart';
 import '../../logic/auth_provider.dart';
@@ -15,6 +18,7 @@ import 'package:provider/provider.dart';
 import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
 import '../widgets/chat_text_direction.dart';
+import '../widgets/ai_place_recommendation_card.dart';
 
 typedef GeneralAiMessageSender = Future<String> Function(String text);
 
@@ -46,7 +50,6 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   final List<_Msg> _messages = [];
   int _quotaRemaining = 3;
   int _quotaLimit = 3;
-  bool _quotaUnlimited = false;
 
   @override
   void didChangeDependencies() {
@@ -121,12 +124,13 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   Future<void> _send() async {
     if (_isOffline()) return;
     final text = _input.text.trim();
-    if (text.isEmpty ||
-        _busy ||
-        (!(context.read<AuthProvider>().isPro ||
-                context.read<AuthProvider>().isAdmin ||
-                _quotaUnlimited) &&
-            _quotaRemaining <= 0)) {
+    if (text.isEmpty || _busy) {
+      return;
+    }
+    if (_quotaRemaining <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('ai_quota_limit_reached'))),
+      );
       return;
     }
     final history = _messages
@@ -139,10 +143,13 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
         )
         .toList(growable: false);
     final responseId = const Uuid().v4();
-    _quotaKey.currentState?.consumeOne();
+    final consumed = await _quotaKey.currentState?.consumeOne() ?? false;
+    if (!consumed || !mounted) return;
     setState(() {
       _messages.add(_Msg(id: '', role: _Role.user, text: text));
-      _messages.add(_Msg(id: responseId, role: _Role.bot, text: ''));
+      _messages.add(
+        _Msg(id: responseId, role: _Role.bot, text: '', userPrompt: text),
+      );
       _busy = true;
     });
     _input.clear();
@@ -158,6 +165,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
               id: responseId,
               role: _Role.bot,
               text: response,
+              userPrompt: text,
             );
           });
           _scrollToBottom();
@@ -169,6 +177,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
           id: responseId,
           role: _Role.bot,
           text: reply,
+          userPrompt: text,
         );
         _busy = false;
       });
@@ -183,6 +192,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
           text: e.statusCode == 429
               ? context.tr('ai_daily_limit_body')
               : _cityFallback(),
+          userPrompt: text,
           isDailyLimitExceeded: e.statusCode == 429,
         );
         _busy = false;
@@ -196,6 +206,7 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
           id: '',
           role: _Role.bot,
           text: _cityFallback(),
+          userPrompt: text,
         );
         _busy = false;
       });
@@ -217,11 +228,19 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
   }
 
   Widget _buildQuotaSubtitle(BuildContext context, bool isPro) {
-    final message = isPro || _quotaUnlimited
-        ? context.tr('ai_quota_pro_unlimited')
+    final pro = isPro;
+    final limit = pro ? kProDailyAiLimit : _quotaLimit;
+    final remaining = pro && _quotaLimit != kProDailyAiLimit
+        ? kProDailyAiLimit
+        : _quotaRemaining;
+    final message = pro
+        ? context.tr('ai_quota_pro_remaining', {
+            'remaining': '$remaining',
+            'limit': '$limit',
+          })
         : context.tr('ai_quota_remaining', {
             'remaining': '$_quotaRemaining',
-            'limit': '$_quotaLimit',
+            'limit': '$limit',
           });
     return SizedBox(
       height: 16,
@@ -245,8 +264,21 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
     setState(() {
       _quotaRemaining = snapshot.remaining;
       _quotaLimit = snapshot.limit;
-      _quotaUnlimited = snapshot.unlimited;
     });
+  }
+
+  List<PlaceModel> _recommendedPlaces(_Msg message) {
+    if (message.role != _Role.bot || message.text.isEmpty) return const [];
+    final providerPlaces = context.read<PlaceProvider>().allPlaces;
+    final places = providerPlaces.isEmpty ? MockData.places : providerPlaces;
+    return AiPlaceMatcher.match(
+      userPrompt: message.userPrompt,
+      assistantReply: message.text,
+      places: places,
+      activeGovernorateId: context
+          .read<GovernorateProvider>()
+          .activeGovernorate,
+    );
   }
 
   @override
@@ -294,8 +326,14 @@ class _GeneralAITourGuideScreenState extends State<GeneralAITourGuideScreen> {
               controller: _scroll,
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               itemCount: _messages.length,
-              itemBuilder: (context, i) =>
-                  _Bubble(msg: _messages[i], onUpgrade: _openPaywall),
+              itemBuilder: (context, i) {
+                final message = _messages[i];
+                return _Bubble(
+                  msg: message,
+                  onUpgrade: _openPaywall,
+                  recommendedPlaces: _recommendedPlaces(message),
+                );
+              },
             ),
           ),
           if (_busy)
@@ -350,11 +388,13 @@ class _Msg {
   final String id;
   final _Role role;
   final String text;
+  final String userPrompt;
   final bool isDailyLimitExceeded;
   const _Msg({
     required this.id,
     required this.role,
     required this.text,
+    this.userPrompt = '',
     this.isDailyLimitExceeded = false,
   });
 }
@@ -362,7 +402,12 @@ class _Msg {
 class _Bubble extends StatelessWidget {
   final _Msg msg;
   final VoidCallback onUpgrade;
-  const _Bubble({required this.msg, required this.onUpgrade});
+  final List<PlaceModel> recommendedPlaces;
+  const _Bubble({
+    required this.msg,
+    required this.onUpgrade,
+    this.recommendedPlaces = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -398,44 +443,67 @@ class _Bubble extends StatelessWidget {
             ),
           if (!isUser) const SizedBox(width: 10),
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isUser ? AppColors.primary : Theme.of(context).cardColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(18),
-                  topRight: const Radius.circular(18),
-                  bottomLeft: Radius.circular(isUser ? 18 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isUser
+                              ? AppColors.primary
+                              : Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(18),
+                            topRight: const Radius.circular(18),
+                            bottomLeft: Radius.circular(isUser ? 18 : 4),
+                            bottomRight: Radius.circular(isUser ? 4 : 18),
+                          ),
+                          border: Border.all(
+                            color: isUser
+                                ? Colors.transparent
+                                : context.borderColor.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: ChatMessageText(
+                          text: msg.text,
+                          style: TextStyle(
+                            color: isUser ? Colors.white : context.textPri,
+                            fontSize: 15,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (!isUser && msg.id.isNotEmpty && msg.text.isNotEmpty)
+                      IconButton(
+                        tooltip: context.tr('report_title'),
+                        onPressed: () => ReportContentSheet.show(
+                          context,
+                          targetId: msg.id,
+                          targetType: 'ai_message',
+                          targetContext: msg.text,
+                        ),
+                        icon: const Icon(Icons.flag_outlined, size: 18),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
                 ),
-                border: Border.all(
-                  color: isUser
-                      ? Colors.transparent
-                      : context.borderColor.withValues(alpha: 0.5),
-                ),
-              ),
-              child: ChatMessageText(
-                text: msg.text,
-                style: TextStyle(
-                  color: isUser ? Colors.white : context.textPri,
-                  fontSize: 15,
-                  height: 1.5,
-                ),
-              ),
+                if (!isUser)
+                  for (final place in recommendedPlaces)
+                    AiPlaceRecommendationCard(
+                      key: Key('ai-recommended-place-card-${place.id}'),
+                      place: place,
+                    ),
+              ],
             ),
           ),
-          if (!isUser && msg.id.isNotEmpty && msg.text.isNotEmpty)
-            IconButton(
-              tooltip: context.tr('report_title'),
-              onPressed: () => ReportContentSheet.show(
-                context,
-                targetId: msg.id,
-                targetType: 'ai_message',
-                targetContext: msg.text,
-              ),
-              icon: const Icon(Icons.flag_outlined, size: 18),
-              visualDensity: VisualDensity.compact,
-            ),
         ],
       ),
     );

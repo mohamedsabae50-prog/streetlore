@@ -631,6 +631,33 @@ class AuthProvider extends ChangeNotifier {
         .join(' ');
   }
 
+  Future<void> resetPasswordForEmail(String email) async {
+    if (!AppConfig.supabaseEnabled) {
+      throw StateError('Password recovery requires an online account.');
+    }
+    await SupabaseService.instance.resetPasswordForEmail(email);
+  }
+
+  Future<void> verifyPasswordRecoveryOtp({
+    required String email,
+    required String token,
+  }) async {
+    if (!AppConfig.supabaseEnabled) {
+      throw StateError('Password recovery requires an online account.');
+    }
+    await SupabaseService.instance.verifyPasswordRecoveryOtp(
+      email: email,
+      token: token,
+    );
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    if (!AppConfig.supabaseEnabled) {
+      throw StateError('Password updates require an online account.');
+    }
+    await SupabaseService.instance.updatePassword(newPassword);
+  }
+
   Future<void> _persistAuthSnapshot({
     String? accessToken,
     String? refreshToken,

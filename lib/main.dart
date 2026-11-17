@@ -37,6 +37,7 @@ import 'logic/squad_provider.dart';
 import 'logic/journal_provider.dart';
 import 'logic/achievement_provider.dart';
 import 'presentation/screens/splash_screen.dart';
+import 'presentation/widgets/password_reset_dialog.dart';
 import 'logic/trip_provider.dart';
 import 'logic/review_provider.dart';
 import 'logic/ai_features_providers.dart';
@@ -121,6 +122,7 @@ Future<void> _runApplication() async {
     publishableKey: AppConfig.supabaseAnonKey,
     authOptions: const FlutterAuthClientOptions(autoRefreshToken: true),
   );
+  _listenForPasswordRecovery();
   unawaited(RemoteConfigService.instance.initialize());
 
   await OfflineStorageService.instance.init();
@@ -368,6 +370,50 @@ Future<void> _configureRevenueCat(String userId) async {
 }
 
 String? _lastBootstrappedUserId;
+StreamSubscription<AuthState>? _passwordRecoverySubscription;
+bool _passwordRecoveryPending = false;
+bool _passwordRecoveryDialogOpen = false;
+
+void _listenForPasswordRecovery() {
+  _passwordRecoverySubscription = Supabase
+      .instance
+      .client
+      .auth
+      .onAuthStateChange
+      .listen(
+        (state) {
+          if (state.event != AuthChangeEvent.passwordRecovery) return;
+          _passwordRecoveryPending = true;
+          _showPasswordRecoveryDialogIfReady();
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          debugPrint(
+            'Password recovery auth listener failed: $error\n$stackTrace',
+          );
+        },
+      );
+}
+
+void _showPasswordRecoveryDialogIfReady() {
+  if (!_passwordRecoveryPending || _passwordRecoveryDialogOpen) return;
+  final context = WidgetDeepLinkService.navigatorKey.currentContext;
+  if (context == null) return;
+  _passwordRecoveryPending = false;
+  _passwordRecoveryDialogOpen = true;
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    final dialogContext = WidgetDeepLinkService.navigatorKey.currentContext;
+    if (dialogContext == null) {
+      _passwordRecoveryPending = true;
+      _passwordRecoveryDialogOpen = false;
+      return;
+    }
+    try {
+      await PasswordResetDialog.show(dialogContext, recoveryVerified: true);
+    } finally {
+      _passwordRecoveryDialogOpen = false;
+    }
+  });
+}
 
 Future<void> _bindAuthDeepLink(AuthProvider auth) async {
   try {
@@ -440,6 +486,9 @@ class _EgyptLoreAppState extends State<EgyptLoreApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _showPasswordRecoveryDialogIfReady();
+    });
     final imageCache = PaintingBinding.instance.imageCache;
     imageCache.maximumSize = 80;
     imageCache.maximumSizeBytes = 60 << 20;
@@ -519,6 +568,8 @@ class _EgyptLoreAppState extends State<EgyptLoreApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_passwordRecoverySubscription?.cancel());
+    _passwordRecoverySubscription = null;
     unawaited(_autoCheckInPositionSubscription?.cancel());
     unawaited(_autoCheckInNotificationSubscription?.cancel());
     super.dispose();

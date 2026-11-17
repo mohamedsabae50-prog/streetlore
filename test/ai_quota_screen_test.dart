@@ -23,6 +23,17 @@ class _FreeAuthProvider extends AuthProvider {
   bool get isAdmin => false;
 }
 
+class _ProAuthProvider extends AuthProvider {
+  @override
+  bool get isPro => true;
+
+  @override
+  bool get isAdmin => false;
+
+  @override
+  String get currentUserId => 'pro-quota-screen-test';
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -207,6 +218,144 @@ void main() {
     expect(messagesSent, 1);
     expect(quotaFetches, 2);
     expect(find.text('Remaining AI uses today: 2 / 3'), findsNWidgets(2));
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('general guide shows and decrements the finite Pro quota', (
+    tester,
+  ) async {
+    final governorates = GovernorateProvider();
+    governorates.unlockAndSelectGovernorate('alexandria');
+    final places = PlaceProvider(
+      watchRemoteUpdates: false,
+      governorates: governorates,
+      isOnline: () => false,
+    );
+    final tours = TourProvider(
+      governorates: governorates,
+      isOnline: () => false,
+    );
+    final auth = _ProAuthProvider();
+    final locale = LocaleProvider();
+    var quotaFetches = 0;
+    Future<Map<String, dynamic>> fetchStatus() async =>
+        _quotaStatus(++quotaFetches);
+
+    addTearDown(governorates.dispose);
+    addTearDown(places.dispose);
+    addTearDown(tours.dispose);
+    addTearDown(auth.dispose);
+    addTearDown(locale.dispose);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: auth),
+          ChangeNotifierProvider<LocaleProvider>.value(value: locale),
+          ChangeNotifierProvider<GovernorateProvider>.value(
+            value: governorates,
+          ),
+          ChangeNotifierProvider<PlaceProvider>.value(value: places),
+          ChangeNotifierProvider<TourProvider>.value(value: tours),
+        ],
+        child: MaterialApp(
+          home: GeneralAITourGuideScreen(
+            fetchQuotaStatus: fetchStatus,
+            isOfflineOverride: false,
+            onSendMessage: (_) async => 'A recommended place.',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Remaining AI uses today: 50 / 50 (Pro)'),
+      findsNWidgets(2),
+    );
+    await tester.enterText(find.byType(TextField), 'What should I see?');
+    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Remaining AI uses today: 49 / 50 (Pro)'),
+      findsNWidgets(2),
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('place guide shows and decrements the finite Pro quota', (
+    tester,
+  ) async {
+    const place = PlaceModel(
+      id: 'pro-quota-place',
+      nameEn: 'Pro Quota Landmark',
+      descriptionEn: 'A landmark.',
+      imageUrl: '',
+      rating: 4.5,
+      category: 'Historical',
+      lat: 31.2,
+      lng: 29.9,
+      governorate: 'alexandria',
+    );
+    final governorates = GovernorateProvider();
+    final places = PlaceProvider(
+      watchRemoteUpdates: false,
+      governorates: governorates,
+      isOnline: () => false,
+      initialPlaces: const [place],
+    );
+    final tours = TourProvider(
+      governorates: governorates,
+      isOnline: () => false,
+    );
+    final auth = _ProAuthProvider();
+    final locale = LocaleProvider();
+    var quotaFetches = 0;
+    Future<Map<String, dynamic>> fetchStatus() async =>
+        _quotaStatus(++quotaFetches);
+
+    addTearDown(governorates.dispose);
+    addTearDown(places.dispose);
+    addTearDown(tours.dispose);
+    addTearDown(auth.dispose);
+    addTearDown(locale.dispose);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: auth),
+          ChangeNotifierProvider<LocaleProvider>.value(value: locale),
+          ChangeNotifierProvider<GovernorateProvider>.value(
+            value: governorates,
+          ),
+          ChangeNotifierProvider<PlaceProvider>.value(value: places),
+          ChangeNotifierProvider<TourProvider>.value(value: tours),
+        ],
+        child: MaterialApp(
+          home: AITourGuideScreen(
+            place: place,
+            fetchQuotaStatus: fetchStatus,
+            isOfflineOverride: false,
+            onSendMessage: (_) async => 'A helpful reply.',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Remaining AI uses today: 50 / 50 (Pro)'),
+      findsNWidgets(2),
+    );
+    await tester.enterText(find.byType(TextField), 'Tell me more');
+    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Remaining AI uses today: 49 / 50 (Pro)'),
+      findsNWidgets(2),
+    );
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

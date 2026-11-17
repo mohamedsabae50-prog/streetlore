@@ -6,8 +6,10 @@ import 'package:uuid/uuid.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/ai_quota_banner.dart';
 import '../../core/services/ai_tour_guide_service.dart';
+import '../../core/utils/ai_place_matcher.dart';
 import '../../data/models/egypt_governorate.dart';
 import '../../data/models/place_model.dart';
+import '../../data/mock_data.dart';
 import '../../l10n/app_strings.dart';
 import '../../logic/connectivity_provider.dart';
 import '../../logic/auth_provider.dart';
@@ -17,6 +19,7 @@ import 'package:provider/provider.dart';
 import 'paywall_screen.dart';
 import '../widgets/report_content_sheet.dart';
 import '../widgets/chat_text_direction.dart';
+import '../widgets/ai_place_recommendation_card.dart';
 
 typedef PlaceAiMessageSender = Future<String> Function(String text);
 
@@ -49,8 +52,8 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
   bool _sending = false;
   int _quotaRemaining = 3;
   int _quotaLimit = 3;
-  bool _quotaUnlimited = false;
   String? _streamingReply;
+  String _streamingPrompt = '';
 
   @override
   void didChangeDependencies() {
@@ -93,20 +96,21 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
   Future<void> _send() async {
     if (_isOffline()) return;
     final text = _inputCtrl.text.trim();
-    if (text.isEmpty ||
-        _sending ||
-        (!(context.read<AuthProvider>().isPro ||
-                context.read<AuthProvider>().isAdmin ||
-                _quotaUnlimited) &&
-            _quotaRemaining <= 0)) {
+    if (text.isEmpty || _sending) return;
+    if (_quotaRemaining <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('ai_quota_limit_reached'))),
+      );
       return;
     }
     HapticFeedback.lightImpact();
+    final consumed = await _quotaKey.currentState?.consumeOne() ?? false;
+    if (!consumed || !mounted) return;
     _inputCtrl.clear();
-    _quotaKey.currentState?.consumeOne();
     setState(() {
       _sending = true;
       _streamingReply = '';
+      _streamingPrompt = text;
     });
     try {
       final sender = widget.onSendMessage;
@@ -129,6 +133,7 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
         setState(() {
           _sending = false;
           _streamingReply = null;
+          _streamingPrompt = '';
         });
         _scrollToBottom();
       }
@@ -228,11 +233,18 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
   }
 
   Widget _buildQuotaSubtitle(BuildContext context, bool isPro) {
-    final message = isPro || _quotaUnlimited
-        ? context.tr('ai_quota_pro_unlimited')
+    final limit = isPro ? kProDailyAiLimit : _quotaLimit;
+    final remaining = isPro && _quotaLimit != kProDailyAiLimit
+        ? kProDailyAiLimit
+        : _quotaRemaining;
+    final message = isPro
+        ? context.tr('ai_quota_pro_remaining', {
+            'remaining': '$remaining',
+            'limit': '$limit',
+          })
         : context.tr('ai_quota_remaining', {
             'remaining': '$_quotaRemaining',
-            'limit': '$_quotaLimit',
+            'limit': '$limit',
           });
     return SizedBox(
       height: 16,
@@ -256,7 +268,6 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
     setState(() {
       _quotaRemaining = snapshot.remaining;
       _quotaLimit = snapshot.limit;
-      _quotaUnlimited = snapshot.unlimited;
     });
   }
 
@@ -276,17 +287,43 @@ class _AITourGuideScreenState extends State<AITourGuideScreen> {
             isUser: false,
             id: '',
             onUpgrade: _openPaywall,
+            userPrompt: _streamingPrompt,
+            recommendedPlaces: _matchPlaces(
+              userPrompt: _streamingPrompt,
+              reply: _streamingReply!,
+            ),
           );
         }
         final m = msgs[i];
+        final userPrompt = !m.isUser && i > 0 && msgs[i - 1].isUser
+            ? msgs[i - 1].text
+            : '';
         return _MessageBubble(
           text: m.text,
           isUser: m.isUser,
           id: m.id,
           isDailyLimitExceeded: m.isDailyLimitExceeded,
           onUpgrade: _openPaywall,
+          userPrompt: userPrompt,
+          recommendedPlaces: _matchPlaces(
+            userPrompt: userPrompt,
+            reply: m.text,
+          ),
         );
       },
+    );
+  }
+
+  List<PlaceModel> _matchPlaces({
+    required String userPrompt,
+    required String reply,
+  }) {
+    final providerPlaces = context.read<PlaceProvider>().allPlaces;
+    return AiPlaceMatcher.match(
+      userPrompt: userPrompt,
+      assistantReply: reply,
+      places: providerPlaces.isEmpty ? MockData.places : providerPlaces,
+      activeGovernorateId: widget.place.governorate,
     );
   }
 
@@ -354,12 +391,16 @@ class _MessageBubble extends StatelessWidget {
   final String text;
   final bool isUser;
   final String id;
+  final String userPrompt;
+  final List<PlaceModel> recommendedPlaces;
   final bool isDailyLimitExceeded;
   final VoidCallback onUpgrade;
   const _MessageBubble({
     required this.text,
     required this.isUser,
     required this.id,
+    this.userPrompt = '',
+    this.recommendedPlaces = const [],
     this.isDailyLimitExceeded = false,
     required this.onUpgrade,
   });
@@ -397,42 +438,66 @@ class _MessageBubble extends StatelessWidget {
             ),
           if (!isUser) const SizedBox(width: 8),
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isUser ? AppColors.primary : context.cardColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isUser ? 16 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isUser ? AppColors.primary : context.cardColor,
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(16),
+                            topRight: const Radius.circular(16),
+                            bottomLeft: Radius.circular(isUser ? 16 : 4),
+                            bottomRight: Radius.circular(isUser ? 4 : 16),
+                          ),
+                          border: isUser
+                              ? null
+                              : Border.all(
+                                  color: context.borderColor,
+                                  width: 0.5,
+                                ),
+                        ),
+                        child: ChatMessageText(
+                          text: text,
+                          style: TextStyle(
+                            color: isUser ? Colors.white : context.textPri,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (!isUser && id.isNotEmpty && text.isNotEmpty)
+                      IconButton(
+                        tooltip: context.tr('report_title'),
+                        onPressed: () => ReportContentSheet.show(
+                          context,
+                          targetId: id,
+                          targetType: 'ai_message',
+                          targetContext: text,
+                        ),
+                        icon: const Icon(Icons.flag_outlined, size: 18),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
                 ),
-                border: isUser
-                    ? null
-                    : Border.all(color: context.borderColor, width: 0.5),
-              ),
-              child: ChatMessageText(
-                text: text,
-                style: TextStyle(
-                  color: isUser ? Colors.white : context.textPri,
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-              ),
+                if (!isUser)
+                  for (final place in recommendedPlaces)
+                    AiPlaceRecommendationCard(
+                      key: Key('ai-recommended-place-card-${place.id}'),
+                      place: place,
+                    ),
+              ],
             ),
           ),
-          if (!isUser && id.isNotEmpty && text.isNotEmpty)
-            IconButton(
-              tooltip: context.tr('report_title'),
-              onPressed: () => ReportContentSheet.show(
-                context,
-                targetId: id,
-                targetType: 'ai_message',
-                targetContext: text,
-              ),
-              icon: const Icon(Icons.flag_outlined, size: 18),
-              visualDensity: VisualDensity.compact,
-            ),
         ],
       ),
     );

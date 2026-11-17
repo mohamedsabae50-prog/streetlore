@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../config/app_config.dart';
 import '../../data/models/egypt_governorate.dart';
@@ -10,6 +11,32 @@ import 'gemini_rest_client.dart';
 
 const aiDailyLimitMessage =
     'You have reached your daily limit, please come back tomorrow.';
+
+const int kProDailyAiLimit = 50;
+const int kFreeDailyAiLimit = 3;
+
+class AiQuotaStatus {
+  const AiQuotaStatus({
+    required this.dailyLimit,
+    required this.usedToday,
+    required this.nextResetAt,
+  });
+
+  final int dailyLimit;
+  final int usedToday;
+  final DateTime nextResetAt;
+
+  int get remaining => math.max(dailyLimit - usedToday, 0).toInt();
+  bool get isUnlimited => false;
+
+  Map<String, dynamic> toMap() => {
+    'daily_limit': dailyLimit,
+    'used_today': usedToday,
+    'remaining': remaining,
+    'is_unlimited': false,
+    'next_reset_at': nextResetAt.toIso8601String(),
+  };
+}
 
 String buildGeneralGuideWelcome({
   required String governorateId,
@@ -158,6 +185,84 @@ class AITourGuideService {
   AITourGuideService._();
   static final AITourGuideService instance = AITourGuideService._();
   static const _uuid = Uuid();
+
+  static String _quotaPreferenceKey(String userId, DateTime now) {
+    final day = now.toUtc().toIso8601String().substring(0, 10);
+    final safeUserId = userId.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_');
+    return 'ai_quota_used_${safeUserId}_$day';
+  }
+
+  static DateTime _nextUtcReset(DateTime now) {
+    final utc = now.toUtc();
+    return DateTime.utc(utc.year, utc.month, utc.day + 1);
+  }
+
+  static Future<AiQuotaStatus> resolveQuotaStatus({
+    required bool isPro,
+    required String userId,
+    Future<Map<String, dynamic>> Function()? fetchServerStatus,
+  }) async {
+    final now = DateTime.now().toUtc();
+    final key = _quotaPreferenceKey(userId, now);
+    final preferences = await SharedPreferences.getInstance();
+    final localUsed = math.max(preferences.getInt(key) ?? 0, 0).toInt();
+    var limit = isPro ? kProDailyAiLimit : kFreeDailyAiLimit;
+    var used = localUsed;
+    var nextResetAt = _nextUtcReset(now);
+
+    if (fetchServerStatus != null) {
+      try {
+        final server = await fetchServerStatus();
+        final serverLimit = (server['daily_limit'] as num?)?.toInt() ?? 0;
+        if (!isPro && serverLimit > 0) limit = serverLimit;
+        final serverUsed = (server['used_today'] as num?)?.toInt() ?? 0;
+        used = math.max(used, serverUsed).toInt();
+        final serverReset = DateTime.tryParse(
+          server['next_reset_at'] as String? ?? '',
+        );
+        if (serverReset != null && serverReset.isAfter(now)) {
+          nextResetAt = serverReset.toUtc();
+        }
+      } catch (error, stackTrace) {
+        debugPrint(
+          'AITourGuideService.resolveQuotaStatus: server quota unavailable; '
+          'using local counter: $error\n$stackTrace',
+        );
+      }
+    }
+
+    used = used.clamp(0, limit).toInt();
+    await preferences.setInt(key, used);
+    return AiQuotaStatus(
+      dailyLimit: limit,
+      usedToday: used,
+      nextResetAt: nextResetAt,
+    );
+  }
+
+  static Future<AiQuotaStatus> consumeLocalQuota({
+    required bool isPro,
+    required String userId,
+    int observedServerUsage = 0,
+  }) async {
+    final now = DateTime.now().toUtc();
+    final limit = isPro ? kProDailyAiLimit : kFreeDailyAiLimit;
+    final key = _quotaPreferenceKey(userId, now);
+    final preferences = await SharedPreferences.getInstance();
+    final localUsed = math.max(preferences.getInt(key) ?? 0, 0).toInt();
+    final used = math
+        .min(
+          math.max(localUsed, observedServerUsage).clamp(0, limit) + 1,
+          limit,
+        )
+        .toInt();
+    await preferences.setInt(key, used);
+    return AiQuotaStatus(
+      dailyLimit: limit,
+      usedToday: used,
+      nextResetAt: _nextUtcReset(now),
+    );
+  }
 
   final List<ChatMessage> _messages = [];
   List<ChatMessage> get messages => List.unmodifiable(_messages);
